@@ -3,14 +3,35 @@
 
 //! Reference-grid geometry and the decoder's preflight working-memory estimate.
 
-use crate::header::{CodingStyle, MainHeader, SizComponent};
+use crate::header::{CodingStyle, MainHeader, SizComponent, tile::TileComponentParams};
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub(crate) struct Rect {
     pub(crate) x0: u32,
     pub(crate) y0: u32,
     pub(crate) x1: u32,
     pub(crate) y1: u32,
+}
+
+impl Rect {
+    pub(crate) const fn width(self) -> u32 {
+        self.x1 - self.x0
+    }
+
+    pub(crate) const fn height(self) -> u32 {
+        self.y1 - self.y0
+    }
+
+    pub(crate) fn clipped_to(self, other: Self) -> Self {
+        let x0 = self.x0.max(other.x0);
+        let y0 = self.y0.max(other.y0);
+        Self {
+            x0,
+            y0,
+            x1: self.x1.min(other.x1).max(x0),
+            y1: self.y1.min(other.y1).max(y0),
+        }
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -28,7 +49,7 @@ pub(crate) fn ceil_div_pow2(value: u32, shift: u32) -> u32 {
     }
 }
 
-fn component_rect(rect: Rect, component: SizComponent) -> Rect {
+pub(crate) fn component_rect(rect: Rect, component: SizComponent) -> Rect {
     let dx = u32::from(component.dx);
     let dy = u32::from(component.dy);
     Rect {
@@ -124,10 +145,17 @@ fn structure_bytes(style: &CodingStyle, reduce: u32, bounds: Rect, most_precinct
     bytes
 }
 
-fn image_bytes(main: &MainHeader, reduce: u32) -> u64 {
+fn active(slots: Option<&[Option<usize>]>, index: usize) -> bool {
+    slots.is_none_or(|slots| slots[index].is_some())
+}
+
+fn image_bytes(main: &MainHeader, reduce: u32, slots: Option<&[Option<usize>]>) -> u64 {
     let mut bytes = 256_u64 * 1024;
     let mut longest = 1;
-    for &component in &main.comps {
+    for (index, &component) in main.comps.iter().enumerate() {
+        if !active(slots, index) {
+            continue;
+        }
         let header = header_dimensions(main, component, reduce);
         let resized = resized_dimensions(main, component, reduce).unwrap_or(header);
         let width = header.width.max(resized.width);
@@ -142,7 +170,14 @@ fn sample_bytes(width: u32, height: u32) -> u64 {
     (u64::from(width) * u64::from(height)).saturating_mul(4)
 }
 
-fn tile_bytes(main: &MainHeader, tile: u32, reduce: u32) -> u64 {
+fn tile_bytes<'a>(
+    main: &MainHeader,
+    tile: u32,
+    reduce: u32,
+    layers: u16,
+    style_at: impl Fn(u32) -> &'a CodingStyle,
+    slots: Option<&[Option<usize>]>,
+) -> u64 {
     let rect = tile_rect(main, tile);
     let several_tiles = main.tile_count() > 1;
     let mut bytes = 0_u64;
@@ -150,18 +185,18 @@ fn tile_bytes(main: &MainHeader, tile: u32, reduce: u32) -> u64 {
     let mut most_resolutions = 0;
     for (index, &component) in (0..main.numcomps).zip(&main.comps) {
         let bounds = component_rect(rect, component);
-        let style = main.main_style(index);
+        let style = style_at(index);
         most_resolutions = most_resolutions.max(style.numresolutions);
         let structures = structure_bytes(style, reduce, bounds, &mut most_precincts);
         // The working arena reserves blocks in a doubling series.
         bytes = bytes.saturating_add(structures.saturating_mul(2));
-        if several_tiles {
+        if several_tiles && active(slots, index as usize) {
             let width = ceil_div_pow2(bounds.x1, reduce) - ceil_div_pow2(bounds.x0, reduce);
             let height = ceil_div_pow2(bounds.y1, reduce) - ceil_div_pow2(bounds.y0, reduce);
             bytes = bytes.saturating_add(sample_bytes(width, height));
         }
     }
-    let packet_bits = (u64::from(main.cod.numlayers) + 1)
+    let packet_bits = (u64::from(layers) + 1)
         .saturating_mul(u64::from(most_resolutions))
         .saturating_mul(u64::from(main.numcomps))
         .saturating_mul(most_precincts);
@@ -169,13 +204,35 @@ fn tile_bytes(main: &MainHeader, tile: u32, reduce: u32) -> u64 {
 }
 
 pub(crate) fn working_memory(main: &MainHeader, reduce: u32) -> u64 {
+    working_memory_selected(main, reduce, None)
+}
+
+pub(crate) fn working_memory_for_tile(
+    main: &MainHeader,
+    tile: u32,
+    reduce: u32,
+    params: &[TileComponentParams<'_>],
+    slots: &[Option<usize>],
+) -> u64 {
+    image_bytes(main, reduce, Some(slots)).saturating_add(tile_bytes(
+        main,
+        tile,
+        reduce,
+        params[0].coding.numlayers,
+        |index| params[index as usize].style,
+        Some(slots),
+    ))
+}
+
+pub(crate) fn working_memory_selected(main: &MainHeader, reduce: u32, slots: Option<&[Option<usize>]>) -> u64 {
     let indices = |len: u32| [Some(0), (len > 2).then_some(1), (len > 1).then_some(len - 1)];
     // The largest tile is bounded by sampling the first, inner, and last rows and columns.
     let mut largest = 0;
     for row in indices(main.th).into_iter().flatten() {
         for col in indices(main.tw).into_iter().flatten() {
-            largest = largest.max(tile_bytes(main, row * main.tw + col, reduce));
+            let tile = row * main.tw + col;
+            largest = largest.max(tile_bytes(main, tile, reduce, main.cod.numlayers, |c| main.main_style(c), slots));
         }
     }
-    image_bytes(main, reduce).saturating_add(largest)
+    image_bytes(main, reduce, slots).saturating_add(largest)
 }

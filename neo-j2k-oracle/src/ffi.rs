@@ -36,7 +36,32 @@ pub(crate) struct Header {
     _private: [u8; 0],
 }
 
-pub(crate) const ABI_VERSION: u32 = 3;
+pub(crate) const ABI_VERSION: u32 = 5;
+
+/// `nj2k_shim_codestream_t`, opaque.
+#[repr(C)]
+pub(crate) struct Codestream {
+    _private: [u8; 0],
+}
+
+#[repr(C)]
+pub(crate) struct EncodeRequest {
+    pub(crate) pixels: *const u8,
+    pub(crate) size: usize,
+    pub(crate) stride: usize,
+    pub(crate) width: u32,
+    pub(crate) height: u32,
+    pub(crate) components: u32,
+    pub(crate) flip_vertical: u32,
+    pub(crate) reversible: u32,
+    pub(crate) resolutions: u32,
+    pub(crate) mct: u32,
+    pub(crate) max_codestream_size: u32,
+    pub(crate) rates: *const f32,
+    pub(crate) rate_count: usize,
+    pub(crate) comment: *const u8,
+    pub(crate) comment_len: usize,
+}
 
 #[repr(C)]
 pub(crate) struct Layout {
@@ -204,12 +229,17 @@ unsafe extern "C" {
         count: usize,
         reversible: u32,
     ) -> u32;
+    pub(crate) fn nj2k_shim_encode_u8(request: *const EncodeRequest, out: *mut *mut Codestream) -> i32;
+    pub(crate) fn nj2k_shim_codestream_bytes(codestream: *const Codestream, len: *mut usize) -> *const u8;
+    pub(crate) fn nj2k_shim_codestream_free(codestream: *mut Codestream);
 
     pub(crate) fn nj2k_shim_codec_new(
         format: u32,
         reduce: u32,
         reduce_policy: u32,
         limits: *const Limits,
+        max_layers: u32,
+        strict: u32,
     ) -> *mut Codec;
     pub(crate) fn nj2k_shim_codec_free(codec: *mut Codec);
     pub(crate) fn nj2k_shim_codec_set_max_memory(codec: *mut Codec, max_memory: u64) -> u32;

@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#define NJ2K_SHIM_ABI_VERSION 3u
+#define NJ2K_SHIM_ABI_VERSION 5u
 
 uint32_t nj2k_shim_abi_version(void);
 /* 1 when the harness's backends were made before main() (their making clears OPJ_NUM_THREADS, an
@@ -128,10 +128,27 @@ typedef struct nj2k_shim_wavelet_rect {
 uint32_t nj2k_shim_dwt_decode(int32_t *plane, size_t size, uint32_t stride, const nj2k_shim_wavelet_rect_t *resolutions,
                               size_t count, uint32_t reversible);
 
+/* ---- the C++ encoder, using a memory output stream -------------------------------------------- */
+typedef struct nj2k_shim_encode_request {
+    const uint8_t *pixels;
+    size_t size, stride;
+    uint32_t width, height, components, flip_vertical;
+    uint32_t reversible, resolutions, mct, max_codestream_size;
+    const float *rates;
+    size_t rate_count;
+    const uint8_t *comment;
+    size_t comment_len;
+} nj2k_shim_encode_request_t;
+typedef struct nj2k_shim_codestream nj2k_shim_codestream_t;
+/* Returns the C++ encoder's status; on success out owns the codestream until it is freed. */
+int32_t nj2k_shim_encode_u8(const nj2k_shim_encode_request_t *request, nj2k_shim_codestream_t **out);
+const uint8_t *nj2k_shim_codestream_bytes(const nj2k_shim_codestream_t *codestream, size_t *len);
+void nj2k_shim_codestream_free(nj2k_shim_codestream_t *codestream);
+
 /* ---- a memory codec of neo-j2k, its ledger numbers and its thresholds ------------------------- */
-/* a non-strict memory decoder (NJ2K_CODEC_J2K or NJ2K_CODEC_JP2) with the given reduce settings and limits */
+/* A memory decoder (NJ2K_CODEC_J2K or NJ2K_CODEC_JP2) with the given options and limits. */
 nj2k_codec_t *nj2k_shim_codec_new(uint32_t format, uint32_t reduce, uint32_t reduce_policy,
-                                  const nj2k_decoder_limits_t *limits);
+                                  const nj2k_decoder_limits_t *limits, uint32_t max_layers, uint32_t strict);
 void nj2k_shim_codec_free(nj2k_codec_t *codec);
 uint32_t nj2k_shim_codec_set_max_memory(nj2k_codec_t *codec, uint64_t max_memory);
 typedef struct nj2k_shim_header nj2k_shim_header_t;

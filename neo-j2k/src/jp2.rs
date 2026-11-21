@@ -40,13 +40,13 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//! JP2 and JPH container inspection, up to the beginning of the codestream.
+//! JP2 and JPH container inspection, palette expansion and channel definitions.
 
 use core::ops::Range;
 
 use crate::error::Diagnostics;
 use crate::mem::{CType, HeaderLedger};
-use crate::{Error, ErrorKind};
+use crate::{DecodedComponent, Error, ErrorKind, Limits};
 
 pub(crate) const MAGIC: [u8; 12] = *b"\x00\x00\x00\x0cjP  \x0d\x0a\x87\x0a";
 
@@ -86,11 +86,8 @@ pub(crate) enum ColourSpec {
 #[derive(Debug)]
 struct Palette {
     columns: usize,
-    #[allow(dead_code, reason = "the decoded image consumes the palette")]
     entries: usize,
-    #[allow(dead_code, reason = "the decoded image consumes the palette")]
     bits: Range<usize>,
-    #[allow(dead_code, reason = "the decoded image consumes the palette")]
     values: Range<usize>,
 }
 
@@ -105,6 +102,10 @@ impl Jp2Header {
             Some(ColourSpec::Enumerated { code: 12, .. }) => 5,
             _ => -1,
         }
+    }
+
+    pub(crate) const fn changes_channels(&self) -> bool {
+        (self.palette.is_some() && self.mapping.is_some()) || self.channels.is_some()
     }
 }
 
@@ -510,9 +511,267 @@ impl Reader<'_> {
     }
 }
 
+#[derive(Clone, Copy, Debug, Default)]
+struct Mapping {
+    component: usize,
+    method: u8,
+    column: usize,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Channel {
+    number: usize,
+    kind: u16,
+    association: u16,
+}
+
+fn channel_defs(bytes: &[u8]) -> impl Iterator<Item = Channel> {
+    bytes.as_chunks::<6>().0.iter().map(|def| Channel {
+        number: usize::from(be16(def, 0)),
+        kind: be16(def, 2),
+        association: be16(def, 4),
+    })
+}
+
+fn colour_error(message: impl Into<String>) -> Error {
+    Error::new(ErrorKind::Data, message)
+}
+
+fn colour_bytes<'a>(data: &'a [u8], range: &Range<usize>) -> Result<&'a [u8], Error> {
+    data.get(range.clone())
+        .ok_or_else(|| colour_error("Incomplete JP2 colour data\n"))
+}
+
+fn validate_channels(defs: &[u8], channels: usize) -> Result<(), Error> {
+    // Channel numbers are u16. Count distinct channels without rescanning the definitions for each one.
+    let mut seen = [0_u64; 1024];
+    let mut count = 0;
+    for def in channel_defs(defs) {
+        if def.number >= channels {
+            return Err(colour_error(format!(
+                "Invalid component index {} (>= {channels}).\n",
+                def.number
+            )));
+        }
+        if def.association != u16::MAX && def.association != 0 {
+            let index = usize::from(def.association - 1);
+            if index >= channels {
+                return Err(colour_error(format!(
+                    "Invalid component index {index} (>= {channels}).\n"
+                )));
+            }
+        }
+        let bit = 1 << (def.number % 64);
+        let slot = &mut seen[def.number / 64];
+        if *slot & bit == 0 {
+            *slot |= bit;
+            count += 1;
+        }
+    }
+    if count != channels {
+        return Err(colour_error("Incomplete channel definitions.\n"));
+    }
+    Ok(())
+}
+
+fn validate_mapping(mapping: &mut [Mapping], components: usize, diagnostics: &mut Diagnostics) -> Result<(), Error> {
+    let mut used = [false; 256];
+    let mut last_error = None;
+    // The caller reports the returned error. Emit the earlier errors here to keep C++ order.
+    let mut record = |message| {
+        if let Some(previous) = last_error.replace(message) {
+            diagnostics.error(previous);
+        }
+    };
+    for entry in mapping.iter() {
+        if entry.component >= components {
+            record(format!(
+                "Invalid component index {} (>= {components}).\n",
+                entry.component
+            ));
+        }
+    }
+    for (index, &Mapping { method, column, .. }) in mapping.iter().enumerate() {
+        if method > 1 {
+            record(format!("Invalid value for cmap[{index}].mtyp = {method}.\n"));
+        } else if column >= mapping.len() {
+            record(format!(
+                "Invalid component/palette index for direct mapping {column}.\n"
+            ));
+        } else if used[column] && method == 1 {
+            record(format!("Component {column} is mapped twice.\n"));
+        } else if method == 0 && column != 0 {
+            record(format!("Direct use at #{index} however pcol={column}.\n"));
+        } else if method == 1 && column != index {
+            record(format!(
+                "Implementation limitation: for palette mapping, pcol[{index}] should be equal to {index}, but is equal to {column}.\n"
+            ));
+        } else {
+            used[column] = true;
+        }
+    }
+    for (index, entry) in mapping.iter().enumerate() {
+        if !used[index] && entry.method != 0 {
+            record(format!("Component {index} doesn't have a mapping.\n"));
+        }
+    }
+    if let Some(error) = last_error {
+        return Err(colour_error(error));
+    }
+    if components == 1 && used[..mapping.len()].contains(&false) {
+        diagnostics.warn("Component mapping seems wrong. Trying to correct.\n");
+        for (column, entry) in mapping.iter_mut().enumerate() {
+            entry.method = 1;
+            entry.column = column;
+        }
+    }
+    Ok(())
+}
+
+fn palette_memory_error() -> Error {
+    colour_error("Memory allocation failure in opj_jp2_apply_pclr().\n")
+}
+
+fn expand_palette(
+    palette: &Palette,
+    mapping: &[Mapping],
+    data: &[u8],
+    image: &[DecodedComponent],
+) -> Result<Vec<DecodedComponent>, Error> {
+    for (index, entry) in mapping.iter().enumerate() {
+        if image[entry.component].samples.is_empty() {
+            return Err(colour_error(format!(
+                "image->comps[{index}].data == NULL in opj_jp2_apply_pclr().\n"
+            )));
+        }
+    }
+    let bits = colour_bytes(data, &palette.bits)?;
+    let values = colour_bytes(data, &palette.values)?;
+    let mut offsets = [0; 256];
+    for (column, &format) in bits.iter().enumerate() {
+        offsets[column + 1] = offsets[column] + (usize::from(format & 0x7f) + 1).div_ceil(8).min(4);
+    }
+    let row_stride = offsets[bits.len()];
+    let top = i32::try_from(palette.entries - 1).expect("palette has at most 1024 entries");
+
+    let mut result = Vec::new();
+    result
+        .try_reserve_exact(mapping.len())
+        .map_err(|_| palette_memory_error())?;
+    for (index, entry) in mapping.iter().enumerate() {
+        let source = &image[entry.component];
+        let mut info = source.info;
+        info.precision = u32::from(bits[index] & 0x7f) + 1;
+        info.signed = bits[index] & 0x80 != 0;
+        let mut samples = Vec::new();
+        samples
+            .try_reserve_exact(source.samples.len())
+            .map_err(|_| palette_memory_error())?;
+        if entry.method == 0 {
+            samples.extend_from_slice(&source.samples);
+        } else {
+            let left = offsets[entry.column];
+            let right = offsets[entry.column + 1];
+            for &sample in &source.samples {
+                let row = usize::try_from(sample.clamp(0, top)).expect("clamped palette index is nonnegative");
+                let base = row * row_stride;
+                // OpenJPEG reads at most four bytes per entry as an unsigned word and interprets
+                // those bits as i32. Short signed columns retain their raw value.
+                let value = values[base + left..base + right]
+                    .iter()
+                    .fold(0_u32, |acc, &byte| (acc << 8) | u32::from(byte));
+                samples.push(value.cast_signed());
+            }
+        }
+        result.push(DecodedComponent {
+            info,
+            samples,
+            resolution: source.resolution,
+            alpha: source.alpha,
+        });
+    }
+    Ok(result)
+}
+
+fn assign_channels(defs: &[u8], image: &mut [DecodedComponent]) -> Result<(), Error> {
+    let mut positions = Vec::new();
+    positions
+        .try_reserve_exact(image.len())
+        .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory for the channel definitions\n"))?;
+    // Keep each original channel's current position and each position's original channel.
+    // This follows the swaps without rewriting every later definition.
+    positions.extend((0..image.len()).map(|index| (index, index)));
+    for def in channel_defs(defs) {
+        let number = positions[def.number].0;
+        if def.association != 0 && def.association != u16::MAX && def.kind == 0 {
+            let other = usize::from(def.association - 1);
+            if number != other {
+                image.swap(number, other);
+                let here_origin = positions[number].1;
+                let other_origin = positions[other].1;
+                positions[here_origin].0 = other;
+                positions[other_origin].0 = number;
+                positions[number].1 = other_origin;
+                positions[other].1 = here_origin;
+            }
+        }
+        image[number].alpha = def.kind;
+    }
+    Ok(())
+}
+
+/// Apply the transformations used by the C++ stream API's JP2 postprocessing. The image is
+/// in original component order and `data` contains the same container header prefix as `header`.
+pub(crate) fn apply_colour(
+    header: &Jp2Header,
+    data: &[u8],
+    image: &mut Vec<DecodedComponent>,
+    limits: Limits,
+    diagnostics: &mut Diagnostics,
+) -> Result<(), Error> {
+    let palette = header.palette.as_ref().zip(header.mapping.as_ref());
+    let defs = header
+        .channels
+        .as_ref()
+        .map(|range| colour_bytes(data, range))
+        .transpose()?;
+    if let Some(defs) = defs {
+        let channels = palette.map_or(image.len(), |(palette, _)| palette.columns);
+        validate_channels(defs, channels)?;
+    }
+    if let Some((palette, cmap)) = palette {
+        let bytes = colour_bytes(data, cmap)?;
+        let mut entries = [Mapping::default(); 256];
+        let mapping = &mut entries[..palette.columns];
+        for (entry, bytes) in mapping.iter_mut().zip(bytes.as_chunks::<4>().0) {
+            *entry = Mapping {
+                component: usize::from(be16(bytes, 0)),
+                method: bytes[2],
+                column: usize::from(bytes[3]),
+            };
+        }
+        validate_mapping(mapping, image.len(), diagnostics)?;
+        if limits.max_components != 0 && u32::try_from(palette.columns).unwrap() > limits.max_components {
+            return Err(Error::new(
+                ErrorKind::Limit,
+                format!(
+                    "The palette (pclr box) makes {} components, more than the decoder's limit of {}\n",
+                    palette.columns, limits.max_components
+                ),
+            ));
+        }
+        *image = expand_palette(palette, mapping, data, image)?;
+    }
+    if let Some(defs) = defs {
+        assign_channels(defs, image)?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::ComponentInfo;
     use crate::error::Diagnostic;
 
     const IHDR: [u8; 14] = [0, 0, 0, 5, 0, 0, 0, 7, 0, 3, 7, 7, 0, 0];
@@ -614,6 +873,142 @@ mod tests {
         assert_eq!(
             error.message(),
             "The JP2 boxes need more memory than the decoder's limit\n"
+        );
+    }
+
+    fn plane(samples: &[i32]) -> Vec<DecodedComponent> {
+        vec![DecodedComponent {
+            info: ComponentInfo {
+                width: u32::try_from(samples.len()).unwrap(),
+                height: 1,
+                precision: 8,
+                ..ComponentInfo::default()
+            },
+            samples: samples.to_vec(),
+            ..DecodedComponent::default()
+        }]
+    }
+
+    #[test]
+    fn palette_values_and_following_channel_definitions_match_cpp_order() {
+        let mut boxes = Vec::new();
+        append_box(
+            &mut boxes,
+            PALETTE,
+            &[
+                0, 2, 3, 7, 0x87, 31, 10, 255, 0x80, 0, 0, 0, 20, 129, 0x7f, 0xff, 0xff, 0xff,
+            ],
+        );
+        append_box(&mut boxes, MAPPING, &[0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 2]);
+        append_box(
+            &mut boxes,
+            CHANNELS,
+            &[0, 3, 0, 2, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 2],
+        );
+        let mut data = prefix(&boxes);
+        append_box(&mut data, CODESTREAM, &[]);
+        let header = inspect(&data).unwrap();
+        assert!(header.changes_channels());
+        let mut original = plane(&[-3, 0, 1, 17]);
+        let limits = Limits {
+            max_components: 2,
+            ..Limits::default()
+        };
+        let refused = apply_colour(&header, &data, &mut original, limits, &mut Diagnostics::default()).unwrap_err();
+        assert_eq!(refused.kind(), ErrorKind::Limit);
+        assert_eq!(original.len(), 1);
+
+        apply_colour(
+            &header,
+            &data,
+            &mut original,
+            Limits::default(),
+            &mut Diagnostics::default(),
+        )
+        .unwrap();
+        assert_eq!(original[0].samples, &[i32::MIN, i32::MIN, i32::MAX, i32::MAX]);
+        assert_eq!(original[0].info.precision, 32);
+        assert_eq!(original[1].samples, &[255, 255, 129, 129]);
+        assert!(original[1].info.signed);
+        assert_eq!(original[2].samples, &[10, 10, 20, 20]);
+        assert_eq!(original.iter().map(|comp| comp.alpha).collect::<Vec<_>>(), [0, 0, 1]);
+    }
+
+    #[test]
+    fn one_component_direct_mapping_is_repaired_like_cpp() {
+        let mut boxes = Vec::new();
+        append_box(&mut boxes, PALETTE, &[0, 2, 2, 7, 7, 10, 20, 30, 40]);
+        append_box(&mut boxes, MAPPING, &[0, 0, 0, 0, 0, 0, 0, 0]);
+        let mut data = prefix(&boxes);
+        append_box(&mut data, CODESTREAM, &[]);
+        let header = inspect(&data).unwrap();
+        let mut original = plane(&[0, 1]);
+        let mut diagnostics = Diagnostics::default();
+        apply_colour(&header, &data, &mut original, Limits::default(), &mut diagnostics).unwrap();
+        assert_eq!(original[0].samples, &[10, 30]);
+        assert_eq!(original[1].samples, &[20, 40]);
+        assert_eq!(
+            diagnostics.entries(),
+            &[Diagnostic::Warning(
+                "Component mapping seems wrong. Trying to correct.\n".into()
+            )]
+        );
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn decoded_palette_and_channel_order_match_the_cpp_stream_api() {
+        use crate::{DecodeParams, Decoder, DecoderConfig, Format, Jp2Channels};
+        use neo_j2k_oracle::{BackendKind, OracleBackend};
+        use neo_j2k_testkit::files::corpus_dir;
+        use neo_j2k_testkit::request::{Backend, Mode, Request};
+
+        let codestream = std::fs::read(corpus_dir().join("size_3x5_g.j2k")).unwrap();
+        let mut boxes = Vec::new();
+        append_box(&mut boxes, IMAGE_HEADER, &[0, 0, 0, 5, 0, 0, 0, 3, 0, 1, 7, 7, 0, 0]);
+        append_box(&mut boxes, COLOUR, &[1, 0, 0, 0, 0, 0, 16]);
+        append_box(&mut boxes, PALETTE, &[0, 2, 3, 7, 7, 7, 10, 20, 30, 40, 50, 60]);
+        append_box(&mut boxes, MAPPING, &[0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 2]);
+        append_box(
+            &mut boxes,
+            CHANNELS,
+            &[0, 3, 0, 2, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 2],
+        );
+        let mut file = MAGIC.to_vec();
+        append_box(&mut file, FILE_TYPE, b"jp2 \0\0\0\0jp2 ");
+        append_box(&mut file, JP2_HEADER, &boxes);
+        append_box(&mut file, CODESTREAM, &codestream);
+
+        let mut request = Request::new(&file, 0, Mode::Plain);
+        request.jp2 = true;
+        let cpp = OracleBackend::new(BackendKind::NeoJ2k).decode(&request);
+        assert!(cpp.ok, "{}", String::from_utf8_lossy(&cpp.last_error));
+
+        let mut decoder = Decoder::new(DecoderConfig {
+            format: Format::Jp2,
+            ..DecoderConfig::default()
+        });
+        assert_eq!(
+            decoder.decode(&file, DecodeParams::default()).unwrap_err().kind(),
+            ErrorKind::Unsupported
+        );
+        let params = DecodeParams {
+            jp2_channels: Jp2Channels::Ignore,
+            ..DecodeParams::default()
+        };
+        assert_eq!(decoder.decode(&file, params).unwrap().components.len(), 1);
+        let params = DecodeParams {
+            jp2_channels: Jp2Channels::Apply,
+            ..DecodeParams::default()
+        };
+        let rust = decoder.decode(&file, params).unwrap();
+        assert_eq!(rust.components.len(), cpp.planes.len());
+        for (rust, cpp) in rust.components.iter().zip(cpp.planes) {
+            assert_eq!(rust.samples(), cpp);
+        }
+        assert_eq!(
+            rust.components.iter().map(DecodedComponent::alpha).collect::<Vec<_>>(),
+            [0, 0, 1]
         );
     }
 }

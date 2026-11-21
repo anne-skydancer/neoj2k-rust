@@ -25,6 +25,7 @@
 // the library's internals (by their path: src/ is no include directory)
 #include "../../../src/codec.h"
 #include "../../../src/dwt.h"
+#include "../../../src/encode.h"
 #include "../../../src/mct.h"
 #include "../../../src/parallel.h"
 
@@ -128,6 +129,26 @@ struct nj2k_shim_header {
     std::vector<nj2k_shim_component_t> original, sized;
     std::vector<HeaderMessage> diagnostics;
 };
+
+struct nj2k_shim_codestream {
+    std::vector<uint8_t> bytes;
+};
+
+namespace {
+
+NJ2K_SIZE_T append_encoded(void* buffer, NJ2K_SIZE_T count, void* cookie) noexcept
+{
+    auto& output = *static_cast<nj2k_shim_codestream_t*>(cookie);
+    const auto* bytes = static_cast<const uint8_t*>(buffer);
+    try {
+        output.bytes.insert(output.bytes.end(), bytes, bytes + count);
+        return count;
+    } catch (...) {
+        return 0;
+    }
+}
+
+}  // namespace
 
 extern "C" {
 
@@ -529,6 +550,107 @@ uint32_t nj2k_shim_dwt_decode(int32_t* plane, size_t size, uint32_t stride, cons
     }
 }
 
+int32_t nj2k_shim_encode_u8(const nj2k_shim_encode_request_t* request, nj2k_shim_codestream_t** out)
+{
+    using nj2k::detail::Encoder;
+    if (!out) {
+        return NJ2K_E_ARGUMENT;
+    }
+    *out = nullptr;
+    if (!request || !request->pixels || !request->components || !request->width || !request->height ||
+        (request->rate_count && !request->rates)) {
+        return NJ2K_E_ARGUMENT;
+    }
+    const auto& r = *request;
+    if (r.components > Encoder::kMaxComponents || r.width > Encoder::kMaxSide || r.height > Encoder::kMaxSide ||
+        uint64_t(r.width) * r.height * r.components > Encoder::kMaxSamples || r.rate_count > Encoder::kMaxLayers) {
+        return NJ2K_E_LIMIT;
+    }
+    const size_t row_size = size_t(r.width) * r.components;
+    if (r.stride < row_size || r.size < row_size || r.height - 1 > (r.size - row_size) / r.stride ||
+        r.resolutions > static_cast<uint32_t>(std::numeric_limits<int>::max()) ||
+        r.max_codestream_size > static_cast<uint32_t>(std::numeric_limits<int>::max())) {
+        return NJ2K_E_ARGUMENT;
+    }
+
+    try {
+        nj2k_image_cmptparm_t components[Encoder::kMaxComponents]{};
+        for (uint32_t c = 0; c < r.components; ++c) {
+            components[c].dx = components[c].dy = 1;
+            components[c].w = r.width;
+            components[c].h = r.height;
+            components[c].prec = 8;
+        }
+        const std::unique_ptr<nj2k_image_t, decltype(&nj2k_image_destroy)> image(
+            nj2k_image_create(r.components, components, NJ2K_CLRSPC_SRGB), nj2k_image_destroy);
+        const std::unique_ptr<nj2k_codec_t, decltype(&nj2k_destroy_codec)> codec(
+            nj2k_create_compress(NJ2K_CODEC_J2K), nj2k_destroy_codec);
+        if (!image || !codec) {
+            return NJ2K_E_NO_MEMORY;
+        }
+        image->x1 = r.width;
+        image->y1 = r.height;
+
+        nj2k_cparameters_t params{};
+        nj2k_set_default_encoder_parameters(&params);
+        params.prog_order = NJ2K_RLCP;
+        params.cp_disto_alloc = 1;
+        params.tcp_numlayers = static_cast<int>(r.rate_count);
+        params.numresolution = static_cast<int>(r.resolutions);
+        params.irreversible = r.reversible ? 0 : 1;
+        params.tcp_mct = static_cast<char>(r.mct ? 1 : 0);
+        params.max_cs_size = static_cast<int>(r.max_codestream_size);
+        if (r.rate_count) {
+            std::memcpy(params.tcp_rates, r.rates, r.rate_count * sizeof(float));
+        }
+        std::string comment;
+        if (r.comment) {
+            // The C++ parameter is a NUL-terminated string, although the FFI takes a byte slice.
+            comment.assign(reinterpret_cast<const char*>(r.comment), r.comment_len);
+            params.cp_comment = comment.data();
+        }
+        if (!nj2k_setup_encoder(codec.get(), &params, image.get())) {
+            return nj2k_get_status(codec.get());
+        }
+        for (uint32_t c = 0; c < r.components; ++c) {
+            for (uint32_t y = 0; y < r.height; ++y) {
+                const size_t start = size_t(r.flip_vertical ? r.height - 1 - y : y) * r.stride + c;
+                for (uint32_t x = 0; x < r.width; ++x) {
+                    image->comps[c].data[size_t(y) * r.width + x] = r.pixels[start + size_t(x) * r.components];
+                }
+            }
+        }
+
+        auto codestream = std::make_unique<nj2k_shim_codestream_t>();
+        const std::unique_ptr<nj2k_stream_t, decltype(&nj2k_stream_destroy)> stream(nj2k_stream_create(4096, NJ2K_FALSE),
+                                                                                 nj2k_stream_destroy);
+        if (!stream) {
+            return NJ2K_E_NO_MEMORY;
+        }
+        nj2k_stream_set_user_data(stream.get(), codestream.get(), nullptr);
+        nj2k_stream_set_write_function(stream.get(), append_encoded);
+        if (!nj2k_start_compress(codec.get(), image.get(), stream.get()) || !nj2k_encode(codec.get(), stream.get()) ||
+            !nj2k_end_compress(codec.get(), stream.get())) {
+            return nj2k_get_status(codec.get());
+        }
+        *out = codestream.release();
+        return NJ2K_OK;
+    } catch (...) {
+        return NJ2K_E_NO_MEMORY;
+    }
+}
+
+const uint8_t* nj2k_shim_codestream_bytes(const nj2k_shim_codestream_t* codestream, size_t* len)
+{
+    *len = codestream->bytes.size();
+    return codestream->bytes.data();
+}
+
+void nj2k_shim_codestream_free(nj2k_shim_codestream_t* codestream)
+{
+    delete codestream;
+}
+
 uint32_t nj2k_shim_codec_set_max_memory(nj2k_codec_t* codec, uint64_t max_memory)
 {
     nj2k_decoder_limits_t limits;
@@ -538,7 +660,7 @@ uint32_t nj2k_shim_codec_set_max_memory(nj2k_codec_t* codec, uint64_t max_memory
 }
 
 nj2k_codec_t* nj2k_shim_codec_new(uint32_t format, uint32_t reduce, uint32_t reduce_policy,
-                                  const nj2k_decoder_limits_t* limits)
+                                  const nj2k_decoder_limits_t* limits, uint32_t max_layers, uint32_t strict)
 {
     if (format != NJ2K_CODEC_J2K && format != NJ2K_CODEC_JP2) {
         return nullptr;
@@ -550,7 +672,8 @@ nj2k_codec_t* nj2k_shim_codec_new(uint32_t format, uint32_t reduce, uint32_t red
     nj2k_dparameters_t p;
     nj2k_set_default_decoder_parameters(&p);
     p.cp_reduce = reduce;
-    if (!nj2k_setup_decoder(codec, &p) || !nj2k_decoder_set_strict_mode(codec, NJ2K_FALSE) ||
+    p.cp_layer = max_layers;
+    if (!nj2k_setup_decoder(codec, &p) || !nj2k_decoder_set_strict_mode(codec, strict ? NJ2K_TRUE : NJ2K_FALSE) ||
         !nj2k_decoder_set_reduce_policy(codec, reduce_policy) || !nj2k_decoder_set_limits(codec, limits)) {
         nj2k_destroy_codec(codec);
         return nullptr;

@@ -6,10 +6,12 @@
 use std::num::NonZeroUsize;
 
 use super::{
-    CAP, COC, COD, COM, CPF, CRG, CodingStyle, EOC, EPH, HeaderSettings, MAX_POCS, MainHeader, PLM, PLT, POC, PPM, PPT,
-    PocEntry, QCC, QCD, Quantization, RGN, SIZ, SOC, SOD, SOP, SOT, TLM, TileCoding, be16, be32, coding,
-    component_room, invalid, need_data, no_memory, push_list, read_component, read_rgn,
+    CAP, COC, COD, COM, CPF, CRG, CodingStyle, HeaderSettings, MAX_POCS, MainHeader, PLM, PLT, POC, PPM, PPT,
+    PocEntry, QCC, QCD, Quantization, RGN, SIZ, SOP, SOT, TLM, TileCoding, be16, coding,
+    component_room, invalid, no_memory, push_list, read_component, read_rgn,
 };
+#[cfg(test)]
+use super::{EOC, EPH, SOC, SOD, be32, need_data};
 use crate::error::Diagnostics;
 use crate::mem::{CType, HeaderLedger};
 use crate::{Error, ErrorKind};
@@ -223,6 +225,7 @@ pub(crate) fn read_tile_part_marker<'data>(
 }
 
 #[derive(Clone, Copy, Debug)]
+#[cfg(test)]
 pub(crate) struct TilePartHeader {
     pub(crate) sot: usize,
     pub(crate) data: usize,
@@ -233,6 +236,7 @@ pub(crate) struct TilePartHeader {
     pub(crate) tnsot: u8,
 }
 
+#[cfg(test)]
 fn subtract_marker_room(room: u32, size: u32) -> Result<u32, Error> {
     room.checked_sub(size)
         .ok_or_else(|| invalid("Sot length is less than marker size + marker ID\n"))
@@ -240,6 +244,7 @@ fn subtract_marker_room(room: u32, size: u32) -> Result<u32, Error> {
 
 /// Read a tile-part header from its SOT marker through SOD. The main decode walk can feed the
 /// individual segments instead when it needs its OpenJPEG stream-state and truncation handling.
+#[cfg(test)]
 pub(crate) fn read_tile_part_header<'data>(
     data: &'data [u8],
     sot: usize,

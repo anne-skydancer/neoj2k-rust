@@ -1,0 +1,47 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+
+[workspace]
+members = ["."]
+resolver = "3"
+
+[package]
+name = "neo-j2k-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+rust-version = "1.100"
+license = "BSD-2-Clause"
+
+[package.metadata]
+cargo-fuzz = true
+
+[features]
+oracle = ["dep:neo-j2k-oracle"]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+neo-j2k = { path = "../neo-j2k" }
+neo-j2k-oracle = { path = "../neo-j2k-oracle", optional = true }
+
+[[bin]]
+name = "header_decode"
+path = "fuzz_targets/header_decode.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "differential"
+path = "fuzz_targets/differential.rs"
+required-features = ["oracle"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "roundtrip"
+path = "fuzz_targets/roundtrip.rs"
+test = false
+doc = false
+bench = false

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 
+use crate::decode::{self, DecodeParams, DecodeStatistics, DecodeTarget, DecodedImage, Jp2Channels, SampleType};
 use crate::error::Diagnostics;
 use crate::geometry::{self, Dimensions};
 use crate::header::{HeaderSettings, MainHeader, parse_main_header};
@@ -82,7 +83,7 @@ pub enum ColorProfile {
 }
 
 /// Geometry and sample representation of a codestream component.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 #[non_exhaustive]
 pub struct ComponentInfo {
     pub x0: u32,
@@ -177,6 +178,7 @@ impl Default for DecoderConfig {
 #[derive(Debug)]
 struct HeaderState {
     main: MainHeader,
+    jp2: Option<Jp2Header>,
     info: Info,
     prefix: Vec<u8>,
     reduce: u32,
@@ -190,6 +192,7 @@ pub struct Decoder {
     header: Option<HeaderState>,
     ledger: HeaderLedger,
     diagnostics: Diagnostics,
+    work: decode::Workspace,
 }
 
 impl Decoder {
@@ -201,6 +204,7 @@ impl Decoder {
             header: None,
             ledger: HeaderLedger::default(),
             diagnostics: Diagnostics::new(config.capture_diagnostics),
+            work: decode::Workspace::default(),
         }
     }
 
@@ -214,6 +218,109 @@ impl Decoder {
     #[must_use]
     pub const fn header_reserved_bytes(&self) -> u64 {
         self.ledger.reserved()
+    }
+
+    /// The working memory reservations charged by the most recent decode.
+    #[must_use]
+    pub const fn statistics(&self) -> DecodeStatistics {
+        DecodeStatistics {
+            header_reserved: self.ledger.reserved(),
+            tile_reserved: self.work.tile_ledger.reserved(),
+            work_reserved: self.work.budget.reserved(),
+            work_high_water: self.work.budget.high_water(),
+        }
+    }
+
+    /// Decodes a memory codestream into this decoder's reusable planar buffers.
+    pub fn decode(&mut self, data: &[u8], params: DecodeParams<'_>) -> Result<DecodedImage<'_>, Error> {
+        self.read_header(data)?;
+        let result = self.decode_planes(data, params, false);
+        if let Err(error) = result {
+            self.diagnostics.error(error.message());
+            return Err(error);
+        }
+        Ok(self.work.image())
+    }
+
+    /// Decodes into borrowed, strided buffers. Returns whether the codestream was truncated.
+    pub fn decode_into(
+        &mut self,
+        data: &[u8],
+        params: DecodeParams<'_>,
+        sample: SampleType,
+        targets: &mut [DecodeTarget<'_>],
+    ) -> Result<bool, Error> {
+        let header = self.read_header(data)?;
+        let result = decode::validate_targets(targets, sample, &header.components)
+            .and_then(|()| self.decode_planes(data, params, true));
+        if let Err(error) = result {
+            self.diagnostics.error(error.message());
+            return Err(error);
+        }
+        self.work.write_targets(sample, targets);
+        Ok(self.work.truncated)
+    }
+
+    fn decode_planes(&mut self, data: &[u8], params: DecodeParams<'_>, into: bool) -> Result<(), Error> {
+        let state = self.header.as_mut().expect("decode reads the header first");
+        let main = &state.main;
+        let params = DecodeParams {
+            components: params.components.filter(|indices| !indices.is_empty()),
+            ..params
+        };
+        let channels = params.components.is_none() && state.jp2.as_ref().is_some_and(Jp2Header::changes_channels);
+        if channels
+            && (params.jp2_channels == Jp2Channels::Reject || into && params.jp2_channels == Jp2Channels::Apply)
+        {
+            return Err(Error::new(
+                ErrorKind::Unsupported,
+                "nj2k_decode_memory: the JP2 file's palette or channel definitions change the components; nj2k_decode() applies them\n",
+            ));
+        }
+        let limits = self.config.limits;
+        let side = limits.max_decoded_side;
+        self.work.reset_selection(main.comps.len(), params.components)?;
+        if side != 0 {
+            for (index, info) in state.info.components.iter().enumerate() {
+                let ComponentInfo { width, height, .. } = *info;
+                if width > side || height > side {
+                    let message = format!(
+                        "Component {index} decodes to {width} x {height} samples, more than the decoder's limit of {side} per side\n"
+                    );
+                    return Err(Error::new(ErrorKind::Limit, message));
+                }
+            }
+        }
+        if limits.max_memory != 0 {
+            let bytes = if params.components.is_some() {
+                geometry::working_memory_selected(main, state.reduce, Some(self.work.slots()))
+            } else {
+                estimate(state)
+            };
+            if bytes > limits.max_memory {
+                return Err(memory_limit(bytes, limits.max_memory));
+            }
+        }
+
+        let end = state
+            .info
+            .codestream_length
+            .and_then(|length| state.info.codestream_offset.checked_add(length))
+            .and_then(|length| usize::try_from(length).ok())
+            .map_or(data.len(), |end| end.min(data.len()));
+        let input = decode::Input {
+            data: &data[..end],
+            header: &state.main,
+            components: &state.info.components,
+            reduce: state.reduce,
+            limits,
+            retain: self.config.retain_bytes,
+        };
+        self.work.decode(input, params, &mut self.diagnostics)?;
+        if let Some(jp2) = state.jp2.as_ref().filter(|_| channels && params.jp2_channels == Jp2Channels::Apply) {
+            jp2::apply_colour(jp2, data, self.work.image_mut(), limits, &mut self.diagnostics)?;
+        }
+        Ok(())
     }
 
     /// Reads the input through the first SOT marker.
@@ -312,11 +419,12 @@ impl Decoder {
             color_space: jp2.as_ref().map_or(ColorSpace::Unspecified, ColorSpace::from_jp2),
             color_profile,
             codestream_offset: main.start,
-            codestream_length: jp2.and_then(|container| container.codestream_len),
+            codestream_length: jp2.as_ref().and_then(|container| container.codestream_len),
             first_tile_offset: main.end,
         };
         Ok(HeaderState {
             main,
+            jp2,
             info,
             prefix,
             reduce,
@@ -466,28 +574,36 @@ fn validate_dimensions(state: &mut HeaderState, limits: Limits) -> Result<&[Comp
 
     let max = limits.max_memory;
     if max != 0 {
-        let need = match state.estimate {
-            Some((reduce, bytes)) if reduce == state.reduce => bytes,
-            _ => {
-                let bytes = geometry::working_memory(main, state.reduce);
-                state.estimate = Some((state.reduce, bytes));
-                bytes
-            }
-        };
+        let need = estimate(state);
         if need > max {
-            return Err(Error::new(
-                ErrorKind::Limit,
-                format!("The decode needs {need} bytes of working memory, above the decoder's limit of {max}\n"),
-            ));
+            return Err(memory_limit(need, max));
         }
     }
 
     if resize {
-        for (stored, &component) in state.info.components.iter_mut().zip(&main.comps) {
-            let dims = geometry::resized_dimensions(main, component, state.reduce)
+        for (stored, &component) in state.info.components.iter_mut().zip(&state.main.comps) {
+            let dims = geometry::resized_dimensions(&state.main, component, state.reduce)
                 .expect("the dimensions were validated above");
             stored.set_dimensions(dims, state.reduce);
         }
     }
     Ok(&state.info.components)
+}
+
+fn estimate(state: &mut HeaderState) -> u64 {
+    match state.estimate {
+        Some((reduce, bytes)) if reduce == state.reduce => bytes,
+        _ => {
+            let bytes = geometry::working_memory(&state.main, state.reduce);
+            state.estimate = Some((state.reduce, bytes));
+            bytes
+        }
+    }
+}
+
+fn memory_limit(need: u64, max: u64) -> Error {
+    Error::new(
+        ErrorKind::Limit,
+        format!("The decode needs {need} bytes of working memory, above the decoder's limit of {max}\n"),
+    )
 }

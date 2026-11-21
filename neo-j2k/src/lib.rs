@@ -17,20 +17,27 @@
 #[cfg(not(feature = "std"))]
 compile_error!("neo-j2k needs the std feature in this version");
 
+mod decode;
 mod decoder;
-#[cfg(test)]
 mod dwt;
+#[cfg(feature = "encode")]
+mod encoder;
 mod error;
 mod geometry;
 mod header;
 mod jp2;
 mod limits;
-#[cfg(test)]
 mod mct;
 mod mem;
-#[cfg(test)]
+mod t1;
 mod t2;
+mod tile;
 
+pub use decode::{
+    DecodeParams, DecodeStatistics, DecodeTarget, DecodedComponent, DecodedImage, Jp2Channels, OutputPlane, SampleType,
+};
+#[cfg(feature = "encode")]
+pub use encoder::{EncodeParams, Encoder, ImageSamples, ImageView, Plane};
 pub use decoder::{
     ColorProfile, ColorSpace, ComponentInfo, Decoder, DecoderConfig, Format, Info, Progression, ReducePolicy,
 };

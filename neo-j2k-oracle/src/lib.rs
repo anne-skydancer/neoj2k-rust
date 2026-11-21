@@ -14,6 +14,7 @@
 //!   for the test kit's differential tests;
 //! - [`kernels`]: the library's scalar row kernels and inverse wavelet transform;
 //! - [`Codec`]: a memory codec of neo-j2k with header facts, decoded dimensions, arena numbers and parallel thresholds.
+//! - [`encode_u8`]: the C++ encoder's codestream from eight-bit samples and explicit encoder settings.
 //!
 //! Every call first checks the shim's ABI version ([`init`]). The C++ never throws across the
 //! boundary (the shim catches); a failure of the harness itself is a panic here, which is a test
@@ -461,6 +462,71 @@ pub mod kernels {
     }
 }
 
+/// The inputs of one neo-j2k C++ encoder call. Samples are interleaved with an optional row stride.
+#[derive(Clone, Copy, Debug)]
+pub struct EncodeRequest<'a> {
+    pub pixels: &'a [u8],
+    pub row_stride: usize,
+    pub width: u32,
+    pub height: u32,
+    pub components: u32,
+    pub flip_vertical: bool,
+    pub reversible: bool,
+    pub resolutions: u32,
+    pub mct: bool,
+    pub max_codestream_size: u32,
+    pub layer_ratios: &'a [f32],
+    pub comment: Option<&'a [u8]>,
+}
+
+struct Codestream(NonNull<ffi::Codestream>);
+
+impl Drop for Codestream {
+    fn drop(&mut self) {
+        // SAFETY: the handle was returned by the shim and is freed here exactly once.
+        unsafe { ffi::nj2k_shim_codestream_free(self.0.as_ptr()) };
+    }
+}
+
+/// Encode into a memory output stream. Errors are the C++ encoder's status codes.
+pub fn encode_u8(request: &EncodeRequest<'_>) -> Result<Vec<u8>, i32> {
+    init();
+    let (comment, comment_len) = request.comment.map_or((std::ptr::null(), 0), |c| (c.as_ptr(), c.len()));
+    let raw = ffi::EncodeRequest {
+        pixels: request.pixels.as_ptr(),
+        size: request.pixels.len(),
+        stride: request.row_stride,
+        width: request.width,
+        height: request.height,
+        components: request.components,
+        flip_vertical: u32::from(request.flip_vertical),
+        reversible: u32::from(request.reversible),
+        resolutions: request.resolutions,
+        mct: u32::from(request.mct),
+        max_codestream_size: request.max_codestream_size,
+        rates: request.layer_ratios.as_ptr(),
+        rate_count: request.layer_ratios.len(),
+        comment,
+        comment_len,
+    };
+    let mut out = std::ptr::null_mut();
+    // SAFETY: raw's pointers come from live slices and supply the exact lengths. The output handle
+    // is written to a local, and no handle or pointer to the slices is kept by the shim.
+    let status = unsafe { ffi::nj2k_shim_encode_u8(&raw const raw, &raw mut out) };
+    if status != 0 {
+        return Err(status);
+    }
+    let out = Codestream(NonNull::new(out).expect("the C++ encoder returned its codestream"));
+    let mut len = 0;
+    // SAFETY: the codestream handle is live and len is a writable local.
+    let bytes = unsafe { ffi::nj2k_shim_codestream_bytes(out.0.as_ptr(), &raw mut len) };
+    if len == 0 {
+        return Ok(Vec::new());
+    }
+    // SAFETY: the C++ codestream owns len initialized bytes for as long as the handle lives.
+    Ok(unsafe { std::slice::from_raw_parts(bytes, len) }.to_vec())
+}
+
 /// A codec's container format.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Format {
@@ -594,7 +660,7 @@ pub struct Ledger {
     pub kept_bytes: u64,
 }
 
-/// A non-strict memory decoder of the C++ neo-j2k.
+/// A memory decoder of the C++ neo-j2k.
 #[derive(Debug)]
 pub struct Codec(NonNull<ffi::Codec>);
 
@@ -620,13 +686,36 @@ impl Codec {
     /// A decoder with explicit reduce policy and resource limits.
     #[must_use]
     pub fn with_limits(format: Format, reduce: u32, reduce_policy: ReducePolicy, limits: Limits) -> Option<Self> {
+        Self::with_options(format, reduce, reduce_policy, limits, 0, false)
+    }
+
+    /// A memory decoder with explicit reduce, resource, layer and strict-mode options.
+    #[must_use]
+    pub fn with_options(
+        format: Format,
+        reduce: u32,
+        reduce_policy: ReducePolicy,
+        limits: Limits,
+        max_layers: u32,
+        strict: bool,
+    ) -> Option<Self> {
         init();
         let f = match format {
             Format::J2k => ffi::CODEC_J2K,
             Format::Jp2 => ffi::CODEC_JP2,
         };
         // SAFETY: limits is valid for the call and copied by the shim. The result is a new codec or null.
-        NonNull::new(unsafe { ffi::nj2k_shim_codec_new(f, reduce, reduce_policy as u32, &raw const limits) }).map(Self)
+        NonNull::new(unsafe {
+            ffi::nj2k_shim_codec_new(
+                f,
+                reduce,
+                reduce_policy as u32,
+                &raw const limits,
+                max_layers,
+                u32::from(strict),
+            )
+        })
+        .map(Self)
     }
 
     /// New limits (`max_memory` alone); false when the codec refuses them now.

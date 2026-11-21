@@ -10,8 +10,7 @@ use crate::mem::{CType, HeaderLedger};
 use crate::{Error, ErrorKind, Limits};
 
 mod coding;
-#[cfg(test)]
-mod tile;
+pub(crate) mod tile;
 
 pub(crate) use coding::{CodingStyle, Quantization, TileCoding};
 

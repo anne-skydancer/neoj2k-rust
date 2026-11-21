@@ -109,6 +109,12 @@ impl Diagnostics {
         }
     }
 
+    pub(crate) fn info_fmt(&mut self, message: fmt::Arguments<'_>) {
+        if self.enabled {
+            self.entries.push(Diagnostic::Info(message.to_string()));
+        }
+    }
+
     pub(crate) fn warn(&mut self, message: impl Into<String>) {
         if self.enabled {
             self.entries.push(Diagnostic::Warning(message.into()));

@@ -42,9 +42,171 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//! Packet header bits and precinct tag trees for Tier 2.
+//! Packet progression, headers and codeword contributions for Tier 2.
 
+use crate::error::Diagnostics;
+use crate::header::{PocEntry, TileCoding};
+use crate::mem::{CType, WorkBudget};
+use crate::tile::Tile;
 use crate::{Error, ErrorKind};
+
+mod packet;
+mod progression;
+
+use packet::{MISSING_EPH, Reader};
+use progression::{Grid, Packet, Seen};
+
+/// Tile packet data and the effective coding parameters selected by the tile-part reader.
+#[derive(Debug)]
+pub(crate) struct PacketInput<'data, 'cursor, 'ppm> {
+    pub(crate) coding: TileCoding,
+    /// Tile POC entries when present, else the main header's.
+    pub(crate) pocs: &'data [PocEntry],
+    /// A maximum layer count, or zero for all layers.
+    pub(crate) layers: u32,
+    pub(crate) strict: bool,
+    /// The bytes ended before the tile-part's declared length.
+    pub(crate) cut: bool,
+    /// The combined SOD bodies, in tile-part order. Chunk ranges refer to this slice.
+    pub(crate) data: &'data [u8],
+    /// Main-header packed headers, consumed across tiles.
+    pub(crate) ppm: Option<&'cursor mut &'ppm [u8]>,
+    /// Packed headers from the tile's PPT markers, in marker-index order.
+    pub(crate) ppt: Option<&'data [u8]>,
+}
+
+/// Packet traversal storage reused between tiles and decoder requests.
+#[derive(Debug, Default)]
+pub(crate) struct Workspace {
+    grid: Grid,
+    seen: Seen,
+    decoded: Vec<u32>,
+    first_pass_failed: Vec<bool>,
+}
+
+/// Reads one tile's packets, preserving every complete codeword contribution.
+/// The result is each component's highest decoded resolution index.
+pub(crate) fn read_packets<'work>(
+    workspace: &'work mut Workspace,
+    tile: &mut Tile,
+    input: PacketInput<'_, '_, '_>,
+    budget: &mut WorkBudget,
+    diagnostics: &mut Diagnostics,
+) -> Result<&'work [u32], Error> {
+    let coding = input.coding;
+    let pocs = input.pocs;
+    let layer_limit = if input.layers == 0 {
+        u32::from(coding.numlayers)
+    } else {
+        input.layers
+    };
+    let components = tile.comps.len();
+    let Workspace {
+        grid,
+        seen,
+        decoded,
+        first_pass_failed,
+    } = workspace;
+    packet_array(decoded, CType::U32, components, 0u32, budget)?;
+    grid.configure(tile, budget)?;
+    grid.prepare_seen(seen, coding, budget)?;
+    packet_array(first_pass_failed, CType::Bool, components, true, budget)?;
+    let mut reader = Reader::new(input);
+    let mut exhausted = false;
+    let mut final_components = 0;
+
+    for index in 0..pocs.len().max(1) {
+        let poc = pocs.get(index);
+        if let Some(poc) = poc
+            && usize::from(poc.compno0) >= components
+            && let Some(name) = ["lrcp", "rlcp", "rpcl", "pcrl", "cprl"].get(usize::from(poc.prg))
+        {
+            diagnostics.error(format!("opj_pi_next_{name}(): invalid compno0/compno1\n"));
+            continue;
+        }
+        first_pass_failed.fill(true);
+        let done = grid.visit(coding, poc, |packet| {
+            if !seen.insert(packet) {
+                return Ok(false);
+            }
+            let comp = &tile.comps[packet.comp];
+            let last = comp.minimum_num_resolutions - 1;
+            let resolution = u32::try_from(packet.res).expect("resolution index fits u32");
+            let skip = skip_packet(tile, layer_limit, packet, resolution);
+            let decoded_res = &mut decoded[packet.comp];
+            let first_failed = &mut first_pass_failed[packet.comp];
+
+            if exhausted {
+                if reader.strict_eph() {
+                    return Err(Error::new(ErrorKind::Data, MISSING_EPH));
+                }
+                // Visiting an absent packet can only update the reported resolution.
+                if *decoded_res < last {
+                    record_resolution(decoded_res, first_failed, resolution, last, skip);
+                    if *decoded_res >= last {
+                        final_components += 1;
+                        return Ok(final_components == components);
+                    }
+                }
+                return Ok(false);
+            }
+
+            reader.visit(tile, packet, skip, budget, diagnostics)?;
+            record_resolution(decoded_res, first_failed, resolution, last, skip);
+            if reader.exhausted() {
+                exhausted = true;
+                final_components = decoded
+                    .iter()
+                    .zip(&tile.comps)
+                    .filter(|(resolution, comp)| **resolution + 1 >= comp.minimum_num_resolutions)
+                    .count();
+                return Ok(final_components == components);
+            }
+            Ok(false)
+        })?;
+        if done {
+            break;
+        }
+    }
+    Ok(decoded)
+}
+
+fn packet_array<T: Copy>(
+    array: &mut Vec<T>,
+    ty: CType,
+    count: usize,
+    value: T,
+    budget: &mut WorkBudget,
+) -> Result<(), Error> {
+    budget.array(ty, count)?;
+    array
+        .try_reserve_exact(count.saturating_sub(array.len()))
+        .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory for a packet iterator array\n"))?;
+    array.resize(count, value);
+    array.fill(value);
+    Ok(())
+}
+
+fn skip_packet(tile: &Tile, layer_limit: u32, packet: Packet, resolution: u32) -> bool {
+    let comp = &tile.comps[packet.comp];
+    if packet.layer >= layer_limit || resolution >= comp.minimum_num_resolutions {
+        return true;
+    }
+    // The packet reader traverses unselected components, too. Selection happens only in Tier 1.
+    !comp.res[packet.res].bands.iter().any(|band| {
+        let precinct = &band.precincts[packet.precinct];
+        comp.area_of_interest(resolution, band.bandno, precinct.rect)
+    })
+}
+
+fn record_resolution(decoded: &mut u32, first_failed: &mut bool, res: u32, last: u32, skip: bool) {
+    if !skip {
+        *first_failed = false;
+        *decoded = (*decoded).max(res);
+    } else if *first_failed && *decoded == 0 {
+        *decoded = last;
+    }
+}
 
 /// Packet header bit reader, with one stuffed high bit after each `0xff` byte.
 #[derive(Debug)]
@@ -154,7 +316,7 @@ impl TagNode {
 }
 
 /// Flat tag tree, with leaf rows first and successive parent levels ending at the root.
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub(crate) struct TagTree {
     width: usize,
     height: usize,
@@ -166,10 +328,16 @@ fn oversized_tree() -> Error {
 }
 
 impl TagTree {
+    #[cfg(test)]
     pub(crate) fn new(width: u32, height: u32) -> Result<Self, Error> {
-        let width = usize::try_from(width).map_err(|_| oversized_tree())?;
-        let height = usize::try_from(height).map_err(|_| oversized_tree())?;
-        let (mut columns, mut rows) = (width, height);
+        let mut tree = Self::default();
+        tree.configure(width, height)?;
+        Ok(tree)
+    }
+
+    pub(crate) fn node_count(width: u32, height: u32) -> Result<usize, Error> {
+        let mut columns = usize::try_from(width).map_err(|_| oversized_tree())?;
+        let mut rows = usize::try_from(height).map_err(|_| oversized_tree())?;
         let mut count = columns.checked_mul(rows).ok_or_else(oversized_tree)?;
         let mut total = count;
         while count > 1 {
@@ -179,12 +347,19 @@ impl TagTree {
             count = columns * rows;
             total = total.checked_add(count).ok_or_else(oversized_tree)?;
         }
-        let mut nodes = Vec::new();
-        nodes
-            .try_reserve_exact(total)
+        Ok(total)
+    }
+
+    pub(crate) fn configure(&mut self, width: u32, height: u32) -> Result<(), Error> {
+        let total = Self::node_count(width, height)?;
+        self.nodes
+            .try_reserve_exact(total.saturating_sub(self.nodes.len()))
             .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory for a packet tag tree\n"))?;
-        nodes.resize(total, TagNode::UNSET);
-        Ok(Self { width, height, nodes })
+        self.nodes.clear();
+        self.nodes.resize(total, TagNode::UNSET);
+        self.width = usize::try_from(width).map_err(|_| oversized_tree())?;
+        self.height = usize::try_from(height).map_err(|_| oversized_tree())?;
+        Ok(())
     }
 
     pub(crate) fn reset(&mut self) {
@@ -243,6 +418,74 @@ fn invalid_leaf() -> Error {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::geometry::Rect;
+    use crate::tile::{Band, CodeBlock, Precinct, Resolution, TileComp};
+
+    fn single_block(cblksty: u8) -> Tile {
+        let rect = Rect {
+            x0: 0,
+            y0: 0,
+            x1: 2,
+            y1: 2,
+        };
+        let precinct = Precinct {
+            rect,
+            cw: 1,
+            ch: 1,
+            cblks: vec![CodeBlock::default()],
+            incl: TagTree::new(1, 1).unwrap(),
+            imsb: TagTree::new(1, 1).unwrap(),
+        };
+        let band = Band {
+            rect,
+            numbps: 8,
+            precincts: vec![precinct],
+            ..Band::default()
+        };
+        let res = Resolution {
+            rect,
+            pw: 1,
+            ph: 1,
+            pdx: 1,
+            pdy: 1,
+            bands: vec![band],
+        };
+        let comp = TileComp {
+            rect,
+            dx: 1,
+            dy: 1,
+            cblksty,
+            minimum_num_resolutions: 1,
+            res: vec![res],
+            ..TileComp::default()
+        };
+        Tile {
+            rect,
+            comps: vec![comp],
+        }
+    }
+
+    fn stream<'data, 'cursor, 'ppm>(data: &'data [u8], numlayers: u16) -> PacketInput<'data, 'cursor, 'ppm> {
+        PacketInput {
+            coding: TileCoding {
+                csty: 0,
+                prg: 0,
+                numlayers,
+                mct: 0,
+            },
+            pocs: &[],
+            layers: 0,
+            strict: false,
+            cut: false,
+            data,
+            ppm: None,
+            ppt: None,
+        }
+    }
+
+    fn first_block(tile: &Tile) -> &CodeBlock {
+        &tile.comps[0].res[0].bands[0].precincts[0].cblks[0]
+    }
 
     #[test]
     fn packet_header_bits_are_stuffed_and_missing_bits_read_as_zero() {
@@ -342,5 +585,138 @@ mod tests {
         assert!(empty.nodes.is_empty());
         assert_eq!(empty.decode(&mut bio, 0, 1).unwrap_err().kind(), ErrorKind::Data);
         assert_eq!(TagTree::new(u32::MAX, u32::MAX).unwrap_err().kind(), ErrorKind::Limit);
+    }
+
+    #[test]
+    fn layers_and_cut_segments_keep_only_complete_wanted_contributions() {
+        let mut workspace = Workspace::default();
+        let mut budget = WorkBudget::default();
+        let mut diagnostics = Diagnostics::default();
+        // First inclusion and zero-bit-plane code, one pass and length 2 in layer 0.
+        // Already included, one pass and length 2 in layer 1.
+        let bytes = [0xe2, 0xaa, 0xbb, 0xc4, 0xcc, 0xdd];
+
+        let mut tile = single_block(0);
+        let cut = PacketInput {
+            cut: true,
+            ..stream(&bytes[..5], 2)
+        };
+        assert_eq!(
+            read_packets(&mut workspace, &mut tile, cut, &mut budget, &mut diagnostics).unwrap(),
+            [0]
+        );
+        let block = first_block(&tile);
+        assert_eq!(block.chunks.len(), 1);
+        assert_eq!(block.chunks[0], 1..3);
+        assert_eq!(block.real_num_segs, 1);
+        assert_eq!(block.segs[0].numpasses, 2);
+        assert_eq!(block.segs[0].real_num_passes, 1);
+        assert!(block.corrupted);
+        assert_eq!(diagnostics.entries().len(), 1);
+
+        let limited = PacketInput {
+            layers: 1,
+            ..stream(&bytes, 2)
+        };
+        let mut tile = single_block(0);
+        read_packets(&mut workspace, &mut tile, limited, &mut budget, &mut diagnostics).unwrap();
+        let block = first_block(&tile);
+        assert_eq!(block.chunks.len(), 1);
+        assert_eq!(block.chunks[0], 1..3);
+        assert_eq!(block.segs[0].numpasses, 2);
+        assert_eq!(block.segs[0].real_num_passes, 1);
+        assert!(!block.corrupted);
+
+        let strict = PacketInput {
+            strict: true,
+            ..stream(&bytes[..5], 2)
+        };
+        let mut tile = single_block(0);
+        let error = read_packets(&mut workspace, &mut tile, strict, &mut budget, &mut diagnostics).unwrap_err();
+        assert_eq!(error.kind(), ErrorKind::Data);
+        assert!(error.message().starts_with("read: segment too long (2) with max (1)"));
+    }
+
+    #[test]
+    fn packed_header_cursor_crosses_tiles_and_precedes_ppt() {
+        let mut workspace = Workspace::default();
+        let mut budget = WorkBudget::default();
+        let mut diagnostics = Diagnostics::default();
+        let mut ppm = &[0xe2, 0xe2][..];
+        for left in [1, 0] {
+            let mut tile = single_block(0);
+            let packed = PacketInput {
+                ppm: Some(&mut ppm),
+                ppt: Some(&[0]),
+                ..stream(&[0xaa, 0xbb], 1)
+            };
+            read_packets(&mut workspace, &mut tile, packed, &mut budget, &mut diagnostics).unwrap();
+            assert_eq!(ppm.len(), left);
+            let block = first_block(&tile);
+            assert_eq!(block.chunks.len(), 1);
+            assert_eq!(block.chunks[0], 0..2);
+        }
+
+        let mut tile = single_block(0);
+        let packed = PacketInput {
+            ppt: Some(&[0xe2]),
+            ..stream(&[0xaa, 0xbb], 1)
+        };
+        read_packets(&mut workspace, &mut tile, packed, &mut budget, &mut diagnostics).unwrap();
+        assert_eq!(first_block(&tile).chunks[0], 0..2);
+    }
+
+    #[test]
+    fn sop_and_eph_are_outside_the_retained_segment() {
+        let mut workspace = Workspace::default();
+        let mut budget = WorkBudget::default();
+        let mut diagnostics = Diagnostics::default();
+        let mut tile = single_block(0);
+        let input = [0xff, 0x91, 0, 4, 0, 1, 0xe2, 0xff, 0x92, 0xaa, 0xbb];
+        let mut framed = stream(&input, 1);
+        framed.coding.csty = 6;
+        framed.strict = true;
+        read_packets(&mut workspace, &mut tile, framed, &mut budget, &mut diagnostics).unwrap();
+        assert_eq!(first_block(&tile).chunks[0], 9..11);
+
+        let mut framed = stream(&input[..8], 1);
+        framed.coding.csty = 6;
+        framed.strict = true;
+        let mut tile = single_block(0);
+        let error = read_packets(&mut workspace, &mut tile, framed, &mut budget, &mut diagnostics).unwrap_err();
+        assert_eq!(error.message(), MISSING_EPH);
+    }
+
+    #[test]
+    fn a_warmed_workspace_reuses_storage_and_charges_the_same_tile_budget() {
+        let mut workspace = Workspace::default();
+        let mut budget = WorkBudget::default();
+        let mut diagnostics = Diagnostics::default();
+        let bytes = [0xe2, 0xaa, 0xbb];
+        let warm = read_packets(
+            &mut workspace,
+            &mut single_block(0),
+            stream(&bytes, 1),
+            &mut budget,
+            &mut diagnostics,
+        )
+        .unwrap()
+        .as_ptr();
+        let first = workspace.first_pass_failed.as_ptr();
+        let expected_watermark = budget.high_water();
+
+        budget.reset(u64::MAX, 0);
+        let again = read_packets(
+            &mut workspace,
+            &mut single_block(0),
+            stream(&bytes, 1),
+            &mut budget,
+            &mut diagnostics,
+        )
+        .unwrap()
+        .as_ptr();
+        assert_eq!(warm, again);
+        assert_eq!(first, workspace.first_pass_failed.as_ptr());
+        assert_eq!(budget.high_water(), expected_watermark);
     }
 }
