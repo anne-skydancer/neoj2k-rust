@@ -25,8 +25,18 @@ pub(super) struct Passes<'a> {
 }
 
 impl Passes<'_> {
-    pub(super) fn initialize(&mut self) {
+    pub(super) fn initialize<const SINGLE_STRIPE: bool>(&mut self) {
         self.data.fill(0);
+        if SINGLE_STRIPE {
+            // One stripe needs only its side padding. No neighbour can write across a stripe.
+            let padding = if self.height == 4 {
+                0
+            } else {
+                ALL_PI & (u32::MAX << (21 + self.height * 3))
+            };
+            self.flags.fill(padding);
+            return;
+        }
         self.flags.fill(0);
         let stride = self.width + 2;
         let stripes = self.height.div_ceil(4);
@@ -56,17 +66,17 @@ impl Passes<'_> {
     }
 
     // Update the neighbouring columns and return the bits for the current column.
-    fn mark_significant(&mut self, index: usize, row: usize, sign: u32) -> u32 {
+    fn mark_significant<const SINGLE_STRIPE: bool>(&mut self, index: usize, row: usize, sign: u32) -> u32 {
         let shift = row * 3;
         self.flags[index - 1] |= (1 << 5) << shift;
         self.flags[index + 1] |= (1 << 3) << shift;
-        if row == 0 && !self.vertical_causal {
+        if !SINGLE_STRIPE && row == 0 && !self.vertical_causal {
             let above = index - self.width - 2;
             self.flags[above] |= (sign << 31) | (1 << 16);
             self.flags[above - 1] |= 1 << 17;
             self.flags[above + 1] |= 1 << 15;
         }
-        if row == 3 {
+        if !SINGLE_STRIPE && row == 3 {
             let below = index + self.width + 2;
             self.flags[below] |= (sign << 18) | (1 << 1);
             self.flags[below - 1] |= 1 << 2;
@@ -75,15 +85,24 @@ impl Passes<'_> {
         ((sign << 19) | SIGMA_THIS) << shift
     }
 
-    pub(super) fn significance<const RAW: bool>(&mut self, decoder: &mut Decoder<'_>, bitplane: u32) {
+    pub(super) fn significance<const RAW: bool, const SINGLE_STRIPE: bool>(
+        &mut self,
+        decoder: &mut Decoder<'_>,
+        bitplane: u32,
+    ) {
         let one = 1i32 << bitplane;
         let magnitude = one | (one >> 1);
         let stride = self.width + 2;
         let zero_context = &ZERO_CONTEXT.as_chunks::<512>().0[self.orient];
-        for row in (0..self.height).step_by(4) {
-            let rows = (self.height - row).min(4);
+        let height = if SINGLE_STRIPE { 4 } else { self.height };
+        for row in (0..height).step_by(4) {
+            let rows = if SINGLE_STRIPE {
+                self.height
+            } else {
+                (self.height - row).min(4)
+            };
             let data_start = row * self.width;
-            let flag_start = (row / 4 + 1) * stride + 1;
+            let flag_start = if SINGLE_STRIPE { 1 } else { (row / 4 + 1) * stride + 1 };
             for col in 0..self.width {
                 let index = flag_start + col;
                 let mut column = self.flags[index];
@@ -109,7 +128,7 @@ impl Passes<'_> {
                         };
                         self.data[data_start + col + lane * self.width] =
                             if sign != 0 { -magnitude } else { magnitude };
-                        column |= self.mark_significant(index, lane, sign);
+                        column |= self.mark_significant::<SINGLE_STRIPE>(index, lane, sign);
                     }
                     column |= PI_THIS << shift;
                 }
@@ -118,12 +137,17 @@ impl Passes<'_> {
         }
     }
 
-    pub(super) fn refinement<const RAW: bool>(&mut self, decoder: &mut Decoder<'_>, bitplane: u32) {
+    pub(super) fn refinement<const RAW: bool, const SINGLE_STRIPE: bool>(
+        &mut self,
+        decoder: &mut Decoder<'_>,
+        bitplane: u32,
+    ) {
         let half = (1i32 << bitplane) >> 1;
         let stride = self.width + 2;
-        for row in (0..self.height).step_by(4) {
+        let height = if SINGLE_STRIPE { 4 } else { self.height };
+        for row in (0..height).step_by(4) {
             let data_start = row * self.width;
-            let flag_start = (row / 4 + 1) * stride + 1;
+            let flag_start = if SINGLE_STRIPE { 1 } else { (row / 4 + 1) * stride + 1 };
             for col in 0..self.width {
                 let index = flag_start + col;
                 let column = self.flags[index];
@@ -154,15 +178,25 @@ impl Passes<'_> {
         }
     }
 
-    pub(super) fn cleanup(&mut self, decoder: &mut Decoder<'_>, bitplane: u32, segment_symbol: bool) {
+    pub(super) fn cleanup<const SINGLE_STRIPE: bool>(
+        &mut self,
+        decoder: &mut Decoder<'_>,
+        bitplane: u32,
+        segment_symbol: bool,
+    ) {
         let one = 1i32 << bitplane;
         let magnitude = one | (one >> 1);
         let stride = self.width + 2;
         let zero_context = &ZERO_CONTEXT.as_chunks::<512>().0[self.orient];
-        for row in (0..self.height).step_by(4) {
-            let rows = (self.height - row).min(4);
+        let height = if SINGLE_STRIPE { 4 } else { self.height };
+        for row in (0..height).step_by(4) {
+            let rows = if SINGLE_STRIPE {
+                self.height
+            } else {
+                (self.height - row).min(4)
+            };
             let data_start = row * self.width;
-            let flag_start = (row / 4 + 1) * stride + 1;
+            let flag_start = if SINGLE_STRIPE { 1 } else { (row / 4 + 1) * stride + 1 };
             for col in 0..self.width {
                 let index = flag_start + col;
                 let mut column = self.flags[index];
@@ -173,7 +207,7 @@ impl Passes<'_> {
                 let mut mark = |decoder: &mut Decoder<'_>, column: &mut u32, lane: usize| {
                     let sign = self.sign(decoder, index, lane, *column);
                     self.data[data_start + col + lane * self.width] = if sign != 0 { -magnitude } else { magnitude };
-                    *column |= self.mark_significant(index, lane, sign);
+                    *column |= self.mark_significant::<SINGLE_STRIPE>(index, lane, sign);
                 };
                 let start = if rows == 4 && column == 0 {
                     if decoder.symbol(CONTEXT_AGGREGATE) == 0 {

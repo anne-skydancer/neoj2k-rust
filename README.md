@@ -89,6 +89,10 @@ For a `Read` input, use `Decoder::read_header_from` with `StreamOptions` to obta
 dimensions or choose a reduce factor before decoding. Supply the byte length for a complete
 decode or a JP2/JPH header read. `DecodeStream::decode_into` writes to caller buffers.
 
+Use `decoded_dimensions_for` on `Decoder` or `DecodeStream` to check the working-memory estimate
+for a component selection. It returns geometry for every codestream component. Pass the selection
+again in `DecodeParams::components` when decoding.
+
 After reading the header, `Decoder::codestream_coding` borrows the tile defaults and component
 coding settings from the parsed header. Use `component(index)` to inspect the effective
 code-block and precinct sizes, quantization, wavelet, and ROI shift for that codestream component.
@@ -129,6 +133,9 @@ fn encode_rgb(width: u32, height: u32, rgb: &[u8]) -> Result<Vec<u8>, Error> {
 
 Use `Encoder::encode_to` for a `Write` output. `encode_and_update` and `encode_to_and_update`
 also return the effective layer ratios and codestream size cap through the caller's `EncodeParams`.
+
+`EncodeParams::extra_options` accepts the core encoder's `PLT=NO`, `TLM=NO`, and `GUARD_BITS=2`.
+The encoder checks these options after setup, before writing the main header.
 
 The small-image release tests compare whole, reduced, and partial decodes against C++ and check
 that a warmed Rust decoder performs no heap calls on the selected fixtures. The opt-in timing
@@ -359,7 +366,8 @@ CI (`.github/workflows/rust.yml`) runs the lint job (fmt, clippy at both CPU lev
 decoder-only configuration, docs, cargo-deny, the native-Rust check, and
 `cargo package --locked -p neo-j2k`). Tests run at both CPU levels on Windows (MSVC), Linux
 (GCC 15, with the full conformance and non-regression data), and Ubuntu 24.04 (GCC 14,
-with the oracle built by `build.rs`). CI also runs scalar and AVX2 Miri and seeded
+with the oracle built by `build.rs`). The GCC 15 job compares the irreversible sample conversion
+with C++ for every 32-bit floating-point bit pattern. CI also runs scalar and AVX2 Miri and seeded
 AddressSanitizer fuzzing at both CPU levels on Windows. Scheduled and manually dispatched runs replay
 the extended cut table and allow ten minutes per fuzz target at each CPU level. See the
 [Rust port design](../doc/rust.md) for implementation notes.

@@ -21,6 +21,7 @@
 //! failure.
 
 use std::ffi::{CStr, CString};
+use std::num::NonZeroUsize;
 use std::path::Path;
 use std::ptr::NonNull;
 use std::sync::OnceLock;
@@ -484,6 +485,19 @@ pub struct EncodeRequest<'a> {
 
 struct Codestream(NonNull<ffi::Codestream>);
 
+impl Codestream {
+    fn bytes(&self) -> Vec<u8> {
+        let mut len = 0;
+        // SAFETY: the codestream handle is live and len is a writable local.
+        let bytes = unsafe { ffi::nj2k_shim_codestream_bytes(self.0.as_ptr(), &raw mut len) };
+        if len == 0 {
+            return Vec::new();
+        }
+        // SAFETY: the C++ codestream owns len initialized bytes for as long as the handle lives.
+        unsafe { std::slice::from_raw_parts(bytes, len) }.to_vec()
+    }
+}
+
 impl Drop for Codestream {
     fn drop(&mut self) {
         // SAFETY: the handle was returned by the shim and is freed here exactly once.
@@ -525,13 +539,80 @@ pub fn encode_u8_with_updates(request: &EncodeRequest<'_>) -> (Result<Vec<u8>, i
     (output, updates)
 }
 
+/// How the C++ stream callback accepts bytes during an encoder trace.
+#[derive(Clone, Copy, Debug)]
+pub struct EncodeTraceOptions<'a> {
+    pub buffer_size: NonZeroUsize,
+    pub max_write: usize,
+    pub stop_at: usize,
+    pub fail_with_error: bool,
+    pub extra_options: &'a [String],
+}
+
+/// The C++ encoder's status and callback observations, including after a refused write.
+#[derive(Debug, PartialEq, Eq)]
+pub struct EncodeTrace {
+    pub status: i32,
+    pub bytes: Vec<u8>,
+    pub offers: Vec<usize>,
+    pub diagnostics: Vec<HeaderDiagnostic>,
+}
+
+/// Encodes to a traced C++ stream using the same setup as [`encode_u8`].
+pub fn encode_u8_trace(request: &EncodeRequest<'_>, options: EncodeTraceOptions<'_>) -> EncodeTrace {
+    init();
+    let request = raw_encode_request(request);
+    let strings: Vec<_> = options
+        .extra_options
+        .iter()
+        .map(|option| CString::new(option.split('\0').next().unwrap_or_default()).unwrap())
+        .collect();
+    let mut pointers: Vec<_> = strings.iter().map(|option| option.as_ptr()).collect();
+    pointers.push(std::ptr::null());
+    let trace = ffi::EncodeTraceRequest {
+        buffer_size: options.buffer_size.get(),
+        max_write: options.max_write,
+        stop_at: options.stop_at,
+        fail_with_error: u32::from(options.fail_with_error),
+        extra_options: pointers.as_ptr(),
+    };
+    let mut out = std::ptr::null_mut();
+    // SAFETY: request spans and the null-terminated extra-options list remain valid until return.
+    let status = unsafe { ffi::nj2k_shim_encode_u8_trace(&raw const request, &raw const trace, &raw mut out) };
+    let stream = Codestream(NonNull::new(out).expect("the C++ harness did not return an encode trace"));
+    let mut count = 0;
+    // SAFETY: the codestream handle is live and count points to a writable local.
+    let offers = unsafe { ffi::nj2k_shim_codestream_offers(stream.0.as_ptr(), &raw mut count) };
+    let offers = if count == 0 {
+        Vec::new()
+    } else {
+        // SAFETY: the C++ codestream owns count initialized offers until the handle is freed.
+        unsafe { std::slice::from_raw_parts(offers, count) }.to_vec()
+    };
+    let diagnostics = read_diagnostics(|index, severity, text, len| {
+        // SAFETY: the snapshot is live and the out-pointers are valid, with zero past the last message.
+        unsafe { ffi::nj2k_shim_codestream_diagnostic(stream.0.as_ptr(), index, severity, text, len) }
+    });
+    EncodeTrace {
+        status,
+        bytes: stream.bytes(),
+        offers,
+        diagnostics,
+    }
+}
+
 fn encode_request(
     request: &EncodeRequest<'_>,
     encode: impl FnOnce(*const ffi::EncodeRequest, *mut *mut ffi::Codestream) -> i32,
 ) -> Result<Vec<u8>, i32> {
     init();
+    let raw = raw_encode_request(request);
+    get_codestream(|out| encode(&raw const raw, out))
+}
+
+fn raw_encode_request(request: &EncodeRequest<'_>) -> ffi::EncodeRequest {
     let (comment, comment_len) = request.comment.map_or((std::ptr::null(), 0), |c| (c.as_ptr(), c.len()));
-    let raw = ffi::EncodeRequest {
+    ffi::EncodeRequest {
         pixels: request.pixels.as_ptr(),
         size: request.pixels.len(),
         stride: request.row_stride,
@@ -547,21 +628,27 @@ fn encode_request(
         rate_count: request.layer_ratios.len(),
         comment,
         comment_len,
-    };
+    }
+}
+
+/// Generates a synthetic JPEG 2000 codestream with the pinned OpenJPEG encoder.
+///
+/// The seed and case index select the sample data and bounded coding parameters.
+pub fn generate_codestream(seed: u32, index: u32) -> Result<Vec<u8>, i32> {
+    init();
+    get_codestream(|out| {
+        // SAFETY: get_codestream supplies a writable output handle.
+        unsafe { ffi::nj2k_shim_generate_codestream(seed, index, out) }
+    })
+}
+
+fn get_codestream(encode: impl FnOnce(*mut *mut ffi::Codestream) -> i32) -> Result<Vec<u8>, i32> {
     let mut out = std::ptr::null_mut();
-    let status = encode(&raw const raw, &raw mut out);
+    let status = encode(&raw mut out);
     if status != 0 {
         return Err(status);
     }
-    let out = Codestream(NonNull::new(out).expect("the C++ encoder returned its codestream"));
-    let mut len = 0;
-    // SAFETY: the codestream handle is live and len is a writable local.
-    let bytes = unsafe { ffi::nj2k_shim_codestream_bytes(out.0.as_ptr(), &raw mut len) };
-    if len == 0 {
-        return Ok(Vec::new());
-    }
-    // SAFETY: the C++ codestream owns len initialized bytes for as long as the handle lives.
-    Ok(unsafe { std::slice::from_raw_parts(bytes, len) }.to_vec())
+    Ok(Codestream(NonNull::new(out).expect("the C++ encoder returned its codestream")).bytes())
 }
 
 /// A codec's container format.
@@ -622,7 +709,7 @@ pub struct Header {
     pub dimensions: Result<Vec<Component>, i32>,
 }
 
-/// A diagnostic from the C++ header read, as emitted by the codec callback.
+/// A diagnostic from the C++ codec callback.
 #[derive(Debug, PartialEq, Eq)]
 pub enum HeaderDiagnostic {
     /// An informational message.
@@ -650,29 +737,32 @@ impl OwnedHeader {
     }
 
     fn diagnostics(&self) -> Vec<HeaderDiagnostic> {
-        let mut diagnostics = Vec::new();
-        for index in 0.. {
-            let mut severity = 0;
-            let mut text = std::ptr::null();
-            let mut len = 0;
-            // SAFETY: the snapshot is live and the out-pointers valid; 0 past the last message.
-            let present = unsafe {
-                ffi::nj2k_shim_header_diagnostic(self.0.as_ptr(), index, &raw mut severity, &raw mut text, &raw mut len)
-            };
-            if present == 0 {
-                break;
-            }
-            // SAFETY: the shim returns len text bytes owned by the live snapshot.
-            let bytes = unsafe { std::slice::from_raw_parts(text, len) }.to_vec();
-            diagnostics.push(match severity {
-                0 => HeaderDiagnostic::Info(bytes),
-                1 => HeaderDiagnostic::Warning(bytes),
-                2 => HeaderDiagnostic::Error(bytes),
-                _ => panic!("unexpected C++ diagnostic severity {severity}"),
-            });
-        }
-        diagnostics
+        read_diagnostics(|index, severity, text, len| {
+            // SAFETY: the snapshot is live and the out-pointers are valid, with zero past the last message.
+            unsafe { ffi::nj2k_shim_header_diagnostic(self.0.as_ptr(), index, severity, text, len) }
+        })
     }
+}
+
+fn read_diagnostics(mut read: impl FnMut(usize, &mut u32, &mut *const u8, &mut usize) -> u32) -> Vec<HeaderDiagnostic> {
+    let mut diagnostics = Vec::new();
+    for index in 0.. {
+        let mut severity = 0;
+        let mut text = std::ptr::null();
+        let mut len = 0;
+        if read(index, &mut severity, &mut text, &mut len) == 0 {
+            break;
+        }
+        // SAFETY: the shim returns len text bytes owned by the live snapshot.
+        let bytes = unsafe { std::slice::from_raw_parts(text, len) }.to_vec();
+        diagnostics.push(match severity {
+            0 => HeaderDiagnostic::Info(bytes),
+            1 => HeaderDiagnostic::Warning(bytes),
+            2 => HeaderDiagnostic::Error(bytes),
+            _ => panic!("unexpected C++ diagnostic severity {severity}"),
+        });
+    }
+    diagnostics
 }
 
 impl Drop for OwnedHeader {
@@ -761,6 +851,12 @@ impl Codec {
         unsafe { ffi::nj2k_shim_codec_set_max_memory(self.0.as_ptr(), max_memory) != 0 }
     }
 
+    /// Set the requested reduce factor on the existing decoder and return its status.
+    pub fn set_reduce(&mut self, reduce: u32) -> i32 {
+        // SAFETY: the codec is live and the factor is passed by value.
+        unsafe { ffi::nj2k_shim_codec_set_reduce(self.0.as_ptr(), reduce) }
+    }
+
     /// Change the capacity the C++ codec can retain after a decode.
     pub fn set_retained_bytes(&mut self, bytes: usize) -> bool {
         // SAFETY: the codec is live and the byte limit is passed by value.
@@ -776,6 +872,30 @@ impl Codec {
     /// Read a header, set a new reduce factor, then check decoded dimensions on the original image.
     pub fn read_header_then_reduce(&mut self, data: &[u8], reduce: u32) -> Result<Header, i32> {
         self.read_header_request(data, Some(reduce), false).0
+    }
+
+    /// Read a memory header, select codestream components, and check the resulting dimensions.
+    pub fn decoded_dimensions_for(&mut self, data: &[u8], indices: &[u32]) -> Result<Vec<Component>, i32> {
+        let count = u32::try_from(indices.len()).expect("component count fits in u32");
+        let mut numcomps = 0;
+        let mut raw = std::ptr::null_mut();
+        // SAFETY: the codec is live, the slices are valid for their lengths, and both out-pointers are valid.
+        let status = unsafe {
+            ffi::nj2k_shim_codec_dimensions_for(
+                self.0.as_ptr(),
+                data.as_ptr(),
+                data.len(),
+                indices.as_ptr(),
+                count,
+                &raw mut numcomps,
+                &raw mut raw,
+            )
+        };
+        if status != 0 {
+            return Err(status);
+        }
+        let header = OwnedHeader(NonNull::new(raw).expect("the C++ shim did not return a header snapshot"));
+        Ok(header.components(numcomps, true))
     }
 
     /// Read a header and also return ordered diagnostics from the read itself.

@@ -281,8 +281,11 @@ pub fn api_sequence(data: &[u8]) {
             0 => header_input = compare_header(&mut native, &mut oracle, input).then_some(input),
             1 => {
                 let reduce = u32::from(command >> 2 & 7);
-                let result = native.set_reduce(reduce);
                 if let Some(data) = header_input {
+                    // The oracle helper reads the header before applying the factor. Match that
+                    // state transition, including resetting cached component geometry.
+                    native.read_header(data).expect("Rust retains the header");
+                    let result = native.set_reduce(reduce);
                     let expected = oracle
                         .read_header_then_reduce(data, reduce)
                         .expect("C++ retains the header");
@@ -292,8 +295,8 @@ pub fn api_sequence(data: &[u8]) {
                     );
                     compare_dimensions(&mut native, expected);
                 } else {
-                    assert_eq!(result.unwrap_err().kind(), neo_j2k::ErrorKind::State);
-                    oracle = differential_codecs(Format::J2k, reduce, policy, params, limits).1;
+                    let result = native.set_reduce(reduce);
+                    assert_eq!(result.unwrap_err().kind() as i32, oracle.set_reduce(reduce));
                 }
             }
             2 => {
@@ -335,6 +338,7 @@ mod tests {
         for sequence in [
             &include_bytes!("../seeds/api_sequence/retries")[..],
             &include_bytes!("../seeds/api_sequence/options")[..],
+            &[0, 0, 0, 3, 32][..],
         ] {
             api_sequence(sequence);
         }
@@ -347,6 +351,31 @@ mod tests {
             &include_bytes!("../seeds/jp2/rgb-64.jp2")[..],
         ]) {
             differential(seed);
+        }
+    }
+
+    #[test]
+    fn decoder_reuse_with_a_reduced_header_budget() {
+        for selector in 0..7 {
+            for cut in [0x20, 0x40, 0x60] {
+                for first in [0, 1, 2, 3] {
+                    let sequence = [selector, 0, first, 3, cut, 7, 0];
+                    let result = std::panic::catch_unwind(|| api_sequence(&sequence));
+                    assert!(result.is_ok(), "sequence {sequence:?}");
+                }
+            }
+        }
+        let mut state = 137_u32;
+        for _ in 0..10_000 {
+            let mut sequence = [0_u8; 18];
+            for byte in &mut sequence {
+                state ^= state << 13;
+                state ^= state >> 17;
+                state ^= state << 5;
+                *byte = state.to_le_bytes()[0];
+            }
+            let result = std::panic::catch_unwind(|| api_sequence(&sequence));
+            assert!(result.is_ok(), "sequence {sequence:?}");
         }
     }
 }

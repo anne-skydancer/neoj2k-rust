@@ -361,4 +361,32 @@ mod tests {
             assert_eq!(actual, expected);
         }
     }
+
+    #[test]
+    #[ignore = "exhaustive sweep of all 32-bit floating-point encodings"]
+    fn irreversible_shift_matches_cpp_for_all_float_bits() {
+        let mut input = vec![0; 1 << 16];
+        let mut actual = input.clone();
+        let mut expected = input.clone();
+        let finishes = [Finish::new(8, false, false), Finish::new(31, true, false)];
+        for high in 0..=u16::MAX {
+            let upper = i32::from(high) << 16;
+            for (low, bits) in (0..=u16::MAX).zip(&mut input) {
+                *bits = upper | i32::from(low);
+            }
+            for finish in finishes {
+                actual.copy_from_slice(&input);
+                expected.copy_from_slice(&input);
+                finish.apply(&mut actual);
+                kernels::dc_shift_97_scalar(&mut expected, finish.shift, finish.lo, finish.hi);
+                if actual != expected {
+                    let index = actual.iter().zip(&expected).position(|(a, b)| a != b).unwrap();
+                    panic!(
+                        "float bits {:08x}, clamp {}..={}: Rust {}, C++ {}",
+                        input[index], finish.lo, finish.hi, actual[index], expected[index]
+                    );
+                }
+            }
+        }
+    }
 }

@@ -6,6 +6,7 @@
 // memory codec with its ledger numbers and thresholds.
 #include "nj2k_rust_shim.h"
 
+#include <algorithm>
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
@@ -19,6 +20,7 @@
 
 #include "common.h"
 #include "decoder.h"
+#include "generated.h"
 #include "j2k_scan.h"
 #include "pgx.h"
 #include "thread_pool.h"
@@ -59,14 +61,14 @@ struct Shared {
 };
 const Shared g_shared;
 
-struct HeaderMessage {
+struct CapturedMessage {
     Messages::Kind severity;
     std::string text;
 };
 
-class HeaderDiagnostics {
+class CaptureDiagnostics {
 public:
-    HeaderDiagnostics(Messages& messages, std::vector<HeaderMessage>& entries, bool enabled) noexcept
+    CaptureDiagnostics(Messages& messages, std::vector<CapturedMessage>& entries, bool enabled) noexcept
         : messages_(messages), previous_(messages), entries_(entries)
     {
         if (enabled) {
@@ -76,7 +78,7 @@ public:
         }
     }
 
-    ~HeaderDiagnostics() { messages_ = previous_; }
+    ~CaptureDiagnostics() { messages_ = previous_; }
 
     bool failed() const noexcept { return failed_; }
 
@@ -84,9 +86,9 @@ private:
     template <Messages::Kind Kind>
     static void record(const char* text, void* cookie) noexcept
     {
-        auto& capture = *static_cast<HeaderDiagnostics*>(cookie);
+        auto& capture = *static_cast<CaptureDiagnostics*>(cookie);
         try {
-            capture.entries_.push_back(HeaderMessage{Kind, text});
+            capture.entries_.push_back(CapturedMessage{Kind, text});
         } catch (...) {
             capture.failed_ = true;
         }
@@ -94,9 +96,22 @@ private:
 
     Messages& messages_;
     Messages previous_;
-    std::vector<HeaderMessage>& entries_;
+    std::vector<CapturedMessage>& entries_;
     bool failed_ = false;
 };
+
+uint32_t diagnostic_at(const std::vector<CapturedMessage>& entries, size_t index, uint32_t* severity,
+                       const uint8_t** text, size_t* len) noexcept
+{
+    if (index >= entries.size() || !severity || !text || !len) {
+        return 0;
+    }
+    const auto& entry = entries[index];
+    *severity = static_cast<uint32_t>(entry.severity);
+    *text = reinterpret_cast<const uint8_t*>(entry.text.data());
+    *len = entry.text.size();
+    return 1;
+}
 
 std::vector<nj2k_shim_component_t> copy_components(const nj2k_image_t& image)
 {
@@ -128,11 +143,13 @@ struct nj2k_shim_pgx {
 
 struct nj2k_shim_header {
     std::vector<nj2k_shim_component_t> original, sized;
-    std::vector<HeaderMessage> diagnostics;
+    std::vector<CapturedMessage> diagnostics;
 };
 
 struct nj2k_shim_codestream {
     std::vector<uint8_t> bytes;
+    std::vector<size_t> offers;
+    std::vector<CapturedMessage> diagnostics;
 };
 
 struct nj2k_shim_pool {
@@ -177,6 +194,31 @@ NJ2K_SIZE_T append_encoded(void* buffer, NJ2K_SIZE_T count, void* cookie) noexce
         return 0;
     }
 }
+
+struct TracedWriter {
+    nj2k_shim_codestream_t& output;
+    const nj2k_shim_encode_trace_request_t* trace;
+    bool failed = false;
+
+    static NJ2K_SIZE_T write(void* buffer, NJ2K_SIZE_T count, void* cookie) noexcept
+    {
+        auto& writer = *static_cast<TracedWriter*>(cookie);
+        const auto& options = *writer.trace;
+        try {
+            writer.output.offers.push_back(count);
+        } catch (...) {
+            writer.failed = true;
+            return 0;
+        }
+        count = std::min({count, options.max_write, options.stop_at - writer.output.bytes.size()});
+        if (count == 0) {
+            return options.fail_with_error ? std::numeric_limits<NJ2K_SIZE_T>::max() : 0;
+        }
+        const auto accepted = append_encoded(buffer, count, &writer.output);
+        writer.failed = accepted != count;
+        return accepted;
+    }
+};
 
 }  // namespace
 
@@ -585,20 +627,16 @@ int32_t nj2k_shim_encode_u8(const nj2k_shim_encode_request_t* request, nj2k_shim
     return nj2k_shim_encode_u8_with_updates(request, nullptr, out);
 }
 
-int32_t nj2k_shim_encode_u8_with_updates(const nj2k_shim_encode_request_t* request,
-                                       nj2k_shim_encode_updates_t* updates, nj2k_shim_codestream_t** out)
+static int32_t encode_u8(const nj2k_shim_encode_request_t* request, nj2k_shim_encode_updates_t* updates,
+                         const nj2k_shim_encode_trace_request_t* trace, nj2k_shim_codestream_t& output)
 {
     using nj2k::detail::Encoder;
     static_assert(sizeof(nj2k_shim_encode_updates_t::ratios) == sizeof(float) * Encoder::kMaxLayers);
     if (updates) {
         *updates = {};
     }
-    if (!out) {
-        return NJ2K_E_ARGUMENT;
-    }
-    *out = nullptr;
     if (!request || !request->pixels || !request->components || !request->width || !request->height ||
-        (request->rate_count && !request->rates)) {
+        (request->rate_count && !request->rates) || (trace && !trace->buffer_size)) {
         return NJ2K_E_ARGUMENT;
     }
     const auto& r = *request;
@@ -628,6 +666,7 @@ int32_t nj2k_shim_encode_u8_with_updates(const nj2k_shim_encode_request_t* reque
         if (!image || !codec) {
             return NJ2K_E_NO_MEMORY;
         }
+        CaptureDiagnostics messages(Encoder::from(codec.get())->messages, output.diagnostics, trace != nullptr);
         image->x1 = r.width;
         image->y1 = r.height;
 
@@ -650,12 +689,15 @@ int32_t nj2k_shim_encode_u8_with_updates(const nj2k_shim_encode_request_t* reque
             params.cp_comment = comment.data();
         }
         if (!nj2k_setup_encoder(codec.get(), &params, image.get())) {
-            return nj2k_get_status(codec.get());
+            return messages.failed() ? NJ2K_E_NO_MEMORY : nj2k_get_status(codec.get());
         }
         if (updates) {
             updates->max_codestream_size = static_cast<uint32_t>(params.max_cs_size);
             updates->layer_count = static_cast<uint32_t>(params.tcp_numlayers);
             std::memcpy(updates->ratios, params.tcp_rates, updates->layer_count * sizeof(float));
+        }
+        if (trace && !nj2k_encoder_set_extra_options(codec.get(), trace->extra_options)) {
+            return messages.failed() ? NJ2K_E_NO_MEMORY : nj2k_get_status(codec.get());
         }
         for (uint32_t c = 0; c < r.components; ++c) {
             for (uint32_t y = 0; y < r.height; ++y) {
@@ -666,23 +708,66 @@ int32_t nj2k_shim_encode_u8_with_updates(const nj2k_shim_encode_request_t* reque
             }
         }
 
-        auto codestream = std::make_unique<nj2k_shim_codestream_t>();
-        const std::unique_ptr<nj2k_stream_t, decltype(&nj2k_stream_destroy)> stream(nj2k_stream_create(4096, NJ2K_FALSE),
-                                                                                 nj2k_stream_destroy);
+        const std::unique_ptr<nj2k_stream_t, decltype(&nj2k_stream_destroy)> stream(
+            nj2k_stream_create(trace ? trace->buffer_size : 4096, NJ2K_FALSE), nj2k_stream_destroy);
         if (!stream) {
             return NJ2K_E_NO_MEMORY;
         }
-        nj2k_stream_set_user_data(stream.get(), codestream.get(), nullptr);
-        nj2k_stream_set_write_function(stream.get(), append_encoded);
-        if (!nj2k_start_compress(codec.get(), image.get(), stream.get()) || !nj2k_encode(codec.get(), stream.get()) ||
-            !nj2k_end_compress(codec.get(), stream.get())) {
-            return nj2k_get_status(codec.get());
+        TracedWriter writer{output, trace};
+        nj2k_stream_set_user_data(stream.get(), trace ? static_cast<void*>(&writer) : &output, nullptr);
+        nj2k_stream_set_write_function(stream.get(), trace ? TracedWriter::write : append_encoded);
+        const bool complete = nj2k_start_compress(codec.get(), image.get(), stream.get()) &&
+                              nj2k_encode(codec.get(), stream.get()) && nj2k_end_compress(codec.get(), stream.get());
+        if (writer.failed || messages.failed()) {
+            return NJ2K_E_NO_MEMORY;
         }
-        *out = codestream.release();
-        return NJ2K_OK;
+        return complete ? NJ2K_OK : nj2k_get_status(codec.get());
     } catch (...) {
         return NJ2K_E_NO_MEMORY;
     }
+}
+
+static int32_t encode_u8_snapshot(const nj2k_shim_encode_request_t* request, nj2k_shim_encode_updates_t* updates,
+                                  const nj2k_shim_encode_trace_request_t* trace, nj2k_shim_codestream_t** out)
+{
+    if (!out) {
+        return NJ2K_E_ARGUMENT;
+    }
+    *out = nullptr;
+    try {
+        auto codestream = std::make_unique<nj2k_shim_codestream_t>();
+        const int32_t status = encode_u8(request, updates, trace, *codestream);
+        if (trace || status == NJ2K_OK) {
+            *out = codestream.release();
+        }
+        return status;
+    } catch (...) {
+        return NJ2K_E_NO_MEMORY;
+    }
+}
+
+int32_t nj2k_shim_encode_u8_with_updates(const nj2k_shim_encode_request_t* request,
+                                       nj2k_shim_encode_updates_t* updates, nj2k_shim_codestream_t** out)
+{
+    return encode_u8_snapshot(request, updates, nullptr, out);
+}
+
+int32_t nj2k_shim_encode_u8_trace(const nj2k_shim_encode_request_t* request,
+                                 const nj2k_shim_encode_trace_request_t* trace, nj2k_shim_codestream_t** out)
+{
+    return encode_u8_snapshot(request, nullptr, trace, out);
+}
+
+const size_t* nj2k_shim_codestream_offers(const nj2k_shim_codestream_t* codestream, size_t* count)
+{
+    *count = codestream->offers.size();
+    return codestream->offers.data();
+}
+
+uint32_t nj2k_shim_codestream_diagnostic(const nj2k_shim_codestream_t* codestream, size_t index, uint32_t* severity,
+                                         const uint8_t** text, size_t* len)
+{
+    return diagnostic_at(codestream->diagnostics, index, severity, text, len);
 }
 
 const uint8_t* nj2k_shim_codestream_bytes(const nj2k_shim_codestream_t* codestream, size_t* len)
@@ -696,12 +781,42 @@ void nj2k_shim_codestream_free(nj2k_shim_codestream_t* codestream)
     delete codestream;
 }
 
+int32_t nj2k_shim_generate_codestream(uint32_t seed, uint32_t index, nj2k_shim_codestream_t** out)
+{
+    if (!out) {
+        return NJ2K_E_ARGUMENT;
+    }
+    *out = nullptr;
+    try {
+        const auto spec = nj2k::test::generated_case(seed, index);
+        auto codestream = std::make_unique<nj2k_shim_codestream_t>();
+        std::string error;
+        if (!nj2k::test::encode_generated(spec, spec.sop, spec.eph, codestream->bytes, error)) {
+            std::fprintf(stderr, "OpenJPEG generation %08x/%u: %s\n", seed, index, error.c_str());
+            return NJ2K_E_DATA;
+        }
+        *out = codestream.release();
+        return NJ2K_OK;
+    } catch (...) {
+        return NJ2K_E_NO_MEMORY;
+    }
+}
+
 uint32_t nj2k_shim_codec_set_max_memory(nj2k_codec_t* codec, uint64_t max_memory)
 {
     nj2k_decoder_limits_t limits;
     nj2k_decoder_limits_init(&limits, NJ2K_DECODER_LIMITS_NONE);
     limits.max_memory = max_memory;
     return codec && nj2k_decoder_set_limits(codec, &limits) ? 1u : 0u;
+}
+
+int32_t nj2k_shim_codec_set_reduce(nj2k_codec_t* codec, uint32_t reduce)
+{
+    if (!codec) {
+        return NJ2K_E_ARGUMENT;
+    }
+    nj2k_set_decoded_resolution_factor(codec, reduce);
+    return nj2k_get_status(codec);
 }
 
 nj2k_codec_t* nj2k_shim_codec_new(uint32_t format, uint32_t reduce, uint32_t reduce_policy,
@@ -746,7 +861,7 @@ int32_t nj2k_shim_codec_header(nj2k_codec_t* codec, const uint8_t* data, size_t 
         nj2k_image_t image{};
         int32_t header_status;
         {
-            HeaderDiagnostics capture(decoder->messages, header->diagnostics, capture_diagnostics != 0);
+            CaptureDiagnostics capture(decoder->messages, header->diagnostics, capture_diagnostics != 0);
             nj2k_read_header_memory(codec, data, size, &image);
             header_status = nj2k_get_status(codec);
             if (capture.failed()) {
@@ -795,14 +910,7 @@ const nj2k_shim_component_t* nj2k_shim_header_components(const nj2k_shim_header_
 uint32_t nj2k_shim_header_diagnostic(const nj2k_shim_header_t* header, size_t index, uint32_t* severity,
                                      const uint8_t** text, size_t* len)
 {
-    if (!header || index >= header->diagnostics.size() || !severity || !text || !len) {
-        return 0;
-    }
-    const auto& entry = header->diagnostics[index];
-    *severity = static_cast<uint32_t>(entry.severity);
-    *text = reinterpret_cast<const uint8_t*>(entry.text.data());
-    *len = entry.text.size();
-    return 1;
+    return header ? diagnostic_at(header->diagnostics, index, severity, text, len) : 0;
 }
 
 void nj2k_shim_header_free(nj2k_shim_header_t* header)
@@ -907,6 +1015,27 @@ uint32_t nj2k_shim_set_parallel_thresholds(nj2k_codec_t* codec, uint64_t tile_sa
 {
     return nj2k::detail::set_parallel_thresholds(codec, tile_samples, level_area, output_samples, clear_bytes) ? 1u
                                                                                                                 : 0u;
+}
+
+int32_t nj2k_shim_codec_dimensions_for(nj2k_codec_t* codec, const uint8_t* data, size_t size,
+                                      const uint32_t* indices, uint32_t count, uint32_t* numcomps,
+                                      nj2k_shim_header_t** out)
+{
+    *out = nullptr;
+    nj2k_image_t image{};
+    if (!nj2k_read_header_memory(codec, data, size, &image) ||
+        !nj2k_set_decoded_components(codec, count, indices, NJ2K_FALSE) || !nj2k_get_decoded_dimensions(codec, &image)) {
+        return nj2k_get_status(codec);
+    }
+    try {
+        auto header = std::make_unique<nj2k_shim_header>();
+        header->sized = copy_components(image);
+        *numcomps = image.numcomps;
+        *out = header.release();
+        return NJ2K_OK;
+    } catch (...) {
+        return NJ2K_E_NO_MEMORY;
+    }
 }
 
 }  // extern "C"

@@ -142,9 +142,9 @@ impl Scratch {
             orient,
             roishift,
             cblksty,
-            segments,
+            ..
         } = block;
-        let mut bitplane = bits_as_i32(numbps.wrapping_add(roishift));
+        let bitplane = bits_as_i32(numbps.wrapping_add(roishift));
         if bitplane >= 31 {
             diagnostics.warn_fmt(format_args!(
                 "opj_t1_decode_cblk(): unsupported bpno_plus_one = {bitplane} >= 31\n"
@@ -187,7 +187,7 @@ impl Scratch {
             }
             return Ok(());
         };
-        let mut bytes = if let Some(second) = chunks.next() {
+        let bytes = if let Some(second) = chunks.next() {
             self.coded.clear();
             for chunk in [first, second].into_iter().chain(chunks) {
                 self.coded.try_reserve(chunk.len()).map_err(|_| no_memory())?;
@@ -199,53 +199,20 @@ impl Scratch {
         };
         reserve_fixed(&mut self.data, MAX_SAMPLES)?;
         reserve_fixed(&mut self.flags, MAX_FLAGS)?;
+        let single_stripe = height <= 4;
+        let used_flags = if single_stripe { width + 2 } else { flag_count };
         let mut passes = Passes {
             data: &mut self.data[..samples],
-            flags: &mut self.flags[..flag_count],
+            flags: &mut self.flags[..used_flags],
             width,
             height,
             orient: orient as usize,
             vertical_causal: cblksty & VERTICAL_CAUSAL != 0,
         };
-        passes.initialize();
-
-        let mut decoder = Decoder::new();
-        let mut pass = 2;
-        let lazy = cblksty & LAZY != 0;
-        let reset = cblksty & RESET != 0;
-        let segment_symbol = cblksty & SEGMENT_SYMBOL != 0;
-        let bypass_bitplane = bits_as_i32(numbps).wrapping_sub(4);
-        // Tier 2 supplies segment boundaries for termination modes. OpenJPEG's decode path
-        // performs no additional predictable-termination check.
-        for segment in segments {
-            let (segment_data, remainder) = bytes
-                .split_at_checked(segment.len as usize)
-                .ok_or_else(invalid_segment)?;
-            bytes = remainder;
-            let raw = lazy && pass < 2 && bitplane <= bypass_bitplane;
-            decoder.start_segment(segment_data, raw);
-            for _ in 0..segment.real_num_passes {
-                if bitplane < 1 {
-                    break;
-                }
-                let plane = u32::try_from(bitplane).expect("positive bit-plane index");
-                match pass {
-                    0 if raw => passes.significance::<true>(&mut decoder, plane),
-                    0 => passes.significance::<false>(&mut decoder, plane),
-                    1 if raw => passes.refinement::<true>(&mut decoder, plane),
-                    1 => passes.refinement::<false>(&mut decoder, plane),
-                    2 => passes.cleanup(&mut decoder, plane, segment_symbol),
-                    _ => unreachable!("a code-block cycles through three coding passes"),
-                }
-                if reset && !raw {
-                    decoder.reset_contexts();
-                }
-                pass += 1;
-                if pass == 3 {
-                    pass = 0;
-                    bitplane -= 1;
-                }
-            }
+        if single_stripe {
+            decode_single_stripe(&mut passes, block, bitplane, bytes)?;
+        } else {
+            decode_passes::<false>(&mut passes, block, bitplane, bytes)?;
         }
         store_coefficients::<true>(
             &mut self.data[..samples],
@@ -258,6 +225,67 @@ impl Scratch {
         );
         Ok(())
     }
+}
+
+#[inline(never)]
+fn decode_single_stripe(passes: &mut Passes<'_>, block: Block<'_>, bitplane: i32, bytes: &[u8]) -> Result<(), Error> {
+    decode_passes::<true>(passes, block, bitplane, bytes)
+}
+
+#[inline(always)]
+fn decode_passes<const SINGLE_STRIPE: bool>(
+    passes: &mut Passes<'_>,
+    block: Block<'_>,
+    mut bitplane: i32,
+    mut bytes: &[u8],
+) -> Result<(), Error> {
+    let Block {
+        numbps,
+        cblksty,
+        segments,
+        ..
+    } = block;
+    passes.initialize::<SINGLE_STRIPE>();
+
+    let mut decoder = Decoder::new();
+    let mut pass = 2;
+    let lazy = cblksty & LAZY != 0;
+    let reset = cblksty & RESET != 0;
+    let segment_symbol = cblksty & SEGMENT_SYMBOL != 0;
+    let bypass_bitplane = bits_as_i32(numbps).wrapping_sub(4);
+    // Tier 2 supplies segment boundaries for termination modes. OpenJPEG's decode path
+    // performs no additional predictable-termination check.
+    for segment in segments {
+        let (segment_data, remainder) = bytes
+            .split_at_checked(segment.len as usize)
+            .ok_or_else(invalid_segment)?;
+        bytes = remainder;
+        let raw = lazy && pass < 2 && bitplane <= bypass_bitplane;
+        decoder.start_segment(segment_data, raw);
+        for _ in 0..segment.real_num_passes {
+            if bitplane < 1 {
+                break;
+            }
+            let plane = u32::try_from(bitplane).expect("positive bit-plane index");
+            match pass {
+                0 if raw => passes.significance::<true, SINGLE_STRIPE>(&mut decoder, plane),
+                0 => passes.significance::<false, SINGLE_STRIPE>(&mut decoder, plane),
+                1 if raw => passes.refinement::<true, SINGLE_STRIPE>(&mut decoder, plane),
+                1 => passes.refinement::<false, SINGLE_STRIPE>(&mut decoder, plane),
+                2 => passes.cleanup::<SINGLE_STRIPE>(&mut decoder, plane, segment_symbol),
+                _ => unreachable!("a code-block cycles through three coding passes"),
+            }
+            if reset && !raw {
+                decoder.reset_contexts();
+            }
+            pass += 1;
+            if pass == 3 {
+                pass = 0;
+                bitplane -= 1;
+            }
+        }
+    }
+    Ok(())
 }
 
 /// Store a nonempty block in its validated destination, preserving row padding.

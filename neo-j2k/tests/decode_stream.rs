@@ -319,6 +319,44 @@ fn limits_are_checked_before_the_reader_consumes_tile_data() {
 }
 
 #[test]
+fn stream_preflight_can_check_the_memory_for_a_component_selection() {
+    let input = fixture("sl_128_rgba_97.j2k");
+    let options = StreamOptions {
+        length: Some(input.len() as u64),
+        seekable: true,
+    };
+    let mut decoder = Decoder::new(DecoderConfig {
+        limits: Limits {
+            max_memory: 500_000,
+            ..Limits::default()
+        },
+        ..DecoderConfig::default()
+    });
+    let mut reader = Cursor::new(&input);
+    let mut stream = decoder.read_header_from(&mut reader, options).unwrap();
+    let tile = stream.info().first_tile_offset;
+    assert_eq!(stream.decoded_dimensions_for(&[3]).unwrap().len(), 4);
+    assert_eq!(stream.decoded_dimensions().unwrap_err().kind(), ErrorKind::Limit);
+    let error = stream.decode(DecodeParams::default()).unwrap_err();
+    assert_eq!(error.kind(), ErrorKind::Limit);
+    assert_eq!(reader.position(), tile + 2, "preflight leaves the tile data unread");
+
+    let mut reader = Cursor::new(&input);
+    let mut stream = decoder.read_header_from(&mut reader, options).unwrap();
+    let selected = [3];
+    let dimensions = stream.decoded_dimensions_for(&selected).unwrap()[3];
+    let image = stream
+        .decode(DecodeParams {
+            components: Some(&selected),
+            ..DecodeParams::default()
+        })
+        .unwrap();
+    assert!(!image.truncated);
+    assert_eq!(image.components.len(), 1);
+    assert_eq!(image.components[0].info(), dimensions);
+}
+
+#[test]
 fn early_eof_is_distinct_from_a_short_advertised_length() {
     let input = fixture("sl_64_rgb_97.j2k");
     let mut decoder = Decoder::new(DecoderConfig::default());

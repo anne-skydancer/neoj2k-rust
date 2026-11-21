@@ -180,7 +180,7 @@ impl<'data> Walk<'_, 'data> {
             current_tile: 0,
             can_decode: false,
             open_ended: false,
-            checked_correction: false,
+            checked_correction: strict,
             correction: 0,
             room: 0,
             reduce,

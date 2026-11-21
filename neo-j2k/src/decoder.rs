@@ -423,6 +423,14 @@ impl<'decoder> DecodeStream<'decoder, '_> {
         self.decoder.decoded_dimensions()
     }
 
+    /// Checks decoded dimensions and the working memory needed for the given component indices.
+    ///
+    /// Returns geometry for every codestream component without reading tile data. Pass the
+    /// same indices in [`DecodeParams::components`] to decode the selection.
+    pub fn decoded_dimensions_for(&mut self, components: &[u32]) -> Result<&[ComponentInfo], Error> {
+        self.decoder.decoded_dimensions_for(components)
+    }
+
     /// Consumes the stream and decodes into the decoder's reusable planar buffers.
     pub fn decode(mut self, params: DecodeParams<'_>) -> Result<DecodedImage<'decoder>, Error> {
         let result = self
@@ -847,6 +855,15 @@ impl Decoder {
     ///
     /// A reduce factor set after reading at full resolution uses the decode-time geometry.
     pub fn decoded_dimensions(&mut self) -> Result<&[ComponentInfo], Error> {
+        self.decoded_dimensions_for(&[])
+    }
+
+    /// Validates dimensions and the estimated working memory for a component selection.
+    ///
+    /// An empty selection checks the memory for all components. The decoded-side limit and the
+    /// returned geometry cover every component in codestream order. The selection applies only
+    /// to this check. Pass it in [`DecodeParams::components`] when decoding.
+    pub fn decoded_dimensions_for(&mut self, components: &[u32]) -> Result<&[ComponentInfo], Error> {
         self.diagnostics.clear();
         let result = self
             .header
@@ -857,7 +874,15 @@ impl Decoder {
                     "nj2k_get_decoded_dimensions: call it after nj2k_read_header\n",
                 )
             })
-            .and_then(|state| validate_dimensions(state, self.config.limits));
+            .and_then(|state| {
+                let slots = if components.is_empty() {
+                    None
+                } else {
+                    self.work.reset_selection(state.main.comps.len(), Some(components))?;
+                    Some(self.work.slots())
+                };
+                validate_dimensions(state, self.config.limits, slots)
+            });
         if let Err(error) = &result {
             self.diagnostics.error(error.message());
         }
@@ -944,7 +969,11 @@ fn color_profile(jp2: Option<&Jp2Header>, data: &[u8]) -> Result<Option<ColorPro
     }
 }
 
-fn validate_dimensions(state: &mut HeaderState, limits: Limits) -> Result<&[ComponentInfo], Error> {
+fn validate_dimensions<'a>(
+    state: &'a mut HeaderState,
+    limits: Limits,
+    slots: Option<&[Option<usize>]>,
+) -> Result<&'a [ComponentInfo], Error> {
     let resize = state.needs_resize();
     let main = &state.main;
     for (index, (&stored, &component)) in state.info.components.iter().zip(&main.comps).enumerate() {
@@ -968,7 +997,10 @@ fn validate_dimensions(state: &mut HeaderState, limits: Limits) -> Result<&[Comp
 
     let max = limits.max_memory;
     if max != 0 {
-        let need = estimate(state);
+        let need = match slots {
+            Some(slots) => geometry::working_memory_selected(main, state.reduce, Some(slots)),
+            None => estimate(state),
+        };
         if need > max {
             return Err(memory_limit(need, max));
         }

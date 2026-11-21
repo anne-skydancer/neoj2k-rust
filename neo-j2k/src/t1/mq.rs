@@ -6,6 +6,34 @@ use super::tables::MQ_STATES;
 
 pub(super) const CONTEXT_AGGREGATE: usize = 17;
 pub(super) const CONTEXT_UNIFORM: usize = 18;
+const MPS_BIT: u32 = 16;
+const NEXT_MPS_SHIFT: u32 = 17;
+const NEXT_LPS_SHIFT: u32 = 24;
+const STATE_COUNT: usize = 128;
+
+// Cache the active state in each context. A symbol that leaves its context unchanged
+// can use Qe and MPS immediately, with no separate state-table lookup.
+static PACKED_STATES: [u32; STATE_COUNT] = {
+    let mut table = [0; STATE_COUNT];
+    let mut i = 0;
+    while i < MQ_STATES.len() {
+        let (qeval, mps, next_mps, next_lps) = MQ_STATES[i];
+        assert!(qeval <= 0xffff && mps <= 1);
+        assert!((next_mps as usize) < MQ_STATES.len() && (next_lps as usize) < MQ_STATES.len());
+        table[i] =
+            qeval | (mps << MPS_BIT) | ((next_mps as u32) << NEXT_MPS_SHIFT) | ((next_lps as u32) << NEXT_LPS_SHIFT);
+        i += 1;
+    }
+    table
+};
+
+const INITIAL_CONTEXTS: [u32; 19] = {
+    let mut contexts = [PACKED_STATES[0]; 19];
+    contexts[0] = PACKED_STATES[8];
+    contexts[CONTEXT_AGGREGATE] = PACKED_STATES[6];
+    contexts[CONTEXT_UNIFORM] = PACKED_STATES[92];
+    contexts
+};
 
 /// One code-block's arithmetic registers and contexts, reused across its codeword segments.
 #[derive(Debug)]
@@ -15,28 +43,23 @@ pub(super) struct Decoder<'a> {
     a: u32,
     c: u32,
     bits: u32,
-    contexts: [u8; 19],
+    contexts: [u32; 19],
 }
 
 impl<'a> Decoder<'a> {
     pub(super) fn new() -> Self {
-        let mut decoder = Self {
+        Self {
             data: &[],
             current: 0,
             a: 0x8000,
             c: 0,
             bits: 0,
-            contexts: [0; 19],
-        };
-        decoder.reset_contexts();
-        decoder
+            contexts: INITIAL_CONTEXTS,
+        }
     }
 
     pub(super) fn reset_contexts(&mut self) {
-        self.contexts.fill(0);
-        self.contexts[0] = 8;
-        self.contexts[CONTEXT_AGGREGATE] = 6;
-        self.contexts[CONTEXT_UNIFORM] = 92;
+        self.contexts = INITIAL_CONTEXTS;
     }
 
     pub(super) fn start_segment(&mut self, data: &'a [u8], raw: bool) {
@@ -91,7 +114,11 @@ impl<'a> Decoder<'a> {
 
     #[inline]
     pub(super) fn symbol(&mut self, context: usize) -> u32 {
-        let (qeval, mps, next_mps, next_lps) = MQ_STATES[usize::from(self.contexts[context])];
+        let current = self.contexts[context];
+        let qeval = current & 0xffff;
+        let mps = (current >> MPS_BIT) & 1;
+        let next_mps = current >> NEXT_MPS_SHIFT;
+        let next_lps = current >> NEXT_LPS_SHIFT;
         self.a -= qeval;
         let (bit, state) = if self.c >> 16 < qeval {
             let less = self.a < qeval;
@@ -108,7 +135,7 @@ impl<'a> Decoder<'a> {
                 (mps, next_mps)
             }
         };
-        self.contexts[context] = state;
+        self.contexts[context] = PACKED_STATES[state as usize & (STATE_COUNT - 1)];
         self.renormalize();
         bit
     }

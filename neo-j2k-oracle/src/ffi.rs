@@ -77,6 +77,15 @@ pub(crate) struct EncodeUpdates {
 }
 
 #[repr(C)]
+pub(crate) struct EncodeTraceRequest {
+    pub(crate) buffer_size: usize,
+    pub(crate) max_write: usize,
+    pub(crate) stop_at: usize,
+    pub(crate) fail_with_error: u32,
+    pub(crate) extra_options: *const *const c_char,
+}
+
+#[repr(C)]
 pub(crate) struct Layout {
     pub(crate) name: *const c_char,
     pub(crate) size: u64,
@@ -243,11 +252,25 @@ unsafe extern "C" {
         reversible: u32,
     ) -> u32;
     pub(crate) fn nj2k_shim_encode_u8(request: *const EncodeRequest, out: *mut *mut Codestream) -> i32;
+    pub(crate) fn nj2k_shim_generate_codestream(seed: u32, index: u32, out: *mut *mut Codestream) -> i32;
     pub(crate) fn nj2k_shim_encode_u8_with_updates(
         request: *const EncodeRequest,
         updates: *mut EncodeUpdates,
         out: *mut *mut Codestream,
     ) -> i32;
+    pub(crate) fn nj2k_shim_encode_u8_trace(
+        request: *const EncodeRequest,
+        trace: *const EncodeTraceRequest,
+        out: *mut *mut Codestream,
+    ) -> i32;
+    pub(crate) fn nj2k_shim_codestream_offers(codestream: *const Codestream, count: *mut usize) -> *const usize;
+    pub(crate) fn nj2k_shim_codestream_diagnostic(
+        codestream: *const Codestream,
+        index: usize,
+        severity: *mut u32,
+        text: *mut *const u8,
+        len: *mut usize,
+    ) -> u32;
     pub(crate) fn nj2k_shim_codestream_bytes(codestream: *const Codestream, len: *mut usize) -> *const u8;
     pub(crate) fn nj2k_shim_codestream_free(codestream: *mut Codestream);
 
@@ -261,6 +284,7 @@ unsafe extern "C" {
     ) -> *mut Codec;
     pub(crate) fn nj2k_shim_codec_free(codec: *mut Codec);
     pub(crate) fn nj2k_shim_codec_set_max_memory(codec: *mut Codec, max_memory: u64) -> u32;
+    pub(crate) fn nj2k_shim_codec_set_reduce(codec: *mut Codec, reduce: u32) -> i32;
     pub(crate) fn nj2k_shim_codec_header(
         codec: *mut Codec,
         data: *const u8,
@@ -306,4 +330,13 @@ unsafe extern "C" {
         output_samples: u64,
         clear_bytes: u64,
     ) -> u32;
+    pub(crate) fn nj2k_shim_codec_dimensions_for(
+        codec: *mut Codec,
+        data: *const u8,
+        size: usize,
+        indices: *const u32,
+        count: u32,
+        numcomps: *mut u32,
+        out: *mut *mut Header,
+    ) -> i32;
 }

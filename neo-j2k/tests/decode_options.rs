@@ -148,6 +148,48 @@ fn strict_cuts_match_cpp_with_in_band_and_packed_headers() {
     assert!(rejected > 0, "strict cuts include refused codestreams");
 }
 
+#[test]
+fn strict_decode_matches_cpp_when_tile_part_count_is_one_short() {
+    let original = fixture("sl_32_rgba_53.j2k");
+    let main = parse_main_header(&original).unwrap();
+    let parts = scan_tile_parts(&original, &main);
+    assert_eq!(parts.len(), 1);
+    let sot = parts[0].sot;
+    let mut input = original[..sot].to_vec();
+    // Start with two empty parts, both counting to the last index rather than the part count.
+    for part in [0, 1] {
+        input.extend_from_slice(&[0xff, 0x90, 0, 10, 0, 0, 0, 0, 0, 14, part, 2, 0xff, 0x93]);
+    }
+    let last = input.len();
+    input.extend_from_slice(&original[sot..]);
+    input[last + 10..last + 12].copy_from_slice(&[2, 2]);
+
+    let (mut decoder, mut oracle, params) = codecs(0, 0, false);
+    let (status, pixels) = compare(
+        &mut decoder,
+        &mut oracle,
+        params,
+        &input,
+        "plain tile-part count correction",
+    );
+    assert_eq!(status, 0);
+    assert_eq!(pixels, oracle.decode_i32(&original).1);
+    assert!(decoder.diagnostics().iter().any(|diagnostic| matches!(
+        diagnostic,
+        neo_j2k::Diagnostic::Warning(message) if message == "Non conformant codestream TPsot==TNsot.\n"
+    )));
+
+    let (mut decoder, mut oracle, params) = codecs(0, 0, true);
+    let (status, _) = compare(
+        &mut decoder,
+        &mut oracle,
+        params,
+        &input,
+        "strict tile-part count rejection",
+    );
+    assert_eq!(status, ErrorKind::Data as i32);
+}
+
 fn damaged_inputs(input: &[u8]) -> Vec<(String, Vec<u8>)> {
     let header = parse_main_header(input).expect("a generated codestream header");
     let parts = scan_tile_parts(input, &header);

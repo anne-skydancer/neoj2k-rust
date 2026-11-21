@@ -70,6 +70,9 @@ pub struct EncodeParams {
     pub max_codestream_size: u32,
     /// The COM marker's text. As in the C++ encoder, only bytes before the first NUL are written.
     pub comment: Option<Vec<u8>>,
+    /// OpenJPEG-style `KEY=VALUE` options. The core accepts `PLT=NO`, `TLM=NO`, and `GUARD_BITS=2`.
+    /// Options are checked in order after setup and before any output is written. NUL ends an option.
+    pub extra_options: Vec<String>,
 }
 
 impl Default for EncodeParams {
@@ -81,6 +84,7 @@ impl Default for EncodeParams {
             layer_ratios: Vec::new(),
             max_codestream_size: 0,
             comment: None,
+            extra_options: Vec::new(),
         }
     }
 }
@@ -493,6 +497,7 @@ impl<'p> Settings<'p> {
         };
         let written_cap = settings.setup_rates(samples, params.max_codestream_size, diagnostics);
         update(&settings.rates[..settings.layers], written_cap);
+        validate_extra_options(&params.extra_options)?;
         image.validate_samples(&settings)?;
         settings.update_rates(samples);
         for (index, step) in settings.steps[..3 * resolutions - 2].iter_mut().enumerate() {
@@ -618,6 +623,57 @@ impl<'p> Settings<'p> {
             }
         }
     }
+}
+
+fn validate_extra_options(options: &[String]) -> Result<(), Error> {
+    for option in options {
+        let option = option.split('\0').next().unwrap_or_default();
+        if matches!(option, "PLT=NO" | "TLM=NO" | "GUARD_BITS=2") {
+            continue;
+        }
+        let (kind, prefix, suffix) = if matches!(option, "PLT=YES" | "TLM=YES")
+            || option.strip_prefix("GUARD_BITS=").is_some_and(guard_bits_in_range)
+        {
+            (
+                ErrorKind::Unsupported,
+                "nj2k_encoder_set_extra_options: ",
+                " is not supported by the core encoder (it belongs to the j2k-extra module)\n",
+            )
+        } else {
+            (ErrorKind::Argument, "Invalid option: ", ".\n")
+        };
+        // The C++ message has 511 payload bytes. Preserve a UTF-8 boundary if one spans the limit.
+        let limit = 511 - prefix.len();
+        let end = option.floor_char_boundary(limit);
+        let suffix = if end == option.len() {
+            &suffix[..suffix.len().min(limit - end)]
+        } else {
+            ""
+        };
+        return Err(Error::formatted(
+            kind,
+            format_args!("{prefix}{}{suffix}", &option[..end]),
+            "Invalid or unsupported encoder option\n",
+        ));
+    }
+    Ok(())
+}
+
+fn guard_bits_in_range(value: &str) -> bool {
+    // The C++ option parser uses atoi, which accepts a sign and stops at the first non-digit.
+    let value = value.trim_start_matches([' ', '\t', '\n', '\r', '\u{b}', '\u{c}']);
+    let (negative, digits) = match value.as_bytes() {
+        [b'-', rest @ ..] => (true, rest),
+        [b'+', rest @ ..] => (false, rest),
+        digits => (false, digits),
+    };
+    let magnitude = digits
+        .iter()
+        .take_while(|byte| byte.is_ascii_digit())
+        .fold(0_u8, |value, &digit| {
+            value.saturating_mul(10).saturating_add(digit - b'0')
+        });
+    magnitude <= if negative { 0 } else { 7 }
 }
 
 #[allow(

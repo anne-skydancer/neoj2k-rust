@@ -278,6 +278,61 @@ fn header_and_dimension_limits_refuse_at_the_same_stage() {
 }
 
 #[test]
+fn selected_dimensions_match_cpp_under_the_working_memory_limit() {
+    let input = fixture("sl_128_rgba_97.j2k");
+    for (max_memory, one_component_status) in [(400_000, LIMIT), (500_000, 0)] {
+        let (mut decoder, mut oracle) = codecs(DecoderConfig {
+            limits: Limits {
+                max_memory,
+                ..Limits::default()
+            },
+            ..DecoderConfig::default()
+        });
+        let original = decoder.read_header(&input).unwrap().components.clone();
+        let argument = ErrorKind::Argument as i32;
+        for (indices, expected_status) in [
+            (&[3][..], one_component_status),
+            (&[], LIMIT),
+            (&[3, 3], argument),
+            (&[4], argument),
+            (&[3], one_component_status),
+        ] {
+            let expected = oracle.decoded_dimensions_for(&input, indices);
+            let actual = decoder.decoded_dimensions_for(indices);
+            let case = format!("{indices:?} under {max_memory} bytes");
+            assert_eq!(expected.as_ref().err().copied().unwrap_or(0), expected_status, "{case}");
+            assert_eq!(
+                actual.as_ref().err().map_or(0, |error| error.kind() as i32),
+                expected_status,
+                "{case}"
+            );
+            if let Ok(expected) = expected {
+                let actual = actual.unwrap();
+                compare_components(actual, &expected, &case);
+                assert_eq!(
+                    actual, original,
+                    "the geometry covers every component in codestream order"
+                );
+            }
+        }
+        assert_eq!(decoder.decoded_dimensions().unwrap_err().kind(), ErrorKind::Limit);
+        let selected = DecodeParams {
+            components: Some(&[3]),
+            ..DecodeParams::default()
+        };
+        let actual = decoder.decode(&input, selected);
+        assert_eq!(
+            actual.as_ref().err().map_or(0, |error| error.kind() as i32),
+            one_component_status
+        );
+        if let Ok(image) = actual {
+            assert_eq!(image.components.len(), 1);
+            assert_eq!(image.components[0].info(), original[3]);
+        }
+    }
+}
+
+#[test]
 fn changing_header_limits_revalidates_the_same_bytes() {
     let input = fixture("sl_64_rgb_97.j2k");
     let mut decoder = Decoder::new(DecoderConfig::default());
