@@ -103,6 +103,28 @@ impl Diagnostics {
         self.entries.clear();
     }
 
+    pub(crate) fn configure_like(&mut self, other: &Self) {
+        self.enabled = other.enabled;
+        self.entries.clear();
+    }
+
+    pub(crate) fn append(&mut self, other: &mut Self) {
+        self.entries.append(&mut other.entries);
+    }
+
+    pub(crate) fn retained_bytes(&self) -> u64 {
+        crate::mem::capacity_bytes(&self.entries)
+            + self
+                .entries
+                .iter()
+                .map(|entry| match entry {
+                    Diagnostic::Info(text) | Diagnostic::Warning(text) | Diagnostic::Error(text) => {
+                        text.capacity() as u64
+                    }
+                })
+                .sum::<u64>()
+    }
+
     pub(crate) fn info(&mut self, message: impl Into<String>) {
         if self.enabled {
             self.entries.push(Diagnostic::Info(message.into()));

@@ -25,7 +25,7 @@ name = "neo_j2k"
 default = ["std", "encode", "simd", "opensim"]
 # required in this version; reserved for a later no_std + alloc build
 std = []
-# the encoder; without it Encoder::new returns Error::Unsupported (stage R5)
+# exposes the native encoder API
 encode = []
 # the AVX2 kernels when the target has AVX2 (stage R3); without it the scalar kernels
 simd = []

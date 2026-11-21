@@ -168,8 +168,8 @@ const nj2k_shim_component_t *nj2k_shim_header_components(const nj2k_shim_header_
 uint32_t nj2k_shim_header_diagnostic(const nj2k_shim_header_t *header, size_t index, uint32_t *severity,
                                      const uint8_t **text, size_t *len);
 void nj2k_shim_header_free(nj2k_shim_header_t *header);
-/* the header from memory, then the decode into planar int32 planes (each component w x h, one
- * after the other) in out (cap samples; the samples needed through *count): the status */
+/* Read the header and report the total number of samples through count. A null out queries this
+ * count only. Otherwise decode into cap samples, packed by component, skipping empty planes. */
 int32_t nj2k_shim_codec_decode_i32(nj2k_codec_t *codec, const uint8_t *data, size_t size, int32_t *out,
                                    uint64_t cap, uint64_t *count);
 typedef struct nj2k_shim_ledger_s {

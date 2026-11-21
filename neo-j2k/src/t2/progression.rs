@@ -7,7 +7,7 @@ use std::ops::Range;
 
 use crate::geometry::Rect;
 use crate::header::{PocEntry, TileCoding};
-use crate::mem::{CType, WorkBudget};
+use crate::mem::{CType, WorkBudget, capacity_bytes};
 use crate::tile::Tile;
 use crate::{Error, ErrorKind};
 
@@ -117,7 +117,16 @@ fn grow<T: Default>(array: &mut Vec<T>, len: usize) -> Result<(), Error> {
 }
 
 impl Grid {
-    pub(super) fn configure(&mut self, tile: &Tile, budget: &mut WorkBudget) -> Result<(), Error> {
+    pub(super) fn retained_bytes(&self) -> u64 {
+        capacity_bytes(&self.components)
+            + self
+                .components
+                .iter()
+                .map(|component| capacity_bytes(&component.resolutions))
+                .sum::<u64>()
+    }
+
+    pub(super) fn configure(&mut self, tile: &Tile, spatial: bool, budget: &mut WorkBudget) -> Result<(), Error> {
         budget.charge(
             PI_COMP.0.checked_mul(tile.comps.len()).ok_or_else(no_memory)?,
             PI_COMP.1,
@@ -147,9 +156,11 @@ impl Grid {
                     pw: res.pw,
                     ph: res.ph,
                 };
-                let level = u32::try_from(count - index - 1).map_err(|_| no_memory())?;
-                update_step(&mut component.step.0, comp.dx, resolution.pdx + level);
-                update_step(&mut component.step.1, comp.dy, resolution.pdy + level);
+                if spatial {
+                    let level = u32::try_from(count - index - 1).map_err(|_| no_memory())?;
+                    update_step(&mut component.step.0, comp.dx, resolution.pdx + level);
+                    update_step(&mut component.step.1, comp.dy, resolution.pdy + level);
+                }
                 self.max_prec = self.max_prec.max(resolution.precincts().ok_or_else(no_memory)?);
             }
             if component.step.0 != 0 {
@@ -167,6 +178,7 @@ impl Grid {
         &self,
         seen: &mut Seen,
         coding: TileCoding,
+        deduplicate: bool,
         budget: &mut WorkBudget,
     ) -> Result<(), Error> {
         let count = (usize::from(coding.numlayers) + 1)
@@ -177,6 +189,11 @@ impl Grid {
             .ok_or_else(no_memory)?;
         let len = usize::try_from(count.div_ceil(64) + 1).map_err(|_| no_memory())?;
         budget.array(CType::U64, len)?;
+        // LRCP and RLCP without a progression change enumerate each packet once.
+        // Keep the same modeled reservation for memory limit parity.
+        if !deduplicate {
+            return Ok(());
+        }
         grow(&mut seen.words, len)?;
         seen.words.truncate(len);
         seen.words.fill(0);
@@ -355,6 +372,10 @@ pub(super) struct Seen {
 }
 
 impl Seen {
+    pub(super) fn retained_bytes(&self) -> u64 {
+        capacity_bytes(&self.words)
+    }
+
     pub(super) fn insert(&mut self, packet: Packet) -> bool {
         let layer = usize::try_from(packet.layer).expect("a layer count fits usize");
         let index = ((layer * self.max_res + packet.res) * self.comps + packet.comp) * self.max_prec + packet.precinct;
@@ -454,7 +475,7 @@ mod tests {
             mct: 0,
         };
         let mut seen = Seen::default();
-        grid.prepare_seen(&mut seen, coding, &mut budget).unwrap();
+        grid.prepare_seen(&mut seen, coding, true, &mut budget).unwrap();
         let short = PocEntry {
             prg: 2,
             resno0: 0,

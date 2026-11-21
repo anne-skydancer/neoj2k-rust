@@ -115,17 +115,8 @@ impl<'data, 'cursor, 'ppm> Reader<'data, 'cursor, 'ppm> {
         budget: &mut WorkBudget,
         diagnostics: &mut Diagnostics,
     ) -> Result<bool, Error> {
-        if packet.layer == 0 {
-            for band in res.bands.iter_mut().filter(|band| !band.empty()) {
-                let precinct = &mut band.precincts[packet.precinct];
-                precinct.incl.reset();
-                precinct.imsb.reset();
-                for block in &mut precinct.cblks {
-                    block.numsegs = 0;
-                    block.real_num_segs = 0;
-                }
-            }
-        }
+        // Tile setup initializes the precincts. Each progression starts at layer zero,
+        // and the packet iterator rejects revisiting layers across progression changes.
         self.read_sop(diagnostics);
         let source = if let Some(ppm) = self.ppm.as_deref() {
             *ppm
@@ -302,11 +293,8 @@ fn read_pass_headers(
                 continue;
             }
             if first {
-                let mut missing = 0;
-                while !precinct.imsb.decode(bio, index, missing)? {
-                    missing += 1;
-                }
-                block.numbps = (band.numbps + 1 - missing).cast_unsigned();
+                let missing = precinct.imsb.decode_value(bio, index)?;
+                block.numbps = (band.numbps - missing).cast_unsigned();
                 block.numlenbits = 3;
             }
             block.numnewpasses = bio.num_passes();

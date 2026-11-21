@@ -4,30 +4,50 @@
 //! Tile-part marker parsing and effective tile-component coding parameters.
 
 use std::num::NonZeroUsize;
+use std::ops::Range;
 
 use super::{
-    CAP, COC, COD, COM, CPF, CRG, CodingStyle, HeaderSettings, MAX_POCS, MainHeader, PLM, PLT, POC, PPM, PPT,
-    PocEntry, QCC, QCD, Quantization, RGN, SIZ, SOP, SOT, TLM, TileCoding, be16, coding,
-    component_room, invalid, no_memory, push_list, read_component, read_rgn,
+    CAP, COC, COD, COM, CPF, CRG, CodingStyle, HeaderSettings, MAX_POCS, MainHeader, PLM, PLT, POC, PPM, PPT, PocEntry,
+    QCC, QCD, Quantization, RGN, SIZ, SOP, SOT, TLM, TileCoding, be16, coding, component_room, invalid, no_memory,
+    push_list, read_component, read_rgn,
 };
 #[cfg(test)]
 use super::{EOC, EPH, SOC, SOD, be32, need_data};
 use crate::error::Diagnostics;
-use crate::mem::{CType, HeaderLedger};
+use crate::mem::{CType, HeaderLedger, capacity_bytes};
 use crate::{Error, ErrorKind};
 
 const PAGE_TILES: usize = 128;
 
 /// A directory of overrides for tiles whose tile parts supplied them.
 #[derive(Debug, Default)]
-pub(crate) struct TileDirectory<'data> {
+pub(crate) struct TileDirectory {
     pages: Vec<Option<NonZeroUsize>>,
     slots: Vec<[Option<NonZeroUsize>; PAGE_TILES]>,
-    overrides: Vec<TileOverrides<'data>>,
+    overrides: Vec<TileOverridesData>,
+    active: usize,
 }
 
-impl<'data> TileDirectory<'data> {
-    pub(crate) fn find(&self, tile: u32) -> Option<&TileOverrides<'data>> {
+impl TileDirectory {
+    pub(crate) fn retained_bytes(&self) -> u64 {
+        capacity_bytes(&self.pages)
+            + capacity_bytes(&self.slots)
+            + capacity_bytes(&self.overrides)
+            + self
+                .overrides
+                .iter()
+                .map(TileOverridesData::retained_bytes)
+                .sum::<u64>()
+    }
+
+    /// Start a new codestream while keeping storage for the sparse directory and overrides.
+    pub(crate) fn reset(&mut self) {
+        self.pages.clear();
+        self.slots.clear();
+        self.active = 0;
+    }
+
+    pub(crate) fn find(&self, tile: u32) -> Option<&TileOverridesData> {
         let tile = tile as usize;
         let page = self.pages.get(tile / PAGE_TILES).copied().flatten()?.get() - 1;
         let index = self.slots[page][tile % PAGE_TILES]?.get() - 1;
@@ -39,7 +59,7 @@ impl<'data> TileDirectory<'data> {
         tile_count: u32,
         tile: u16,
         ledger: &mut HeaderLedger,
-    ) -> Result<&mut TileOverrides<'data>, Error> {
+    ) -> Result<&mut TileOverridesData, Error> {
         if u32::from(tile) >= tile_count {
             return Err(invalid(format!("Invalid tile number {tile}\n")));
         }
@@ -61,20 +81,28 @@ impl<'data> TileDirectory<'data> {
         let page = self.pages[page].expect("page was just allocated").get() - 1;
         if self.slots[page][slot].is_none() {
             ledger.array(CType::TileOverrides, 1)?;
-            self.overrides.try_reserve(1).map_err(|_| no_memory())?;
-            self.overrides.push(TileOverrides {
-                tile,
-                ..TileOverrides::default()
-            });
-            self.slots[page][slot] = NonZeroUsize::new(self.overrides.len());
+            if let Some(overrides) = self.overrides.get_mut(self.active) {
+                overrides.reset(tile);
+            } else {
+                self.overrides.try_reserve(1).map_err(|_| no_memory())?;
+                self.overrides.push(TileOverridesData {
+                    tile,
+                    ..TileOverridesData::default()
+                });
+            }
+            self.active += 1;
+            self.slots[page][slot] = NonZeroUsize::new(self.active);
         }
         let index = self.slots[page][slot].expect("tile was just allocated").get() - 1;
         Ok(&mut self.overrides[index])
     }
 }
 
+/// The tile-parameter reader keeps the existing spelling while the state holds offsets.
+pub(crate) type TileOverrides<'data> = TileOverridesData;
+
 #[derive(Debug, Default)]
-pub(crate) struct TileOverrides<'data> {
+pub(crate) struct TileOverridesData {
     tile: u16,
     cod: Option<(TileCoding, CodingStyle)>,
     qcd: Option<Quantization>,
@@ -82,16 +110,36 @@ pub(crate) struct TileOverrides<'data> {
     qcc: Vec<(u16, Quantization)>,
     rgn: Vec<(u16, u8)>,
     pub(crate) poc: Vec<PocEntry>,
-    ppt: Vec<(u8, &'data [u8])>,
+    // Byte ranges in the input for this decode, so the directory can outlive its borrow.
+    ppt: Vec<(u8, Range<usize>)>,
 }
 
-impl<'data> TileOverrides<'data> {
+impl TileOverridesData {
+    fn retained_bytes(&self) -> u64 {
+        capacity_bytes(&self.coc)
+            + capacity_bytes(&self.qcc)
+            + capacity_bytes(&self.rgn)
+            + capacity_bytes(&self.poc)
+            + capacity_bytes(&self.ppt)
+    }
+
+    fn reset(&mut self, tile: u16) {
+        self.tile = tile;
+        self.cod = None;
+        self.qcd = None;
+        self.coc.clear();
+        self.qcc.clear();
+        self.rgn.clear();
+        self.poc.clear();
+        self.ppt.clear();
+    }
+
     pub(crate) fn has_own_coding(&self) -> bool {
         self.cod.is_some() || !self.coc.is_empty()
     }
 
-    pub(crate) fn packed_headers(&self) -> impl Iterator<Item = (u8, &'data [u8])> + '_ {
-        self.ppt.iter().copied()
+    pub(crate) fn packed_headers(&self) -> impl ExactSizeIterator<Item = (u8, Range<usize>)> + '_ {
+        self.ppt.iter().cloned()
     }
 }
 
@@ -100,13 +148,14 @@ pub(crate) struct TileMarker<'data> {
     pub(crate) tile: u16,
     pub(crate) code: u16,
     pub(crate) body: &'data [u8],
+    pub(crate) body_start: usize,
 }
 
 fn read_poc_entries(
     body: &[u8],
     numcomps: u32,
     main_pocs: usize,
-    tile: &mut TileOverrides<'_>,
+    tile: &mut TileOverridesData,
     ledger: &mut HeaderLedger,
 ) -> Result<(), Error> {
     let room = component_room(numcomps);
@@ -132,7 +181,12 @@ fn read_poc_entries(
     Ok(())
 }
 
-fn add_ppt<'data>(body: &'data [u8], tile: &mut TileOverrides<'data>, ledger: &mut HeaderLedger) -> Result<(), Error> {
+fn add_ppt(
+    body: &[u8],
+    body_start: usize,
+    tile: &mut TileOverridesData,
+    ledger: &mut HeaderLedger,
+) -> Result<(), Error> {
     if body.len() < 2 {
         return Err(invalid("Error reading PPT marker\n"));
     }
@@ -140,7 +194,7 @@ fn add_ppt<'data>(body: &'data [u8], tile: &mut TileOverrides<'data>, ledger: &m
     if tile.ppt.iter().any(|chunk| chunk.0 == index) {
         return Err(invalid(format!("Zppt {index} already read\n")));
     }
-    let chunk = (index, &body[1..]);
+    let chunk = (index, body_start + 1..body_start + body.len());
     push_list(&mut tile.ppt, CType::PackedChunk, chunk, ledger)
 }
 
@@ -164,15 +218,20 @@ fn check_plt(body: &[u8]) -> Result<(), Error> {
 
 /// Validate and record a single segment whose marker code and complete body were already read.
 /// The decode walk charges the body to its tile arena before this call.
-pub(crate) fn read_tile_part_marker<'data>(
+pub(crate) fn read_tile_part_marker(
     main: &MainHeader,
-    directory: &mut TileDirectory<'data>,
-    marker: TileMarker<'data>,
+    directory: &mut TileDirectory,
+    marker: TileMarker<'_>,
     settings: HeaderSettings,
     ledger: &mut HeaderLedger,
     diagnostics: &mut Diagnostics,
 ) -> Result<(), Error> {
-    let TileMarker { tile, code, body } = marker;
+    let TileMarker {
+        tile,
+        code,
+        body,
+        body_start,
+    } = marker;
     let tile = match code {
         COD | COC | QCD | QCC | RGN | POC | PPT => directory.ensure(main.tile_count(), tile, ledger)?,
         PLT => return check_plt(body),
@@ -217,7 +276,7 @@ pub(crate) fn read_tile_part_marker<'data>(
                     "Error reading PPT marker: packet header have been previously found in the main header (PPM marker).\n",
                 ));
             }
-            add_ppt(body, tile, ledger)?;
+            add_ppt(body, body_start, tile, ledger)?;
         }
         _ => unreachable!("non-override markers were already handled"),
     }
@@ -245,11 +304,11 @@ fn subtract_marker_room(room: u32, size: u32) -> Result<u32, Error> {
 /// Read a tile-part header from its SOT marker through SOD. The main decode walk can feed the
 /// individual segments instead when it needs its OpenJPEG stream-state and truncation handling.
 #[cfg(test)]
-pub(crate) fn read_tile_part_header<'data>(
-    data: &'data [u8],
+pub(crate) fn read_tile_part_header(
+    data: &[u8],
     sot: usize,
     main: &MainHeader,
-    directory: &mut TileDirectory<'data>,
+    directory: &mut TileDirectory,
     settings: HeaderSettings,
     ledger: &mut HeaderLedger,
     diagnostics: &mut Diagnostics,
@@ -313,6 +372,7 @@ pub(crate) fn read_tile_part_header<'data>(
                 format!("Marker 0x{code:04X} is a JPEG 2000 Part 2 extension, not supported\n"),
             ));
         }
+        let body_start = data.len() - rest.len();
         let (body, rest) = rest
             .split_at_checked(usize::from(length - 2))
             .ok_or_else(missing_header)?;
@@ -321,7 +381,12 @@ pub(crate) fn read_tile_part_header<'data>(
         read_tile_part_marker(
             main,
             directory,
-            TileMarker { tile, code, body },
+            TileMarker {
+                tile,
+                code,
+                body,
+                body_start,
+            },
             settings,
             ledger,
             diagnostics,
@@ -348,7 +413,7 @@ pub(crate) struct TileComponentParams<'a> {
 
 fn component_defaults<'a>(
     main: &'a MainHeader,
-    tile: Option<&'a TileOverrides<'_>>,
+    tile: Option<&'a TileOverridesData>,
     comp: u32,
 ) -> TileComponentParams<'a> {
     let (coding, style) = tile
@@ -389,7 +454,7 @@ fn check_steps(params: TileComponentParams<'_>, tile: Option<u16>, comp: u32) ->
 
 pub(crate) fn resolve_tile_component<'a>(
     main: &'a MainHeader,
-    tile: Option<&'a TileOverrides<'_>>,
+    tile: Option<&'a TileOverridesData>,
     comp: u32,
 ) -> Result<TileComponentParams<'a>, Error> {
     if comp >= main.numcomps {
@@ -408,7 +473,7 @@ pub(crate) fn resolve_tile_component<'a>(
 /// Resolve all component parameters in one pass over the defaults and the sparse overrides.
 pub(crate) fn resolve_tile<'a>(
     main: &'a MainHeader,
-    tile: Option<&'a TileOverrides<'_>>,
+    tile: Option<&'a TileOverridesData>,
 ) -> Result<Vec<TileComponentParams<'a>>, Error> {
     let mut params = Vec::new();
     params
@@ -474,11 +539,7 @@ mod tests {
         (main, data)
     }
 
-    fn parse<'data>(
-        main: &MainHeader,
-        data: &'data [u8],
-        dir: &mut TileDirectory<'data>,
-    ) -> Result<TilePartHeader, Error> {
+    fn parse(main: &MainHeader, data: &[u8], dir: &mut TileDirectory) -> Result<TilePartHeader, Error> {
         read_tile_part_header(
             data,
             usize::try_from(main.end).unwrap(),
@@ -528,7 +589,11 @@ mod tests {
         assert_eq!(component.style.numresolutions, 2);
         assert_eq!(component.quant.step(0), (10, 0));
         assert_eq!(component.roishift, 3);
-        assert_eq!(tile.packed_headers().collect::<Vec<_>>(), [(0, &[0x41][..])]);
+        let packets: Vec<_> = tile
+            .packed_headers()
+            .map(|(index, range)| (index, &data[range]))
+            .collect();
+        assert_eq!(packets, [(0, &[0x41][..])]);
 
         let (main, mut short_quantization) = codestream();
         marker(&mut short_quantization, COC, &[0, 0, 1, 4, 4, 0, 1]);
@@ -540,5 +605,29 @@ mod tests {
             error.message(),
             "Tile 0, component 0: the quantization gives 1 step sizes for 4 sub-bands\n"
         );
+    }
+
+    #[test]
+    fn sparse_override_slots_keep_storage_without_retaining_previous_markers() {
+        let mut directory = TileDirectory::default();
+        let mut ledger = HeaderLedger::default();
+        let first = directory.ensure(300, 129, &mut ledger).unwrap();
+        add_ppt(&[7, 0xaa], 90, first, &mut ledger).unwrap();
+        first.rgn.push((0, 4));
+        let storage = first.ppt.as_ptr();
+        directory.ensure(300, 2, &mut ledger).unwrap();
+        assert!(directory.find(129).is_some());
+        assert!(directory.find(2).is_some());
+
+        directory.reset();
+        assert!(directory.find(129).is_none());
+        assert!(directory.find(2).is_none());
+        let next = directory.ensure(2, 1, &mut ledger).unwrap();
+        assert_eq!(next.ppt.as_ptr(), storage);
+        assert!(next.rgn.is_empty());
+        assert_eq!(next.packed_headers().len(), 0);
+        add_ppt(&[7, 0xbb, 0xcc], 115, next, &mut ledger).unwrap();
+        assert_eq!(next.packed_headers().next(), Some((7, 116..118)));
+        assert!(directory.find(129).is_none());
     }
 }

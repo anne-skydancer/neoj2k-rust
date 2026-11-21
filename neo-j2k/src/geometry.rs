@@ -231,7 +231,14 @@ pub(crate) fn working_memory_selected(main: &MainHeader, reduce: u32, slots: Opt
     for row in indices(main.th).into_iter().flatten() {
         for col in indices(main.tw).into_iter().flatten() {
             let tile = row * main.tw + col;
-            largest = largest.max(tile_bytes(main, tile, reduce, main.cod.numlayers, |c| main.main_style(c), slots));
+            largest = largest.max(tile_bytes(
+                main,
+                tile,
+                reduce,
+                main.cod.numlayers,
+                |c| main.main_style(c),
+                slots,
+            ));
         }
     }
     image_bytes(main, reduce, slots).saturating_add(largest)

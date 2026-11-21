@@ -3,9 +3,9 @@
 
 #![cfg(not(miri))]
 
-use neo_j2k::{DecodeParams, DecodeTarget, Decoder, DecoderConfig, ErrorKind, OutputPlane, SampleType};
+use neo_j2k::{DecodeParams, DecodeTarget, Decoder, DecoderConfig, ErrorKind, Limits, OutputPlane, SampleType};
 use neo_j2k_oracle::{Codec, Format};
-use neo_j2k_testkit::files::{base_name, corpus_dir, expand_inputs};
+use neo_j2k_testkit::files::{base_name, corpus_dir, expand_inputs, testdata_dir};
 
 fn codecs(reduce: u32) -> (Decoder, Codec) {
     (
@@ -24,13 +24,22 @@ fn compare(rust: &mut Decoder, cpp: &mut Codec, input: &[u8], label: &str) {
         Ok(image) => {
             assert_eq!(i32::from(image.truncated), status, "{label}: status");
             let actual = image.components.iter().flat_map(|comp| comp.samples().iter().copied());
-            assert_eq!(image.components.iter().map(|c| c.samples().len()).sum::<usize>(), samples.len(), "{label}: sample count");
+            assert_eq!(
+                image.components.iter().map(|c| c.samples().len()).sum::<usize>(),
+                samples.len(),
+                "{label}: sample count"
+            );
             for (index, (actual, expected)) in actual.zip(samples).enumerate() {
                 assert_eq!(actual, expected, "{label}: sample {index}");
             }
         }
         Err(error) => {
-            assert_eq!(error.kind() as i32, status, "{label}: {error:?}, {:?}", rust.diagnostics());
+            assert_eq!(
+                error.kind() as i32,
+                status,
+                "{label}: {error:?}, {:?}",
+                rust.diagnostics()
+            );
         }
     }
 }
@@ -48,6 +57,46 @@ fn whole_memory_decodes_match_cpp_at_every_reduce_level() {
         let (mut rust, mut cpp) = codecs(reduce);
         for (name, input) in &inputs {
             compare(&mut rust, &mut cpp, input, &format!("{name}, reduce {reduce}"));
+        }
+    }
+}
+
+#[test]
+fn conformance_pixels_match_cpp_when_test_data_is_available() {
+    let Some(directory) = testdata_dir().map(|root| root.join("input/conformance")) else {
+        return;
+    };
+    let files = expand_inputs(&directory, true);
+    assert!(!files.is_empty(), "no conformance files in {}", directory.display());
+    let memory = 64 << 20;
+    for path in files {
+        let jp2 = path
+            .extension()
+            .and_then(|ext| ext.to_str())
+            .is_some_and(|ext| ext.eq_ignore_ascii_case("jp2") || ext.eq_ignore_ascii_case("jph"));
+        let input = std::fs::read(&path).expect("a conformance file");
+        for reduce in [0, 2, 5] {
+            let mut rust = Decoder::new(DecoderConfig {
+                format: if jp2 {
+                    neo_j2k::Format::Jp2
+                } else {
+                    neo_j2k::Format::J2k
+                },
+                reduce,
+                limits: Limits {
+                    max_memory: memory,
+                    ..Limits::default()
+                },
+                capture_diagnostics: true,
+                ..DecoderConfig::default()
+            });
+            let mut cpp = Codec::new(if jp2 { Format::Jp2 } else { Format::J2k }, reduce, memory).unwrap();
+            compare(
+                &mut rust,
+                &mut cpp,
+                &input,
+                &format!("{}, reduce {reduce}", base_name(&path)),
+            );
         }
     }
 }
@@ -118,7 +167,10 @@ fn u8_interleaved_output_supports_bottom_up_rows_and_preserves_padding() {
                 &data,
                 DecodeParams::default(),
                 SampleType::U8,
-                &mut [DecodeTarget { bytes: &mut bytes, planes: &packing }],
+                &mut [DecodeTarget {
+                    bytes: &mut bytes,
+                    planes: &packing
+                }],
             )
             .unwrap()
     );
@@ -134,13 +186,19 @@ fn u8_interleaved_output_supports_bottom_up_rows_and_preserves_padding() {
     }
 
     let original = bytes.clone();
-    let packing = [OutputPlane { offset: 0, ..packing[0] }];
+    let packing = [OutputPlane {
+        offset: 0,
+        ..packing[0]
+    }];
     let error = rust
         .decode_into(
             &data,
             DecodeParams::default(),
             SampleType::U8,
-            &mut [DecodeTarget { bytes: &mut bytes, planes: &packing }],
+            &mut [DecodeTarget {
+                bytes: &mut bytes,
+                planes: &packing,
+            }],
         )
         .unwrap_err();
     assert_eq!(error.kind(), ErrorKind::Output);

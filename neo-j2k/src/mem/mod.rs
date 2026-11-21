@@ -10,3 +10,7 @@ mod work;
 pub(crate) use header::HeaderLedger;
 pub(crate) use layout::CType;
 pub(crate) use work::WorkBudget;
+
+pub(crate) fn capacity_bytes<T>(storage: &Vec<T>) -> u64 {
+    storage.capacity() as u64 * size_of::<T>() as u64
+}

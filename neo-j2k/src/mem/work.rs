@@ -41,6 +41,10 @@ impl Default for WorkBudget {
 }
 
 impl WorkBudget {
+    pub(crate) fn retained_bytes(&self) -> u64 {
+        super::capacity_bytes(&self.blocks)
+    }
+
     pub(crate) fn reset(&mut self, retain: u64, maximum: u64) {
         self.maximum = maximum;
         self.cursor = Mark::default();

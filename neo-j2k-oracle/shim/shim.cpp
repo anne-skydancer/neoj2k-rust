@@ -777,17 +777,29 @@ int32_t nj2k_shim_codec_decode_i32(nj2k_codec_t* codec, const uint8_t* data, siz
         return nj2k_get_status(codec);
     }
     try {
-        std::vector<nj2k_plane_t> planes(image.numcomps);
         std::uint64_t at = 0;
         for (std::uint32_t c = 0; c < image.numcomps; ++c) {
-            planes[c] = nj2k_plane_t{out ? out + at : nullptr, std::int64_t(image.comps[c].w) * 4, 4, c};
             at += std::uint64_t(image.comps[c].w) * image.comps[c].h;
         }
         *count = at;
+        if (!out) {
+            return NJ2K_OK;
+        }
         if (at > cap) {
             return NJ2K_E_OUTPUT;
         }
-        const nj2k_output_t output{sizeof(nj2k_output_t), NJ2K_SAMPLE_I32, image.numcomps, planes.data()};
+        std::vector<nj2k_plane_t> planes;
+        planes.reserve(image.numcomps);
+        at = 0;
+        for (std::uint32_t c = 0; c < image.numcomps; ++c) {
+            const auto& comp = image.comps[c];
+            if (comp.w && comp.h) {
+                planes.push_back(nj2k_plane_t{out + at, std::int64_t(comp.w) * 4, 4, c});
+                at += std::uint64_t(comp.w) * comp.h;
+            }
+        }
+        const nj2k_output_t output{sizeof(nj2k_output_t), NJ2K_SAMPLE_I32, static_cast<uint32_t>(planes.size()),
+                                   planes.data()};
         nj2k_decode_memory(codec, data, size, &output);
         return nj2k_get_status(codec);
     } catch (...) {

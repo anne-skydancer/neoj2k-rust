@@ -40,29 +40,41 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-//! Scalar inverse wavelet transforms of a whole tile-component.
+//! Inverse wavelet transforms of a whole tile-component.
 
 use crate::geometry::Rect;
+#[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+use crate::simd::dwt as vector;
 use crate::{Error, ErrorKind};
 
 const GROUP_WIDTH_53: usize = 16;
 
-const ALPHA: f32 = f32::from_bits(0xbfcb_0673);
-const BETA: f32 = f32::from_bits(0xbd59_01ae);
-const GAMMA: f32 = f32::from_bits(0x3f62_0676);
-const DELTA: f32 = f32::from_bits(0x3ee3_1355);
-const K: f32 = f32::from_bits(0x3f9d_7658);
+pub(crate) const ALPHA: f32 = f32::from_bits(0xbfcb_0673);
+pub(crate) const BETA: f32 = f32::from_bits(0xbd59_01ae);
+pub(crate) const GAMMA: f32 = f32::from_bits(0x3f62_0676);
+pub(crate) const DELTA: f32 = f32::from_bits(0x3ee3_1355);
+pub(crate) const K: f32 = f32::from_bits(0x3f9d_7658);
 // OpenJPEG keeps this high-band scale and compensates for it in dequantisation.
-const TWO_INV_K: f32 = f32::from_bits(0x3fd0_1800);
+pub(crate) const TWO_INV_K: f32 = f32::from_bits(0x3fd0_1800);
 
-/// One line, reused for both wavelets and across tile-components.
+/// Scratch for one scalar line or eight SIMD lines, reused across tile-components.
 #[derive(Debug, Default)]
 pub(crate) struct Workspace {
     line: Vec<i32>,
 }
 
+impl Workspace {
+    pub(crate) fn retained_bytes(&self) -> u64 {
+        crate::mem::capacity_bytes(&self.line)
+    }
+}
+
 fn invalid_geometry() -> Error {
     Error::new(ErrorKind::Data, "Invalid tile-component wavelet geometry\n")
+}
+
+fn no_memory() -> Error {
+    Error::new(ErrorKind::NoMemory, "Not enough memory for the inverse wavelet\n")
 }
 
 fn dimensions(rect: Rect) -> Option<(usize, usize)> {
@@ -83,6 +95,16 @@ fn coarser_matches(coarse: Rect, fine: Rect) -> bool {
 /// samples and each level's subbands occupy its upper-left quadrants. Irreversible samples use
 /// the bit representation of `f32` in the same buffer. Padding beyond a level is preserved.
 pub(crate) fn inverse(
+    data: &mut [i32],
+    stride: usize,
+    resolutions: &[Rect],
+    reversible: bool,
+    workspace: &mut Workspace,
+) -> Result<(), Error> {
+    inverse_with::<true>(data, stride, resolutions, reversible, workspace)
+}
+
+fn inverse_with<const VECTOR: bool>(
     data: &mut [i32],
     stride: usize,
     resolutions: &[Rect],
@@ -111,11 +133,24 @@ pub(crate) fn inverse(
     }
 
     let scratch_size = width.max(height);
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+    let scratch_size = if VECTOR {
+        let row = if !reversible && height >= vector::LANES {
+            width
+        } else {
+            0
+        };
+        let group = if reversible { GROUP_WIDTH_53 } else { vector::LANES };
+        let column = if width >= group { height } else { 0 };
+        scratch_size.max(row.max(column).checked_mul(vector::LANES).ok_or_else(no_memory)?)
+    } else {
+        scratch_size
+    };
     if workspace.line.len() < scratch_size {
         workspace
             .line
             .try_reserve_exact(scratch_size - workspace.line.len())
-            .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory for the inverse wavelet\n"))?;
+            .map_err(|_| no_memory())?;
         workspace.line.resize(scratch_size, 0);
     }
     for &rect in finer {
@@ -125,7 +160,29 @@ pub(crate) fn inverse(
         }
         let x_parity = usize::from(rect.x0 & 1 != 0);
         let y_parity = usize::from(rect.y0 & 1 != 0);
-        for row in 0..height {
+        let rows_done = 0;
+        #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+        let rows_done = if VECTOR && !reversible && height >= vector::LANES {
+            let rows = height / vector::LANES * vector::LANES;
+            let lanes = workspace.line[..width * vector::LANES]
+                .as_chunks_mut::<{ vector::LANES }>()
+                .0;
+            let groups = (0..rows).step_by(vector::LANES);
+            // Two blocks in each band amortize the transpose setup.
+            if width >= 4 * vector::LANES {
+                for row in groups {
+                    vector::inverse_97_rows(&mut data[row * stride..], stride, x_parity, lanes);
+                }
+            } else {
+                for row in groups {
+                    vector::inverse(&mut data[row * stride..], 1, stride, x_parity, false, lanes);
+                }
+            }
+            rows
+        } else {
+            rows_done
+        };
+        for row in rows_done..height {
             let offset = row * stride;
             inverse_line(
                 &mut data[offset..offset + width],
@@ -137,7 +194,27 @@ pub(crate) fn inverse(
             );
         }
         let group_end = width / GROUP_WIDTH_53 * GROUP_WIDTH_53;
-        for col in 0..width {
+        let columns_done = 0;
+        #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+        let columns_done = if VECTOR {
+            let columns = if reversible {
+                group_end
+            } else {
+                width / vector::LANES * vector::LANES
+            };
+            if columns != 0 {
+                let lanes = workspace.line[..height * vector::LANES]
+                    .as_chunks_mut::<{ vector::LANES }>()
+                    .0;
+                for col in (0..columns).step_by(vector::LANES) {
+                    vector::inverse(&mut data[col..], stride, 1, y_parity, reversible, lanes);
+                }
+            }
+            columns
+        } else {
+            columns_done
+        };
+        for col in columns_done..width {
             inverse_line(
                 &mut data[col..],
                 stride,
@@ -153,49 +230,114 @@ pub(crate) fn inverse(
 
 fn inverse_line(data: &mut [i32], stride: usize, parity: usize, reversible: bool, full_group: bool, line: &mut [i32]) {
     let len = line.len();
-    let low_len = len / 2 + (len % 2) * (1 - parity);
-    for (i, sample) in line.iter_mut().enumerate() {
-        let index = if i % 2 == parity { i / 2 } else { low_len + i / 2 };
-        *sample = data[index * stride];
-    }
-    if reversible {
-        inverse_53(line, parity, full_group);
-    } else {
-        inverse_97(line, parity);
-    }
-    for (i, &sample) in line.iter().enumerate() {
-        data[i * stride] = sample;
-    }
-}
-
-fn inverse_53(line: &mut [i32], parity: usize, full_group: bool) {
-    if let [sample] = line {
-        if parity == 1 {
-            *sample /= 2;
+    if len < 2 {
+        if len == 1 && reversible && parity == 1 {
+            data[0] /= 2;
         }
         return;
     }
-    let last = line.len() - 1;
-    // A two-sample odd-origin column uses the scalar shortcut even in a full group.
-    let group_edges = full_group && (parity == 0 || last > 1);
-    for at in (parity..=last).step_by(2) {
-        let previous = line[at.abs_diff(1)];
-        let next = line[if at == last { last - 1 } else { at + 1 }];
-        let adjustment = if (at == 0 || at == last) && !group_edges {
-            previous.wrapping_add(1) >> 1
-        } else {
-            previous.wrapping_add(next).wrapping_add(2) >> 2
-        };
-        line[at] = line[at].wrapping_sub(adjustment);
+    let low_len = len / 2 + (len % 2) * (1 - parity);
+    if !reversible {
+        for (i, sample) in line.iter_mut().enumerate() {
+            let index = if i % 2 == parity { i / 2 } else { low_len + i / 2 };
+            *sample = data[index * stride];
+        }
+        inverse_97(line, parity);
+        for (i, &sample) in line.iter().enumerate() {
+            data[i * stride] = sample;
+        }
+        return;
     }
-    for at in ((1 - parity)..=last).step_by(2) {
-        let previous = line[at.abs_diff(1)];
-        let adjustment = if at == 0 || at == last {
-            previous
+
+    let (low, high) = data.split_at(low_len * stride);
+    let low = low.iter().step_by(stride).copied();
+    let high = high.iter().step_by(stride).take(len - low_len).copied();
+    inverse_53(low, high, parity, full_group, line);
+    if stride == 1 {
+        data[..len].copy_from_slice(line);
+    } else {
+        for (out, &sample) in data.iter_mut().step_by(stride).zip(line.iter()) {
+            *out = sample;
+        }
+    }
+}
+
+fn update_53(a: i32, b: i32) -> i32 {
+    a.wrapping_add(b).wrapping_add(2) >> 2
+}
+
+fn edge_53(sample: i32, full_group: bool) -> i32 {
+    if full_group {
+        update_53(sample, sample)
+    } else {
+        sample.wrapping_add(1) >> 1
+    }
+}
+
+fn predict_53(high: i32, left: i32, right: i32) -> i32 {
+    high.wrapping_add(left.wrapping_add(right) >> 1)
+}
+
+// Each newly adjusted low sample finishes the previous high sample. Emit pairs directly into
+// scratch instead of interleaving the bands and walking the scratch twice to lift them.
+fn inverse_53(
+    mut low: impl Iterator<Item = i32>,
+    mut high: impl Iterator<Item = i32>,
+    parity: usize,
+    full_group: bool,
+    line: &mut [i32],
+) {
+    let odd_length = !line.len().is_multiple_of(2);
+    let first_low = low.next().expect("low band of a nontrivial line");
+    let first_high = high.next().expect("high band of a nontrivial line");
+    if parity == 0 {
+        let (mut a, mut b) = (first_low.wrapping_sub(edge_53(first_high, full_group)), first_high);
+        let (pairs, trailing) = line.as_chunks_mut::<2>();
+        let (last, body) = pairs.split_last_mut().expect("at least one pair");
+        for ((next_high, next_low), out) in high.zip(low.by_ref()).zip(body) {
+            let adjusted = next_low.wrapping_sub(update_53(b, next_high));
+            *out = [a, predict_53(b, a, adjusted)];
+            (a, b) = (adjusted, next_high);
+        }
+        if odd_length {
+            let adjusted = low
+                .next()
+                .expect("the extra low sample")
+                .wrapping_sub(edge_53(b, full_group));
+            *last = [a, predict_53(b, a, adjusted)];
+            trailing[0] = adjusted;
         } else {
-            previous.wrapping_add(line[at + 1]) >> 1
-        };
-        line[at] = line[at].wrapping_add(adjustment);
+            *last = [a, b.wrapping_add(a)];
+        }
+        return;
+    }
+
+    let Some(mut b) = high.next() else {
+        // The two-sample odd-origin shortcut uses the scalar mirror even in a full column group.
+        let a = first_low.wrapping_sub(edge_53(first_high, false));
+        line.copy_from_slice(&[first_high.wrapping_add(a), a]);
+        return;
+    };
+    let mut a = first_low.wrapping_sub(update_53(first_high, b));
+    line[0] = first_high.wrapping_add(a);
+    let (pairs, trailing) = line[1..].as_chunks_mut::<2>();
+    let (last, body) = pairs
+        .split_last_mut()
+        .expect("at least one pair after the odd-origin sample");
+    for ((next_high, next_low), out) in high.zip(low.by_ref()).zip(body) {
+        let adjusted = next_low.wrapping_sub(update_53(b, next_high));
+        *out = [a, predict_53(b, a, adjusted)];
+        (a, b) = (adjusted, next_high);
+    }
+    if odd_length {
+        *last = [a, b.wrapping_add(a)];
+    } else {
+        let adjusted = low
+            .next()
+            .expect("the final low sample")
+            .wrapping_sub(edge_53(b, full_group));
+        *last = [a, predict_53(b, a, adjusted)];
+        trailing[0] = adjusted;
     }
 }
 
@@ -222,9 +364,6 @@ fn lift_97(line: &mut [i32], parity: usize, coefficient: f32) {
 }
 
 fn inverse_97(line: &mut [i32], parity: usize) {
-    if line.len() < 2 {
-        return;
-    }
     for sample in line.iter_mut().skip(parity).step_by(2) {
         *sample = to_sample(from_sample(*sample) * K);
     }
@@ -328,6 +467,50 @@ mod tests {
         );
         assert_eq!(error.unwrap_err().kind(), ErrorKind::Data);
         assert_eq!(data, [10, 20, 30]);
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+    #[test]
+    fn avx2_lanes_match_scalar_and_reuse_scratch() {
+        let mut scalar = Workspace::default();
+        let mut avx2 = Workspace::default();
+        for (w, h, x, y) in [
+            (16_u32, 2_u32, 0_u32, 1_u32),
+            (17, 4, 1, 1),
+            (9, 3, 1, 0),
+            (3, 9, 0, 1),
+            (17, 17, 1, 1),
+            (33, 35, 1, 1),
+        ] {
+            let levels = [
+                rect(x.div_ceil(2), y.div_ceil(2), (x + w).div_ceil(2), (y + h).div_ceil(2)),
+                rect(x, y, x + w, y + h),
+            ];
+            let stride = usize::try_from(w + 5).unwrap();
+            for reversible in [true, false] {
+                let original: Vec<_> = (0..stride * usize::try_from(h).unwrap())
+                    .map(|index| {
+                        let word = u32::try_from(index).unwrap().wrapping_mul(0x9e37_79b9);
+                        if reversible {
+                            word.cast_signed()
+                        } else {
+                            to_sample((f32::from(word.to_le_bytes()[0]) - 127.0) / 16.0)
+                        }
+                    })
+                    .collect();
+                let mut expected = original.clone();
+                inverse_with::<false>(&mut expected, stride, &levels, reversible, &mut scalar).unwrap();
+                let mut actual = original.clone();
+                inverse(&mut actual, stride, &levels, reversible, &mut avx2).unwrap();
+                assert_eq!(actual, expected);
+
+                let buffer = avx2.line.as_ptr();
+                actual.copy_from_slice(&original);
+                inverse(&mut actual, stride, &levels, reversible, &mut avx2).unwrap();
+                assert_eq!(avx2.line.as_ptr(), buffer);
+                assert_eq!(actual, expected);
+            }
+        }
     }
 }
 

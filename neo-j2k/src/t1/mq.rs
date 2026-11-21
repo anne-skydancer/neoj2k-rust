@@ -12,6 +12,7 @@ pub(super) const CONTEXT_UNIFORM: usize = 18;
 pub(super) struct Decoder<'a> {
     data: &'a [u8],
     position: usize,
+    current: u32,
     a: u32,
     c: u32,
     bits: u32,
@@ -23,6 +24,7 @@ impl<'a> Decoder<'a> {
         let mut decoder = Self {
             data: &[],
             position: 0,
+            current: 0,
             a: 0x8000,
             c: 0,
             bits: 0,
@@ -46,7 +48,8 @@ impl<'a> Decoder<'a> {
             self.c = 0;
             self.bits = 0;
         } else {
-            self.c = self.byte(0) << 16;
+            self.current = self.byte(0);
+            self.c = self.current << 16;
             self.byte_in();
             self.c <<= 7;
             self.bits -= 7;
@@ -61,8 +64,9 @@ impl<'a> Decoder<'a> {
 
     fn byte_in(&mut self) {
         let next = self.byte(self.position + 1);
-        let contribution = if self.byte(self.position) != 0xff {
+        let contribution = if self.current != 0xff {
             self.position += 1;
+            self.current = next;
             self.bits = 8;
             next << 8
         } else if next > 0x8f {
@@ -70,24 +74,25 @@ impl<'a> Decoder<'a> {
             0xff00
         } else {
             self.position += 1;
+            self.current = next;
             self.bits = 7;
             next << 9
         };
         self.c = self.c.wrapping_add(contribution);
     }
 
+    #[inline]
     fn renormalize(&mut self) {
-        let mut shifts = self.a.leading_zeros() - 16;
-        while shifts > 0 {
-            if self.bits == 0 {
-                self.byte_in();
-            }
-            let count = shifts.min(self.bits);
-            self.a <<= count;
-            self.c <<= count;
-            self.bits -= count;
-            shifts -= count;
+        let total = self.a.leading_zeros() - 16;
+        let mut shifts = total;
+        while shifts > self.bits {
+            self.c <<= self.bits;
+            shifts -= self.bits;
+            self.byte_in();
         }
+        self.a <<= total;
+        self.c <<= shifts;
+        self.bits -= shifts;
     }
 
     #[inline]

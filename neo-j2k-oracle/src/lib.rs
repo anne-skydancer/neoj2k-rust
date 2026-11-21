@@ -793,37 +793,34 @@ impl Codec {
     /// The header from memory, then the decode into planar `int32` planes (each component `w x h`,
     /// one after the other): the status (`NJ2K_OK`, `NJ2K_TRUNCATED` or an error) and the samples.
     pub fn decode_i32(&mut self, data: &[u8]) -> (i32, Vec<i32>) {
-        let mut need = 0u64;
-        // SAFETY: the codec is live, data valid for its length; with no output (cap 0) the shim
-        // reads the header and gives the samples needed.
-        let st = unsafe {
-            ffi::nj2k_shim_codec_decode_i32(
-                self.0.as_ptr(),
-                data.as_ptr(),
-                data.len(),
-                std::ptr::null_mut(),
-                0,
-                &raw mut need,
-            )
-        };
-        if need == 0 {
-            return (st, Vec::new());
-        }
+        let mut prepared = self.prepare_i32(data);
+        let need = prepared.samples_needed();
         let mut out = vec![0i32; usize::try_from(need).expect("an image larger than memory")];
-        let mut count = 0u64;
-        // SAFETY: as above, out has room for the need samples the header gives.
-        let st = unsafe {
-            ffi::nj2k_shim_codec_decode_i32(
-                self.0.as_ptr(),
-                data.as_ptr(),
-                data.len(),
-                out.as_mut_ptr(),
-                need,
-                &raw mut count,
-            )
-        };
+        let (st, count) = prepared.decode_into(&mut out);
         assert_eq!(count, need, "the header changed between two reads of the same bytes");
         (st, out)
+    }
+
+    /// Query the header once and keep its input and decoder settings for repeated decodes.
+    pub fn prepare_i32<'a>(&'a mut self, data: &'a [u8]) -> PreparedI32<'a> {
+        let (status, need) = self.decode_i32_into(data, None);
+        PreparedI32 {
+            codec: self,
+            data,
+            status,
+            need,
+        }
+    }
+
+    fn decode_i32_into(&mut self, data: &[u8], output: Option<&mut [i32]>) -> (i32, u64) {
+        let mut count = 0u64;
+        let (ptr, cap) = output.map_or((std::ptr::null_mut(), 0), |out| (out.as_mut_ptr(), out.len() as u64));
+        // SAFETY: the codec, slices and count are live. The shim only offsets the output pointer
+        // for nonempty planes after checking their full length against cap.
+        let st = unsafe {
+            ffi::nj2k_shim_codec_decode_i32(self.0.as_ptr(), data.as_ptr(), data.len(), ptr, cap, &raw mut count)
+        };
+        (st, count)
     }
 
     /// The arenas' numbers now.
@@ -847,6 +844,34 @@ impl Codec {
     pub fn set_parallel_thresholds(&mut self, tile_samples: u64, level_area: u64, output: u64, clear: u64) -> bool {
         // SAFETY: the codec is live.
         unsafe { ffi::nj2k_shim_set_parallel_thresholds(self.0.as_ptr(), tile_samples, level_area, output, clear) != 0 }
+    }
+}
+
+/// One input whose planar output size has been checked against the oracle header.
+#[derive(Debug)]
+pub struct PreparedI32<'a> {
+    codec: &'a mut Codec,
+    data: &'a [u8],
+    status: i32,
+    need: u64,
+}
+
+impl PreparedI32<'_> {
+    /// The sample capacity required by the header, or zero if the header was refused.
+    #[must_use]
+    pub const fn samples_needed(&self) -> u64 {
+        self.need
+    }
+
+    /// Decode into a reusable sample buffer. Returns the status and required sample count.
+    pub fn decode_into(&mut self, output: &mut [i32]) -> (i32, u64) {
+        if self.status != 0 {
+            return (self.status, self.need);
+        }
+        if (output.len() as u64) < self.need {
+            return (-9, self.need);
+        }
+        self.codec.decode_i32_into(self.data, Some(output))
     }
 }
 

@@ -4,7 +4,10 @@
 // The sample arithmetic is from OpenJPEG's mct.c and tcd.c through src/mct.h.
 // See LICENSE.OpenJPEG for OpenJPEG's copyright notices and licence.
 
-//! Scalar inverse component transforms and sample finishing.
+//! Inverse component transforms and sample finishing.
+
+#[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+use crate::simd::mct as vector;
 
 /// Reversible inverse colour transform. Intermediate values wrap as int32.
 #[inline]
@@ -18,6 +21,23 @@ pub(crate) fn inverse_reversible([y, u, v]: [i32; 3]) -> [i32; 3] {
 pub(crate) fn inverse_irreversible(samples: [i32; 3]) -> [i32; 3] {
     let [y, u, v] = samples.map(|sample| f32::from_bits(sample.cast_unsigned()));
     [y + v * 1.402, y - u * 0.34413 - v * 0.71414, y + u * 1.772].map(|sample| sample.to_bits().cast_signed())
+}
+
+pub(crate) fn inverse([y, u, v]: [&mut [i32]; 3], reversible: bool) {
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+    let start = vector::inverse([y, u, v], reversible);
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2")))]
+    let start = 0;
+    let lanes = y[start..].iter_mut().zip(&mut u[start..]).zip(&mut v[start..]);
+    if reversible {
+        for ((y, u), v) in lanes {
+            [*y, *u, *v] = inverse_reversible([*y, *u, *v]);
+        }
+    } else {
+        for ((y, u), v) in lanes {
+            [*y, *u, *v] = inverse_irreversible([*y, *u, *v]);
+        }
+    }
 }
 
 /// DC level shift and clamp for one decoded component.
@@ -62,10 +82,23 @@ impl Finish {
             let rounded = value.round_ties_even() as i32;
             rounded
         };
-        let shifted = i64::from(integer) + i64::from(self.shift);
-        #[allow(clippy::cast_possible_truncation, reason = "clamped to the i32 range")]
-        {
-            shifted.clamp(i64::from(self.lo), i64::from(self.hi)) as i32
+        integer.clamp(self.lo - self.shift, self.hi - self.shift) + self.shift
+    }
+
+    pub(crate) fn apply(self, line: &mut [i32]) {
+        #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+        let start = vector::level_shift(line, self.shift, self.lo, self.hi, self.reversible);
+        #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2")))]
+        let start = 0;
+        if self.reversible {
+            let (lo, hi) = (self.lo - self.shift, self.hi - self.shift);
+            for sample in &mut line[start..] {
+                *sample = (*sample).clamp(lo, hi) + self.shift;
+            }
+        } else {
+            for sample in &mut line[start..] {
+                *sample = self.sample(*sample);
+            }
         }
     }
 }
@@ -126,6 +159,9 @@ mod tests {
             kernels::dc_shift_97_scalar(&mut expected, shift, lo, hi);
             let finish = Finish::new(8, signed, false);
             assert_eq!(input.map(|sample| finish.sample(sample)), expected);
+            let mut actual = input;
+            finish.apply(&mut actual);
+            assert_eq!(actual, expected);
         }
     }
 }

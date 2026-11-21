@@ -120,6 +120,11 @@ fn bits_as_i32(value: u32) -> i32 {
 }
 
 impl Scratch {
+    pub(crate) fn retained_bytes(&self) -> u64 {
+        (self.data.capacity() * size_of::<i32>() + self.flags.capacity() * size_of::<u32>() + self.coded.capacity())
+            as u64
+    }
+
     /// Decode the code-block's complete packet contributions and write its tile coefficients.
     pub(crate) fn decode<'a>(
         &mut self,
@@ -172,19 +177,24 @@ impl Scratch {
             return Err(invalid_output());
         }
 
-        let mut chunks = chunks.into_iter().peekable();
-        if chunks.peek().is_none() {
+        let mut chunks = chunks.into_iter();
+        let Some(first) = chunks.next() else {
             for row in 0..height {
                 let start = offset + row * stride;
                 output[start..start + width].fill(0);
             }
             return Ok(());
-        }
-        self.coded.clear();
-        for chunk in chunks {
-            self.coded.try_reserve(chunk.len()).map_err(|_| no_memory())?;
-            self.coded.extend_from_slice(chunk);
-        }
+        };
+        let mut bytes = if let Some(second) = chunks.next() {
+            self.coded.clear();
+            for chunk in [first, second].into_iter().chain(chunks) {
+                self.coded.try_reserve(chunk.len()).map_err(|_| no_memory())?;
+                self.coded.extend_from_slice(chunk);
+            }
+            self.coded.as_slice()
+        } else {
+            first
+        };
         reserve_fixed(&mut self.data, MAX_SAMPLES)?;
         reserve_fixed(&mut self.flags, MAX_FLAGS)?;
         let mut passes = Passes {
@@ -198,7 +208,6 @@ impl Scratch {
         passes.initialize();
 
         let mut decoder = Decoder::new();
-        let mut bytes = self.coded.as_slice();
         let mut pass = 2;
         let lazy = cblksty & LAZY != 0;
         let reset = cblksty & RESET != 0;
@@ -219,8 +228,10 @@ impl Scratch {
                 }
                 let plane = u32::try_from(bitplane).expect("positive bit-plane index");
                 match pass {
-                    0 => passes.significance(&mut decoder, plane, raw),
-                    1 => passes.refinement(&mut decoder, plane, raw),
+                    0 if raw => passes.significance::<true>(&mut decoder, plane),
+                    0 => passes.significance::<false>(&mut decoder, plane),
+                    1 if raw => passes.refinement::<true>(&mut decoder, plane),
+                    1 => passes.refinement::<false>(&mut decoder, plane),
                     2 => passes.cleanup(&mut decoder, plane, segment_symbol),
                     _ => unreachable!("a code-block cycles through three coding passes"),
                 }

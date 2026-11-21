@@ -262,7 +262,9 @@ fn compare_encoding(
         components: u32::from(components),
         flip_vertical: view.flip_vertical,
         reversible: params.reversible,
-        resolutions: u32::from(params.resolutions.unwrap_or(0)),
+        resolutions: params
+            .resolutions
+            .map_or_else(|| (view.width.min(view.height).ilog2() + 1).min(6), u32::from),
         mct: params.mct,
         max_codestream_size: params.max_codestream_size,
         layer_ratios: &params.layer_ratios,

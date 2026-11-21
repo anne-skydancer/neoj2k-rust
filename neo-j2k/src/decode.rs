@@ -10,17 +10,27 @@ pub(crate) use output::validate as validate_targets;
 pub use output::{DecodeTarget, OutputPlane, SampleType};
 
 use crate::error::Diagnostics;
+use crate::executor::{Executor, Jobs};
 use crate::geometry::{self, Rect, ceil_div_pow2};
-use crate::header::{MainHeader, tile::{TileComponentParams, TileOverrides, resolve_tile, resolve_tile_component}};
-use crate::mem::{CType, HeaderLedger, WorkBudget};
+use crate::header::{
+    MainHeader,
+    tile::{TileComponentParams, TileOverrides, resolve_tile, resolve_tile_component},
+};
+use crate::mem::{CType, HeaderLedger, WorkBudget, capacity_bytes};
 use crate::t1::{self, Destination};
 use crate::t2::{self, PacketInput};
 use crate::tile::{Tile, TileComp, resize};
 use crate::{ComponentInfo, Error, ErrorKind, Limits, dwt, mct};
 use walk::{Pages, Walk, data_error, need_data};
 
+use std::fmt;
+
+const TILE_SAMPLE_FLOOR: u64 = 1 << 18;
+const OUTPUT_SAMPLE_FLOOR: usize = 1 << 16;
+const CLEAR_BYTE_FLOOR: usize = 1 << 22;
+
 /// Options for one decode. A zero layer limit decodes every quality layer.
-#[derive(Clone, Copy, Debug, Default)]
+#[derive(Clone, Copy, Default)]
 pub struct DecodeParams<'a> {
     pub max_layers: u32,
     pub strict: bool,
@@ -28,6 +38,20 @@ pub struct DecodeParams<'a> {
     pub components: Option<&'a [u32]>,
     /// How to handle a JP2 palette or channel definitions when decoding every component.
     pub jp2_channels: Jp2Channels,
+    /// A scheduler borrowed for independent work on large images.
+    pub executor: Option<&'a dyn Executor>,
+}
+
+impl fmt::Debug for DecodeParams<'_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DecodeParams")
+            .field("max_layers", &self.max_layers)
+            .field("strict", &self.strict)
+            .field("components", &self.components)
+            .field("jp2_channels", &self.jp2_channels)
+            .field("has_executor", &self.executor.is_some())
+            .finish()
+    }
 }
 
 /// How to handle JP2 container metadata that changes the decoded component list.
@@ -110,9 +134,9 @@ pub(crate) struct Workspace {
     pub(crate) budget: WorkBudget,
     pages: Pages,
     tile: Tile,
-    tier1: t1::Scratch,
+    serial: ComponentScratch,
+    workers: Vec<WorkerScratch>,
     tier2: t2::Workspace,
-    wavelet: dwt::Workspace,
     packed: Vec<u8>,
     combined: Vec<u8>,
     image: Vec<DecodedComponent>,
@@ -120,9 +144,79 @@ pub(crate) struct Workspace {
     slot: Vec<Option<usize>>,
     written: Vec<bool>,
     pub(crate) truncated: bool,
+    pub(crate) retained_work_bytes: u64,
 }
 
 impl Workspace {
+    /// Return excess native buffer capacity, keeping the image only when it is borrowed by a caller.
+    pub(crate) fn trim_retained(&mut self, limit: u64, keep_image: bool) {
+        for worker in &mut self.workers {
+            worker.diagnostics.clear();
+            worker.result = None;
+        }
+        let image_bytes = if keep_image {
+            0
+        } else {
+            image_capacity_bytes(&self.image)
+        };
+        let worker_bytes = capacity_bytes(&self.workers)
+            + self
+                .workers
+                .iter()
+                .map(|worker| worker.component.retained_bytes() + worker.diagnostics.retained_bytes())
+                .sum::<u64>();
+        let mut bytes = image_bytes
+            + worker_bytes
+            + self.serial.retained_bytes()
+            + self.budget.retained_bytes()
+            + self.pages.retained_bytes()
+            + tile_capacity_bytes(&self.tile)
+            + self.tier2.retained_bytes()
+            + capacity_bytes(&self.packed)
+            + capacity_bytes(&self.combined)
+            + capacity_bytes(&self.selection)
+            + capacity_bytes(&self.slot)
+            + capacity_bytes(&self.written);
+
+        if bytes > limit {
+            release_vec(&mut self.combined, &mut bytes);
+            release_vec(&mut self.packed, &mut bytes);
+        }
+        if bytes > limit {
+            if !keep_image {
+                self.image = Vec::new();
+                bytes -= image_bytes;
+            }
+            for component in &mut self.tile.comps {
+                release_vec(&mut component.samples, &mut bytes);
+            }
+        }
+        if bytes > limit {
+            bytes -= self.serial.wavelet.retained_bytes();
+            self.serial.wavelet = dwt::Workspace::default();
+        }
+        if bytes > limit {
+            self.workers = Vec::new();
+            bytes -= worker_bytes;
+        }
+        if bytes > limit {
+            bytes -= self.serial.tier1.retained_bytes();
+            self.serial.tier1 = t1::Scratch::default();
+        }
+        if bytes > limit {
+            self.pages = Pages::default();
+            self.tile = Tile::default();
+            self.tier2 = t2::Workspace::default();
+            self.budget = WorkBudget::default();
+            self.tile_ledger = HeaderLedger::default();
+            self.selection = Vec::new();
+            self.slot = Vec::new();
+            self.written = Vec::new();
+            bytes = 0;
+        }
+        self.retained_work_bytes = bytes;
+    }
+
     pub(crate) fn image(&self) -> DecodedImage<'_> {
         DecodedImage {
             components: &self.image,
@@ -140,6 +234,9 @@ impl Workspace {
 
     pub(crate) fn write_targets(&self, sample: SampleType, targets: &mut [DecodeTarget<'_>]) {
         for target in targets {
+            if output::write_interleaved(&self.image, &self.slot, sample, target) {
+                continue;
+            }
             for plane in target.planes {
                 if let Some(slot) = self.slot[plane.component as usize] {
                     output::write(&self.image[slot], sample, target.bytes, *plane);
@@ -189,10 +286,17 @@ impl Workspace {
         self.tile_ledger.reset(input.retain, input.limits.max_memory);
         self.budget.array(CType::OutComp, main.comps.len())?;
         let single = single_tile_image(main);
-        self.prepare_image(input.components, single)?;
+        self.prepare_image(input.components, single, params.executor)?;
         self.truncated = false;
 
-        let mut walk = Walk::new(input.data, main, &mut self.pages, input.limits, input.reduce, params.strict);
+        let mut walk = Walk::new(
+            input.data,
+            main,
+            &mut self.pages,
+            input.limits,
+            input.reduce,
+            params.strict,
+        );
         let mut ppm = (!main.ppm_data.is_empty()).then_some(main.ppm_data.as_slice());
         let mut decoded = 0;
         while let Some(index) = walk.next_tile(&mut self.budget, &mut self.tile_ledger, diagnostics)? {
@@ -206,9 +310,9 @@ impl Workspace {
             };
             let mut target = TileOutput {
                 tile: &mut self.tile,
-                tier1: &mut self.tier1,
+                serial: &mut self.serial,
+                workers: &mut self.workers,
                 tier2: &mut self.tier2,
-                wavelet: &mut self.wavelet,
                 packed: &mut self.packed,
                 combined: &mut self.combined,
                 budget: &mut self.budget,
@@ -227,7 +331,11 @@ impl Workspace {
                 self.truncated = walk.cut_or_incomplete();
                 return Ok(());
             }
-            diagnostics.info_fmt(format_args!("Tile {}/{} has been decoded.\n", index + 1, main.tile_count()));
+            diagnostics.info_fmt(format_args!(
+                "Tile {}/{} has been decoded.\n",
+                index + 1,
+                main.tile_count()
+            ));
             decoded += 1;
             if walk.past_cut() || decoded == main.tile_count() {
                 break;
@@ -243,13 +351,22 @@ impl Workspace {
                 }
             }
             let message = "Failed to decode all used components\n";
-            return Err(if walk.saw_cut() { need_data(message) } else { data_error(message) });
+            return Err(if walk.saw_cut() {
+                need_data(message)
+            } else {
+                data_error(message)
+            });
         }
         self.truncated = walk.cut_or_incomplete();
         Ok(())
     }
 
-    fn prepare_image(&mut self, components: &[ComponentInfo], single: bool) -> Result<(), Error> {
+    fn prepare_image(
+        &mut self,
+        components: &[ComponentInfo],
+        single: bool,
+        executor: Option<&dyn Executor>,
+    ) -> Result<(), Error> {
         resize(&mut self.image, self.selection.len())?;
         resize(&mut self.written, self.selection.len())?;
         self.written.fill(false);
@@ -260,7 +377,7 @@ impl Workspace {
             if !single {
                 let count = sample_count(plane.info.width, plane.info.height)?;
                 resize(&mut plane.samples, count)?;
-                plane.samples.fill(0);
+                clear_plane(&mut plane.samples, plane.info.height as usize, executor);
             }
         }
         Ok(())
@@ -275,11 +392,160 @@ struct TileDecode<'a> {
     params: DecodeParams<'a>,
 }
 
+#[derive(Debug, Default)]
+struct ComponentScratch {
+    tier1: t1::Scratch,
+    wavelet: dwt::Workspace,
+}
+
+impl ComponentScratch {
+    fn retained_bytes(&self) -> u64 {
+        self.tier1.retained_bytes() + self.wavelet.retained_bytes()
+    }
+}
+
+fn release_vec<T>(storage: &mut Vec<T>, total: &mut u64) {
+    *total -= capacity_bytes(storage);
+    *storage = Vec::new();
+}
+
+fn image_capacity_bytes(image: &Vec<DecodedComponent>) -> u64 {
+    capacity_bytes(image)
+        + image
+            .iter()
+            .map(|component| capacity_bytes(&component.samples))
+            .sum::<u64>()
+}
+
+fn tile_capacity_bytes(tile: &Tile) -> u64 {
+    let mut bytes = capacity_bytes(&tile.comps);
+    for component in &tile.comps {
+        bytes += capacity_bytes(&component.samples) + capacity_bytes(&component.res);
+        for resolution in &component.res {
+            bytes += capacity_bytes(&resolution.bands);
+            for band in &resolution.bands {
+                bytes += capacity_bytes(&band.precincts);
+                for precinct in &band.precincts {
+                    bytes += capacity_bytes(&precinct.cblks)
+                        + precinct.incl.retained_bytes()
+                        + precinct.imsb.retained_bytes();
+                    for block in &precinct.cblks {
+                        bytes += capacity_bytes(&block.segs) + capacity_bytes(&block.chunks);
+                    }
+                }
+            }
+        }
+    }
+    bytes
+}
+
+#[derive(Debug, Default)]
+struct WorkerScratch {
+    component: ComponentScratch,
+    diagnostics: Diagnostics,
+    result: Option<Result<(), Error>>,
+}
+
+struct Components<'a> {
+    parts: &'a mut [TileComp],
+    resolutions: &'a [u32],
+    slots: &'a [Option<usize>],
+}
+
+impl Components<'_> {
+    fn take(&mut self, selected: usize) -> Self {
+        let end = self
+            .slots
+            .iter()
+            .enumerate()
+            .filter(|(_, slot)| slot.is_some())
+            .nth(selected - 1)
+            .map_or(self.slots.len(), |(index, _)| index + 1);
+        let (parts, remaining) = core::mem::take(&mut self.parts).split_at_mut(end);
+        self.parts = remaining;
+        let (resolutions, remaining) = self.resolutions.split_at(end);
+        self.resolutions = remaining;
+        let (slots, remaining) = self.slots.split_at(end);
+        self.slots = remaining;
+        Self {
+            parts,
+            resolutions,
+            slots,
+        }
+    }
+
+    fn inverse(
+        &mut self,
+        data: &[u8],
+        scratch: &mut ComponentScratch,
+        diagnostics: &mut Diagnostics,
+    ) -> Result<(), Error> {
+        for ((component, &resolution), slot) in self.parts.iter_mut().zip(self.resolutions).zip(self.slots) {
+            if slot.is_some() {
+                inverse_component(component, resolution, data, scratch, diagnostics)?;
+            }
+        }
+        Ok(())
+    }
+
+    fn parallel_inverse(
+        &mut self,
+        jobs: Jobs<'_>,
+        workers: &mut Vec<WorkerScratch>,
+        data: &[u8],
+        diagnostics: &mut Diagnostics,
+    ) -> Option<Result<(), Error>> {
+        let selected = self.slots.iter().filter(|slot| slot.is_some()).count();
+        let max_jobs = selected.min(jobs.width());
+        if max_jobs < 2 {
+            return None;
+        }
+        let each = selected.div_ceil(max_jobs);
+        let count = selected.div_ceil(each);
+        if workers.len() < count && resize(workers, count).is_err() {
+            workers.clear();
+            return None;
+        }
+        let mut components = Components {
+            parts: self.parts,
+            resolutions: self.resolutions,
+            slots: self.slots,
+        };
+        let tasks = workers[..count].iter_mut().map(|worker| {
+            worker.diagnostics.configure_like(diagnostics);
+            (components.take(each), worker)
+        });
+        jobs.run(tasks, |(mut batch, worker)| {
+            worker.result = Some(batch.inverse(data, &mut worker.component, &mut worker.diagnostics));
+        });
+
+        if workers[..count].iter().any(|worker| {
+            worker
+                .result
+                .as_ref()
+                .and_then(|result| result.as_ref().err())
+                .is_some_and(|error| error.kind() == ErrorKind::NoMemory)
+        }) {
+            workers.clear();
+            return None;
+        }
+        // Replay jobs in component order, stopping at the first failure as the serial walk does.
+        for worker in &mut workers[..count] {
+            diagnostics.append(&mut worker.diagnostics);
+            let result = worker.result.take().expect("each component job completed");
+            if result.is_err() {
+                return Some(result);
+            }
+        }
+        Some(Ok(()))
+    }
+}
+
 struct TileOutput<'a> {
     tile: &'a mut Tile,
-    tier1: &'a mut t1::Scratch,
+    serial: &'a mut ComponentScratch,
+    workers: &'a mut Vec<WorkerScratch>,
     tier2: &'a mut t2::Workspace,
-    wavelet: &'a mut dwt::Workspace,
     packed: &'a mut Vec<u8>,
     combined: &'a mut Vec<u8>,
     budget: &'a mut WorkBudget,
@@ -308,7 +574,9 @@ impl TileOutput<'_> {
                 let limit = input.limits.max_memory;
                 return Err(Error::new(
                     ErrorKind::Limit,
-                    format!("Tile {index} needs {need} bytes of working memory with its own coding, above the decoder's limit of {limit}\n"),
+                    format!(
+                        "Tile {index} needs {need} bytes of working memory with its own coding, above the decoder's limit of {limit}\n"
+                    ),
                 ));
             }
         }
@@ -338,22 +606,45 @@ impl TileOutput<'_> {
             ppt,
         };
         let whole = single_tile_image(main);
+        let jobs = input
+            .params
+            .executor
+            .filter(|_| {
+                self.tile.comps.iter().zip(self.slot).any(|(component, slot)| {
+                    let rect = component.selected_resolution();
+                    slot.is_some() && u64::from(rect.width()) * u64::from(rect.height()) >= TILE_SAMPLE_FLOOR
+                })
+            })
+            .and_then(Jobs::new);
         let decoded = t2::read_packets(self.tier2, self.tile, packet_input, self.budget, diagnostics)
             .and_then(|decoded| {
-                for ((component, &resolution), slot) in self.tile.comps.iter_mut().zip(decoded).zip(self.slot) {
-                    if let Some(slot) = *slot {
-                        if whole && self.image[slot].samples.capacity() > component.samples.capacity() {
+                if whole {
+                    for (component, slot) in self.tile.comps.iter_mut().zip(self.slot) {
+                        if let Some(slot) = *slot
+                            && self.image[slot].samples.capacity() > component.samples.capacity()
+                        {
                             // The tile is the image. Keep one allocation per component across requests.
                             core::mem::swap(&mut component.samples, &mut self.image[slot].samples);
                         }
-                        inverse_component(component, resolution, data, self.tier1, self.wavelet, diagnostics)?;
                     }
+                }
+                let mut components = Components {
+                    parts: &mut self.tile.comps,
+                    resolutions: decoded,
+                    slots: self.slot,
+                };
+                if let Some(result) =
+                    jobs.and_then(|jobs| components.parallel_inverse(jobs, self.workers, data, diagnostics))
+                {
+                    result?;
+                } else {
+                    components.inverse(data, self.serial, diagnostics)?;
                 }
                 Ok(decoded)
             })
             .and_then(|decoded| {
                 if coding.mct != 0 && input.params.components.is_none() {
-                    transform_colour(&mut self.tile.comps, decoded, diagnostics)?;
+                    transform_colour(&mut self.tile.comps, decoded, diagnostics, jobs)?;
                 }
                 Ok(decoded)
             })
@@ -364,11 +655,17 @@ impl TileOutput<'_> {
                 Error::new(error.kind(), "Failed to decode.\n")
             })?;
         walk.after_tile(index, diagnostics)?;
-        for (index, (component, (&resolution, slot))) in self.tile.comps.iter_mut().zip(decoded.iter().zip(self.slot)).enumerate() {
+        for (index, (component, (&resolution, slot))) in self
+            .tile
+            .comps
+            .iter_mut()
+            .zip(decoded.iter().zip(self.slot))
+            .enumerate()
+        {
             let Some(slot) = *slot else { continue };
             let sampling = main.comps[index];
             let finish = mct::Finish::new(sampling.prec, sampling.sgnd != 0, component.reversible);
-            if copy_component(component, resolution, finish, &mut self.image[slot], whole)? {
+            if copy_component(component, resolution, finish, &mut self.image[slot], whole, jobs)? {
                 self.written[slot] = true;
             }
         }
@@ -379,7 +676,10 @@ impl TileOutput<'_> {
 // The Second Life and OpenSim profiles both admit eight components at most.
 const INLINE_COMPONENTS: usize = 8;
 
-#[allow(clippy::large_enum_variant, reason = "the small-image path keeps its component parameters on the stack")]
+#[allow(
+    clippy::large_enum_variant,
+    reason = "the small-image path keeps its component parameters on the stack"
+)]
 enum TileParams<'a> {
     Inline {
         params: [TileComponentParams<'a>; INLINE_COMPONENTS],
@@ -412,16 +712,19 @@ impl<'a> TileParams<'a> {
 
 fn single_tile_image(main: &MainHeader) -> bool {
     main.tile_count() == 1
-        && main.x0 == 0 && main.y0 == 0 && main.tx0 == 0 && main.ty0 == 0
-        && main.x1 == main.tdx && main.y1 == main.tdy
+        && main.x0 == 0
+        && main.y0 == 0
+        && main.tx0 == 0
+        && main.ty0 == 0
+        && main.x1 == main.tdx
+        && main.y1 == main.tdy
 }
 
 fn inverse_component(
     component: &mut TileComp,
     decoded: u32,
     data: &[u8],
-    scratch: &mut t1::Scratch,
-    wavelet: &mut dwt::Workspace,
+    scratch: &mut ComponentScratch,
     diagnostics: &mut Diagnostics,
 ) -> Result<(), Error> {
     let finest = component.selected_resolution();
@@ -433,14 +736,10 @@ fn inverse_component(
         for band in &resolution.bands {
             let horizontal = coarser.map_or(0, |r| if band.bandno & 1 == 0 { 0 } else { r.width() });
             let vertical = coarser.map_or(0, |r| if band.bandno & 2 == 0 { 0 } else { r.height() });
+            // Every nonempty block is clipped to this band, so it contributes to the whole tile.
             for precinct in &band.precincts {
-                if !component.area_of_interest(index, band.bandno, precinct.rect) {
-                    continue;
-                }
                 for block in &precinct.cblks {
-                    if !component.area_of_interest(index, band.bandno, block.rect)
-                        || block.rect.width() == 0 || block.rect.height() == 0
-                    {
+                    if block.rect.width() == 0 || block.rect.height() == 0 {
                         continue;
                     }
                     let x = block.rect.x0 - band.rect.x0 + horizontal;
@@ -454,7 +753,7 @@ fn inverse_component(
                         cblksty: u32::from(component.cblksty),
                         segments: &block.segs[..block.real_num_segs as usize],
                     };
-                    scratch.decode(
+                    scratch.tier1.decode(
                         block_input,
                         block.chunks.iter().map(|chunk| &data[chunk.clone()]),
                         Destination {
@@ -475,17 +774,26 @@ fn inverse_component(
     for (rect, res) in rects[..count].iter_mut().zip(&component.res) {
         *rect = res.rect;
     }
-    dwt::inverse(&mut component.samples, stride, &rects[..count], component.reversible, wavelet)
+    dwt::inverse(
+        &mut component.samples,
+        stride,
+        &rects[..count],
+        component.reversible,
+        &mut scratch.wavelet,
+    )
 }
 
 fn transform_colour(
     components: &mut [TileComp],
     resolutions: &[u32],
     diagnostics: &mut Diagnostics,
+    jobs: Option<Jobs<'_>>,
 ) -> Result<(), Error> {
     let count = components.len();
     let [a, b, c, ..] = components else {
-        diagnostics.error(format!("Number of components ({count}) is inconsistent with a MCT. Skip the MCT step.\n"));
+        diagnostics.error(format!(
+            "Number of components ({count}) is inconsistent with a MCT. Skip the MCT step.\n"
+        ));
         return Ok(());
     };
     if resolutions[0] != resolutions[1]
@@ -495,11 +803,26 @@ fn transform_colour(
         || a.samples.len() != b.samples.len()
         || a.samples.len() != c.samples.len()
     {
-        return Err(data_error("Tiles don't all have the same dimension. Skip the MCT step.\n"));
+        return Err(data_error(
+            "Tiles don't all have the same dimension. Skip the MCT step.\n",
+        ));
     }
-    let transform = if a.reversible { mct::inverse_reversible } else { mct::inverse_irreversible };
-    for ((y, u), v) in a.samples.iter_mut().zip(&mut b.samples).zip(&mut c.samples) {
-        [*y, *u, *v] = transform([*y, *u, *v]);
+    let reversible = a.reversible;
+    let apply = |planes| mct::inverse(planes, reversible);
+    let rect = a.selected_resolution();
+    let rows = rect.height() as usize;
+    if let Some(jobs) = jobs.filter(|_| a.samples.len() >= OUTPUT_SAMPLE_FLOOR && rows > 1) {
+        let span = rows.div_ceil(jobs.width()) * rect.width() as usize;
+        jobs.run(
+            a.samples
+                .chunks_mut(span)
+                .zip(b.samples.chunks_mut(span))
+                .zip(c.samples.chunks_mut(span))
+                .map(|((y, u), v)| [y, u, v]),
+            apply,
+        );
+    } else {
+        apply([&mut a.samples, &mut b.samples, &mut c.samples]);
     }
     Ok(())
 }
@@ -510,6 +833,7 @@ fn copy_component(
     finish: mct::Finish,
     target: &mut DecodedComponent,
     whole: bool,
+    jobs: Option<Jobs<'_>>,
 ) -> Result<bool, Error> {
     target.resolution = resolution;
     if source.samples.is_empty() {
@@ -522,10 +846,18 @@ fn copy_component(
     let actual = source.res[resolution.min(source.minimum_num_resolutions - 1) as usize].rect;
     let stride = requested.width() as usize;
     if whole && requested.width() == target.info.width && requested.height() == target.info.height {
-        for row in source.samples.chunks_exact_mut(stride).take(actual.height() as usize) {
-            for sample in &mut row[..actual.width() as usize] {
-                *sample = finish.sample(*sample);
+        let rows = actual.height() as usize;
+        let width = actual.width() as usize;
+        let apply = |band: &mut [i32]| {
+            for row in band.chunks_exact_mut(stride) {
+                finish.apply(&mut row[..width]);
             }
+        };
+        let samples = &mut source.samples[..rows * stride];
+        if let Some(jobs) = output_jobs(jobs, width, rows) {
+            jobs.run(samples.chunks_mut(rows.div_ceil(jobs.width()) * stride), apply);
+        } else {
+            apply(samples);
         }
         core::mem::swap(&mut source.samples, &mut target.samples);
         return Ok(true);
@@ -550,16 +882,46 @@ fn copy_component(
     let target_x = (area.x0 - x0) as usize;
     let target_y = (area.y0 - y0) as usize;
     let target_stride = info.width as usize;
-    for row in 0..area.height() as usize {
-        let i = (source_y + row) * stride + source_x;
-        let j = (target_y + row) * target_stride + target_x;
-        let input = &source.samples[i..i + width];
-        let output = &mut target.samples[j..j + width];
-        for (output, &input) in output.iter_mut().zip(input) {
-            *output = finish.sample(input);
+    let rows = area.height() as usize;
+    let input = &source.samples[source_y * stride..(source_y + rows) * stride];
+    let output = &mut target.samples[target_y * target_stride..(target_y + rows) * target_stride];
+    let copy = |(input, output): (&[i32], &mut [i32])| {
+        for (src, dst) in input.chunks_exact(stride).zip(output.chunks_exact_mut(target_stride)) {
+            let src = &src[source_x..source_x + width];
+            let dst = &mut dst[target_x..target_x + width];
+            for (output, &input) in dst.iter_mut().zip(src) {
+                *output = finish.sample(input);
+            }
         }
+    };
+    if let Some(jobs) = output_jobs(jobs, width, rows) {
+        let band_rows = rows.div_ceil(jobs.width());
+        jobs.run(
+            input
+                .chunks(band_rows * stride)
+                .zip(output.chunks_mut(band_rows * target_stride)),
+            copy,
+        );
+    } else {
+        copy((input, output));
     }
     Ok(true)
+}
+
+fn output_jobs(jobs: Option<Jobs<'_>>, width: usize, rows: usize) -> Option<Jobs<'_>> {
+    jobs.filter(|_| rows > 1 && width * rows >= OUTPUT_SAMPLE_FLOOR)
+}
+
+fn clear_plane(samples: &mut [i32], rows: usize, executor: Option<&dyn Executor>) {
+    if rows > 1
+        && samples.len() >= CLEAR_BYTE_FLOOR / size_of::<i32>()
+        && let Some(jobs) = executor.and_then(Jobs::new)
+    {
+        let span = rows.div_ceil(jobs.width()) * (samples.len() / rows);
+        jobs.run(samples.chunks_mut(span), |rows| rows.fill(0));
+        return;
+    }
+    samples.fill(0);
 }
 
 fn sample_count(width: u32, height: u32) -> Result<usize, Error> {
@@ -575,4 +937,46 @@ fn invalid_output() -> Error {
 
 fn no_memory() -> Error {
     Error::new(ErrorKind::NoMemory, "Not enough memory to decode\n")
+}
+
+#[cfg(all(test, not(miri)))]
+mod tests {
+    use super::*;
+    use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
+
+    #[derive(Default)]
+    struct Host {
+        queries: AtomicUsize,
+        calls: AtomicUsize,
+    }
+
+    impl Executor for Host {
+        fn concurrency(&self) -> usize {
+            self.queries.fetch_add(1, Relaxed);
+            4
+        }
+
+        fn parallel_for(&self, count: usize, work: &(dyn Fn(usize) + Sync)) {
+            self.calls.fetch_add(1, Relaxed);
+            for index in (0..count).rev() {
+                work(index);
+            }
+        }
+    }
+
+    #[test]
+    fn plane_clear_uses_the_host_at_four_mebibytes() {
+        let host = Host::default();
+        let mut samples = vec![17; 1024 * 1024];
+        let below = &mut samples[..1024 * 1023];
+        clear_plane(below, 1023, Some(&host));
+        assert!(below.iter().all(|&sample| sample == 0));
+        assert_eq!(host.queries.load(Relaxed), 0);
+
+        samples.fill(19);
+        clear_plane(&mut samples, 1024, Some(&host));
+        assert!(samples.iter().all(|&sample| sample == 0));
+        assert_eq!(host.queries.load(Relaxed), 1);
+        assert_eq!(host.calls.load(Relaxed), 1);
+    }
 }

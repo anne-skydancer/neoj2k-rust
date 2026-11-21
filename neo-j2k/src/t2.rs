@@ -46,7 +46,7 @@
 
 use crate::error::Diagnostics;
 use crate::header::{PocEntry, TileCoding};
-use crate::mem::{CType, WorkBudget};
+use crate::mem::{CType, WorkBudget, capacity_bytes};
 use crate::tile::Tile;
 use crate::{Error, ErrorKind};
 
@@ -84,6 +84,15 @@ pub(crate) struct Workspace {
     first_pass_failed: Vec<bool>,
 }
 
+impl Workspace {
+    pub(crate) fn retained_bytes(&self) -> u64 {
+        self.grid.retained_bytes()
+            + self.seen.retained_bytes()
+            + capacity_bytes(&self.decoded)
+            + capacity_bytes(&self.first_pass_failed)
+    }
+}
+
 /// Reads one tile's packets, preserving every complete codeword contribution.
 /// The result is each component's highest decoded resolution index.
 pub(crate) fn read_packets<'work>(
@@ -95,6 +104,7 @@ pub(crate) fn read_packets<'work>(
 ) -> Result<&'work [u32], Error> {
     let coding = input.coding;
     let pocs = input.pocs;
+    let deduplicate = !pocs.is_empty() || coding.prg > 1;
     let layer_limit = if input.layers == 0 {
         u32::from(coding.numlayers)
     } else {
@@ -108,8 +118,8 @@ pub(crate) fn read_packets<'work>(
         first_pass_failed,
     } = workspace;
     packet_array(decoded, CType::U32, components, 0u32, budget)?;
-    grid.configure(tile, budget)?;
-    grid.prepare_seen(seen, coding, budget)?;
+    grid.configure(tile, deduplicate, budget)?;
+    grid.prepare_seen(seen, coding, deduplicate, budget)?;
     packet_array(first_pass_failed, CType::Bool, components, true, budget)?;
     let mut reader = Reader::new(input);
     let mut exhausted = false;
@@ -126,7 +136,7 @@ pub(crate) fn read_packets<'work>(
         }
         first_pass_failed.fill(true);
         let done = grid.visit(coding, poc, |packet| {
-            if !seen.insert(packet) {
+            if deduplicate && !seen.insert(packet) {
                 return Ok(false);
             }
             let comp = &tile.comps[packet.comp];
@@ -195,7 +205,7 @@ fn skip_packet(tile: &Tile, layer_limit: u32, packet: Packet, resolution: u32) -
     // The packet reader traverses unselected components, too. Selection happens only in Tier 1.
     !comp.res[packet.res].bands.iter().any(|band| {
         let precinct = &band.precincts[packet.precinct];
-        comp.area_of_interest(resolution, band.bandno, precinct.rect)
+        band.area_of_interest(precinct.rect, comp.reversible)
     })
 }
 
@@ -252,7 +262,19 @@ impl<'a> Bio<'a> {
 
     /// Reads up to 32 bits, most significant first. Missing bits are zero and set `overrun`.
     pub(crate) fn read(&mut self, count: u32) -> u32 {
-        (0..count).fold(0, |value, _| (value << 1) | self.bit())
+        let mut remaining = u8::try_from(count).expect("packet fields occupy at most 32 bits");
+        let mut value = 0;
+        while remaining != 0 {
+            if self.bits_left == 0 {
+                self.refill();
+            }
+            let take = remaining.min(self.bits_left);
+            self.bits_left -= take;
+            remaining -= take;
+            let bits = u32::from(self.buffer) >> self.bits_left;
+            value = (value << take) | (bits & ((1 << take) - 1));
+        }
+        value
     }
 
     /// Reads the run of one bits before the zero terminating the packet's comma code.
@@ -312,7 +334,24 @@ struct TagNode {
 
 impl TagNode {
     // OpenJPEG's sentinel also bounds how far an unterminated tag code is read.
-    const UNSET: Self = Self { value: 999, low: 0 };
+    const MAX_VALUE: i32 = 999;
+    const UNSET: Self = Self {
+        value: Self::MAX_VALUE,
+        low: 0,
+    };
+
+    fn decode(&mut self, bio: &mut Bio<'_>, inherited_low: i32, threshold: i32) -> i32 {
+        let mut low = inherited_low.max(self.low);
+        while low < threshold && low < self.value {
+            if bio.bit() != 0 {
+                self.value = low;
+                break;
+            }
+            low += 1;
+        }
+        self.low = low;
+        low
+    }
 }
 
 /// Flat tag tree, with leaf rows first and successive parent levels ending at the root.
@@ -328,10 +367,14 @@ fn oversized_tree() -> Error {
 }
 
 impl TagTree {
+    pub(crate) fn retained_bytes(&self) -> u64 {
+        capacity_bytes(&self.nodes)
+    }
+
     #[cfg(test)]
     pub(crate) fn new(width: u32, height: u32) -> Result<Self, Error> {
         let mut tree = Self::default();
-        tree.configure(width, height)?;
+        tree.configure(width, height, Self::node_count(width, height)?)?;
         Ok(tree)
     }
 
@@ -350,8 +393,7 @@ impl TagTree {
         Ok(total)
     }
 
-    pub(crate) fn configure(&mut self, width: u32, height: u32) -> Result<(), Error> {
-        let total = Self::node_count(width, height)?;
+    pub(crate) fn configure(&mut self, width: u32, height: u32, total: usize) -> Result<(), Error> {
         self.nodes
             .try_reserve_exact(total.saturating_sub(self.nodes.len()))
             .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory for a packet tag tree\n"))?;
@@ -362,14 +404,26 @@ impl TagTree {
         Ok(())
     }
 
-    pub(crate) fn reset(&mut self) {
-        self.nodes.fill(TagNode::UNSET);
-    }
-
     /// Decodes the path from the root to `leaf` and reports whether its tag is below `threshold`.
     /// Each call retains the bits already decoded for later calls in the same precinct.
     pub(crate) fn decode(&mut self, bio: &mut Bio<'_>, leaf: u32, threshold: i32) -> Result<bool, Error> {
+        self.decode_until(bio, leaf, threshold).map(|value| value < threshold)
+    }
+
+    /// Decodes a complete tag. Each descendant starts consuming bits only after its
+    /// parent's value is known, so a single walk matches increasing the threshold one at a time.
+    fn decode_value(&mut self, bio: &mut Bio<'_>, leaf: u32) -> Result<i32, Error> {
+        self.decode_until(bio, leaf, TagNode::MAX_VALUE + 1)
+    }
+
+    fn decode_until(&mut self, bio: &mut Bio<'_>, leaf: u32, threshold: i32) -> Result<i32, Error> {
         let leaf = usize::try_from(leaf).map_err(|_| invalid_leaf())?;
+        if let [node] = self.nodes.as_mut_slice()
+            && leaf == 0
+        {
+            node.decode(bio, 0, threshold);
+            return Ok(node.value);
+        }
         if leaf >= self.width * self.height {
             return Err(invalid_leaf());
         }
@@ -396,18 +450,9 @@ impl TagTree {
 
         let mut low = 0;
         for &index in path[..depth].iter().rev() {
-            let node = &mut self.nodes[index];
-            low = low.max(node.low);
-            while low < threshold && low < node.value {
-                if bio.bit() != 0 {
-                    node.value = low;
-                    break;
-                }
-                low += 1;
-            }
-            node.low = low;
+            low = self.nodes[index].decode(bio, low, threshold);
         }
-        Ok(self.nodes[leaf].value < threshold)
+        Ok(self.nodes[leaf].value)
     }
 }
 
@@ -552,6 +597,24 @@ mod tests {
     }
 
     #[test]
+    fn packed_fields_match_single_bit_reads_at_every_offset() {
+        let bytes = [0xab, 0xff, 0x7f, 0xff, 0x01, 0xff];
+        for length in 0..=bytes.len() {
+            for offset in 0..=32 {
+                for width in 0..=32 {
+                    let mut field = Bio::new(&bytes[..length]);
+                    let mut bitwise = Bio::new(&bytes[..length]);
+                    assert_eq!(field.read(offset), (0..offset).fold(0, |v, _| (v << 1) | bitwise.bit()));
+                    assert_eq!(field.read(width), (0..width).fold(0, |v, _| (v << 1) | bitwise.bit()));
+                    assert_eq!(field.num_bytes(), bitwise.num_bytes());
+                    assert_eq!(field.overrun(), bitwise.overrun());
+                    assert_eq!(field.align(), bitwise.align());
+                }
+            }
+        }
+    }
+
+    #[test]
     fn repeated_thresholds_share_the_decoded_root_and_leaf_values() {
         let mut tree = TagTree::new(2, 1).unwrap();
         let mut bio = Bio::new(&[0b1100_1000]);
@@ -566,9 +629,33 @@ mod tests {
         assert!(tree.decode(&mut next, 1, 3).unwrap());
         assert!(!next.overrun());
 
-        tree.reset();
+        tree.configure(2, 1, 3).unwrap();
         assert!(!tree.decode(&mut next, 0, 1).unwrap());
         assert!(next.overrun());
+    }
+
+    #[test]
+    fn complete_tags_match_successive_thresholds_with_and_without_input() {
+        let bytes = [0x20, 0x3f, 0xff, 0x56, 0xe3, 0x76, 0x01, 0x21, 0x11, 0xff];
+        for (width, height) in [(1, 1), (2, 1), (3, 2), (7, 5)] {
+            for length in 0..=bytes.len() {
+                let mut direct = TagTree::new(width, height).unwrap();
+                let mut stepped = TagTree::new(width, height).unwrap();
+                let mut first = Bio::new(&bytes[..length]);
+                let mut second = Bio::new(&bytes[..length]);
+                for leaf in (0..width * height).rev() {
+                    let value = direct.decode_value(&mut first, leaf).unwrap();
+                    let mut threshold = 0;
+                    while !stepped.decode(&mut second, leaf, threshold).unwrap() {
+                        threshold += 1;
+                    }
+                    assert_eq!(value + 1, threshold);
+                    assert_eq!(first.num_bytes(), second.num_bytes());
+                    assert_eq!(first.bits_left, second.bits_left);
+                    assert_eq!(first.overrun(), second.overrun());
+                }
+            }
+        }
     }
 
     #[test]

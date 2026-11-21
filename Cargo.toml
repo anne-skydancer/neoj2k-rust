@@ -2,13 +2,13 @@
 # Copyright (c) 2026, Anne Skydancer (neo-j2k)
 #
 # The native Rust twin of neo-j2k (rust/README.md): the crate, the test-only C++ oracle crate and
-# the test kit. Later stages add fuzz/ and bench/.
+# the test kit. Fuzz targets use a separate workspace in fuzz/.
 [workspace]
 resolver = "3"
 members = ["neo-j2k", "neo-j2k-oracle", "neo-j2k-testkit"]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.1.2"
 edition = "2024"
 rust-version = "1.100"
 license = "BSD-2-Clause"

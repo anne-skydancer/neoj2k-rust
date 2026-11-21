@@ -75,6 +75,16 @@ impl Band {
     pub(crate) const fn empty(&self) -> bool {
         self.rect.width() == 0 || self.rect.height() == 0
     }
+
+    pub(crate) fn area_of_interest(&self, rect: Rect, reversible: bool) -> bool {
+        // This decoder works on whole tiles, so the area of interest in band
+        // coordinates is precisely its bounds plus the wavelet filter margin.
+        let margin = if reversible { 2 } else { 3 };
+        rect.x0 < self.rect.x1.saturating_add(margin)
+            && rect.y0 < self.rect.y1.saturating_add(margin)
+            && rect.x1 > self.rect.x0.saturating_sub(margin)
+            && rect.y1 > self.rect.y0.saturating_sub(margin)
+    }
 }
 
 #[derive(Debug, Default)]
@@ -101,24 +111,6 @@ pub(crate) struct TileComp {
 }
 
 impl TileComp {
-    pub(crate) fn area_of_interest(&self, resno: u32, bandno: u32, rect: Rect) -> bool {
-        let margin = if self.reversible { 2 } else { 3 };
-        let levels = u32::try_from(self.res.len()).expect("one component has at most 33 resolutions") - resno.max(1);
-        let band = |coordinate: u32, high: u32| {
-            if levels == 0 {
-                coordinate
-            } else {
-                ceil_div_pow2(coordinate.saturating_sub(high << (levels - 1)), levels)
-            }
-        };
-        let x = bandno & 1;
-        let y = bandno >> 1;
-        rect.x0 < band(self.rect.x1, x).saturating_add(margin)
-            && rect.y0 < band(self.rect.y1, y).saturating_add(margin)
-            && rect.x1 > band(self.rect.x0, x).saturating_sub(margin)
-            && rect.y1 > band(self.rect.y0, y).saturating_sub(margin)
-    }
-
     pub(crate) fn selected_resolution(&self) -> Rect {
         self.res[self.minimum_num_resolutions as usize - 1].rect
     }
@@ -224,7 +216,12 @@ impl ResContext<'_> {
         let py = u32::from(precincts >> 4);
         let gx = GridAxis::new(rect.x0, rect.x1, px)?;
         let gy = GridAxis::new(rect.y0, rect.y1, py)?;
-        let count = from_count(gx.count(), gy.count(), OPJ_PRECINCT_BYTES, "Size of tile data exceeds system limits\n")?;
+        let count = from_count(
+            gx.count(),
+            gy.count(),
+            OPJ_PRECINCT_BYTES,
+            "Size of tile data exceeds system limits\n",
+        )?;
         resolution.rect = rect;
         resolution.pdx = px;
         resolution.pdy = py;
@@ -233,11 +230,7 @@ impl ResContext<'_> {
 
         let base = resno == 0;
         let band_count = if base { 1 } else { 3 };
-        let precinct_grid = if base {
-            [gx, gy]
-        } else {
-            [gx.halve(), gy.halve()]
-        };
+        let precinct_grid = if base { [gx, gy] } else { [gx.halve(), gy.halve()] };
         let block_exp = [
             u32::from(self.params.style.cblkw).min(precinct_grid[0].exp),
             u32::from(self.params.style.cblkh).min(precinct_grid[1].exp),
@@ -259,10 +252,8 @@ impl ResContext<'_> {
             band.stepsize = step_size(self.precision + gain, exponent, mantissa);
             budget.array(CType::Precinct, count)?;
             resize(&mut band.precincts, count)?;
-            for (index, precinct) in (0_u32..).zip(&mut band.precincts) {
-                let column = index % gx.count();
-                let row = index / gx.count();
-                let bounds = grid_cell(precinct_grid, column, row).clipped_to(bounds);
+            for (cell, precinct) in grid_cells(precinct_grid, gx.count(), gy.count()).zip(&mut band.precincts) {
+                let bounds = cell.clipped_to(bounds);
                 configure_precinct(precinct, bounds, block_exp, budget)?;
             }
         }
@@ -280,21 +271,25 @@ fn configure_precinct(
     let gy = GridAxis::new(bounds.y0, bounds.y1, block_exp[1])?;
     let cw = gx.grid_count();
     let ch = gy.grid_count();
-    let count = from_count(cw, ch, OPJ_BLOCK_BYTES, "Size of code block data exceeds system limits\n")?;
+    let count = from_count(
+        cw,
+        ch,
+        OPJ_BLOCK_BYTES,
+        "Size of code block data exceeds system limits\n",
+    )?;
     precinct.rect = bounds;
     precinct.cw = cw;
     precinct.ch = ch;
     let nodes = TagTree::node_count(cw, ch)?;
     budget.array(CType::TagNode, nodes)?;
-    precinct.incl.configure(cw, ch)?;
+    precinct.incl.configure(cw, ch, nodes)?;
     budget.array(CType::TagNode, nodes)?;
-    precinct.imsb.configure(cw, ch)?;
+    precinct.imsb.configure(cw, ch, nodes)?;
 
     budget.array(CType::CodeBlock, count)?;
     resize(&mut precinct.cblks, count)?;
-    for (index, block) in (0_u32..).zip(&mut precinct.cblks) {
-        let rect = grid_cell([gx, gy], index % cw, index / cw).clipped_to(bounds);
-        block.reset(rect);
+    for (cell, block) in grid_cells([gx, gy], cw, ch).zip(&mut precinct.cblks) {
+        block.reset(cell.clipped_to(bounds));
     }
     Ok(())
 }
@@ -350,6 +345,10 @@ fn grid_cell([gx, gy]: [GridAxis; 2], column: u32, row: u32) -> Rect {
     }
 }
 
+fn grid_cells(grid: [GridAxis; 2], columns: u32, rows: u32) -> impl Iterator<Item = Rect> {
+    (0..rows).flat_map(move |row| (0..columns).map(move |column| grid_cell(grid, column, row)))
+}
+
 fn band_bounds(rect: Rect, down: u32, bandno: u32) -> Rect {
     let axis = |coordinate: u32, high: u32| {
         if bandno == 0 {
@@ -371,7 +370,10 @@ fn band_bounds(rect: Rect, down: u32, bandno: u32) -> Rect {
     }
 }
 
-#[allow(clippy::cast_possible_truncation, reason = "the stepsize is rounded to f32 as in C++")]
+#[allow(
+    clippy::cast_possible_truncation,
+    reason = "the stepsize is rounded to f32 as in C++"
+)]
 fn step_size(precision: u32, exponent: u32, mantissa: u32) -> f32 {
     let power = u64::from(1023 + precision - exponent);
     ((1.0 + f64::from(mantissa) / 2048.0) * f64::from_bits(power << 52)) as f32

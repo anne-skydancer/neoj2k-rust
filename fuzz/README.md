@@ -18,8 +18,8 @@ nightly=$(cat nightly-toolchain)
 rustup toolchain install "$nightly" --profile minimal
 cargo install cargo-fuzz --version 0.13.2 --locked
 mkdir -p fuzz/corpus/header_decode fuzz/corpus/roundtrip
-cargo +"$nightly" fuzz run --locked header_decode fuzz/corpus/header_decode ../corpus/generated -- -max_len=1048576 -max_total_time=120 -timeout=5 -print_final_stats=1
-cargo +"$nightly" fuzz run --locked roundtrip fuzz/corpus/roundtrip ../fuzz/seeds/roundtrip -- -max_len=16400 -max_total_time=120 -timeout=5 -print_final_stats=1
+cargo +"$nightly" fuzz run header_decode fuzz/corpus/header_decode ../corpus/generated -- -max_len=1048576 -max_total_time=120 -timeout=5 -print_final_stats=1
+cargo +"$nightly" fuzz run roundtrip fuzz/corpus/roundtrip ../fuzz/seeds/roundtrip -- -max_len=16400 -max_total_time=120 -timeout=5 -print_final_stats=1
 ```
 
 On Windows, use an x64 Visual Studio Developer PowerShell with the C++ toolchain and AddressSanitizer installed. The MSVC tools directory must be on `PATH` so the fuzz executable can load the ASan runtime. [Rust Fuzz Book Windows setup](https://rust-fuzz.github.io/book/cargo-fuzz/windows/setup.html)
@@ -29,15 +29,19 @@ $nightly = (Get-Content nightly-toolchain -Raw).Trim()
 rustup toolchain install $nightly --profile minimal
 cargo install cargo-fuzz --version 0.13.2 --locked
 New-Item -ItemType Directory -Force fuzz/corpus/header_decode, fuzz/corpus/roundtrip
-cargo "+$nightly" fuzz run --locked header_decode fuzz/corpus/header_decode ../corpus/generated -- -max_len=1048576 -max_total_time=120 -timeout=5 -print_final_stats=1
-cargo "+$nightly" fuzz run --locked roundtrip fuzz/corpus/roundtrip ../fuzz/seeds/roundtrip -- -max_len=16400 -max_total_time=120 -timeout=5 -print_final_stats=1
+cargo "+$nightly" fuzz run header_decode fuzz/corpus/header_decode ../corpus/generated -- -max_len=1048576 -max_total_time=120 -timeout=5 -print_final_stats=1
+cargo "+$nightly" fuzz run roundtrip fuzz/corpus/roundtrip ../fuzz/seeds/roundtrip -- -max_len=16400 -max_total_time=120 -timeout=5 -print_final_stats=1
 ```
 
 For the differential target, use the C++ oracle build described in the [Rust workspace README](../README.md#tests-and-the-c-oracle). Enabling `oracle` on `roundtrip` also compares the entire encoded stream to the C++ encoder. Cargo-fuzz instruments the Rust target. The C++ oracle uses its own CMake sanitizer settings.
 
+On Windows, configure and build `nj2k_rust_shim` with the `windows-msvc-asan` preset and point
+`NJ2K_ORACLE_DIR` to that build folder. Both libraries then use the same MSVC AddressSanitizer
+annotations.
+
 ```sh
 mkdir -p fuzz/corpus/differential
-cargo +"$nightly" fuzz run --locked --features oracle differential fuzz/corpus/differential ../corpus/generated -- -max_len=131072 -max_total_time=120 -timeout=5 -print_final_stats=1
+cargo +"$nightly" fuzz run --features oracle differential fuzz/corpus/differential ../corpus/generated -- -max_len=131072 -max_total_time=120 -timeout=5 -print_final_stats=1
 ```
 
 Artifacts from local runs stay under `rust/fuzz/artifacts/`. Replay a saved input by passing its path in place of the corpus directories. Use `-runs=0` with the corpus directories for a seed-only replay.

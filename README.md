@@ -9,26 +9,28 @@ levels.
 
 **Native Rust.** The crate `neo-j2k` has no build script, no C or C++, no `-sys` crate and no FFI, in
 itself or in its dependency tree; it has no runtime dependency at all. `unsafe` is allowed only in its
-`simd` module (stage R3). The C++ appears only in the test-only crate `neo-j2k-oracle`, a
+`simd` module. The C++ appears only in the test-only crate `neo-j2k-oracle`, a
 dev-dependency that is never published. CI proves both on every pull request
 (`tools/check_rust_native.py`, below).
 
 Paths below are relative to the repository root.
 
-## State: stage R1, header inspection
+## Codec
 
 | Crate | What | Published |
 |---|---|---|
-| `neo-j2k/` | native J2K and JP2/JPH main-header parsing, component geometry, resource limits, and decode preflight | after codec parity |
+| `neo-j2k/` | native J2K and JP2/JPH decoding and the one-tile JPEG 2000 encoder used for viewer uploads | release crate |
 | `neo-j2k-testkit/` | the Rust side of the C++ harness in `tests/common`: requests and outcomes, the viewer's rules, `nj2k_diff`'s digests and reference tables, the codestream scanner, the PGX reader, a test pool executor. Pure Rust, no dependency | never |
 | `neo-j2k-oracle/` | the C++ neo-j2k, OpenJPEG at the oracle's pin and the C++ harness, built by CMake and linked through the test-only shim (`neo-j2k-oracle/shim`), behind a safe interface | never |
 
-Stages R2 to R5 add pixel decoding, SIMD kernels, the executor and the encoder. Stage R6 adds the
-fuzz targets and benchmarks (`doc/stages.md`).
+The decoder supports the five progression orders, POC, packed packet headers, reduced and
+layer-limited output, and partial inputs. It can return reusable planar samples or write
+into planar or interleaved caller buffers. JP2 palette and channel metadata can be applied
+to planar output through `Jp2Channels::Apply`.
 
-The first R2 tests cover tile-part headers, packet header bits and tag trees, scalar 5/3 and 9/7
-inverse wavelets, and colour transforms and sample finishing. These components run in the unit
-suite while the decode pipeline is under construction.
+The encoder takes planar or interleaved unsigned 8-bit samples. It writes a J2K codestream
+with one tile, RLCP progression and 64 × 64 code-blocks, using lossless 5/3 or irreversible
+9/7 wavelets with optional quality layers.
 
 ## Toolchain
 
@@ -43,9 +45,9 @@ profile = "minimal"
 
 Edition 2024, `rust-version = "1.100"`. In `rust/`, `rustup toolchain install` installs it.
 
-Only Miri and, from R6, the fuzzers use a nightly, pinned by date in `rust/nightly-toolchain`
+Only Miri and the fuzzers use a nightly, pinned by date in `rust/nightly-toolchain`
 (`nightly-2026-11-03`, rustc 1.101.0-nightly 1c3a65069, Miri available for Linux and Windows); never
-the library or its tests. The fuzz targets will use cargo-fuzz 0.13.2.
+the library or its tests. The fuzz workspace uses cargo-fuzz 0.13.2.
 
 ```
 rustup toolchain install nightly-2026-11-03 --profile minimal --component miri,rust-src
@@ -72,10 +74,51 @@ The decoder reads up to the first tile-part and caches the validated header pref
 `Format::Jp2` for JP2 and JPH containers. An incomplete header reports `ErrorKind::NeedData`
 so the caller can retry with more bytes.
 
-The small-image release gates compare whole, reduced, and partial decodes against the C++ output
-and compare both lossless and lossy encodes byte for byte. Benchmarks use the same input and
-settings for both implementations and track latency, peak memory, and allocator calls. The
-existing warmed-up decode gate covers the viewer's requests through 512 × 512 (`doc/bench.md`).
+After reading the header, `Decoder::codestream_coding` borrows the tile defaults and component
+coding settings from the parsed header. Use `component(index)` to inspect the effective
+code-block and precinct sizes, quantization, wavelet, and ROI shift for that codestream component.
+
+```rust,no_run
+use neo_j2k::{DecodeParams, Decoder, DecoderConfig, Error};
+
+fn decode_first_component(data: &[u8]) -> Result<Vec<i32>, Error> {
+    let mut decoder = Decoder::new(DecoderConfig::default());
+    let image = decoder.decode(data, DecodeParams::default())?;
+    Ok(image.components[0].samples().to_vec())
+}
+```
+
+```rust,no_run
+use neo_j2k::{EncodeParams, Encoder, Error, ImageSamples, ImageView};
+
+fn encode_rgb(width: u32, height: u32, rgb: &[u8]) -> Result<Vec<u8>, Error> {
+    let mut encoder = Encoder::new();
+    let image = ImageView {
+        width,
+        height,
+        flip_vertical: false,
+        samples: ImageSamples::Interleaved {
+            samples: rgb,
+            components: 3,
+            row_stride: width as usize * 3,
+        },
+    };
+    Ok(encoder.encode(&image, &EncodeParams::default())?.to_vec())
+}
+```
+
+The small-image release tests compare whole, reduced, and partial decodes against C++ and check
+that a warmed Rust decoder performs no heap calls on the selected fixtures. The opt-in timing
+tests use matching inputs and settings, and compare lossless and lossy encodes byte for byte:
+
+```sh
+cargo test --release -p neo-j2k --test small_image_gates -- --ignored --nocapture --test-threads=1
+```
+
+`Decoder::statistics` exposes the codec's budget and arena accounting. Use
+`Decoder::set_retained_bytes` to cap the reusable native buffers that survive a decode and
+`Decoder::retained_work_bytes` to read their live capacity. A host can lend its executor through
+`DecodeParams::executor` for large tiles. Small requests stay serial.
 
 ```
 cd rust
@@ -86,16 +129,16 @@ cargo build --release -p neo-j2k --no-default-features --features std
 | Feature | Default | What it does |
 |---|---|---|
 | `std` | yes | required in this version (reserved for a later `no_std` + `alloc` build) |
-| `encode` | yes | reserved for the encoder in stage R5 |
-| `simd` | yes | reserved for the AVX2 kernels in stage R3 |
-| `opensim` | yes | the OpenSim limit profile (stage R1), as the C++'s `NJ2K_PROFILE_OPENSIM` |
+| `encode` | yes | the native JPEG 2000 encoder |
+| `simd` | yes | the AVX2 kernels on builds that target AVX2 |
+| `opensim` | yes | the OpenSim limit profile, as the C++'s `NJ2K_PROFILE_OPENSIM` |
 
 The workspace's release profile (`lto = "fat"`, `codegen-units = 1`, `panic = "unwind"`) applies to
 its tests, tools and benches; a program that depends on the crate uses its own profile.
 
 ## Target CPU
 
-Stage R3 selects kernels at compile time, as in the C++ (decision D8):
+The crate selects kernels at compile time, as in the C++ (decision D8).
 
 | Build | How | Kernels |
 |---|---|---|
@@ -103,6 +146,9 @@ Stage R3 selects kernels at compile time, as in the C++ (decision D8):
 | x86-64-v3 (AVX2, the viewer's floor) | `RUSTFLAGS="-C target-cpu=x86-64-v3"`, or in the consumer's `.cargo/config.toml`: `[build] rustflags = ["-C", "target-cpu=x86-64-v3"]` | AVX2 in `mod simd` |
 
 The parity suite runs at both CPU levels. The port preserves the C++ floating-point operation order.
+Calls into Rust, including jobs passed to a host executor, require the standard floating-point
+control settings for the Rust target. On x86-64 this includes round-to-nearest-even and gradual
+underflow.
 `f32::mul_add` and `f64::mul_add` are denied (`rust/clippy.toml`). Use separate target folders so the two
 builds do not rebuild each other:
 
@@ -169,6 +215,13 @@ codestream corpus, selected prefixes and JP2 containers, including the conforman
 reduce policies, limits, and header arena reservations. Targeted cases also compare diagnostics
 in order.
 
+### Pixel and byte parity
+
+The release tests compare native Rust pixel planes and statuses against the C++ decoder on whole
+codestreams, small prefixes, reduced and layer-limited output, and packed packet headers. They
+compare the encoder's bytes against the C++ on the generated image and settings matrix.
+The local [fuzz targets](fuzz/README.md) cover decode, round trips and differential comparison.
+
 ### Oracle and harness checks
 
 - **The size table** (`neo-j2k/src/mem/layout.rs`): the twin's copy of `sizeof` and `alignof` of the
@@ -217,7 +270,7 @@ cargo +nightly-2026-11-03 miri setup
 NJ2K_ORACLE_NO_BUILD=1 cargo +nightly-2026-11-03 miri test -p neo-j2k-testkit -p neo-j2k --lib
 ```
 
-From stage R3 the `simd` module's tests also run with `RUSTFLAGS="-C target-feature=+avx2"`.
+Test the `simd` module with `RUSTFLAGS="-C target-feature=+avx2"`.
 
 ## Windows and Linux
 
@@ -230,5 +283,7 @@ From stage R3 the `simd` module's tests also run with `RUSTFLAGS="-C target-feat
 | Miri | works (it interprets; no oracle) | the CI job runs here |
 
 CI (`.github/workflows/rust.yml`) runs the lint job (fmt, clippy at both CPU levels, docs,
-cargo-deny, the native-Rust check), Windows (MSVC), Linux (GCC 15), Ubuntu 24.04 (GCC 14, the oracle
-built by `build.rs` itself) each at both CPU levels, and Miri.
+cargo-deny, the native-Rust check, and `cargo package --locked -p neo-j2k`), Windows (MSVC),
+Linux (GCC 15), Ubuntu 24.04 (GCC 14, the oracle
+built by `build.rs` itself) each at both CPU levels, Miri, and seeded AddressSanitizer fuzzing
+at both CPU levels on Windows.

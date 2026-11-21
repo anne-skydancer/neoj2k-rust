@@ -4,7 +4,7 @@
 use crate::decode::{self, DecodeParams, DecodeStatistics, DecodeTarget, DecodedImage, Jp2Channels, SampleType};
 use crate::error::Diagnostics;
 use crate::geometry::{self, Dimensions};
-use crate::header::{HeaderSettings, MainHeader, parse_main_header};
+use crate::header::{CodingStyle, HeaderSettings, MainHeader, Quantization, parse_main_header};
 use crate::jp2::{self, ColourSpec, Jp2Header};
 use crate::mem::{CType, HeaderLedger};
 use crate::{Diagnostic, Error, ErrorKind, Limits};
@@ -149,6 +149,168 @@ impl Info {
     }
 }
 
+/// The coding defaults and component overrides parsed from the main header.
+#[derive(Clone, Copy, Debug)]
+pub struct CodestreamCoding<'a> {
+    main: &'a MainHeader,
+}
+
+impl<'a> CodestreamCoding<'a> {
+    /// Number of codestream components, before any JP2 palette or channel mapping.
+    #[must_use]
+    pub const fn component_count(&self) -> u32 {
+        self.main.numcomps
+    }
+
+    /// Default tile coding style flags from the COD marker.
+    #[must_use]
+    pub const fn tile_style_flags(&self) -> u8 {
+        self.main.cod.csty
+    }
+
+    /// Default packet progression order from the COD marker.
+    #[must_use]
+    pub fn progression(&self) -> Progression {
+        Progression::from_marker(self.main.cod.prg)
+    }
+
+    /// Default number of quality layers from the COD marker.
+    #[must_use]
+    pub const fn layers(&self) -> u16 {
+        self.main.cod.numlayers
+    }
+
+    /// Whether the default tile uses a multiple component transform.
+    #[must_use]
+    pub const fn uses_mct(&self) -> bool {
+        self.main.cod.mct != 0
+    }
+
+    /// Coding information for a zero-based codestream component index.
+    #[must_use]
+    pub fn component(&self, index: u32) -> Option<ComponentCoding<'a>> {
+        if index >= self.component_count() {
+            return None;
+        }
+        Some(ComponentCoding {
+            style: self.main.main_style(index),
+            quantization: self.main.main_quant(index),
+            roi_shift: self.main.main_roishift(index),
+        })
+    }
+}
+
+/// Coding information for a component, including its main-header overrides.
+#[derive(Clone, Copy, Debug)]
+pub struct ComponentCoding<'a> {
+    style: &'a CodingStyle,
+    quantization: &'a Quantization,
+    roi_shift: u8,
+}
+
+impl<'a> ComponentCoding<'a> {
+    /// Number of resolutions, including the lowest-resolution subband.
+    #[must_use]
+    pub const fn resolutions(&self) -> u8 {
+        self.style.numresolutions
+    }
+
+    /// Component coding style flags from COD or COC.
+    #[must_use]
+    pub const fn style_flags(&self) -> u8 {
+        self.style.csty
+    }
+
+    /// Code-block width and height as base-2 exponents.
+    #[must_use]
+    pub const fn code_block_log2(&self) -> (u8, u8) {
+        (self.style.cblkw, self.style.cblkh)
+    }
+
+    /// Coding mode flags for this component's code-blocks.
+    #[must_use]
+    pub const fn code_block_style(&self) -> u8 {
+        self.style.cblksty
+    }
+
+    /// Precinct width and height as base-2 exponents at a zero-based resolution.
+    #[must_use]
+    pub fn precinct_log2(&self, resolution: u8) -> Option<(u8, u8)> {
+        if resolution >= self.resolutions() {
+            return None;
+        }
+        let packed = self.style.precincts[usize::from(resolution)];
+        Some((packed & 0x0f, packed >> 4))
+    }
+
+    /// Wavelet transform for this component.
+    #[must_use]
+    pub const fn wavelet(&self) -> Wavelet {
+        if self.style.qmfbid == 1 {
+            Wavelet::Reversible53
+        } else {
+            Wavelet::Irreversible97
+        }
+    }
+
+    /// Region-of-interest shift. Zero is the default.
+    #[must_use]
+    pub const fn roi_shift(&self) -> u8 {
+        self.roi_shift
+    }
+
+    /// Quantization style from QCD or QCC.
+    #[must_use]
+    pub fn quantization_style(&self) -> QuantizationStyle {
+        match self.quantization.qntsty {
+            0 => QuantizationStyle::None,
+            1 => QuantizationStyle::ScalarDerived,
+            2 => QuantizationStyle::ScalarExpounded,
+            _ => unreachable!("the main header parser validates quantization styles"),
+        }
+    }
+
+    /// Number of quantization guard bits.
+    #[must_use]
+    pub const fn guard_bits(&self) -> u8 {
+        self.quantization.numgbits
+    }
+
+    /// The marker's stored exponent and mantissa pairs in subband order.
+    ///
+    /// Scalar-derived quantization yields the single base step encoded in the marker.
+    pub fn encoded_quantization_steps(self) -> impl ExactSizeIterator<Item = QuantizationStep> + 'a {
+        self.quantization.steps[..usize::from(self.quantization.nbands)]
+            .iter()
+            .map(|&packed| QuantizationStep {
+                exponent: packed.to_be_bytes()[0] >> 3,
+                mantissa: packed & 0x07ff,
+            })
+    }
+}
+
+/// Wavelet transforms supported by the Part 1 codec.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Wavelet {
+    Reversible53,
+    Irreversible97,
+}
+
+/// How the marker represents a component's quantization steps.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum QuantizationStyle {
+    None,
+    ScalarDerived,
+    ScalarExpounded,
+}
+
+/// An encoded quantization step from a QCD or QCC marker.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct QuantizationStep {
+    pub exponent: u8,
+    pub mantissa: u16,
+}
+
 /// Options for a reusable decoder.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct DecoderConfig {
@@ -156,7 +318,8 @@ pub struct DecoderConfig {
     pub limits: Limits,
     pub reduce: u32,
     pub reduce_policy: ReducePolicy,
-    /// Header arena reservations above this value are discarded before reading a new header.
+    /// Native working buffer capacity to retain after each decode, in bytes.
+    /// The cached header, diagnostic messages and a borrowed decoded image have separate lifetimes.
     pub retain_bytes: u64,
     /// Save ordered diagnostics for retrieval after a call.
     pub capture_diagnostics: bool,
@@ -231,10 +394,28 @@ impl Decoder {
         }
     }
 
+    /// Change how much native working storage is kept after the next and subsequent decodes.
+    pub fn set_retained_bytes(&mut self, bytes: u64) {
+        self.config.retain_bytes = bytes;
+    }
+
+    /// Capacity in bytes still allocated to working buffers after the last decode.
+    ///
+    /// This measures native storage, separately from the C++ arena accounting in [`Self::statistics`].
+    /// Cached headers, diagnostic messages and the image returned by [`Self::decode`] are excluded.
+    #[must_use]
+    pub const fn retained_work_bytes(&self) -> u64 {
+        self.work.retained_work_bytes
+    }
+
     /// Decodes a memory codestream into this decoder's reusable planar buffers.
     pub fn decode(&mut self, data: &[u8], params: DecodeParams<'_>) -> Result<DecodedImage<'_>, Error> {
-        self.read_header(data)?;
-        let result = self.decode_planes(data, params, false);
+        if let Err(error) = self.read_header(data) {
+            self.work.trim_retained(self.config.retain_bytes, false);
+            return Err(error);
+        }
+        let result = self.decode_planes(data, params, None);
+        self.work.trim_retained(self.config.retain_bytes, result.is_ok());
         if let Err(error) = result {
             self.diagnostics.error(error.message());
             return Err(error);
@@ -250,27 +431,41 @@ impl Decoder {
         sample: SampleType,
         targets: &mut [DecodeTarget<'_>],
     ) -> Result<bool, Error> {
-        let header = self.read_header(data)?;
-        let result = decode::validate_targets(targets, sample, &header.components)
-            .and_then(|()| self.decode_planes(data, params, true));
+        if let Err(error) = self.read_header(data) {
+            self.work.trim_retained(self.config.retain_bytes, false);
+            return Err(error);
+        }
+        let result = self.decode_planes(data, params, Some((sample, targets)));
         if let Err(error) = result {
+            self.work.trim_retained(self.config.retain_bytes, false);
             self.diagnostics.error(error.message());
             return Err(error);
         }
         self.work.write_targets(sample, targets);
+        self.work.trim_retained(self.config.retain_bytes, false);
         Ok(self.work.truncated)
     }
 
-    fn decode_planes(&mut self, data: &[u8], params: DecodeParams<'_>, into: bool) -> Result<(), Error> {
+    fn decode_planes(
+        &mut self,
+        data: &[u8],
+        params: DecodeParams<'_>,
+        output: Option<(SampleType, &[DecodeTarget<'_>])>,
+    ) -> Result<(), Error> {
         let state = self.header.as_mut().expect("decode reads the header first");
         let main = &state.main;
         let params = DecodeParams {
             components: params.components.filter(|indices| !indices.is_empty()),
             ..params
         };
+        self.work.reset_selection(main.comps.len(), params.components)?;
+        if let Some((sample, targets)) = output {
+            decode::validate_targets(targets, sample, &state.info.components, self.work.slots())?;
+        }
         let channels = params.components.is_none() && state.jp2.as_ref().is_some_and(Jp2Header::changes_channels);
         if channels
-            && (params.jp2_channels == Jp2Channels::Reject || into && params.jp2_channels == Jp2Channels::Apply)
+            && (params.jp2_channels == Jp2Channels::Reject
+                || output.is_some() && params.jp2_channels == Jp2Channels::Apply)
         {
             return Err(Error::new(
                 ErrorKind::Unsupported,
@@ -279,7 +474,6 @@ impl Decoder {
         }
         let limits = self.config.limits;
         let side = limits.max_decoded_side;
-        self.work.reset_selection(main.comps.len(), params.components)?;
         if side != 0 {
             for (index, info) in state.info.components.iter().enumerate() {
                 let ComponentInfo { width, height, .. } = *info;
@@ -317,7 +511,11 @@ impl Decoder {
             retain: self.config.retain_bytes,
         };
         self.work.decode(input, params, &mut self.diagnostics)?;
-        if let Some(jp2) = state.jp2.as_ref().filter(|_| channels && params.jp2_channels == Jp2Channels::Apply) {
+        if let Some(jp2) = state
+            .jp2
+            .as_ref()
+            .filter(|_| channels && params.jp2_channels == Jp2Channels::Apply)
+        {
             jp2::apply_colour(jp2, data, self.work.image_mut(), limits, &mut self.diagnostics)?;
         }
         Ok(())
@@ -476,6 +674,17 @@ impl Decoder {
         }
         result
     }
+
+    /// Borrows coding information after a successful header read or decode.
+    ///
+    /// Returns a state error when the decoder has no header. The view uses the main header's
+    /// defaults and component overrides. Tile-part overrides belong to the individual tiles.
+    pub fn codestream_coding(&self) -> Result<CodestreamCoding<'_>, Error> {
+        self.header
+            .as_ref()
+            .map(|state| CodestreamCoding { main: &state.main })
+            .ok_or_else(|| Error::new(ErrorKind::State, "codestream_coding: call it after read_header\n"))
+    }
 }
 
 fn choose_factor(
@@ -606,4 +815,72 @@ fn memory_limit(need: u64, max: u64) -> Error {
         ErrorKind::Limit,
         format!("The decode needs {need} bytes of working memory, above the decoder's limit of {max}\n"),
     )
+}
+
+#[cfg(all(test, not(miri)))]
+mod retention_tests {
+    use super::*;
+    use crate::OutputPlane;
+
+    fn fixture() -> Vec<u8> {
+        std::fs::read(neo_j2k_testkit::files::corpus_dir().join("packed_ppt_tiles.j2k")).unwrap()
+    }
+
+    #[test]
+    fn retention_limits_apply_after_planar_and_caller_owned_decodes() {
+        let data = fixture();
+        let params = DecodeParams::default();
+        let mut decoder = Decoder::new(DecoderConfig::default());
+        let image = decoder.decode(&data, params).unwrap();
+        let first = &image.components[0];
+        let expected = first.samples().to_vec();
+        let width = first.info().width as usize;
+        let warm = decoder.retained_work_bytes();
+        assert!(warm > 0);
+
+        decoder.set_retained_bytes(0);
+        assert_eq!(decoder.retained_work_bytes(), warm);
+        let image = decoder.decode(&data, params).unwrap();
+        assert_eq!(image.components[0].samples(), expected);
+        assert_eq!(decoder.retained_work_bytes(), 0);
+        assert!(decoder.header_reserved_bytes() > 0);
+
+        decoder.set_retained_bytes(1024);
+        let mut bytes = vec![0xff; expected.len() * size_of::<i32>()];
+        let planes = [OutputPlane {
+            component: 0,
+            offset: 0,
+            row_stride: isize::try_from(width * 4).unwrap(),
+            sample_stride: 4,
+        }];
+        let mut targets = [DecodeTarget {
+            bytes: &mut bytes,
+            planes: &planes,
+        }];
+        assert!(
+            !decoder
+                .decode_into(&data, params, SampleType::I32, &mut targets)
+                .unwrap()
+        );
+        let (samples, rest) = bytes.as_chunks::<4>();
+        assert!(rest.is_empty());
+        assert!(samples.iter().copied().map(i32::from_ne_bytes).eq(expected));
+        assert!(decoder.retained_work_bytes() <= 1024);
+    }
+
+    #[test]
+    fn failed_requests_trim_previous_storage_and_allow_retries() {
+        let data = fixture();
+        let params = DecodeParams::default();
+        let mut decoder = Decoder::new(DecoderConfig::default());
+        decoder.decode(&data, params).unwrap();
+        assert!(decoder.retained_work_bytes() > 0);
+        decoder.set_retained_bytes(0);
+
+        let error = decoder.decode(&[], params).unwrap_err();
+        assert_eq!(error.kind(), ErrorKind::NeedData);
+        assert_eq!(decoder.retained_work_bytes(), 0);
+        assert!(!decoder.decode(&data, params).unwrap().truncated);
+        assert_eq!(decoder.retained_work_bytes(), 0);
+    }
 }

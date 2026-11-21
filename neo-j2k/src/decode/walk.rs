@@ -7,9 +7,9 @@
 use crate::error::Diagnostics;
 use crate::header::{
     HeaderSettings, MainHeader,
-    tile::{self, TileDirectory, TileMarker, TileOverrides},
+    tile::{self, TileDirectory, TileMarker},
 };
-use crate::mem::{CType, HeaderLedger, WorkBudget};
+use crate::mem::{CType, HeaderLedger, WorkBudget, capacity_bytes};
 use crate::{Error, ErrorKind, Limits};
 use core::ops::Range;
 
@@ -20,6 +20,7 @@ const PAGE_SIZE: u32 = 128;
 // Layout of TileWalk and Range in src/decode.cpp on the supported 64-bit platforms.
 const WALK_BYTES: usize = 32;
 const RANGE_BYTES: usize = 16;
+const SHORT_STREAM: &str = "Stream too short\n";
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum Position {
@@ -58,11 +59,33 @@ struct Page {
 
 #[derive(Debug, Default)]
 pub(super) struct Pages {
+    parts: PartPages,
+    overrides: TileDirectory,
+}
+
+impl Pages {
+    pub(super) fn retained_bytes(&self) -> u64 {
+        self.overrides.retained_bytes()
+            + capacity_bytes(&self.parts.pages)
+            + self
+                .parts
+                .pages
+                .iter()
+                .map(|page| {
+                    capacity_bytes(&page.tiles)
+                        + page.tiles.iter().map(|tile| capacity_bytes(&tile.ranges)).sum::<u64>()
+                })
+                .sum::<u64>()
+    }
+}
+
+#[derive(Debug, Default)]
+struct PartPages {
     active: bool,
     pages: Vec<Page>,
 }
 
-impl Pages {
+impl PartPages {
     fn reset(&mut self) {
         self.active = false;
         for page in &mut self.pages {
@@ -106,8 +129,8 @@ impl Pages {
 pub(super) struct Walk<'a, 'data> {
     data: &'data [u8],
     main: &'a MainHeader,
-    pages: &'a mut Pages,
-    pub(super) overrides: TileDirectory<'data>,
+    pages: &'a mut PartPages,
+    pub(super) overrides: &'a mut TileDirectory,
     settings: HeaderSettings,
     pos: usize,
     position: Position,
@@ -131,19 +154,24 @@ impl<'data> Walk<'_, 'data> {
         reduce: u32,
         strict: bool,
     ) -> Walk<'a, 'data> {
-        pages.reset();
+        let Pages { parts, overrides } = pages;
+        parts.reset();
+        overrides.reset();
         Walk {
             data,
             main,
-            pages,
-            overrides: TileDirectory::default(),
+            pages: parts,
+            overrides,
             settings: HeaderSettings {
                 limits,
                 ihdr_width: 0,
                 ihdr_height: 0,
                 allow_varying_depth: true,
             },
-            pos: usize::try_from(main.end).unwrap_or(usize::MAX).saturating_add(2).min(data.len()),
+            pos: usize::try_from(main.end)
+                .unwrap_or(usize::MAX)
+                .saturating_add(2)
+                .min(data.len()),
             position: Position::Sot,
             current_tile: 0,
             can_decode: false,
@@ -175,7 +203,11 @@ impl<'data> Walk<'_, 'data> {
 
     fn packed_headers(&self, index: u32) -> bool {
         !self.main.ppm_data.is_empty()
-            || self.overrides.find(index).and_then(|tile| tile.packed_headers().next()).is_some()
+            || self
+                .overrides
+                .find(index)
+                .and_then(|tile| tile.packed_headers().next())
+                .is_some()
     }
 
     pub(super) fn decodable(&self, index: u32) -> bool {
@@ -230,7 +262,7 @@ impl<'data> Walk<'_, 'data> {
             return Err(header_error("Failed to merge PPT data\n"));
         }
         parts.ppt_merged = true;
-        merge_ppt(overrides, output, budget).map(Some)
+        merge_ppt(overrides.packed_headers(), self.data, output, budget).map(Some)
     }
 
     pub(super) fn next_tile(
@@ -348,7 +380,8 @@ impl<'data> Walk<'_, 'data> {
         if size > self.data.len() - self.pos {
             return Err(need_data("Marker size inconsistent with stream length\n"));
         }
-        let body = &self.data[self.pos..self.pos + size];
+        let body_start = self.pos;
+        let body = &self.data[body_start..body_start + size];
         self.pos += size;
         if sot && size > 8 {
             return Err(header_error("Error reading SOT marker\n"));
@@ -360,8 +393,13 @@ impl<'data> Walk<'_, 'data> {
             let tile = u16::try_from(self.current_tile).expect("tile numbers are 16 bit");
             tile::read_tile_part_marker(
                 self.main,
-                &mut self.overrides,
-                TileMarker { tile, code, body },
+                self.overrides,
+                TileMarker {
+                    tile,
+                    code,
+                    body,
+                    body_start,
+                },
                 self.settings,
                 ledger,
                 diagnostics,
@@ -369,17 +407,24 @@ impl<'data> Walk<'_, 'data> {
         };
         result.map_err(|error| {
             diagnostics.error(error.message());
-            Error::new(error.kind(), format!("Fail to read the current marker segment ({code:#x})\n"))
+            Error::new(
+                error.kind(),
+                format!("Fail to read the current marker segment ({code:#x})\n"),
+            )
         })
     }
 
     fn marker(&mut self) -> Result<u16, Error> {
+        self.take_marker().ok_or_else(short)
+    }
+
+    fn take_marker(&mut self) -> Option<u16> {
         let Some(bytes) = self.data.get(self.pos..self.pos.saturating_add(2)) else {
             self.pos = self.data.len();
-            return Err(short());
+            return None;
         };
         self.pos += 2;
-        Ok(be16(bytes))
+        Some(be16(bytes))
     }
 
     fn subtract_room(&mut self, used: u32) -> Result<(), Error> {
@@ -392,12 +437,7 @@ impl<'data> Walk<'_, 'data> {
         Ok(())
     }
 
-    fn read_sot(
-        &mut self,
-        data: &[u8],
-        budget: &mut WorkBudget,
-        diagnostics: &mut Diagnostics,
-    ) -> Result<(), Error> {
+    fn read_sot(&mut self, data: &[u8], budget: &mut WorkBudget, diagnostics: &mut Diagnostics) -> Result<(), Error> {
         if data.len() != 8 {
             diagnostics.error("Error reading SOT marker\n");
             return Err(header_error("Error reading SOT marker\n"));
@@ -459,7 +499,11 @@ impl<'data> Walk<'_, 'data> {
             let params = tile::resolve_tile_component(self.main, Some(overrides), index)?;
             let resolutions = u32::from(params.style.numresolutions);
             if self.reduce >= resolutions {
-                return Err(super::super::tile::too_few_resolutions(index as usize, self.reduce, resolutions));
+                return Err(super::super::tile::too_few_resolutions(
+                    index as usize,
+                    self.reduce,
+                    resolutions,
+                ));
             }
         }
         Ok(())
@@ -509,7 +553,10 @@ impl<'data> Walk<'_, 'data> {
             if next == 0 || (next >= 4 && next.is_power_of_two()) {
                 let capacity = (next * 2).max(4);
                 budget.charge(capacity * RANGE_BYTES, 16)?;
-                parts.ranges.try_reserve_exact(capacity - next).map_err(|_| no_memory())?;
+                parts
+                    .ranges
+                    .try_reserve_exact(capacity - next)
+                    .map_err(|_| no_memory())?;
             }
             parts.ranges.push(self.pos..self.pos + read);
         }
@@ -570,31 +617,34 @@ impl<'data> Walk<'_, 'data> {
         if self.current_tile + 1 != self.main.tile_count() {
             return None;
         }
-        (0..self.main.tile_count())
-            .find(|&tile| self.pages.get(tile).is_some_and(|parts| parts.next_part == 1 && parts.total_parts == 0))
+        (0..self.main.tile_count()).find(|&tile| {
+            self.pages
+                .get(tile)
+                .is_some_and(|parts| parts.next_part == 1 && parts.total_parts == 0)
+        })
     }
 
     pub(super) fn after_tile(&mut self, tile: u32, diagnostics: &mut Diagnostics) -> Result<(), Error> {
         self.can_decode = false;
         if self.position != Position::Eoc && !self.past_cut() {
-            match self.marker() {
-                Ok(EOC) => {
+            match self.take_marker() {
+                Some(EOC) => {
                     self.current_tile = 0;
                     self.position = Position::Eoc;
                 }
-                Ok(SOT) => {}
-                Ok(_) if self.pos == self.data.len() => {
+                Some(SOT) => {}
+                Some(_) if self.pos == self.data.len() => {
                     self.position = Position::Cut;
                     self.cut = true;
                     diagnostics.warn("Stream does not end with EOC\n");
                 }
-                Ok(_) => return Err(data_error("Stream too short, expected SOT\n")),
-                Err(error) => {
+                Some(_) => return Err(data_error("Stream too short, expected SOT\n")),
+                None => {
                     self.cut = true;
                     if self.strict {
-                        return Err(error);
+                        return Err(short());
                     }
-                    diagnostics.warn(error.message());
+                    diagnostics.warn(SHORT_STREAM);
                 }
             }
         }
@@ -607,13 +657,17 @@ impl<'data> Walk<'_, 'data> {
 }
 
 fn merge_ppt<'a>(
-    overrides: &TileOverrides<'_>,
+    headers: impl IntoIterator<Item = (u8, Range<usize>)>,
+    input: &[u8],
     output: &'a mut Vec<u8>,
     budget: &mut WorkBudget,
 ) -> Result<&'a [u8], Error> {
     let mut ordered = [None; 256];
     let mut total = 0_usize;
-    for (index, data) in overrides.packed_headers() {
+    for (index, range) in headers {
+        let data = input
+            .get(range)
+            .ok_or_else(|| header_error("Invalid packed packet header range\n"))?;
         ordered[usize::from(index)] = Some(data);
         total = total.checked_add(data.len()).ok_or_else(no_memory)?;
     }
@@ -651,7 +705,7 @@ fn wrong_marker() -> Error {
 }
 
 pub(super) fn short() -> Error {
-    need_data("Stream too short\n")
+    need_data(SHORT_STREAM)
 }
 
 pub(super) fn need_data(message: impl Into<String>) -> Error {
@@ -660,4 +714,25 @@ pub(super) fn need_data(message: impl Into<String>) -> Error {
 
 pub(super) fn data_error(message: impl Into<String>) -> Error {
     Error::new(ErrorKind::Data, message)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn packed_header_ranges_are_merged_by_marker_index() {
+        let mut output = Vec::new();
+        let mut budget = WorkBudget::default();
+        let headers = [(2, 0..1), (0, 5..7), (1, 2..4)];
+        let input = [0, 1, 2, 3, 4, 5, 6];
+        let packed = merge_ppt(headers.clone(), &input, &mut output, &mut budget).unwrap();
+        assert_eq!(packed, [5, 6, 2, 3, 0]);
+        let storage = packed.as_ptr();
+
+        let input = [10, 11, 12, 13, 14, 15, 16];
+        let packed = merge_ppt(headers, &input, &mut output, &mut budget).unwrap();
+        assert_eq!(packed, [15, 16, 12, 13, 10]);
+        assert_eq!(packed.as_ptr(), storage);
+    }
 }
