@@ -415,7 +415,13 @@ impl<'decoder> DecodeStream<'decoder, '_> {
 
     /// Sets the requested reduce factor for decoding this stream.
     pub fn set_reduce(&mut self, reduce: u32) -> Result<(), Error> {
-        self.decoder.set_reduce(reduce)
+        let previous = self.decoder.header.as_ref().expect("the stream has a header").reduce;
+        self.decoder.set_reduce(reduce)?;
+        let state = self.decoder.header.as_mut().expect("the stream has a header");
+        if state.reduce != previous && state.info.components[0].reduce != 0 {
+            fill_components(&state.main, state.reduce, &mut state.info.components);
+        }
+        Ok(())
     }
 
     /// Validates and returns decoded component dimensions before reading the tile data.

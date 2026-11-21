@@ -548,3 +548,42 @@ fn stream_can_resume_at_a_late_reduce_into_borrowed_or_reusable_planes() {
         assert_eq!(component.samples(), samples);
     }
 }
+
+#[test]
+fn stream_reductions_refresh_geometry_and_pixels_after_a_reduced_header() {
+    let input = fixture("tile_origin_odd_97.j2k");
+    let options = StreamOptions {
+        length: Some(input.len() as u64),
+        seekable: true,
+    };
+    for (initial, target) in [(1, 2), (2, 0), (2, 1)] {
+        let mut fresh = Decoder::new(DecoderConfig {
+            reduce: target,
+            ..DecoderConfig::default()
+        });
+        let mut fresh_reader = Cursor::new(&input);
+        let expected = fresh
+            .decode_from(&mut fresh_reader, DecodeParams::default(), options)
+            .unwrap();
+
+        let mut decoder = Decoder::new(DecoderConfig {
+            reduce: initial,
+            ..DecoderConfig::default()
+        });
+        let mut reader = Cursor::new(&input);
+        let mut stream = decoder.read_header_from(&mut reader, options).unwrap();
+        assert_eq!(stream.set_reduce(99).unwrap_err().kind(), ErrorKind::Limit);
+        stream.set_reduce(target).unwrap();
+        let dimensions = stream.decoded_dimensions().unwrap();
+        assert_eq!(dimensions.len(), expected.components.len());
+        for (actual, expected) in dimensions.iter().zip(expected.components) {
+            assert_eq!(*actual, expected.info());
+        }
+        let actual = stream.decode(DecodeParams::default()).unwrap();
+        assert_eq!(actual.truncated, expected.truncated);
+        for (actual, expected) in actual.components.iter().zip(expected.components) {
+            assert_eq!(actual.info(), expected.info());
+            assert_eq!(actual.samples(), expected.samples());
+        }
+    }
+}
