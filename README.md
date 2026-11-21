@@ -10,8 +10,7 @@ levels.
 **Native Rust.** The crate `neo-j2k` has no build script, no C or C++, no `-sys` crate and no FFI, in
 itself or in its dependency tree; it has no runtime dependency at all. `unsafe` is allowed only in its
 `simd` module. The C++ appears only in the test-only crate `neo-j2k-oracle`, a
-dev-dependency that is never published. CI proves both on every pull request
-(`tools/check_rust_native.py`, below).
+dev-dependency that is never published. The native-Rust check below verifies this directly.
 
 Paths below are relative to the repository root.
 
@@ -160,22 +159,30 @@ header again under the new limits and can reuse its working buffers.
 `Decoder::retained_work_bytes` to read their live capacity. A host can lend its executor through
 `DecodeParams::executor` for large tiles. Small requests stay serial.
 
-On Windows, five paired runs on one core of a Ryzen 9 9950X3D gave these median Rust/C++
-latency ratios for warmed whole-image caller-owned I32 decodes. The Rust and MSVC C++ builds
-used the same instruction-set floor.
+On 21 November 2026, paired runs on a Ryzen 9 9950X3D under Windows gave these median
+Rust/C++ latency ratios for warmed, full-resolution, whole-image caller-owned I32 decodes.
+Each reported latency is the median of 21 alternating Rust/C++ rounds with 16 decodes per
+round. Rust 1.100.0 and MSVC 19.51 release builds used the same scalar or x86-64-v3/AVX2
+instruction-set floor.
 
 | Fixture | Scalar | AVX2 |
 |---|---:|---:|
-| 32 × 32 RGBA, 5/3 | 1.076 | 1.041 |
-| 64 × 64 RGB, 9/7 | 0.961 | 0.980 |
-| 128 × 128 RGBA, 9/7 | 1.070 | 1.014 |
+| 32 × 32 RGBA, 5/3 | 1.028 | 1.009 |
+| 64 × 64 RGB, 9/7 | 0.885 | 1.050 |
+| 128 × 128 RGBA, 9/7 | 0.862 | 1.000 |
 
-The widest observed median ratio was 1.119 at reduce 2 and 1.081 with a missing EOC marker.
+Across those fixtures at full resolution, reduce 2, and with a missing EOC marker, caller-owned
+decode ratios ranged from 0.783 to 1.082 in the scalar build and 0.962 to 1.111 with AVX2. Encoder
+ratios over 32², 64², and 128² RGB inputs using both 5/3 and 9/7 ranged from 0.998 to 1.058 scalar
+and 0.979 to 1.013 with AVX2. A ratio below 1 means Rust was faster. This is a small-image latency
+assessment, not a throughput claim; the C++ measurement includes its test shim constructing plane
+descriptors, and encoder calls include the shim's input/output copies. Reproduce it with the ignored
+`small_image_gates` timing tests above on an otherwise quiet system.
+
 The warmed allocation test covers both output APIs on seven fixtures, including packed headers,
 16-bit samples and 4:2:0 subsampling.
 
 ```
-cd rust
 cargo build --release -p neo-j2k
 cargo build --release -p neo-j2k --no-default-features --features std
 ```
@@ -218,7 +225,8 @@ RUSTFLAGS="-C target-cpu=x86-64-v3" CARGO_TARGET_DIR=target-v3 cargo test --rele
 The tests that compare with the C++ link it through `neo-j2k-oracle`. Its `build.rs` finds the C++ in
 this order:
 
-1. `NJ2K_ORACLE_DIR`: an existing CMake build folder of this repository configured with
+1. `NJ2K_ORACLE_DIR`: an existing CMake build folder of the C++
+   [neo-j2k repository](https://github.com/anne-skydancer/neo-j2k), configured with
    `-DNJ2K_BUILD_RUST_SHIM=ON` (off by default), with the target `nj2k_rust_shim` built. The build
    folder's link manifest, `nj2k-rust-shim-<config>.txt`, names the libraries (`nj2k_rust_shim`,
    `nj2k_test_common`, `nj2k_oracle`, `neoj2k_static`) and, on Linux, the C++ runtime:
@@ -226,11 +234,11 @@ this order:
    ```
    cmake --preset windows-msvc -DNJ2K_BUILD_RUST_SHIM=ON          # or linux-gcc; the presets' flags:
    cmake --build --preset windows-msvc --target nj2k_rust_shim    # /fp:precise /arch:AVX2; -ffp-contract=off -fno-fast-math
-   cd rust
-   NJ2K_ORACLE_DIR=../build/windows-msvc cargo test --release --workspace
+   NJ2K_ORACLE_DIR=/path/to/neo-j2k/build/windows-msvc cargo test --release --workspace
    ```
 
-2. Otherwise CMake configures and builds the C++ into the build script's `OUT_DIR`
+2. Otherwise set `NJ2K_CPP_SOURCE` to a checkout of the C++ repository. CMake configures and
+   builds that checkout into the build script's `OUT_DIR`
    (`cmake-<preset>`), with the preset `NJ2K_ORACLE_PRESET` (default `windows-msvc` on Windows,
    `linux-gcc` elsewhere) and only the static library, the oracle, the harness and the shim
    (`-DNJ2K_BUILD_TESTS=OFF -DNJ2K_BUILD_TOOLS=OFF -DNJ2K_BUILD_BENCH=OFF -DNJ2K_BUILD_SHARED=OFF
@@ -241,7 +249,6 @@ The C++ is always built in `RelWithDebInfo` (`NJ2K_ORACLE_CONFIG`), with the dyn
 (`/MD`) that Rust's MSVC target uses.
 
 ```
-cd rust
 cargo test --release --workspace                                    # every test, the differential ones included
 cargo test --release -p neo-j2k-testkit                             # the test kit alone: no C++
 cargo test --release -p neo-j2k-oracle --test differential          # the test kit against the C++ harness, R0's gates
@@ -252,6 +259,7 @@ cargo fmt --all --check
 | Variable | Use |
 |---|---|
 | `NJ2K_ORACLE_DIR` | a CMake build folder holding the oracle libraries (above) |
+| `NJ2K_CPP_SOURCE` | a checkout of the external C++ neo-j2k repository, used when `NJ2K_ORACLE_DIR` is not set |
 | `NJ2K_ORACLE_PRESET` | the CMake preset `build.rs` uses when it builds the oracle itself |
 | `NJ2K_ORACLE_CONFIG` | the configuration of the oracle's build (default `RelWithDebInfo`) |
 | `NJ2K_ORACLE_NO_BUILD` | `1`: no C++ build and no link, for commands that compile without linking (`cargo clippy`, `cargo doc`, `cargo metadata`); a test build then fails to link |
@@ -344,7 +352,6 @@ exercises the wavelet, colour, Tier-1 sample stores and packed output kernels. T
 build script does nothing under Miri.
 
 ```
-cd rust
 cargo +nightly-2026-11-03 miri setup
 NJ2K_ORACLE_NO_BUILD=1 cargo +nightly-2026-11-03 miri test -p neo-j2k-testkit -p neo-j2k --lib
 NJ2K_ORACLE_NO_BUILD=1 cargo +nightly-2026-11-03 miri test -p neo-j2k --test miri_decode --locked
@@ -362,12 +369,12 @@ NJ2K_ORACLE_NO_BUILD=1 RUSTFLAGS="-C target-feature=+avx2" CARGO_TARGET_DIR=targ
 | Temporary files | `TEMP`/`TMP` and `NJ2K_TEST_TMP` | `TMPDIR` and `NJ2K_TEST_TMP` |
 | Miri | works (it interprets; no oracle) | the CI job runs here |
 
-CI (`.github/workflows/rust.yml`) runs the lint job (fmt, clippy at both CPU levels and for the
-decoder-only configuration, docs, cargo-deny, the native-Rust check, and
-`cargo package --locked -p neo-j2k`). Tests run at both CPU levels on Windows (MSVC), Linux
-(GCC 15, with the full conformance and non-regression data), and Ubuntu 24.04 (GCC 14,
-with the oracle built by `build.rs`). The GCC 15 job compares the irreversible sample conversion
-with C++ for every 32-bit floating-point bit pattern. CI also runs scalar and AVX2 Miri and seeded
-AddressSanitizer fuzzing at both CPU levels on Windows. Scheduled and manually dispatched runs replay
-the extended cut table and allow ten minutes per fuzz target at each CPU level. See the
-[Rust port design](../doc/rust.md) for implementation notes.
+CI (`.github/workflows/ci.yml`) runs formatting, Clippy, documentation, native-package checks, and the tests that do not need
+the external C++ oracle. Differential tests use `NJ2K_ORACLE_DIR` or `NJ2K_CPP_SOURCE` as described
+above. See the [Rust port design](doc/rust.md) for implementation notes.
+
+## License
+
+`neoj2k-rust` is licensed under the [BSD 2-Clause License](LICENSE). Portions derived from
+OpenJPEG retain their notices in [LICENSE.OpenJPEG](neo-j2k/LICENSE.OpenJPEG) and
+[NOTICE.md](neo-j2k/NOTICE.md).

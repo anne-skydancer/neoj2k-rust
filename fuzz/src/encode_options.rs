@@ -144,6 +144,6 @@ mod tests {
                 encode_options(&std::fs::read(path).unwrap());
             }
         }
-        encode_options(include_bytes!("../../../fuzz/regressions/encode-size-cap-lossless.bin"));
+        encode_options(include_bytes!("../regressions/encode-size-cap-lossless.bin"));
     }
 }

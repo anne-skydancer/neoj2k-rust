@@ -1,0 +1,45 @@
+# neo-j2k reference table, written by nj2k_diff record with backend neoj2k
+# whole <file> <mode> <reduce> <bytes> <ok> <hash>
+# cuts <file> <mode> <reduce> <from> <step> <count> <decoded> <digest>
+whole	edge_ppt_empty_tiles_97.j2k	plain	0	561	1	195286ba8ec4875b
+whole	edge_ppt_empty_tiles_97.j2k	plain	1	561	1	851f7cfbe98c0472
+whole	edge_ppt_empty_tiles_97.j2k	plain	2	561	1	bb0668bdd7a11e82
+whole	edge_ppt_empty_tiles_97.j2k	plain	3	561	1	cb1fdf44c623bf00
+whole	edge_ppt_empty_tiles_97.j2k	plain	4	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	plain	5	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	strict	0	561	1	195286ba8ec4875b
+whole	edge_ppt_empty_tiles_97.j2k	strict	1	561	1	851f7cfbe98c0472
+whole	edge_ppt_empty_tiles_97.j2k	strict	2	561	1	bb0668bdd7a11e82
+whole	edge_ppt_empty_tiles_97.j2k	strict	3	561	1	cb1fdf44c623bf00
+whole	edge_ppt_empty_tiles_97.j2k	strict	4	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	strict	5	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	viewer	0	561	1	d2ba7a464fe78a88
+whole	edge_ppt_empty_tiles_97.j2k	viewer	1	561	1	1cc42fb53056fea0
+whole	edge_ppt_empty_tiles_97.j2k	viewer	2	561	1	1a8c7b0e53250f46
+whole	edge_ppt_empty_tiles_97.j2k	viewer	3	561	1	b93a2070ecb55260
+whole	edge_ppt_empty_tiles_97.j2k	viewer	4	561	1	b93a2070ecb55260
+whole	edge_ppt_empty_tiles_97.j2k	viewer	5	561	1	b93a2070ecb55260
+cuts	edge_ppt_empty_tiles_97.j2k	plain	0	1	1	560	224	cbc922a4257a85ec
+cuts	edge_ppt_empty_tiles_97.j2k	plain	0	1	13	44	17	843a20e67b63941c
+cuts	edge_ppt_empty_tiles_97.j2k	plain	1	1	1	560	224	304de5a1136b3c02
+cuts	edge_ppt_empty_tiles_97.j2k	plain	1	1	13	44	17	b777d42055bbf8bb
+cuts	edge_ppt_empty_tiles_97.j2k	plain	2	1	1	560	224	1643ed9d0e8bd047
+cuts	edge_ppt_empty_tiles_97.j2k	plain	2	1	13	44	17	05e09b79990488ba
+cuts	edge_ppt_empty_tiles_97.j2k	plain	3	1	1	560	224	14edf17445cd6cb1
+cuts	edge_ppt_empty_tiles_97.j2k	plain	3	1	13	44	17	c0e1e0de0a88d7a3
+cuts	edge_ppt_empty_tiles_97.j2k	plain	4	1	1	560	0	83fcf125f4010f89
+cuts	edge_ppt_empty_tiles_97.j2k	plain	4	1	13	44	0	630c83a086db8213
+cuts	edge_ppt_empty_tiles_97.j2k	plain	5	1	1	560	0	83fcf125f4010f89
+cuts	edge_ppt_empty_tiles_97.j2k	plain	5	1	13	44	0	630c83a086db8213
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	0	1	1	560	224	116e132841a06507
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	0	1	13	44	17	e9bb06dd07207a73
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	1	1	1	560	224	6da8c967532d0506
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	1	1	13	44	17	ab5efebe54bb6dda
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	2	1	1	560	224	f3fc0a2475c36836
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	2	1	13	44	17	b2167dca45085378
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	3	1	1	560	224	9918e4d949b0b032
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	3	1	13	44	17	b8cf4fc2e8f27db9
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	4	1	1	560	224	9918e4d949b0b032
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	4	1	13	44	17	b8cf4fc2e8f27db9
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	5	1	1	560	224	9918e4d949b0b032
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	5	1	13	44	17	b8cf4fc2e8f27db9

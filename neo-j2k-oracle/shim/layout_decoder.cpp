@@ -3,12 +3,12 @@
 //
 // The decoder's half of the size table: the types its arenas hold (Arena::make_array, make,
 // ArenaList; WorkArena::make_array, raw_array, grow) and the Tier-1 scratch that kept_bytes()
-// counts, as the twin's ledger charges them (rust/neo-j2k/src/mem/layout.rs). The decoder's and
+// counts, as the twin's ledger charges them (neo-j2k/src/mem/layout.rs). The decoder's and
 // the encoder's headers are kept in two translation units: both define nj2k::detail::TagNode and
 // TagTree on origin/main before the ODR hotfix (plan finding C1).
 //
 // Types defined inside a .cpp file (decode.cpp's TileWalk, t2.cpp's PiResolution and PiComp) are
-// not visible here; the stage that transcribes their unit adds them (rust/README.md).
+// not visible here; the stage that transcribes their unit adds them (README.md).
 #include <cstdint>
 
 #include <neoj2k/neoj2k.h>

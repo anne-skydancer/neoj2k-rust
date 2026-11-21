@@ -442,7 +442,7 @@ void coding(std::string& s, const char* tag, const nj2k::test::Coding& c)
          unsigned(c.xcb), unsigned(c.ycb), hex_bytes(c.precincts).c_str());
 }
 
-// The scan's summary, line for line as rust/neo-j2k-testkit/src/scan.rs writes it.
+// The scan's summary, line for line as neo-j2k-testkit/src/scan.rs writes it.
 std::string scan_summary(std::span<const std::uint8_t> bytes)
 {
     std::string s;

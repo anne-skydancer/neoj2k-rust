@@ -1,7 +1,7 @@
 /* SPDX-License-Identifier: BSD-2-Clause
  * Copyright (c) 2026, Anne Skydancer (neo-j2k)
  *
- * The test-only C interface the Rust crate neo-j2k-oracle links (rust/README.md): what the Rust
+ * The test-only C interface the Rust crate neo-j2k-oracle links (README.md): what the Rust
  * twin's differential tests need from the C++ that the public API does not give. Built only with
  * -DNJ2K_BUILD_RUST_SHIM=ON, never installed or shipped, and never linked by the neo-j2k crate
  * (its dev-dependency only).
@@ -9,7 +9,7 @@
  * Every function is noexcept: a C++ exception (an allocation failure in the harness) never crosses
  * into Rust; it becomes a null result or 0. Every pointer argument must be valid for the call;
  * outcomes and backends are released by their own free functions. The bindings in
- * rust/neo-j2k-oracle/src/ffi.rs mirror this file and are checked against NJ2K_SHIM_ABI_VERSION.
+ * neo-j2k-oracle/src/ffi.rs mirror this file and are checked against NJ2K_SHIM_ABI_VERSION.
  */
 #ifndef NJ2K_RUST_SHIM_H
 #define NJ2K_RUST_SHIM_H
@@ -101,7 +101,7 @@ int32_t nj2k_shim_viewer_reduce_factor(int32_t requested_discard, int32_t resolu
 uint32_t nj2k_shim_viewer_decode_allowed(uint64_t width, uint64_t height, uint64_t components, uint32_t reduce);
 
 /* ---- the codestream scanner (tests/common/j2k_scan.h) as text, the PGX reader ------------------ */
-/* the scan's summary (rust/neo-j2k-testkit/src/scan.rs writes the same); writes up to cap bytes,
+/* the scan's summary (neo-j2k-testkit/src/scan.rs writes the same); writes up to cap bytes,
  * returns the summary's length (0 when the harness failed) */
 size_t nj2k_shim_scan_summary(const uint8_t *data, size_t size, char *out, size_t cap);
 

@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 
-//! Finds or builds the C++ oracle and links it (rust/README.md, "Tests and the C++ oracle"):
+//! Finds or builds the external C++ oracle and links it (README.md, "Tests and the C++ oracle"):
 //!
 //! 1. `NJ2K_ORACLE_DIR`: an existing CMake build folder of this repository configured with
 //!    `-DNJ2K_BUILD_RUST_SHIM=ON`, whose libraries are linked as they are (built beforehand);
-//! 2. otherwise CMake configures and builds the C++ into `OUT_DIR` with the preset
+//! 2. otherwise `NJ2K_CPP_SOURCE` names a checkout of the C++ neo-j2k repository, which CMake
+//!    configures and builds into `OUT_DIR` with the preset
 //!    `NJ2K_ORACLE_PRESET` (default `windows-msvc` on Windows, `linux-gcc` elsewhere): the static
 //!    library, the OpenJPEG oracle, the harness and the shim only.
 //!
 //! Either way the build folder's link manifest (`nj2k-rust-shim-<config>.txt`, written by
-//! `rust/neo-j2k-oracle/shim/CMakeLists.txt`; config `NJ2K_ORACLE_CONFIG`, default
+//! `rust/neo-j2k-oracle/shim/CMakeLists.txt` in that C++ checkout; config
+//! `NJ2K_ORACLE_CONFIG`, default
 //! `RelWithDebInfo`) names the libraries in link order. `NJ2K_ORACLE_NO_BUILD=1` skips all of it
 //! for commands that compile without linking (clippy, doc), and so does Miri, whose tests never
 //! call the oracle; a linking build then fails with the oracle's symbols missing.
@@ -81,11 +83,18 @@ fn main() {
     if no_build || env::var_os("CARGO_CFG_MIRI").is_some() {
         return;
     }
-    let repo = PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR")).join("../..");
+    let cpp_source = var("NJ2K_CPP_SOURCE");
     let config = var("NJ2K_ORACLE_CONFIG").unwrap_or_else(|| "RelWithDebInfo".to_owned());
     let dir = if let Some(dir) = var("NJ2K_ORACLE_DIR") {
         PathBuf::from(dir)
     } else {
+        let repo = PathBuf::from(cpp_source.unwrap_or_else(|| {
+            panic!("set NJ2K_CPP_SOURCE to the C++ neo-j2k checkout, or NJ2K_ORACLE_DIR to its built oracle")
+        }));
+        assert!(
+            repo.join("CMakeLists.txt").is_file(),
+            "NJ2K_CPP_SOURCE is not a neo-j2k checkout"
+        );
         let windows = env::var("CARGO_CFG_TARGET_OS").is_ok_and(|os| os == "windows");
         let preset =
             var("NJ2K_ORACLE_PRESET").unwrap_or_else(|| if windows { "windows-msvc" } else { "linux-gcc" }.to_owned());

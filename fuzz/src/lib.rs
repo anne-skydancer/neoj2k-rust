@@ -89,13 +89,13 @@ pub fn header_decode(data: &[u8]) {
 
 #[cfg(feature = "oracle")]
 const DIFFERENTIAL_SEEDS: [&[u8]; 7] = [
-    include_bytes!("../../../corpus/generated/sl_64_rgb_97.j2k"),
-    include_bytes!("../../../corpus/generated/sl_32_rgba_53.j2k"),
-    include_bytes!("../../../corpus/generated/packed_ppm.j2k"),
-    include_bytes!("../../../corpus/generated/packed_ppt.j2k"),
-    include_bytes!("../../../corpus/generated/tile_origin_odd_97.j2k"),
-    include_bytes!("../../../corpus/generated/sub_420.j2k"),
-    include_bytes!("../../../corpus/generated/poc_lrcp_rlcp.j2k"),
+    include_bytes!("../../corpus/generated/sl_64_rgb_97.j2k"),
+    include_bytes!("../../corpus/generated/sl_32_rgba_53.j2k"),
+    include_bytes!("../../corpus/generated/packed_ppm.j2k"),
+    include_bytes!("../../corpus/generated/packed_ppt.j2k"),
+    include_bytes!("../../corpus/generated/tile_origin_odd_97.j2k"),
+    include_bytes!("../../corpus/generated/sub_420.j2k"),
+    include_bytes!("../../corpus/generated/poc_lrcp_rlcp.j2k"),
 ];
 
 #[cfg(feature = "oracle")]

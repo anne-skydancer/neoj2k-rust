@@ -2,7 +2,7 @@
 # Copyright (c) 2026, Anne Skydancer (neo-j2k)
 #
 # nj2k_rust_shim (-DNJ2K_BUILD_RUST_SHIM=ON): the test-only C interface that the Rust crate
-# neo-j2k-oracle links for the twin's differential tests (rust/README.md). It is built with the
+# neo-j2k-oracle links for the twin's differential tests (README.md). It is built with the
 # library's flags, never installed and never shipped. Its link manifest,
 # nj2k-rust-shim-<config>.txt in the build folder, names every library the Rust link needs, in
 # link order, so that the crate's build.rs needs no knowledge of the generator's folder layout.

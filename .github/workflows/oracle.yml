@@ -1,0 +1,37 @@
+name: C++ oracle
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "43 3 * * 1"
+
+permissions:
+  contents: read
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+  NJ2K_ORACLE_PRESET: linux-gcc
+
+jobs:
+  differential:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: rust
+      - uses: actions/checkout@v4
+        with:
+          repository: anne-skydancer/neo-j2k
+          persist-credentials: false
+          path: cpp
+      - name: Toolchain
+        working-directory: rust
+        run: rustup show
+      - name: Differential workspace tests
+        working-directory: rust
+        env:
+          NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+        run: cargo test --release --workspace --locked -- --test-threads=1

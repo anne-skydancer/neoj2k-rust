@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# Files of the generated corpus where neo-j2k departs from the oracle on purpose (doc/departures.md):
+#   <file> <departure>
+# nj2k_diff verify leaves their lines of the reference table out and fails when a listed file has no
+# line in it, so the list cannot go stale; each departure has a test of its own.
+edge_ppt_empty_tiles_97.j2k DP-3: decoded, the oracle refuses (decode_unit test_dp3: equal to the oracle's decode with the empty tile-parts padded)

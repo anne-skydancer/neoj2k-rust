@@ -37,8 +37,8 @@ fn tiny_tiles_preserve_exact_samples_through_scoped_workers() {
     let mut serial = Decoder::new(DecoderConfig::default());
     let mut parallel = Decoder::new(DecoderConfig::default());
     for data in [
-        &include_bytes!("../../../corpus/generated/sl_32_rgba_53.j2k")[..],
-        &include_bytes!("../../../corpus/generated/sl_32_rgb_97.j2k")[..],
+        &include_bytes!("../../corpus/generated/sl_32_rgba_53.j2k")[..],
+        &include_bytes!("../../corpus/generated/sl_32_rgb_97.j2k")[..],
     ] {
         let before = host.0.load(Relaxed);
         let expected = serial.decode(data, DecodeParams::default()).unwrap();
@@ -64,10 +64,10 @@ fn tiny_tiles_preserve_exact_samples_through_scoped_workers() {
 #[test]
 fn small_decodes_at_every_reduce_level_can_be_retried() {
     let inputs: [&[u8]; 4] = [
-        include_bytes!("../../../corpus/generated/size_1x1_g.j2k"),
-        include_bytes!("../../../corpus/generated/size_3x5_g.j2k"),
-        include_bytes!("../../../corpus/generated/size_7x9_rgb_r1.j2k"),
-        include_bytes!("../../../corpus/generated/size_16x16_rgb_r5.j2k"),
+        include_bytes!("../../corpus/generated/size_1x1_g.j2k"),
+        include_bytes!("../../corpus/generated/size_3x5_g.j2k"),
+        include_bytes!("../../corpus/generated/size_7x9_rgb_r1.j2k"),
+        include_bytes!("../../corpus/generated/size_16x16_rgb_r5.j2k"),
     ];
     for reduce in 0..=5 {
         let mut decoder = Decoder::new(DecoderConfig {

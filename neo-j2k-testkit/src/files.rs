@@ -6,10 +6,10 @@
 
 use std::path::{Path, PathBuf};
 
-/// The repository's root (this crate lives in `rust/neo-j2k-testkit`).
+/// The repository's root (this crate lives in `neo-j2k-testkit`).
 #[must_use]
 pub fn repo_root() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
+    Path::new(env!("CARGO_MANIFEST_DIR")).join("..")
 }
 
 /// `corpus/generated`: the generated corpus and the oracle's reference tables.

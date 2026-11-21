@@ -59,7 +59,7 @@ pub fn init() {
 /// One row of the C++ size table.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LayoutEntry {
-    /// The type's name in the twin's table (`rust/neo-j2k/src/mem/layout.rs`).
+    /// The type's name in the twin's table (`neo-j2k/src/mem/layout.rs`).
     pub name: String,
     /// `sizeof`
     pub size: u64,

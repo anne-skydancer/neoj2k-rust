@@ -6,6 +6,7 @@
 [workspace]
 resolver = "3"
 members = ["neo-j2k", "neo-j2k-oracle", "neo-j2k-testkit"]
+default-members = ["neo-j2k"]
 
 [workspace.package]
 version = "0.1.2"

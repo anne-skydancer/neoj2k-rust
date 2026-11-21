@@ -1,0 +1,38 @@
+name: Release crate
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+  NJ2K_ORACLE_NO_BUILD: "1"
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: rustup show
+      - name: Verify tag and package
+        shell: bash
+        run: |
+          set -euo pipefail
+          version=$(cargo metadata --no-deps --format-version 1 | python -c 'import json,sys; print(next(p["version"] for p in json.load(sys.stdin)["packages"] if p["name"] == "neo-j2k"))')
+          test "v$version" = "$GITHUB_REF_NAME"
+          python -I tools/check_rust_native.py
+          cargo package -p neo-j2k --locked
+          test -f "target/package/neo-j2k-$version.crate"
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" target/package/neo-j2k-*.crate --verify-tag --generate-notes --title "neo-j2k $GITHUB_REF_NAME"

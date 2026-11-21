@@ -1,0 +1,1887 @@
+# neo-j2k reference table, written by nj2k_diff record with backend oracle
+# whole <file> <mode> <reduce> <bytes> <ok> <hash>
+# cuts <file> <mode> <reduce> <from> <step> <count> <decoded> <digest>
+whole	cblk_32x16_97.j2k	plain	0	1529	1	aef9eee61540d8b9
+whole	cblk_32x16_97.j2k	plain	1	1529	1	dba10fa99dbe48ba
+whole	cblk_32x16_97.j2k	plain	2	1529	1	c0a7fdef6b9714ea
+whole	cblk_32x16_97.j2k	plain	3	1529	1	3f1b7c7591060851
+whole	cblk_32x16_97.j2k	plain	4	1529	1	59fe75b9f72a55b0
+whole	cblk_32x16_97.j2k	plain	5	1529	0	0000000000000000
+whole	cblk_32x16_97.j2k	viewer	0	1529	1	6f85c07cefc9dd31
+whole	cblk_32x16_97.j2k	viewer	1	1529	1	8e889038386b6b39
+whole	cblk_32x16_97.j2k	viewer	2	1529	1	c460bc73d9f9265b
+whole	cblk_32x16_97.j2k	viewer	3	1529	1	fb1893822e5968bf
+whole	cblk_32x16_97.j2k	viewer	4	1529	1	8a8f239b620b7964
+whole	cblk_32x16_97.j2k	viewer	5	1529	1	8a8f239b620b7964
+cuts	cblk_32x16_97.j2k	plain	0	1	1	1528	1393	0ab03b2601e1febb
+cuts	cblk_32x16_97.j2k	plain	0	1	13	118	107	07945346760c3730
+cuts	cblk_32x16_97.j2k	plain	1	1	1	1528	1393	281eb72ca8aa36e6
+cuts	cblk_32x16_97.j2k	plain	1	1	13	118	107	91bb7d118293723f
+cuts	cblk_32x16_97.j2k	plain	2	1	1	1528	1393	ca446383f2ecc15c
+cuts	cblk_32x16_97.j2k	plain	2	1	13	118	107	b902d022cbf81fe4
+cuts	cblk_32x16_97.j2k	plain	3	1	1	1528	1393	d778f8008d25b16b
+cuts	cblk_32x16_97.j2k	plain	3	1	13	118	107	c5e62a8d56547963
+cuts	cblk_32x16_97.j2k	plain	4	1	1	1528	1393	291fb3cb2973e42a
+cuts	cblk_32x16_97.j2k	plain	4	1	13	118	107	2cb1d0fa27057f20
+cuts	cblk_32x16_97.j2k	plain	5	1	1	1528	0	1e32cf589ef91f54
+cuts	cblk_32x16_97.j2k	plain	5	1	13	118	0	cb78ec4f6e8ae755
+cuts	cblk_32x16_97.j2k	viewer	0	1	1	1528	1393	7b98ea2b0e2dc252
+cuts	cblk_32x16_97.j2k	viewer	0	1	13	118	107	51a40c6a05449ac5
+cuts	cblk_32x16_97.j2k	viewer	1	1	1	1528	1393	88d9f665e2ac8660
+cuts	cblk_32x16_97.j2k	viewer	1	1	13	118	107	270070c34ff8c524
+cuts	cblk_32x16_97.j2k	viewer	2	1	1	1528	1393	620133caad3c3f37
+cuts	cblk_32x16_97.j2k	viewer	2	1	13	118	107	f8d21fb941ac497e
+cuts	cblk_32x16_97.j2k	viewer	3	1	1	1528	1393	847eecf40856a55b
+cuts	cblk_32x16_97.j2k	viewer	3	1	13	118	107	929d617070f94f86
+cuts	cblk_32x16_97.j2k	viewer	4	1	1	1528	1393	abf4de39500b286b
+cuts	cblk_32x16_97.j2k	viewer	4	1	13	118	107	c0115c91c4552989
+cuts	cblk_32x16_97.j2k	viewer	5	1	1	1528	1393	abf4de39500b286b
+cuts	cblk_32x16_97.j2k	viewer	5	1	13	118	107	c0115c91c4552989
+whole	cblk_4x4.j2k	plain	0	3674	1	3d5c9b0207b2c8be
+whole	cblk_4x4.j2k	plain	1	3674	1	d119b4b0a2e78566
+whole	cblk_4x4.j2k	plain	2	3674	1	126913f87c736350
+whole	cblk_4x4.j2k	plain	3	3674	1	24d4be5b2864a16e
+whole	cblk_4x4.j2k	plain	4	3674	0	0000000000000000
+whole	cblk_4x4.j2k	plain	5	3674	0	0000000000000000
+whole	cblk_4x4.j2k	viewer	0	3674	1	8515ca74024110b6
+whole	cblk_4x4.j2k	viewer	1	3674	1	cfcd01b16cbea24a
+whole	cblk_4x4.j2k	viewer	2	3674	1	dee1cb195fb53166
+whole	cblk_4x4.j2k	viewer	3	3674	1	efef306cc47f27e2
+whole	cblk_4x4.j2k	viewer	4	3674	1	efef306cc47f27e2
+whole	cblk_4x4.j2k	viewer	5	3674	1	efef306cc47f27e2
+cuts	cblk_4x4.j2k	plain	0	1	1	3673	3554	bcb115bb33048b10
+cuts	cblk_4x4.j2k	plain	0	1	13	283	273	a81ed187ab8dd174
+cuts	cblk_4x4.j2k	plain	1	1	1	3673	3554	1a12daa9097441b1
+cuts	cblk_4x4.j2k	plain	1	1	13	283	273	2eb07f3f362bf0d3
+cuts	cblk_4x4.j2k	plain	2	1	1	3673	3554	01998fe5d5e58093
+cuts	cblk_4x4.j2k	plain	2	1	13	283	273	8e61682d640c40c6
+cuts	cblk_4x4.j2k	plain	3	1	1	3673	3554	64679a79918f77be
+cuts	cblk_4x4.j2k	plain	3	1	13	283	273	39cbca52445b778d
+cuts	cblk_4x4.j2k	plain	4	1	1	3673	0	22e2c9e0842bc1c6
+cuts	cblk_4x4.j2k	plain	4	1	13	283	0	880a7592e2130952
+cuts	cblk_4x4.j2k	plain	5	1	1	3673	0	22e2c9e0842bc1c6
+cuts	cblk_4x4.j2k	plain	5	1	13	283	0	880a7592e2130952
+cuts	cblk_4x4.j2k	viewer	0	1	1	3673	3554	f095131cd82fb7a1
+cuts	cblk_4x4.j2k	viewer	0	1	13	283	273	73fcfb7ee9c5debd
+cuts	cblk_4x4.j2k	viewer	1	1	1	3673	3554	c2f9933c438cfd89
+cuts	cblk_4x4.j2k	viewer	1	1	13	283	273	28dda00315366549
+cuts	cblk_4x4.j2k	viewer	2	1	1	3673	3554	767a4174baa22897
+cuts	cblk_4x4.j2k	viewer	2	1	13	283	273	1a1d0d8b8ff645fe
+cuts	cblk_4x4.j2k	viewer	3	1	1	3673	3554	8a11fcb85f8b999d
+cuts	cblk_4x4.j2k	viewer	3	1	13	283	273	5a3a63ee05496122
+cuts	cblk_4x4.j2k	viewer	4	1	1	3673	3554	8a11fcb85f8b999d
+cuts	cblk_4x4.j2k	viewer	4	1	13	283	273	5a3a63ee05496122
+cuts	cblk_4x4.j2k	viewer	5	1	1	3673	3554	8a11fcb85f8b999d
+cuts	cblk_4x4.j2k	viewer	5	1	13	283	273	5a3a63ee05496122
+whole	edge_ppt_empty_tiles_97.j2k	plain	0	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	plain	1	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	plain	2	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	plain	3	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	plain	4	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	plain	5	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	viewer	0	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	viewer	1	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	viewer	2	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	viewer	3	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	viewer	4	561	0	0000000000000000
+whole	edge_ppt_empty_tiles_97.j2k	viewer	5	561	0	0000000000000000
+cuts	edge_ppt_empty_tiles_97.j2k	plain	0	1	1	560	219	460e4fea1444f1ad
+cuts	edge_ppt_empty_tiles_97.j2k	plain	0	1	13	44	16	d129c19498f39160
+cuts	edge_ppt_empty_tiles_97.j2k	plain	1	1	1	560	219	f04b01aec4c485f7
+cuts	edge_ppt_empty_tiles_97.j2k	plain	1	1	13	44	16	121d32c3faa35f44
+cuts	edge_ppt_empty_tiles_97.j2k	plain	2	1	1	560	219	6f90d56e69f7536b
+cuts	edge_ppt_empty_tiles_97.j2k	plain	2	1	13	44	16	1de57b70b9b73729
+cuts	edge_ppt_empty_tiles_97.j2k	plain	3	1	1	560	219	513bef8a7d2821d4
+cuts	edge_ppt_empty_tiles_97.j2k	plain	3	1	13	44	16	b2bc22863a2849b5
+cuts	edge_ppt_empty_tiles_97.j2k	plain	4	1	1	560	0	83fcf125f4010f89
+cuts	edge_ppt_empty_tiles_97.j2k	plain	4	1	13	44	0	630c83a086db8213
+cuts	edge_ppt_empty_tiles_97.j2k	plain	5	1	1	560	0	83fcf125f4010f89
+cuts	edge_ppt_empty_tiles_97.j2k	plain	5	1	13	44	0	630c83a086db8213
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	0	1	1	560	219	e5ae3a1a75675c74
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	0	1	13	44	16	f8b256bdd095f1a2
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	1	1	1	560	219	b1bcafb6435634b7
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	1	1	13	44	16	6712cc1b6180298b
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	2	1	1	560	219	1e6dd92437c23f29
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	2	1	13	44	16	7ff52b1cbca5dd1f
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	3	1	1	560	219	dddaff19f5ece9fd
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	3	1	13	44	16	8de3ff0a18380106
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	4	1	1	560	219	dddaff19f5ece9fd
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	4	1	13	44	16	8de3ff0a18380106
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	5	1	1	560	219	dddaff19f5ece9fd
+cuts	edge_ppt_empty_tiles_97.j2k	viewer	5	1	13	44	16	8de3ff0a18380106
+whole	large_1024_rgb_97.j2k	plain	0	31349	1	248d7406a5e96cba
+whole	large_1024_rgb_97.j2k	plain	1	31349	1	b992fb4a9775644d
+whole	large_1024_rgb_97.j2k	plain	2	31349	1	d8a295def6742ca9
+whole	large_1024_rgb_97.j2k	plain	3	31349	1	dbc968e4cb9db8c4
+whole	large_1024_rgb_97.j2k	plain	4	31349	1	283c31a39501ba6a
+whole	large_1024_rgb_97.j2k	plain	5	31349	1	c27fff78cbbb9872
+whole	large_1024_rgb_97.j2k	viewer	0	31349	1	25b92de7e7d085fc
+whole	large_1024_rgb_97.j2k	viewer	1	31349	1	44a264c8306932d6
+whole	large_1024_rgb_97.j2k	viewer	2	31349	1	92b7f50981cedb9c
+whole	large_1024_rgb_97.j2k	viewer	3	31349	1	82643824014908e0
+whole	large_1024_rgb_97.j2k	viewer	4	31349	1	24a1fef7940e619c
+whole	large_1024_rgb_97.j2k	viewer	5	31349	1	c5cbaa29e2aa27f8
+whole	large_2048x64_rgba_53.j2k	plain	0	10407	1	0de0711b6ec08024
+whole	large_2048x64_rgba_53.j2k	plain	1	10407	1	2d8af3ee59de0b5a
+whole	large_2048x64_rgba_53.j2k	plain	2	10407	1	db959011f21f3254
+whole	large_2048x64_rgba_53.j2k	plain	3	10407	1	061d971ab763c7ce
+whole	large_2048x64_rgba_53.j2k	plain	4	10407	1	57c3a7242905932e
+whole	large_2048x64_rgba_53.j2k	plain	5	10407	1	05a9d0ab7a967479
+whole	large_2048x64_rgba_53.j2k	viewer	0	10407	1	8dce1d9bbe99ab50
+whole	large_2048x64_rgba_53.j2k	viewer	1	10407	1	37a3ec9ae937705e
+whole	large_2048x64_rgba_53.j2k	viewer	2	10407	1	09d7bbf372a512a0
+whole	large_2048x64_rgba_53.j2k	viewer	3	10407	1	f87095c6ba6b43e6
+whole	large_2048x64_rgba_53.j2k	viewer	4	10407	1	dce00d16599e3786
+whole	large_2048x64_rgba_53.j2k	viewer	5	10407	1	a311fea51e5ec2fe
+whole	large_4096_g_97.j2k	plain	0	20984	1	beba2e5f8546700c
+whole	large_4096_g_97.j2k	plain	1	20984	1	439712adcac48c14
+whole	large_4096_g_97.j2k	plain	2	20984	1	80e930bb77546da1
+whole	large_4096_g_97.j2k	plain	3	20984	1	7b995de3e9ccdf1b
+whole	large_4096_g_97.j2k	plain	4	20984	1	d7c608e447cabf4b
+whole	large_4096_g_97.j2k	plain	5	20984	1	45c38802b0908dca
+whole	large_4096_g_97.j2k	viewer	0	20984	1	35ec709a92d227f6
+whole	large_4096_g_97.j2k	viewer	1	20984	1	70108e10d74da4ee
+whole	large_4096_g_97.j2k	viewer	2	20984	1	cd0a4da5263aa47a
+whole	large_4096_g_97.j2k	viewer	3	20984	1	4763607c4989dae0
+whole	large_4096_g_97.j2k	viewer	4	20984	1	c6e786c4fef76414
+whole	large_4096_g_97.j2k	viewer	5	20984	1	aecad38bcf49a2c2
+whole	large_4096x8_rgb_97.j2k	plain	0	6157	1	d4ca134b60224302
+whole	large_4096x8_rgb_97.j2k	plain	1	6157	1	db2f6339539a0b6b
+whole	large_4096x8_rgb_97.j2k	plain	2	6157	1	f6340b1067971a68
+whole	large_4096x8_rgb_97.j2k	plain	3	6157	1	dd49725c210404fe
+whole	large_4096x8_rgb_97.j2k	plain	4	6157	0	0000000000000000
+whole	large_4096x8_rgb_97.j2k	plain	5	6157	0	0000000000000000
+whole	large_4096x8_rgb_97.j2k	viewer	0	6157	1	6e0b6e1cb3a64a7c
+whole	large_4096x8_rgb_97.j2k	viewer	1	6157	1	4ae16697b0ac6ed0
+whole	large_4096x8_rgb_97.j2k	viewer	2	6157	1	4f5ece58e978f594
+whole	large_4096x8_rgb_97.j2k	viewer	3	6157	1	0a737b980f6dcf4b
+whole	large_4096x8_rgb_97.j2k	viewer	4	6157	1	0a737b980f6dcf4b
+whole	large_4096x8_rgb_97.j2k	viewer	5	6157	1	0a737b980f6dcf4b
+whole	layers_1_97.j2k	plain	0	1160	1	870884b1610a653f
+whole	layers_1_97.j2k	plain	1	1160	1	e774f5562844afce
+whole	layers_1_97.j2k	plain	2	1160	1	c1185645d0ee7995
+whole	layers_1_97.j2k	plain	3	1160	1	433234dd2614e9ad
+whole	layers_1_97.j2k	plain	4	1160	1	4843a188fb3a9be6
+whole	layers_1_97.j2k	plain	5	1160	0	0000000000000000
+whole	layers_1_97.j2k	viewer	0	1160	1	5cf7a6432b52640b
+whole	layers_1_97.j2k	viewer	1	1160	1	9b857e70e036d627
+whole	layers_1_97.j2k	viewer	2	1160	1	839985e60bc1f1df
+whole	layers_1_97.j2k	viewer	3	1160	1	f05c53d2021f13d3
+whole	layers_1_97.j2k	viewer	4	1160	1	7e1e8a76d0167ac1
+whole	layers_1_97.j2k	viewer	5	1160	1	7e1e8a76d0167ac1
+cuts	layers_1_97.j2k	plain	0	1	1	1159	1024	1434ca4b5d3b52c2
+cuts	layers_1_97.j2k	plain	0	1	13	90	79	cb7ea9865a8486a4
+cuts	layers_1_97.j2k	plain	1	1	1	1159	1024	d328111901e82bb4
+cuts	layers_1_97.j2k	plain	1	1	13	90	79	35a4e1173bd0e546
+cuts	layers_1_97.j2k	plain	2	1	1	1159	1024	e74720e0e5c538f6
+cuts	layers_1_97.j2k	plain	2	1	13	90	79	4d3c533828f2c041
+cuts	layers_1_97.j2k	plain	3	1	1	1159	1024	c58990f6ea88380c
+cuts	layers_1_97.j2k	plain	3	1	13	90	79	44253acd9881aac2
+cuts	layers_1_97.j2k	plain	4	1	1	1159	1024	9195a2ef4d4c5b67
+cuts	layers_1_97.j2k	plain	4	1	13	90	79	e3e098f8ee1bc1f0
+cuts	layers_1_97.j2k	plain	5	1	1	1159	0	7916aa223eab8ca3
+cuts	layers_1_97.j2k	plain	5	1	13	90	0	1e9c41f92256e202
+cuts	layers_1_97.j2k	viewer	0	1	1	1159	1024	6eb68b1fb36c19a2
+cuts	layers_1_97.j2k	viewer	0	1	13	90	79	892e5dae6515d07a
+cuts	layers_1_97.j2k	viewer	1	1	1	1159	1024	a84ef551aec4cfa2
+cuts	layers_1_97.j2k	viewer	1	1	13	90	79	df1510991effd339
+cuts	layers_1_97.j2k	viewer	2	1	1	1159	1024	4890ae78bd723072
+cuts	layers_1_97.j2k	viewer	2	1	13	90	79	d5cd583d831b8148
+cuts	layers_1_97.j2k	viewer	3	1	1	1159	1024	c85e931f155ceeb6
+cuts	layers_1_97.j2k	viewer	3	1	13	90	79	5ad0d75809bccc2e
+cuts	layers_1_97.j2k	viewer	4	1	1	1159	1024	0356a35842eb6711
+cuts	layers_1_97.j2k	viewer	4	1	13	90	79	5b6e4337d882eee7
+cuts	layers_1_97.j2k	viewer	5	1	1	1159	1024	0356a35842eb6711
+cuts	layers_1_97.j2k	viewer	5	1	13	90	79	5b6e4337d882eee7
+whole	layers_2_97.j2k	plain	0	1125	1	a674a2acfc6b1942
+whole	layers_2_97.j2k	plain	1	1125	1	0dfc716168876648
+whole	layers_2_97.j2k	plain	2	1125	1	64ab7c25f25cdfa4
+whole	layers_2_97.j2k	plain	3	1125	1	b6b8f7b4ef270744
+whole	layers_2_97.j2k	plain	4	1125	1	7224ed85ce007451
+whole	layers_2_97.j2k	plain	5	1125	0	0000000000000000
+whole	layers_2_97.j2k	viewer	0	1125	1	9c768152e8fcec95
+whole	layers_2_97.j2k	viewer	1	1125	1	43cd25b65334f553
+whole	layers_2_97.j2k	viewer	2	1125	1	66c23001f93b7f29
+whole	layers_2_97.j2k	viewer	3	1125	1	1836f46f52bc20b3
+whole	layers_2_97.j2k	viewer	4	1125	1	52880b129f949e71
+whole	layers_2_97.j2k	viewer	5	1125	1	52880b129f949e71
+cuts	layers_2_97.j2k	plain	0	1	1	1124	989	4074f41c2bdd640b
+cuts	layers_2_97.j2k	plain	0	1	13	87	76	1d319e1a03a4178d
+cuts	layers_2_97.j2k	plain	1	1	1	1124	989	1ed2f0ce6807acc8
+cuts	layers_2_97.j2k	plain	1	1	13	87	76	d978d57de43e808a
+cuts	layers_2_97.j2k	plain	2	1	1	1124	989	32c99cf775f3b800
+cuts	layers_2_97.j2k	plain	2	1	13	87	76	715f73ff3d504269
+cuts	layers_2_97.j2k	plain	3	1	1	1124	989	bcbb7e6f13434e60
+cuts	layers_2_97.j2k	plain	3	1	13	87	76	be1e5c3d734b0abf
+cuts	layers_2_97.j2k	plain	4	1	1	1124	989	5ad5a6ba9697a17f
+cuts	layers_2_97.j2k	plain	4	1	13	87	76	13abe03af147bfc7
+cuts	layers_2_97.j2k	plain	5	1	1	1124	0	f2d7f9d6bf84a993
+cuts	layers_2_97.j2k	plain	5	1	13	87	0	dd3bbf3f09bd68c5
+cuts	layers_2_97.j2k	viewer	0	1	1	1124	989	c5c4e07427356610
+cuts	layers_2_97.j2k	viewer	0	1	13	87	76	cb2347eef7bc8d2e
+cuts	layers_2_97.j2k	viewer	1	1	1	1124	989	125a22ea8d761fea
+cuts	layers_2_97.j2k	viewer	1	1	13	87	76	57233320d7700846
+cuts	layers_2_97.j2k	viewer	2	1	1	1124	989	34a5f395aba106bf
+cuts	layers_2_97.j2k	viewer	2	1	13	87	76	0ccf472998d38664
+cuts	layers_2_97.j2k	viewer	3	1	1	1124	989	98af1b933eb11208
+cuts	layers_2_97.j2k	viewer	3	1	13	87	76	9d7328b3e8c3db17
+cuts	layers_2_97.j2k	viewer	4	1	1	1124	989	29d8bd7176af3eac
+cuts	layers_2_97.j2k	viewer	4	1	13	87	76	9211077c66291d54
+cuts	layers_2_97.j2k	viewer	5	1	1	1124	989	29d8bd7176af3eac
+cuts	layers_2_97.j2k	viewer	5	1	13	87	76	9211077c66291d54
+whole	layers_4_53.j2k	plain	0	2251	1	d87ff974d9276fe9
+whole	layers_4_53.j2k	plain	1	2251	1	e849bbc8a66febf7
+whole	layers_4_53.j2k	plain	2	2251	1	74a593fb2d148e48
+whole	layers_4_53.j2k	plain	3	2251	1	a1b3e39ab9fd205d
+whole	layers_4_53.j2k	plain	4	2251	1	c60aecabcc272d6c
+whole	layers_4_53.j2k	plain	5	2251	0	0000000000000000
+whole	layers_4_53.j2k	viewer	0	2251	1	661eddebf30b325b
+whole	layers_4_53.j2k	viewer	1	2251	1	771575cdcfc907c9
+whole	layers_4_53.j2k	viewer	2	2251	1	7ac3f5e1d0b4fd41
+whole	layers_4_53.j2k	viewer	3	2251	1	a3373df5066f511f
+whole	layers_4_53.j2k	viewer	4	2251	1	9615c00ac2400fa7
+whole	layers_4_53.j2k	viewer	5	2251	1	9615c00ac2400fa7
+cuts	layers_4_53.j2k	plain	0	1	1	2250	2134	62c650099c9ef640
+cuts	layers_4_53.j2k	plain	0	1	13	174	165	46f24b7054b38832
+cuts	layers_4_53.j2k	plain	1	1	1	2250	2134	b5a0e730ff9f139b
+cuts	layers_4_53.j2k	plain	1	1	13	174	165	28bd2027debbe080
+cuts	layers_4_53.j2k	plain	2	1	1	2250	2134	039a8adc0ecacad1
+cuts	layers_4_53.j2k	plain	2	1	13	174	165	99fd1110c984a62c
+cuts	layers_4_53.j2k	plain	3	1	1	2250	2134	307d042879bc1357
+cuts	layers_4_53.j2k	plain	3	1	13	174	165	de4596eae7745c88
+cuts	layers_4_53.j2k	plain	4	1	1	2250	2134	c8cd3c1177640780
+cuts	layers_4_53.j2k	plain	4	1	13	174	165	9fc8a4a9b35fcca2
+cuts	layers_4_53.j2k	plain	5	1	1	2250	0	0db2d2a79e48ca20
+cuts	layers_4_53.j2k	plain	5	1	13	174	0	37e30c4ccd24f5b4
+cuts	layers_4_53.j2k	viewer	0	1	1	2250	2134	c49b3eb8045dcbed
+cuts	layers_4_53.j2k	viewer	0	1	13	174	165	6ae6567ea72605da
+cuts	layers_4_53.j2k	viewer	1	1	1	2250	2134	743eb16e09a1109f
+cuts	layers_4_53.j2k	viewer	1	1	13	174	165	02a16e75a5a1664a
+cuts	layers_4_53.j2k	viewer	2	1	1	2250	2134	c6cfc01cdfbd5b9a
+cuts	layers_4_53.j2k	viewer	2	1	13	174	165	2eece076cd490a54
+cuts	layers_4_53.j2k	viewer	3	1	1	2250	2134	252c488c8e4259dd
+cuts	layers_4_53.j2k	viewer	3	1	13	174	165	1c87623652f4b9b9
+cuts	layers_4_53.j2k	viewer	4	1	1	2250	2134	7f6a4eeade784ade
+cuts	layers_4_53.j2k	viewer	4	1	13	174	165	8c942d611e17ac12
+cuts	layers_4_53.j2k	viewer	5	1	1	2250	2134	7f6a4eeade784ade
+cuts	layers_4_53.j2k	viewer	5	1	13	174	165	8c942d611e17ac12
+whole	layers_8_97.j2k	plain	0	1715	1	e4e0592162809165
+whole	layers_8_97.j2k	plain	1	1715	1	77bf8cbfc2d6e722
+whole	layers_8_97.j2k	plain	2	1715	1	1ff849e2043ae323
+whole	layers_8_97.j2k	plain	3	1715	1	dee657b96d09474c
+whole	layers_8_97.j2k	plain	4	1715	1	1bfcb63d09716425
+whole	layers_8_97.j2k	plain	5	1715	0	0000000000000000
+whole	layers_8_97.j2k	viewer	0	1715	1	3c115c205cbcf0e7
+whole	layers_8_97.j2k	viewer	1	1715	1	595e50a868705111
+whole	layers_8_97.j2k	viewer	2	1715	1	e26648554184e0c7
+whole	layers_8_97.j2k	viewer	3	1715	1	7380e47105dc6f5f
+whole	layers_8_97.j2k	viewer	4	1715	1	6537bed70ec3eee7
+whole	layers_8_97.j2k	viewer	5	1715	1	6537bed70ec3eee7
+cuts	layers_8_97.j2k	plain	0	1	1	1714	1579	4cae2faadebd6508
+cuts	layers_8_97.j2k	plain	0	1	13	132	121	f73bc7c35a47d0dc
+cuts	layers_8_97.j2k	plain	1	1	1	1714	1579	7759fe2ed4afe4a7
+cuts	layers_8_97.j2k	plain	1	1	13	132	121	b99462feaf8ef2ab
+cuts	layers_8_97.j2k	plain	2	1	1	1714	1579	21b6e3570083d195
+cuts	layers_8_97.j2k	plain	2	1	13	132	121	6ed42f3f950fd29d
+cuts	layers_8_97.j2k	plain	3	1	1	1714	1579	aeb6b1d4708d35c3
+cuts	layers_8_97.j2k	plain	3	1	13	132	121	9ad29553ff8cb7af
+cuts	layers_8_97.j2k	plain	4	1	1	1714	1579	209a57bac13639ca
+cuts	layers_8_97.j2k	plain	4	1	13	132	121	b08c4bd30dba3ce0
+cuts	layers_8_97.j2k	plain	5	1	1	1714	0	25a30a58ee0c2a06
+cuts	layers_8_97.j2k	plain	5	1	13	132	0	1ce499aa1f33c877
+cuts	layers_8_97.j2k	viewer	0	1	1	1714	1579	bd65fb3830aaa344
+cuts	layers_8_97.j2k	viewer	0	1	13	132	121	f663146a5c97f744
+cuts	layers_8_97.j2k	viewer	1	1	1	1714	1579	3e8c0a77483b93e0
+cuts	layers_8_97.j2k	viewer	1	1	13	132	121	9bc724a35a87d429
+cuts	layers_8_97.j2k	viewer	2	1	1	1714	1579	3be02cd284067fb9
+cuts	layers_8_97.j2k	viewer	2	1	13	132	121	a85968d133d0c7c4
+cuts	layers_8_97.j2k	viewer	3	1	1	1714	1579	fe4fe092a0700256
+cuts	layers_8_97.j2k	viewer	3	1	13	132	121	fc56454dee445ceb
+cuts	layers_8_97.j2k	viewer	4	1	1	1714	1579	9bbda3b343ce44b2
+cuts	layers_8_97.j2k	viewer	4	1	13	132	121	8dc30cfea6268701
+cuts	layers_8_97.j2k	viewer	5	1	1	1714	1579	9bbda3b343ce44b2
+cuts	layers_8_97.j2k	viewer	5	1	13	132	121	8dc30cfea6268701
+whole	mark_eph.j2k	plain	0	3718	1	b17b84c4dcb336a3
+whole	mark_eph.j2k	plain	1	3718	1	f4efb2f8c7eaebf1
+whole	mark_eph.j2k	plain	2	3718	1	1d261d95d2abca31
+whole	mark_eph.j2k	plain	3	3718	1	625413b6e004cf84
+whole	mark_eph.j2k	plain	4	3718	0	0000000000000000
+whole	mark_eph.j2k	plain	5	3718	0	0000000000000000
+whole	mark_eph.j2k	viewer	0	3718	1	318ed8934751124c
+whole	mark_eph.j2k	viewer	1	3718	1	85ea6cefbb6020f0
+whole	mark_eph.j2k	viewer	2	3718	1	47e3967ca82c1734
+whole	mark_eph.j2k	viewer	3	3718	1	fa23b15d67d8be0f
+whole	mark_eph.j2k	viewer	4	3718	1	fa23b15d67d8be0f
+whole	mark_eph.j2k	viewer	5	3718	1	fa23b15d67d8be0f
+cuts	mark_eph.j2k	plain	0	1	1	3717	3598	663ed3741092ee53
+cuts	mark_eph.j2k	plain	0	1	13	286	276	9d2bb5e2625ce294
+cuts	mark_eph.j2k	plain	1	1	1	3717	3598	2dd749d18afaac81
+cuts	mark_eph.j2k	plain	1	1	13	286	276	3475ff8e2ac17ddb
+cuts	mark_eph.j2k	plain	2	1	1	3717	3598	4033f3dd4b844398
+cuts	mark_eph.j2k	plain	2	1	13	286	276	1d2c4b1bc38a4f21
+cuts	mark_eph.j2k	plain	3	1	1	3717	3598	fd3a3103515c0819
+cuts	mark_eph.j2k	plain	3	1	13	286	276	e01c16caf7b46f63
+cuts	mark_eph.j2k	plain	4	1	1	3717	0	84cb926d0f98e20e
+cuts	mark_eph.j2k	plain	4	1	13	286	0	2c2afbdb6032277f
+cuts	mark_eph.j2k	plain	5	1	1	3717	0	84cb926d0f98e20e
+cuts	mark_eph.j2k	plain	5	1	13	286	0	2c2afbdb6032277f
+cuts	mark_eph.j2k	viewer	0	1	1	3717	3598	81a3888d96f8469e
+cuts	mark_eph.j2k	viewer	0	1	13	286	276	2d1cc4d38db54d32
+cuts	mark_eph.j2k	viewer	1	1	1	3717	3598	ae0d1d6a489b760c
+cuts	mark_eph.j2k	viewer	1	1	13	286	276	76a09384d99364f8
+cuts	mark_eph.j2k	viewer	2	1	1	3717	3598	873bbb0bab61f0ae
+cuts	mark_eph.j2k	viewer	2	1	13	286	276	6ea666f307321bf4
+cuts	mark_eph.j2k	viewer	3	1	1	3717	3598	d24c57c69a399c38
+cuts	mark_eph.j2k	viewer	3	1	13	286	276	a2408c94a248b128
+cuts	mark_eph.j2k	viewer	4	1	1	3717	3598	d24c57c69a399c38
+cuts	mark_eph.j2k	viewer	4	1	13	286	276	a2408c94a248b128
+cuts	mark_eph.j2k	viewer	5	1	1	3717	3598	d24c57c69a399c38
+cuts	mark_eph.j2k	viewer	5	1	13	286	276	a2408c94a248b128
+whole	mark_plt.j2k	plain	0	5325	1	72795146f2840c2c
+whole	mark_plt.j2k	plain	1	5325	1	91b6e1a893955946
+whole	mark_plt.j2k	plain	2	5325	1	bda4f71702118442
+whole	mark_plt.j2k	plain	3	5325	1	989162c13fd1e64c
+whole	mark_plt.j2k	plain	4	5325	1	d5149bce9cc449d3
+whole	mark_plt.j2k	plain	5	5325	0	0000000000000000
+whole	mark_plt.j2k	viewer	0	5325	1	345532ac9566aef3
+whole	mark_plt.j2k	viewer	1	5325	1	6305446344b7735b
+whole	mark_plt.j2k	viewer	2	5325	1	c89009b4da5a577d
+whole	mark_plt.j2k	viewer	3	5325	1	9c81ba66fec37e32
+whole	mark_plt.j2k	viewer	4	5325	1	eaf68820903c5205
+whole	mark_plt.j2k	viewer	5	5325	1	eaf68820903c5205
+whole	mark_plt_tlm_97.j2k	plain	0	1465	1	c03214c923242704
+whole	mark_plt_tlm_97.j2k	plain	1	1465	1	63917f15476cc3d9
+whole	mark_plt_tlm_97.j2k	plain	2	1465	1	8871b77d55bca299
+whole	mark_plt_tlm_97.j2k	plain	3	1465	1	8cf80e65b73209be
+whole	mark_plt_tlm_97.j2k	plain	4	1465	1	98b2d6cb4c49ea53
+whole	mark_plt_tlm_97.j2k	plain	5	1465	0	0000000000000000
+whole	mark_plt_tlm_97.j2k	viewer	0	1465	1	bf37a79cf5be0789
+whole	mark_plt_tlm_97.j2k	viewer	1	1465	1	d5ded7d582be65cd
+whole	mark_plt_tlm_97.j2k	viewer	2	1465	1	2144173b039e31af
+whole	mark_plt_tlm_97.j2k	viewer	3	1465	1	b9d6897cf982cdfa
+whole	mark_plt_tlm_97.j2k	viewer	4	1465	1	deaaa7fa7fe8eb55
+whole	mark_plt_tlm_97.j2k	viewer	5	1465	1	deaaa7fa7fe8eb55
+cuts	mark_plt_tlm_97.j2k	plain	0	1	1	1464	1266	aa723ac4a9c26f22
+cuts	mark_plt_tlm_97.j2k	plain	0	1	13	113	97	c930fb6038295969
+cuts	mark_plt_tlm_97.j2k	plain	1	1	1	1464	1266	7070a5f81e43b142
+cuts	mark_plt_tlm_97.j2k	plain	1	1	13	113	97	b26b763b1600e093
+cuts	mark_plt_tlm_97.j2k	plain	2	1	1	1464	1266	7dc4bcdc2be464c1
+cuts	mark_plt_tlm_97.j2k	plain	2	1	13	113	97	2e88668f73232b9f
+cuts	mark_plt_tlm_97.j2k	plain	3	1	1	1464	1266	212e6a0fd45a082f
+cuts	mark_plt_tlm_97.j2k	plain	3	1	13	113	97	6bd1022a4db141e9
+cuts	mark_plt_tlm_97.j2k	plain	4	1	1	1464	1266	4b1b208d930a1448
+cuts	mark_plt_tlm_97.j2k	plain	4	1	13	113	97	6f51e0544f00f596
+cuts	mark_plt_tlm_97.j2k	plain	5	1	1	1464	0	eaae916c4f98b8d4
+cuts	mark_plt_tlm_97.j2k	plain	5	1	13	113	0	22caca4c19357368
+cuts	mark_plt_tlm_97.j2k	viewer	0	1	1	1464	1266	1ce3bd43cbdf76cc
+cuts	mark_plt_tlm_97.j2k	viewer	0	1	13	113	97	f0bee002d5974713
+cuts	mark_plt_tlm_97.j2k	viewer	1	1	1	1464	1266	ffd99130014867db
+cuts	mark_plt_tlm_97.j2k	viewer	1	1	13	113	97	10b224dbf5dc5bdb
+cuts	mark_plt_tlm_97.j2k	viewer	2	1	1	1464	1266	1fc63de4c4d55b32
+cuts	mark_plt_tlm_97.j2k	viewer	2	1	13	113	97	e2ef21575e2b36ab
+cuts	mark_plt_tlm_97.j2k	viewer	3	1	1	1464	1266	c3747f624fea45c7
+cuts	mark_plt_tlm_97.j2k	viewer	3	1	13	113	97	46697fc93cb2c060
+cuts	mark_plt_tlm_97.j2k	viewer	4	1	1	1464	1266	a8ffde7d4afad8df
+cuts	mark_plt_tlm_97.j2k	viewer	4	1	13	113	97	4d775d466e1a9e4b
+cuts	mark_plt_tlm_97.j2k	viewer	5	1	1	1464	1266	a8ffde7d4afad8df
+cuts	mark_plt_tlm_97.j2k	viewer	5	1	13	113	97	4d775d466e1a9e4b
+whole	mark_sop.j2k	plain	0	3851	1	b690baea83f93228
+whole	mark_sop.j2k	plain	1	3851	1	07259bc9b4f0f3b5
+whole	mark_sop.j2k	plain	2	3851	1	d04bf14b4e338686
+whole	mark_sop.j2k	plain	3	3851	1	d20bbe08f9bc3901
+whole	mark_sop.j2k	plain	4	3851	0	0000000000000000
+whole	mark_sop.j2k	plain	5	3851	0	0000000000000000
+whole	mark_sop.j2k	viewer	0	3851	1	bd5df00d732bae74
+whole	mark_sop.j2k	viewer	1	3851	1	250a46d2cc2925bc
+whole	mark_sop.j2k	viewer	2	3851	1	099263c56975166c
+whole	mark_sop.j2k	viewer	3	3851	1	04f87e0ad57c41d3
+whole	mark_sop.j2k	viewer	4	3851	1	04f87e0ad57c41d3
+whole	mark_sop.j2k	viewer	5	3851	1	04f87e0ad57c41d3
+cuts	mark_sop.j2k	plain	0	1	1	3850	3731	13f92438b271f00d
+cuts	mark_sop.j2k	plain	0	1	13	297	287	8e30bbde73d30bd9
+cuts	mark_sop.j2k	plain	1	1	1	3850	3731	da6f87e358b78f60
+cuts	mark_sop.j2k	plain	1	1	13	297	287	884eb8be4e033003
+cuts	mark_sop.j2k	plain	2	1	1	3850	3731	b90518c7203a61bd
+cuts	mark_sop.j2k	plain	2	1	13	297	287	63aa198304b44abf
+cuts	mark_sop.j2k	plain	3	1	1	3850	3731	d35ef053e7de33c5
+cuts	mark_sop.j2k	plain	3	1	13	297	287	e0df584d0a03d0c0
+cuts	mark_sop.j2k	plain	4	1	1	3850	0	5735ac0e8f8617ed
+cuts	mark_sop.j2k	plain	4	1	13	297	0	cfec7a31fb998558
+cuts	mark_sop.j2k	plain	5	1	1	3850	0	5735ac0e8f8617ed
+cuts	mark_sop.j2k	plain	5	1	13	297	0	cfec7a31fb998558
+cuts	mark_sop.j2k	viewer	0	1	1	3850	3731	0af1546d8ae8ebbc
+cuts	mark_sop.j2k	viewer	0	1	13	297	287	3489db5fbbae102c
+cuts	mark_sop.j2k	viewer	1	1	1	3850	3731	ed4d13ab4ba337c3
+cuts	mark_sop.j2k	viewer	1	1	13	297	287	b7b0c00803e792d1
+cuts	mark_sop.j2k	viewer	2	1	1	3850	3731	f407a3df6a0c37ba
+cuts	mark_sop.j2k	viewer	2	1	13	297	287	2e7c3b0fd5d247fb
+cuts	mark_sop.j2k	viewer	3	1	1	3850	3731	3cb899b76c741a0c
+cuts	mark_sop.j2k	viewer	3	1	13	297	287	ee139a2c4fb66d32
+cuts	mark_sop.j2k	viewer	4	1	1	3850	3731	3cb899b76c741a0c
+cuts	mark_sop.j2k	viewer	4	1	13	297	287	ee139a2c4fb66d32
+cuts	mark_sop.j2k	viewer	5	1	1	3850	3731	3cb899b76c741a0c
+cuts	mark_sop.j2k	viewer	5	1	13	297	287	ee139a2c4fb66d32
+whole	mark_sop_eph_97.j2k	plain	0	943	1	b047ea00879ef0e6
+whole	mark_sop_eph_97.j2k	plain	1	943	1	7afff3052bf0c7d9
+whole	mark_sop_eph_97.j2k	plain	2	943	1	bf02bf93d4592e45
+whole	mark_sop_eph_97.j2k	plain	3	943	1	80f6911ea67d9c27
+whole	mark_sop_eph_97.j2k	plain	4	943	0	0000000000000000
+whole	mark_sop_eph_97.j2k	plain	5	943	0	0000000000000000
+whole	mark_sop_eph_97.j2k	viewer	0	943	1	e09ee626f759702e
+whole	mark_sop_eph_97.j2k	viewer	1	943	1	62a9b05c2b1f0204
+whole	mark_sop_eph_97.j2k	viewer	2	943	1	66bd8a81d22f2306
+whole	mark_sop_eph_97.j2k	viewer	3	943	1	f9045e1f1440605b
+whole	mark_sop_eph_97.j2k	viewer	4	943	1	f9045e1f1440605b
+whole	mark_sop_eph_97.j2k	viewer	5	943	1	f9045e1f1440605b
+cuts	mark_sop_eph_97.j2k	plain	0	1	1	942	777	a355ecd648f91932
+cuts	mark_sop_eph_97.j2k	plain	0	1	13	73	61	58a0066e36f446ae
+cuts	mark_sop_eph_97.j2k	plain	1	1	1	942	777	a38cbfcdb06ca29c
+cuts	mark_sop_eph_97.j2k	plain	1	1	13	73	61	a8e2f00d95e12939
+cuts	mark_sop_eph_97.j2k	plain	2	1	1	942	777	6183559b25f1843d
+cuts	mark_sop_eph_97.j2k	plain	2	1	13	73	61	7ee20caa7e79dbb6
+cuts	mark_sop_eph_97.j2k	plain	3	1	1	942	777	82ec4f0d7638da4e
+cuts	mark_sop_eph_97.j2k	plain	3	1	13	73	61	23864430c928d045
+cuts	mark_sop_eph_97.j2k	plain	4	1	1	942	0	22859736f982ee11
+cuts	mark_sop_eph_97.j2k	plain	4	1	13	73	0	36b084eb590f5c20
+cuts	mark_sop_eph_97.j2k	plain	5	1	1	942	0	22859736f982ee11
+cuts	mark_sop_eph_97.j2k	plain	5	1	13	73	0	36b084eb590f5c20
+cuts	mark_sop_eph_97.j2k	viewer	0	1	1	942	777	08e63d9c29e3a706
+cuts	mark_sop_eph_97.j2k	viewer	0	1	13	73	61	8991773294810141
+cuts	mark_sop_eph_97.j2k	viewer	1	1	1	942	777	bdd3218b77a7170f
+cuts	mark_sop_eph_97.j2k	viewer	1	1	13	73	61	b6488f005524cbaa
+cuts	mark_sop_eph_97.j2k	viewer	2	1	1	942	777	f210567780ee65eb
+cuts	mark_sop_eph_97.j2k	viewer	2	1	13	73	61	343df14c656de72d
+cuts	mark_sop_eph_97.j2k	viewer	3	1	1	942	777	24d44b4897ab43ca
+cuts	mark_sop_eph_97.j2k	viewer	3	1	13	73	61	1630089dfcdb8dc4
+cuts	mark_sop_eph_97.j2k	viewer	4	1	1	942	777	24d44b4897ab43ca
+cuts	mark_sop_eph_97.j2k	viewer	4	1	13	73	61	1630089dfcdb8dc4
+cuts	mark_sop_eph_97.j2k	viewer	5	1	1	942	777	24d44b4897ab43ca
+cuts	mark_sop_eph_97.j2k	viewer	5	1	13	73	61	1630089dfcdb8dc4
+whole	mark_tlm_tiles.j2k	plain	0	6273	1	34b90757d3f8d79b
+whole	mark_tlm_tiles.j2k	plain	1	6273	1	27317b5b076f0b70
+whole	mark_tlm_tiles.j2k	plain	2	6273	1	382e93c19e7cf4d5
+whole	mark_tlm_tiles.j2k	plain	3	6273	1	ed9df5df06f93176
+whole	mark_tlm_tiles.j2k	plain	4	6273	0	0000000000000000
+whole	mark_tlm_tiles.j2k	plain	5	6273	0	0000000000000000
+whole	mark_tlm_tiles.j2k	viewer	0	6273	1	8ad0f54f9cebfc32
+whole	mark_tlm_tiles.j2k	viewer	1	6273	1	2c8d7160acd76ed8
+whole	mark_tlm_tiles.j2k	viewer	2	6273	1	6de1af23e6e71632
+whole	mark_tlm_tiles.j2k	viewer	3	6273	1	eb79173299a0fe97
+whole	mark_tlm_tiles.j2k	viewer	4	6273	1	eb79173299a0fe97
+whole	mark_tlm_tiles.j2k	viewer	5	6273	1	eb79173299a0fe97
+whole	mix_odd_sub420_signed12_53.j2k	plain	0	3954	1	5eccd9af00c985d0
+whole	mix_odd_sub420_signed12_53.j2k	plain	1	3954	1	30c8f1a819afdcb5
+whole	mix_odd_sub420_signed12_53.j2k	plain	2	3954	1	1896b42dcb343836
+whole	mix_odd_sub420_signed12_53.j2k	plain	3	3954	0	0000000000000000
+whole	mix_odd_sub420_signed12_53.j2k	plain	4	3954	0	0000000000000000
+whole	mix_odd_sub420_signed12_53.j2k	plain	5	3954	0	0000000000000000
+whole	mix_odd_sub420_signed12_53.j2k	viewer	0	3954	0	0000000000000000
+whole	mix_odd_sub420_signed12_53.j2k	viewer	1	3954	0	0000000000000000
+whole	mix_odd_sub420_signed12_53.j2k	viewer	2	3954	0	0000000000000000
+whole	mix_odd_sub420_signed12_53.j2k	viewer	3	3954	0	0000000000000000
+whole	mix_odd_sub420_signed12_53.j2k	viewer	4	3954	0	0000000000000000
+whole	mix_odd_sub420_signed12_53.j2k	viewer	5	3954	0	0000000000000000
+cuts	mix_odd_sub420_signed12_53.j2k	plain	0	1	1	3953	3798	f418a478900cb093
+cuts	mix_odd_sub420_signed12_53.j2k	plain	0	1	13	305	292	6ee7e887191b1120
+cuts	mix_odd_sub420_signed12_53.j2k	plain	1	1	1	3953	3798	12b415e47d56e75b
+cuts	mix_odd_sub420_signed12_53.j2k	plain	1	1	13	305	292	a784ae027f51e812
+cuts	mix_odd_sub420_signed12_53.j2k	plain	2	1	1	3953	3798	41668d64ec526a1d
+cuts	mix_odd_sub420_signed12_53.j2k	plain	2	1	13	305	292	fb370e408a9fb265
+cuts	mix_odd_sub420_signed12_53.j2k	plain	3	1	1	3953	0	6c1c23089b100f92
+cuts	mix_odd_sub420_signed12_53.j2k	plain	3	1	13	305	0	ccca917e0a544988
+cuts	mix_odd_sub420_signed12_53.j2k	plain	4	1	1	3953	0	6c1c23089b100f92
+cuts	mix_odd_sub420_signed12_53.j2k	plain	4	1	13	305	0	ccca917e0a544988
+cuts	mix_odd_sub420_signed12_53.j2k	plain	5	1	1	3953	0	6c1c23089b100f92
+cuts	mix_odd_sub420_signed12_53.j2k	plain	5	1	13	305	0	ccca917e0a544988
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	0	1	1	3953	0	6c1c23089b100f92
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	0	1	13	305	0	ccca917e0a544988
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	1	1	1	3953	0	6c1c23089b100f92
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	1	1	13	305	0	ccca917e0a544988
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	2	1	1	3953	0	6c1c23089b100f92
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	2	1	13	305	0	ccca917e0a544988
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	3	1	1	3953	0	6c1c23089b100f92
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	3	1	13	305	0	ccca917e0a544988
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	4	1	1	3953	0	6c1c23089b100f92
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	4	1	13	305	0	ccca917e0a544988
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	5	1	1	3953	0	6c1c23089b100f92
+cuts	mix_odd_sub420_signed12_53.j2k	viewer	5	1	13	305	0	ccca917e0a544988
+whole	mix_odd_sub420_signed12_97.j2k	plain	0	2462	1	704ba687a11ac4c6
+whole	mix_odd_sub420_signed12_97.j2k	plain	1	2462	1	468fdb1754e4c823
+whole	mix_odd_sub420_signed12_97.j2k	plain	2	2462	1	99271976db3e9c93
+whole	mix_odd_sub420_signed12_97.j2k	plain	3	2462	0	0000000000000000
+whole	mix_odd_sub420_signed12_97.j2k	plain	4	2462	0	0000000000000000
+whole	mix_odd_sub420_signed12_97.j2k	plain	5	2462	0	0000000000000000
+whole	mix_odd_sub420_signed12_97.j2k	viewer	0	2462	0	0000000000000000
+whole	mix_odd_sub420_signed12_97.j2k	viewer	1	2462	0	0000000000000000
+whole	mix_odd_sub420_signed12_97.j2k	viewer	2	2462	0	0000000000000000
+whole	mix_odd_sub420_signed12_97.j2k	viewer	3	2462	0	0000000000000000
+whole	mix_odd_sub420_signed12_97.j2k	viewer	4	2462	0	0000000000000000
+whole	mix_odd_sub420_signed12_97.j2k	viewer	5	2462	0	0000000000000000
+cuts	mix_odd_sub420_signed12_97.j2k	plain	0	1	1	2461	2335	3e9a0d50d976ac72
+cuts	mix_odd_sub420_signed12_97.j2k	plain	0	1	13	190	180	cac13c3df0141f59
+cuts	mix_odd_sub420_signed12_97.j2k	plain	1	1	1	2461	2335	f51045492869e642
+cuts	mix_odd_sub420_signed12_97.j2k	plain	1	1	13	190	180	0210727f3ddb75d8
+cuts	mix_odd_sub420_signed12_97.j2k	plain	2	1	1	2461	2335	7c232b4f08141cd7
+cuts	mix_odd_sub420_signed12_97.j2k	plain	2	1	13	190	180	6b71815845289668
+cuts	mix_odd_sub420_signed12_97.j2k	plain	3	1	1	2461	0	82409a80c8ef17f2
+cuts	mix_odd_sub420_signed12_97.j2k	plain	3	1	13	190	0	dfd49148d89bfb80
+cuts	mix_odd_sub420_signed12_97.j2k	plain	4	1	1	2461	0	82409a80c8ef17f2
+cuts	mix_odd_sub420_signed12_97.j2k	plain	4	1	13	190	0	dfd49148d89bfb80
+cuts	mix_odd_sub420_signed12_97.j2k	plain	5	1	1	2461	0	82409a80c8ef17f2
+cuts	mix_odd_sub420_signed12_97.j2k	plain	5	1	13	190	0	dfd49148d89bfb80
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	0	1	1	2461	0	82409a80c8ef17f2
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	0	1	13	190	0	dfd49148d89bfb80
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	1	1	1	2461	0	82409a80c8ef17f2
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	1	1	13	190	0	dfd49148d89bfb80
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	2	1	1	2461	0	82409a80c8ef17f2
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	2	1	13	190	0	dfd49148d89bfb80
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	3	1	1	2461	0	82409a80c8ef17f2
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	3	1	13	190	0	dfd49148d89bfb80
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	4	1	1	2461	0	82409a80c8ef17f2
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	4	1	13	190	0	dfd49148d89bfb80
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	5	1	1	2461	0	82409a80c8ef17f2
+cuts	mix_odd_sub420_signed12_97.j2k	viewer	5	1	13	190	0	dfd49148d89bfb80
+whole	mode_all_97.j2k	plain	0	971	1	772d64116d8569d2
+whole	mode_all_97.j2k	plain	1	971	1	17be3922afce448a
+whole	mode_all_97.j2k	plain	2	971	1	f0d54a4487cf7f6a
+whole	mode_all_97.j2k	plain	3	971	1	e374e4ba349490b3
+whole	mode_all_97.j2k	plain	4	971	0	0000000000000000
+whole	mode_all_97.j2k	plain	5	971	0	0000000000000000
+whole	mode_all_97.j2k	viewer	0	971	1	7026e133a396a0b4
+whole	mode_all_97.j2k	viewer	1	971	1	fec44ad5db887b3a
+whole	mode_all_97.j2k	viewer	2	971	1	8954dcf5afb8a996
+whole	mode_all_97.j2k	viewer	3	971	1	adf9d10162d46c79
+whole	mode_all_97.j2k	viewer	4	971	1	adf9d10162d46c79
+whole	mode_all_97.j2k	viewer	5	971	1	adf9d10162d46c79
+cuts	mode_all_97.j2k	plain	0	1	1	970	841	6974412d10ad3a97
+cuts	mode_all_97.j2k	plain	0	1	13	75	65	69484c4d4645b51c
+cuts	mode_all_97.j2k	plain	1	1	1	970	841	e60aa505bbd6572f
+cuts	mode_all_97.j2k	plain	1	1	13	75	65	f39cdc2a14491411
+cuts	mode_all_97.j2k	plain	2	1	1	970	841	ca32583b68d4752c
+cuts	mode_all_97.j2k	plain	2	1	13	75	65	98f65bd7dc28eb81
+cuts	mode_all_97.j2k	plain	3	1	1	970	841	789b5ac8c21274df
+cuts	mode_all_97.j2k	plain	3	1	13	75	65	532add37e4eb512b
+cuts	mode_all_97.j2k	plain	4	1	1	970	0	b15e23e213396661
+cuts	mode_all_97.j2k	plain	4	1	13	75	0	c3fad1d206e1bc89
+cuts	mode_all_97.j2k	plain	5	1	1	970	0	b15e23e213396661
+cuts	mode_all_97.j2k	plain	5	1	13	75	0	c3fad1d206e1bc89
+cuts	mode_all_97.j2k	viewer	0	1	1	970	841	8e2ab4d5a2294aec
+cuts	mode_all_97.j2k	viewer	0	1	13	75	65	b6f3630e2d01c080
+cuts	mode_all_97.j2k	viewer	1	1	1	970	841	8ef9fab2c8d4e6e6
+cuts	mode_all_97.j2k	viewer	1	1	13	75	65	50a2f806da5137d6
+cuts	mode_all_97.j2k	viewer	2	1	1	970	841	9543cca7114b8608
+cuts	mode_all_97.j2k	viewer	2	1	13	75	65	47b7b6a836a52676
+cuts	mode_all_97.j2k	viewer	3	1	1	970	841	0eefddb23f8370e7
+cuts	mode_all_97.j2k	viewer	3	1	13	75	65	22158d46b8ef731a
+cuts	mode_all_97.j2k	viewer	4	1	1	970	841	0eefddb23f8370e7
+cuts	mode_all_97.j2k	viewer	4	1	13	75	65	22158d46b8ef731a
+cuts	mode_all_97.j2k	viewer	5	1	1	970	841	0eefddb23f8370e7
+cuts	mode_all_97.j2k	viewer	5	1	13	75	65	22158d46b8ef731a
+whole	mode_bypass.j2k	plain	0	4095	1	c248b33bbb0f9b26
+whole	mode_bypass.j2k	plain	1	4095	1	3183c41af8f8e857
+whole	mode_bypass.j2k	plain	2	4095	1	c67e05632e6231c5
+whole	mode_bypass.j2k	plain	3	4095	1	acb7f859edbc7a82
+whole	mode_bypass.j2k	plain	4	4095	0	0000000000000000
+whole	mode_bypass.j2k	plain	5	4095	0	0000000000000000
+whole	mode_bypass.j2k	viewer	0	4095	1	a5c46bf3aedc2084
+whole	mode_bypass.j2k	viewer	1	4095	1	f2f12a334a7a7828
+whole	mode_bypass.j2k	viewer	2	4095	1	1ef050221f0e76a0
+whole	mode_bypass.j2k	viewer	3	4095	1	c949cb252adf2037
+whole	mode_bypass.j2k	viewer	4	4095	1	c949cb252adf2037
+whole	mode_bypass.j2k	viewer	5	4095	1	c949cb252adf2037
+cuts	mode_bypass.j2k	plain	0	1	1	4094	3975	479cb55dbf118dd5
+cuts	mode_bypass.j2k	plain	0	1	13	315	305	adb2c9d165be8aaa
+cuts	mode_bypass.j2k	plain	1	1	1	4094	3975	5484f402216437be
+cuts	mode_bypass.j2k	plain	1	1	13	315	305	6447d14c1fc619a4
+cuts	mode_bypass.j2k	plain	2	1	1	4094	3975	5cae75f8663c84b9
+cuts	mode_bypass.j2k	plain	2	1	13	315	305	68cd15237c6595eb
+cuts	mode_bypass.j2k	plain	3	1	1	4094	3975	2c3a1672eb35ce8f
+cuts	mode_bypass.j2k	plain	3	1	13	315	305	e5a45707ef33fd4e
+cuts	mode_bypass.j2k	plain	4	1	1	4094	0	698266dff77205cd
+cuts	mode_bypass.j2k	plain	4	1	13	315	0	fd34a3660b471751
+cuts	mode_bypass.j2k	plain	5	1	1	4094	0	698266dff77205cd
+cuts	mode_bypass.j2k	plain	5	1	13	315	0	fd34a3660b471751
+cuts	mode_bypass.j2k	viewer	0	1	1	4094	3975	1871dd785e60349e
+cuts	mode_bypass.j2k	viewer	0	1	13	315	305	47af158ee348756d
+cuts	mode_bypass.j2k	viewer	1	1	1	4094	3975	868a03151d18f301
+cuts	mode_bypass.j2k	viewer	1	1	13	315	305	ab11cfc8313b4d3b
+cuts	mode_bypass.j2k	viewer	2	1	1	4094	3975	e82819cf2f30bec8
+cuts	mode_bypass.j2k	viewer	2	1	13	315	305	54177f031d9b235b
+cuts	mode_bypass.j2k	viewer	3	1	1	4094	3975	5f0c53cdd28f51a0
+cuts	mode_bypass.j2k	viewer	3	1	13	315	305	546a7d271024f9ad
+cuts	mode_bypass.j2k	viewer	4	1	1	4094	3975	5f0c53cdd28f51a0
+cuts	mode_bypass.j2k	viewer	4	1	13	315	305	546a7d271024f9ad
+cuts	mode_bypass.j2k	viewer	5	1	1	4094	3975	5f0c53cdd28f51a0
+cuts	mode_bypass.j2k	viewer	5	1	13	315	305	546a7d271024f9ad
+whole	mode_bypass_termall.j2k	plain	0	4505	1	b68d9872717b9040
+whole	mode_bypass_termall.j2k	plain	1	4505	1	057750e077e9df75
+whole	mode_bypass_termall.j2k	plain	2	4505	1	f0c669c3085b470d
+whole	mode_bypass_termall.j2k	plain	3	4505	1	2df0421947481307
+whole	mode_bypass_termall.j2k	plain	4	4505	0	0000000000000000
+whole	mode_bypass_termall.j2k	plain	5	4505	0	0000000000000000
+whole	mode_bypass_termall.j2k	viewer	0	4505	1	85e71ff7103e9e98
+whole	mode_bypass_termall.j2k	viewer	1	4505	1	93fb4d1e04027578
+whole	mode_bypass_termall.j2k	viewer	2	4505	1	5c11d2b5fe47f7a8
+whole	mode_bypass_termall.j2k	viewer	3	4505	1	affc20d1db8eacd1
+whole	mode_bypass_termall.j2k	viewer	4	4505	1	affc20d1db8eacd1
+whole	mode_bypass_termall.j2k	viewer	5	4505	1	affc20d1db8eacd1
+whole	mode_reset_pterm.j2k	plain	0	3681	1	2318f03592316147
+whole	mode_reset_pterm.j2k	plain	1	3681	1	302f75df4e8c5fe6
+whole	mode_reset_pterm.j2k	plain	2	3681	1	dc78e2456ff77e38
+whole	mode_reset_pterm.j2k	plain	3	3681	1	603a13cacb939749
+whole	mode_reset_pterm.j2k	plain	4	3681	0	0000000000000000
+whole	mode_reset_pterm.j2k	plain	5	3681	0	0000000000000000
+whole	mode_reset_pterm.j2k	viewer	0	3681	1	b15e325bdcdb98a6
+whole	mode_reset_pterm.j2k	viewer	1	3681	1	9ed46c91164e170c
+whole	mode_reset_pterm.j2k	viewer	2	3681	1	d8d88d85c68f6084
+whole	mode_reset_pterm.j2k	viewer	3	3681	1	51bc59605820e085
+whole	mode_reset_pterm.j2k	viewer	4	3681	1	51bc59605820e085
+whole	mode_reset_pterm.j2k	viewer	5	3681	1	51bc59605820e085
+cuts	mode_reset_pterm.j2k	plain	0	1	1	3680	3561	af4b33976980ccc0
+cuts	mode_reset_pterm.j2k	plain	0	1	13	284	274	d48b76f83397a7ab
+cuts	mode_reset_pterm.j2k	plain	1	1	1	3680	3561	52ececb4decec6c6
+cuts	mode_reset_pterm.j2k	plain	1	1	13	284	274	f89a3654873f4ee1
+cuts	mode_reset_pterm.j2k	plain	2	1	1	3680	3561	7e14a16a749cb698
+cuts	mode_reset_pterm.j2k	plain	2	1	13	284	274	c1e676f7655c9a74
+cuts	mode_reset_pterm.j2k	plain	3	1	1	3680	3561	cd1d25ac9148ac1e
+cuts	mode_reset_pterm.j2k	plain	3	1	13	284	274	6dffbdded440f364
+cuts	mode_reset_pterm.j2k	plain	4	1	1	3680	0	9ca873ac4731dbcd
+cuts	mode_reset_pterm.j2k	plain	4	1	13	284	0	081bb4896f3554a8
+cuts	mode_reset_pterm.j2k	plain	5	1	1	3680	0	9ca873ac4731dbcd
+cuts	mode_reset_pterm.j2k	plain	5	1	13	284	0	081bb4896f3554a8
+cuts	mode_reset_pterm.j2k	viewer	0	1	1	3680	3561	b0bc47581ab31b21
+cuts	mode_reset_pterm.j2k	viewer	0	1	13	284	274	69e5569b1b6b502d
+cuts	mode_reset_pterm.j2k	viewer	1	1	1	3680	3561	ae78c9495f5095d9
+cuts	mode_reset_pterm.j2k	viewer	1	1	13	284	274	7cbf3f2ad2ae8753
+cuts	mode_reset_pterm.j2k	viewer	2	1	1	3680	3561	8d6a7b85511f9a7c
+cuts	mode_reset_pterm.j2k	viewer	2	1	13	284	274	5e804b1a137fbb14
+cuts	mode_reset_pterm.j2k	viewer	3	1	1	3680	3561	ed01ee0dbf7afdb6
+cuts	mode_reset_pterm.j2k	viewer	3	1	13	284	274	9dad1a7bbc1d1425
+cuts	mode_reset_pterm.j2k	viewer	4	1	1	3680	3561	ed01ee0dbf7afdb6
+cuts	mode_reset_pterm.j2k	viewer	4	1	13	284	274	9dad1a7bbc1d1425
+cuts	mode_reset_pterm.j2k	viewer	5	1	1	3680	3561	ed01ee0dbf7afdb6
+cuts	mode_reset_pterm.j2k	viewer	5	1	13	284	274	9dad1a7bbc1d1425
+whole	mode_segmark_vsc.j2k	plain	0	3746	1	49c9d1fd80dd34b4
+whole	mode_segmark_vsc.j2k	plain	1	3746	1	220073c0aa893668
+whole	mode_segmark_vsc.j2k	plain	2	3746	1	d6e61e79e13a8236
+whole	mode_segmark_vsc.j2k	plain	3	3746	1	63e56030ea0e9536
+whole	mode_segmark_vsc.j2k	plain	4	3746	0	0000000000000000
+whole	mode_segmark_vsc.j2k	plain	5	3746	0	0000000000000000
+whole	mode_segmark_vsc.j2k	viewer	0	3746	1	cc39903efb524f54
+whole	mode_segmark_vsc.j2k	viewer	1	3746	1	6cca8edd20db785a
+whole	mode_segmark_vsc.j2k	viewer	2	3746	1	4df0975e92c62cbe
+whole	mode_segmark_vsc.j2k	viewer	3	3746	1	feee6f6fc3145dd1
+whole	mode_segmark_vsc.j2k	viewer	4	3746	1	feee6f6fc3145dd1
+whole	mode_segmark_vsc.j2k	viewer	5	3746	1	feee6f6fc3145dd1
+cuts	mode_segmark_vsc.j2k	plain	0	1	1	3745	3626	eec6dbfe1eea083f
+cuts	mode_segmark_vsc.j2k	plain	0	1	13	289	279	120e0cbf8e79ac09
+cuts	mode_segmark_vsc.j2k	plain	1	1	1	3745	3626	9be9ca6855ec1f35
+cuts	mode_segmark_vsc.j2k	plain	1	1	13	289	279	dc97fa3338ab4a86
+cuts	mode_segmark_vsc.j2k	plain	2	1	1	3745	3626	9a70ecb4a49c33d3
+cuts	mode_segmark_vsc.j2k	plain	2	1	13	289	279	613f94bf160771b2
+cuts	mode_segmark_vsc.j2k	plain	3	1	1	3745	3626	c54765df6e7a3d1b
+cuts	mode_segmark_vsc.j2k	plain	3	1	13	289	279	75ee0209770281aa
+cuts	mode_segmark_vsc.j2k	plain	4	1	1	3745	0	45661d521c011c6e
+cuts	mode_segmark_vsc.j2k	plain	4	1	13	289	0	63c5d1d64312271b
+cuts	mode_segmark_vsc.j2k	plain	5	1	1	3745	0	45661d521c011c6e
+cuts	mode_segmark_vsc.j2k	plain	5	1	13	289	0	63c5d1d64312271b
+cuts	mode_segmark_vsc.j2k	viewer	0	1	1	3745	3626	490a0801716446e7
+cuts	mode_segmark_vsc.j2k	viewer	0	1	13	289	279	75f4036a94cd9d86
+cuts	mode_segmark_vsc.j2k	viewer	1	1	1	3745	3626	f9b99754f496e010
+cuts	mode_segmark_vsc.j2k	viewer	1	1	13	289	279	9ce16dc2a749d614
+cuts	mode_segmark_vsc.j2k	viewer	2	1	1	3745	3626	1a45cf601027615c
+cuts	mode_segmark_vsc.j2k	viewer	2	1	13	289	279	dcd03ffd3e4d2df7
+cuts	mode_segmark_vsc.j2k	viewer	3	1	1	3745	3626	a34a9c986662666d
+cuts	mode_segmark_vsc.j2k	viewer	3	1	13	289	279	53eb28435344d4a5
+cuts	mode_segmark_vsc.j2k	viewer	4	1	1	3745	3626	a34a9c986662666d
+cuts	mode_segmark_vsc.j2k	viewer	4	1	13	289	279	53eb28435344d4a5
+cuts	mode_segmark_vsc.j2k	viewer	5	1	1	3745	3626	a34a9c986662666d
+cuts	mode_segmark_vsc.j2k	viewer	5	1	13	289	279	53eb28435344d4a5
+whole	mode_termall.j2k	plain	0	4581	1	1529ed18db4e0bea
+whole	mode_termall.j2k	plain	1	4581	1	816c3ef7f368b688
+whole	mode_termall.j2k	plain	2	4581	1	638c9cde3f5c2d2f
+whole	mode_termall.j2k	plain	3	4581	1	addcdfe0f651060b
+whole	mode_termall.j2k	plain	4	4581	0	0000000000000000
+whole	mode_termall.j2k	plain	5	4581	0	0000000000000000
+whole	mode_termall.j2k	viewer	0	4581	1	150748f2e9c1916a
+whole	mode_termall.j2k	viewer	1	4581	1	ea61b1f316b49822
+whole	mode_termall.j2k	viewer	2	4581	1	bb2e773bc52a0738
+whole	mode_termall.j2k	viewer	3	4581	1	ccfc485bdec75df7
+whole	mode_termall.j2k	viewer	4	4581	1	ccfc485bdec75df7
+whole	mode_termall.j2k	viewer	5	4581	1	ccfc485bdec75df7
+whole	packed_ppm.j2k	plain	0	5260	1	ce17f12ca18c2619
+whole	packed_ppm.j2k	plain	1	5260	1	1546a2c5dc287a87
+whole	packed_ppm.j2k	plain	2	5260	1	e3a0295536bbd1f9
+whole	packed_ppm.j2k	plain	3	5260	1	8902720362c57e96
+whole	packed_ppm.j2k	plain	4	5260	1	8acedc77ebb01699
+whole	packed_ppm.j2k	plain	5	5260	0	0000000000000000
+whole	packed_ppm.j2k	viewer	0	5260	1	1c9726005b626afd
+whole	packed_ppm.j2k	viewer	1	5260	1	7dfd2a825611a375
+whole	packed_ppm.j2k	viewer	2	5260	1	e0790330cac53f47
+whole	packed_ppm.j2k	viewer	3	5260	1	f7e27d55a8feeb5c
+whole	packed_ppm.j2k	viewer	4	5260	1	80e14c4d015bdaeb
+whole	packed_ppm.j2k	viewer	5	5260	1	80e14c4d015bdaeb
+whole	packed_ppm_sop_eph_97.j2k	plain	0	1454	1	2c2d8f67660a43c3
+whole	packed_ppm_sop_eph_97.j2k	plain	1	1454	1	1ae300b578599c1b
+whole	packed_ppm_sop_eph_97.j2k	plain	2	1454	1	7b79f58f1769af8f
+whole	packed_ppm_sop_eph_97.j2k	plain	3	1454	1	7310016fc21211bc
+whole	packed_ppm_sop_eph_97.j2k	plain	4	1454	1	a9efba7ad71acd74
+whole	packed_ppm_sop_eph_97.j2k	plain	5	1454	0	0000000000000000
+whole	packed_ppm_sop_eph_97.j2k	viewer	0	1454	1	2ab88d165bba22bd
+whole	packed_ppm_sop_eph_97.j2k	viewer	1	1454	1	7eaf1a643e0f1fa9
+whole	packed_ppm_sop_eph_97.j2k	viewer	2	1454	1	e5fc219397a0478f
+whole	packed_ppm_sop_eph_97.j2k	viewer	3	1454	1	0e487730b9a97684
+whole	packed_ppm_sop_eph_97.j2k	viewer	4	1454	1	9ef5cc77ffa84fcb
+whole	packed_ppm_sop_eph_97.j2k	viewer	5	1454	1	9ef5cc77ffa84fcb
+cuts	packed_ppm_sop_eph_97.j2k	plain	0	1	1	1453	1062	dfe55e7119bc78b1
+cuts	packed_ppm_sop_eph_97.j2k	plain	0	1	13	112	81	4dc1b525122693cc
+cuts	packed_ppm_sop_eph_97.j2k	plain	1	1	1	1453	1062	2f3e9e82f7b81b88
+cuts	packed_ppm_sop_eph_97.j2k	plain	1	1	13	112	81	6e13a02f83e75dfd
+cuts	packed_ppm_sop_eph_97.j2k	plain	2	1	1	1453	1062	1fffa2d8b4fc979b
+cuts	packed_ppm_sop_eph_97.j2k	plain	2	1	13	112	81	d896d74959fa3599
+cuts	packed_ppm_sop_eph_97.j2k	plain	3	1	1	1453	1062	c9eaefa975fe0efd
+cuts	packed_ppm_sop_eph_97.j2k	plain	3	1	13	112	81	3bd351fd1a19412a
+cuts	packed_ppm_sop_eph_97.j2k	plain	4	1	1	1453	1062	46d9dd68cf98162d
+cuts	packed_ppm_sop_eph_97.j2k	plain	4	1	13	112	81	17b6266400fd1803
+cuts	packed_ppm_sop_eph_97.j2k	plain	5	1	1	1453	0	61064b68c749eae2
+cuts	packed_ppm_sop_eph_97.j2k	plain	5	1	13	112	0	fd6f501a0cff02fe
+cuts	packed_ppm_sop_eph_97.j2k	viewer	0	1	1	1453	1062	df8e55795cd3cc85
+cuts	packed_ppm_sop_eph_97.j2k	viewer	0	1	13	112	81	aa97bbb3b6d8d141
+cuts	packed_ppm_sop_eph_97.j2k	viewer	1	1	1	1453	1062	f39dcd46089d1082
+cuts	packed_ppm_sop_eph_97.j2k	viewer	1	1	13	112	81	877078af9c5ee4a7
+cuts	packed_ppm_sop_eph_97.j2k	viewer	2	1	1	1453	1062	124cd7327c97a894
+cuts	packed_ppm_sop_eph_97.j2k	viewer	2	1	13	112	81	67ca8ab3b0d1623c
+cuts	packed_ppm_sop_eph_97.j2k	viewer	3	1	1	1453	1062	1ed7d18e12ae9a11
+cuts	packed_ppm_sop_eph_97.j2k	viewer	3	1	13	112	81	400fc2704186607e
+cuts	packed_ppm_sop_eph_97.j2k	viewer	4	1	1	1453	1062	d105e9f7ca2efd00
+cuts	packed_ppm_sop_eph_97.j2k	viewer	4	1	13	112	81	e6c9f9f2a12577d3
+cuts	packed_ppm_sop_eph_97.j2k	viewer	5	1	1	1453	1062	d105e9f7ca2efd00
+cuts	packed_ppm_sop_eph_97.j2k	viewer	5	1	13	112	81	e6c9f9f2a12577d3
+whole	packed_ppm_tiles_97.j2k	plain	0	2357	1	60e24ddd7fd4b586
+whole	packed_ppm_tiles_97.j2k	plain	1	2357	1	0aa134ffce625956
+whole	packed_ppm_tiles_97.j2k	plain	2	2357	1	990e9db258c011ab
+whole	packed_ppm_tiles_97.j2k	plain	3	2357	1	12fe9f7c58540013
+whole	packed_ppm_tiles_97.j2k	plain	4	2357	0	0000000000000000
+whole	packed_ppm_tiles_97.j2k	plain	5	2357	0	0000000000000000
+whole	packed_ppm_tiles_97.j2k	viewer	0	2357	1	a1ac2c9d2588319a
+whole	packed_ppm_tiles_97.j2k	viewer	1	2357	1	a806a7335b63c3cc
+whole	packed_ppm_tiles_97.j2k	viewer	2	2357	1	5d47b1a5b3b6642c
+whole	packed_ppm_tiles_97.j2k	viewer	3	2357	1	b283ee68fbfc055e
+whole	packed_ppm_tiles_97.j2k	viewer	4	2357	1	b283ee68fbfc055e
+whole	packed_ppm_tiles_97.j2k	viewer	5	2357	1	b283ee68fbfc055e
+cuts	packed_ppm_tiles_97.j2k	plain	0	1	1	2356	1797	be6e720908004cd6
+cuts	packed_ppm_tiles_97.j2k	plain	0	1	13	182	138	e4d310b2a90b8463
+cuts	packed_ppm_tiles_97.j2k	plain	1	1	1	2356	1797	7c007602cb6fae60
+cuts	packed_ppm_tiles_97.j2k	plain	1	1	13	182	138	a16222b54fcb80d6
+cuts	packed_ppm_tiles_97.j2k	plain	2	1	1	2356	1797	7aa9326c2bfaec8c
+cuts	packed_ppm_tiles_97.j2k	plain	2	1	13	182	138	1241632a23104018
+cuts	packed_ppm_tiles_97.j2k	plain	3	1	1	2356	1797	1af4c4194611fa72
+cuts	packed_ppm_tiles_97.j2k	plain	3	1	13	182	138	89b8ceba4eb12b34
+cuts	packed_ppm_tiles_97.j2k	plain	4	1	1	2356	0	465345c3516b6558
+cuts	packed_ppm_tiles_97.j2k	plain	4	1	13	182	0	da7c0a7205421e20
+cuts	packed_ppm_tiles_97.j2k	plain	5	1	1	2356	0	465345c3516b6558
+cuts	packed_ppm_tiles_97.j2k	plain	5	1	13	182	0	da7c0a7205421e20
+cuts	packed_ppm_tiles_97.j2k	viewer	0	1	1	2356	1797	bfd10efd98d509c8
+cuts	packed_ppm_tiles_97.j2k	viewer	0	1	13	182	138	a378be66ad73542e
+cuts	packed_ppm_tiles_97.j2k	viewer	1	1	1	2356	1797	73768434a89480ce
+cuts	packed_ppm_tiles_97.j2k	viewer	1	1	13	182	138	202bfab12481343a
+cuts	packed_ppm_tiles_97.j2k	viewer	2	1	1	2356	1797	ef8c4cac10c0ebe1
+cuts	packed_ppm_tiles_97.j2k	viewer	2	1	13	182	138	805ae04109c459e8
+cuts	packed_ppm_tiles_97.j2k	viewer	3	1	1	2356	1797	4e2d50b3944728d8
+cuts	packed_ppm_tiles_97.j2k	viewer	3	1	13	182	138	bf31368f6313a863
+cuts	packed_ppm_tiles_97.j2k	viewer	4	1	1	2356	1797	4e2d50b3944728d8
+cuts	packed_ppm_tiles_97.j2k	viewer	4	1	13	182	138	bf31368f6313a863
+cuts	packed_ppm_tiles_97.j2k	viewer	5	1	1	2356	1797	4e2d50b3944728d8
+cuts	packed_ppm_tiles_97.j2k	viewer	5	1	13	182	138	bf31368f6313a863
+whole	packed_ppt.j2k	plain	0	5277	1	57f73cf237a325b5
+whole	packed_ppt.j2k	plain	1	5277	1	a1164442c99959c7
+whole	packed_ppt.j2k	plain	2	5277	1	b0c8409da1510dc0
+whole	packed_ppt.j2k	plain	3	5277	1	b387208048e4c954
+whole	packed_ppt.j2k	plain	4	5277	1	beab77dafe4a0094
+whole	packed_ppt.j2k	plain	5	5277	0	0000000000000000
+whole	packed_ppt.j2k	viewer	0	5277	1	35581f6e7b79b201
+whole	packed_ppt.j2k	viewer	1	5277	1	1adb8b4cd7806e1d
+whole	packed_ppt.j2k	viewer	2	5277	1	be65eedef9dd73df
+whole	packed_ppt.j2k	viewer	3	5277	1	7e62b66662c9c2a0
+whole	packed_ppt.j2k	viewer	4	5277	1	671f8750b5ca4fab
+whole	packed_ppt.j2k	viewer	5	5277	1	671f8750b5ca4fab
+whole	packed_ppt_tiles.j2k	plain	0	8670	1	df56e4fbc2a435e5
+whole	packed_ppt_tiles.j2k	plain	1	8670	1	756328fe5ca74015
+whole	packed_ppt_tiles.j2k	plain	2	8670	1	76eada6979cf7325
+whole	packed_ppt_tiles.j2k	plain	3	8670	1	5dfa12017ca7ba1e
+whole	packed_ppt_tiles.j2k	plain	4	8670	0	0000000000000000
+whole	packed_ppt_tiles.j2k	plain	5	8670	0	0000000000000000
+whole	packed_ppt_tiles.j2k	viewer	0	8670	1	3809fe4f760a10d4
+whole	packed_ppt_tiles.j2k	viewer	1	8670	1	4c9f15752acd3e02
+whole	packed_ppt_tiles.j2k	viewer	2	8670	1	f3ebda7df5110e5e
+whole	packed_ppt_tiles.j2k	viewer	3	8670	1	42994b7c9b87a37e
+whole	packed_ppt_tiles.j2k	viewer	4	8670	1	42994b7c9b87a37e
+whole	packed_ppt_tiles.j2k	viewer	5	8670	1	42994b7c9b87a37e
+whole	poc_lrcp_rlcp.j2k	plain	0	8203	1	d0cd93aea90ba1f8
+whole	poc_lrcp_rlcp.j2k	plain	1	8203	1	df64330d76c76a46
+whole	poc_lrcp_rlcp.j2k	plain	2	8203	1	8c4a9f768c9d8d92
+whole	poc_lrcp_rlcp.j2k	plain	3	8203	1	0056f45f9698fa50
+whole	poc_lrcp_rlcp.j2k	plain	4	8203	1	79fa2b5d5548145a
+whole	poc_lrcp_rlcp.j2k	plain	5	8203	0	0000000000000000
+whole	poc_lrcp_rlcp.j2k	viewer	0	8203	1	5607f3ba2a2718bf
+whole	poc_lrcp_rlcp.j2k	viewer	1	8203	1	09b295ff71e63e8b
+whole	poc_lrcp_rlcp.j2k	viewer	2	8203	1	9c096ac37c9763f3
+whole	poc_lrcp_rlcp.j2k	viewer	3	8203	1	a53d4535ab3fdeb9
+whole	poc_lrcp_rlcp.j2k	viewer	4	8203	1	f55e99a0da76c106
+whole	poc_lrcp_rlcp.j2k	viewer	5	8203	1	f55e99a0da76c106
+whole	poc_sop_97.j2k	plain	0	3020	1	16c02b3aef388aa3
+whole	poc_sop_97.j2k	plain	1	3020	1	e63a7d7df16706ed
+whole	poc_sop_97.j2k	plain	2	3020	1	32be56b0f4e6d475
+whole	poc_sop_97.j2k	plain	3	3020	1	27f18a98d92b5cc8
+whole	poc_sop_97.j2k	plain	4	3020	1	975a15a754fbf1fb
+whole	poc_sop_97.j2k	plain	5	3020	0	0000000000000000
+whole	poc_sop_97.j2k	viewer	0	3020	1	1cc45a8ac8ecad4d
+whole	poc_sop_97.j2k	viewer	1	3020	1	fb08184a791aa0c5
+whole	poc_sop_97.j2k	viewer	2	3020	1	7ccf5eb9060ca707
+whole	poc_sop_97.j2k	viewer	3	3020	1	dcf6b08ded8445cd
+whole	poc_sop_97.j2k	viewer	4	3020	1	808690a89c8965e0
+whole	poc_sop_97.j2k	viewer	5	3020	1	808690a89c8965e0
+cuts	poc_sop_97.j2k	plain	0	1	1	3019	2182	56c8d5084995c732
+cuts	poc_sop_97.j2k	plain	0	1	13	233	168	addcad80b934813b
+cuts	poc_sop_97.j2k	plain	1	1	1	3019	2182	6e58bcfa9e89e7ef
+cuts	poc_sop_97.j2k	plain	1	1	13	233	168	71508973f4194932
+cuts	poc_sop_97.j2k	plain	2	1	1	3019	2182	d78d5d623dcd6adf
+cuts	poc_sop_97.j2k	plain	2	1	13	233	168	6967222ac56ff029
+cuts	poc_sop_97.j2k	plain	3	1	1	3019	2182	72bdf2668579fdeb
+cuts	poc_sop_97.j2k	plain	3	1	13	233	168	562a5adf14c48b01
+cuts	poc_sop_97.j2k	plain	4	1	1	3019	2182	b1ab0724e368a1af
+cuts	poc_sop_97.j2k	plain	4	1	13	233	168	482b3e4e455c1429
+cuts	poc_sop_97.j2k	plain	5	1	1	3019	0	7711584fa67140cf
+cuts	poc_sop_97.j2k	plain	5	1	13	233	0	cb35ea1738da7e71
+cuts	poc_sop_97.j2k	viewer	0	1	1	3019	2182	d025cb8d5a75baf6
+cuts	poc_sop_97.j2k	viewer	0	1	13	233	168	aa1788f2b4d948dc
+cuts	poc_sop_97.j2k	viewer	1	1	1	3019	2182	0ade9e21b3aa0f4d
+cuts	poc_sop_97.j2k	viewer	1	1	13	233	168	8e7e38e8ea20d982
+cuts	poc_sop_97.j2k	viewer	2	1	1	3019	2182	468f6e0078bf2167
+cuts	poc_sop_97.j2k	viewer	2	1	13	233	168	4cbe77cad6a1c471
+cuts	poc_sop_97.j2k	viewer	3	1	1	3019	2182	a5ca2629f066c3db
+cuts	poc_sop_97.j2k	viewer	3	1	13	233	168	8ab856239302c6b9
+cuts	poc_sop_97.j2k	viewer	4	1	1	3019	2182	b04178941ef1d67b
+cuts	poc_sop_97.j2k	viewer	4	1	13	233	168	7914f7c4623a8aed
+cuts	poc_sop_97.j2k	viewer	5	1	1	3019	2182	b04178941ef1d67b
+cuts	poc_sop_97.j2k	viewer	5	1	13	233	168	7914f7c4623a8aed
+whole	prec12_g.j2k	plain	0	2349	1	ba8dc7cc49ce63f6
+whole	prec12_g.j2k	plain	1	2349	1	456c5e8ad5d29364
+whole	prec12_g.j2k	plain	2	2349	1	68de1aa2f4650d0b
+whole	prec12_g.j2k	plain	3	2349	1	47fc40dc3b7fc276
+whole	prec12_g.j2k	plain	4	2349	0	0000000000000000
+whole	prec12_g.j2k	plain	5	2349	0	0000000000000000
+whole	prec12_g.j2k	viewer	0	2349	1	f51dc7fc56c6b488
+whole	prec12_g.j2k	viewer	1	2349	1	f0f7bef5f2f5bdde
+whole	prec12_g.j2k	viewer	2	2349	1	d11bc90deabc37de
+whole	prec12_g.j2k	viewer	3	2349	1	e0108d8596be6ffd
+whole	prec12_g.j2k	viewer	4	2349	1	e0108d8596be6ffd
+whole	prec12_g.j2k	viewer	5	2349	1	e0108d8596be6ffd
+cuts	prec12_g.j2k	plain	0	1	1	2348	2235	54e98195a5eb85f5
+cuts	prec12_g.j2k	plain	0	1	13	181	172	ad537e48938bb376
+cuts	prec12_g.j2k	plain	1	1	1	2348	2235	53d84beafe71ef95
+cuts	prec12_g.j2k	plain	1	1	13	181	172	2af23105fcdd5bc0
+cuts	prec12_g.j2k	plain	2	1	1	2348	2235	9538d72156873492
+cuts	prec12_g.j2k	plain	2	1	13	181	172	53c678b6c2062a9a
+cuts	prec12_g.j2k	plain	3	1	1	2348	2235	97b2d5bd7761dbea
+cuts	prec12_g.j2k	plain	3	1	13	181	172	715fe914d84d1f63
+cuts	prec12_g.j2k	plain	4	1	1	2348	0	4dbcbb3f32350718
+cuts	prec12_g.j2k	plain	4	1	13	181	0	7a4f3c2a6d0f0541
+cuts	prec12_g.j2k	plain	5	1	1	2348	0	4dbcbb3f32350718
+cuts	prec12_g.j2k	plain	5	1	13	181	0	7a4f3c2a6d0f0541
+cuts	prec12_g.j2k	viewer	0	1	1	2348	2235	dd5f3172232f4d93
+cuts	prec12_g.j2k	viewer	0	1	13	181	172	ae8b2d76a122473d
+cuts	prec12_g.j2k	viewer	1	1	1	2348	2235	2c2a547c02dc8f89
+cuts	prec12_g.j2k	viewer	1	1	13	181	172	5c0856ef097ad302
+cuts	prec12_g.j2k	viewer	2	1	1	2348	2235	4e9c95300513428b
+cuts	prec12_g.j2k	viewer	2	1	13	181	172	19269ac648c75565
+cuts	prec12_g.j2k	viewer	3	1	1	2348	2235	1aad2853414f4cfb
+cuts	prec12_g.j2k	viewer	3	1	13	181	172	764d78f0ff6d0195
+cuts	prec12_g.j2k	viewer	4	1	1	2348	2235	1aad2853414f4cfb
+cuts	prec12_g.j2k	viewer	4	1	13	181	172	764d78f0ff6d0195
+cuts	prec12_g.j2k	viewer	5	1	1	2348	2235	1aad2853414f4cfb
+cuts	prec12_g.j2k	viewer	5	1	13	181	172	764d78f0ff6d0195
+whole	prec16_g_97.j2k	plain	0	1075	1	07c73af2d0e6647d
+whole	prec16_g_97.j2k	plain	1	1075	1	8ab63a8e2b941a7d
+whole	prec16_g_97.j2k	plain	2	1075	1	f683566ce9d0df3d
+whole	prec16_g_97.j2k	plain	3	1075	1	8b064207bb4dd012
+whole	prec16_g_97.j2k	plain	4	1075	0	0000000000000000
+whole	prec16_g_97.j2k	plain	5	1075	0	0000000000000000
+whole	prec16_g_97.j2k	viewer	0	1075	1	7efbe09547084efa
+whole	prec16_g_97.j2k	viewer	1	1075	1	174e7eb0146e1265
+whole	prec16_g_97.j2k	viewer	2	1075	1	d2c9038628e27f10
+whole	prec16_g_97.j2k	viewer	3	1075	1	1b694ea4f1f744df
+whole	prec16_g_97.j2k	viewer	4	1075	1	1b694ea4f1f744df
+whole	prec16_g_97.j2k	viewer	5	1075	1	1b694ea4f1f744df
+cuts	prec16_g_97.j2k	plain	0	1	1	1074	951	80e65b25f36adf32
+cuts	prec16_g_97.j2k	plain	0	1	13	83	73	4c22acc6631bea10
+cuts	prec16_g_97.j2k	plain	1	1	1	1074	951	dc87a2c4017b0f7f
+cuts	prec16_g_97.j2k	plain	1	1	13	83	73	40d0d32917c53fae
+cuts	prec16_g_97.j2k	plain	2	1	1	1074	951	19f6189dc1777073
+cuts	prec16_g_97.j2k	plain	2	1	13	83	73	69068a22fba6b360
+cuts	prec16_g_97.j2k	plain	3	1	1	1074	951	dd08214769bb7a2a
+cuts	prec16_g_97.j2k	plain	3	1	13	83	73	66477aa624a67730
+cuts	prec16_g_97.j2k	plain	4	1	1	1074	0	1cfb9180dbc3abf4
+cuts	prec16_g_97.j2k	plain	4	1	13	83	0	3bde0dce3bf0df0d
+cuts	prec16_g_97.j2k	plain	5	1	1	1074	0	1cfb9180dbc3abf4
+cuts	prec16_g_97.j2k	plain	5	1	13	83	0	3bde0dce3bf0df0d
+cuts	prec16_g_97.j2k	viewer	0	1	1	1074	951	d9faea847fdbb5c9
+cuts	prec16_g_97.j2k	viewer	0	1	13	83	73	b832d82205e594ba
+cuts	prec16_g_97.j2k	viewer	1	1	1	1074	951	c07d2e051886259c
+cuts	prec16_g_97.j2k	viewer	1	1	13	83	73	771815dc6cfc7f52
+cuts	prec16_g_97.j2k	viewer	2	1	1	1074	951	67f4a6ac00e982db
+cuts	prec16_g_97.j2k	viewer	2	1	13	83	73	fba44b6322530702
+cuts	prec16_g_97.j2k	viewer	3	1	1	1074	951	f61cb0c9ef66833c
+cuts	prec16_g_97.j2k	viewer	3	1	13	83	73	083c336656c4dafd
+cuts	prec16_g_97.j2k	viewer	4	1	1	1074	951	f61cb0c9ef66833c
+cuts	prec16_g_97.j2k	viewer	4	1	13	83	73	083c336656c4dafd
+cuts	prec16_g_97.j2k	viewer	5	1	1	1074	951	f61cb0c9ef66833c
+cuts	prec16_g_97.j2k	viewer	5	1	13	83	73	083c336656c4dafd
+whole	prog_cprl.j2k	plain	0	5217	1	4c035ab1c5a01036
+whole	prog_cprl.j2k	plain	1	5217	1	5773eea98924e596
+whole	prog_cprl.j2k	plain	2	5217	1	0a3a5b14347a3095
+whole	prog_cprl.j2k	plain	3	5217	1	cbcf9cfe7c42a839
+whole	prog_cprl.j2k	plain	4	5217	1	c3e5ac597c5f1689
+whole	prog_cprl.j2k	plain	5	5217	0	0000000000000000
+whole	prog_cprl.j2k	viewer	0	5217	1	eb99cbe3a79a836f
+whole	prog_cprl.j2k	viewer	1	5217	1	f5224402e4410a97
+whole	prog_cprl.j2k	viewer	2	5217	1	d302f235fb0d751f
+whole	prog_cprl.j2k	viewer	3	5217	1	e94b1b7d659c409a
+whole	prog_cprl.j2k	viewer	4	5217	1	21ae9b880ba3a6e1
+whole	prog_cprl.j2k	viewer	5	5217	1	21ae9b880ba3a6e1
+whole	prog_lrcp.j2k	plain	0	5194	1	52e2bf5b31165346
+whole	prog_lrcp.j2k	plain	1	5194	1	24531cdcdabfc2b6
+whole	prog_lrcp.j2k	plain	2	5194	1	f58162760ecd7b70
+whole	prog_lrcp.j2k	plain	3	5194	1	907e1a5cc7cc13cf
+whole	prog_lrcp.j2k	plain	4	5194	1	3b9b03847c617fbc
+whole	prog_lrcp.j2k	plain	5	5194	0	0000000000000000
+whole	prog_lrcp.j2k	viewer	0	5194	1	25ea156f605d363f
+whole	prog_lrcp.j2k	viewer	1	5194	1	682e994bb1ba804f
+whole	prog_lrcp.j2k	viewer	2	5194	1	048a5881dd34aaaf
+whole	prog_lrcp.j2k	viewer	3	5194	1	c4ea58823b6e665a
+whole	prog_lrcp.j2k	viewer	4	5194	1	35e1a1c53fa24987
+whole	prog_lrcp.j2k	viewer	5	5194	1	35e1a1c53fa24987
+whole	prog_pcrl.j2k	plain	0	5192	1	4389bb2dee5bdadd
+whole	prog_pcrl.j2k	plain	1	5192	1	c5adb77103fdf383
+whole	prog_pcrl.j2k	plain	2	5192	1	398afd3298675384
+whole	prog_pcrl.j2k	plain	3	5192	1	83a32eb4eeddd381
+whole	prog_pcrl.j2k	plain	4	5192	1	43ceeff26119d5e8
+whole	prog_pcrl.j2k	plain	5	5192	0	0000000000000000
+whole	prog_pcrl.j2k	viewer	0	5192	1	f1a53fb3734381e7
+whole	prog_pcrl.j2k	viewer	1	5192	1	fb9f5012a2ad9cdd
+whole	prog_pcrl.j2k	viewer	2	5192	1	5430383612e460ab
+whole	prog_pcrl.j2k	viewer	3	5192	1	7398e51044494c12
+whole	prog_pcrl.j2k	viewer	4	5192	1	32336739b67a43cd
+whole	prog_pcrl.j2k	viewer	5	5192	1	32336739b67a43cd
+whole	prog_rlcp.j2k	plain	0	5223	1	66877ffdeea961e5
+whole	prog_rlcp.j2k	plain	1	5223	1	7df7d098a7e7692c
+whole	prog_rlcp.j2k	plain	2	5223	1	75091549aa941672
+whole	prog_rlcp.j2k	plain	3	5223	1	e087e1bfa46f7c36
+whole	prog_rlcp.j2k	plain	4	5223	1	2fedad38d5625363
+whole	prog_rlcp.j2k	plain	5	5223	0	0000000000000000
+whole	prog_rlcp.j2k	viewer	0	5223	1	227b484e0af70495
+whole	prog_rlcp.j2k	viewer	1	5223	1	1ed8bf02fddb5ec5
+whole	prog_rlcp.j2k	viewer	2	5223	1	8cc3428b0f85aed1
+whole	prog_rlcp.j2k	viewer	3	5223	1	c2e2cadde297259a
+whole	prog_rlcp.j2k	viewer	4	5223	1	6e2b58ab3419fe11
+whole	prog_rlcp.j2k	viewer	5	5223	1	6e2b58ab3419fe11
+whole	prog_rpcl.j2k	plain	0	5217	1	db4b52855f81300d
+whole	prog_rpcl.j2k	plain	1	5217	1	d00b26af4b4e9695
+whole	prog_rpcl.j2k	plain	2	5217	1	0c2160074ad673ee
+whole	prog_rpcl.j2k	plain	3	5217	1	f03aba453da12bf8
+whole	prog_rpcl.j2k	plain	4	5217	1	944823c1cd7f295d
+whole	prog_rpcl.j2k	plain	5	5217	0	0000000000000000
+whole	prog_rpcl.j2k	viewer	0	5217	1	31e31a7d667c8c59
+whole	prog_rpcl.j2k	viewer	1	5217	1	fe4216193c2fcf6b
+whole	prog_rpcl.j2k	viewer	2	5217	1	eee43d424f03553f
+whole	prog_rpcl.j2k	viewer	3	5217	1	75d6766356a83a8a
+whole	prog_rpcl.j2k	viewer	4	5217	1	73dbac691f5978c1
+whole	prog_rpcl.j2k	viewer	5	5217	1	73dbac691f5978c1
+whole	psot0_sop_97.j2k	plain	0	1724	1	f6e701512f614e45
+whole	psot0_sop_97.j2k	plain	1	1724	1	88f04d09bdedc1aa
+whole	psot0_sop_97.j2k	plain	2	1724	1	df69d38eda3870f2
+whole	psot0_sop_97.j2k	plain	3	1724	1	14203c011dc9d487
+whole	psot0_sop_97.j2k	plain	4	1724	1	72ffc5715858b3cc
+whole	psot0_sop_97.j2k	plain	5	1724	0	0000000000000000
+whole	psot0_sop_97.j2k	viewer	0	1724	1	1933e7f299215beb
+whole	psot0_sop_97.j2k	viewer	1	1724	1	890629be160d1afd
+whole	psot0_sop_97.j2k	viewer	2	1724	1	826c436ece3fe6dd
+whole	psot0_sop_97.j2k	viewer	3	1724	1	d1044d970b0bd161
+whole	psot0_sop_97.j2k	viewer	4	1724	1	3bcbbdcfb72b273d
+whole	psot0_sop_97.j2k	viewer	5	1724	1	3bcbbdcfb72b273d
+cuts	psot0_sop_97.j2k	plain	0	1	1	1723	1588	91203f59f0bf7a95
+cuts	psot0_sop_97.j2k	plain	0	1	13	133	122	83c62574066b9156
+cuts	psot0_sop_97.j2k	plain	1	1	1	1723	1588	3f91a02e90b0ed97
+cuts	psot0_sop_97.j2k	plain	1	1	13	133	122	15c3998e6d64b679
+cuts	psot0_sop_97.j2k	plain	2	1	1	1723	1588	c0a8893b7eab8457
+cuts	psot0_sop_97.j2k	plain	2	1	13	133	122	c769ffd83113180a
+cuts	psot0_sop_97.j2k	plain	3	1	1	1723	1588	d2df48991540aefc
+cuts	psot0_sop_97.j2k	plain	3	1	13	133	122	c9e0af87d06620fc
+cuts	psot0_sop_97.j2k	plain	4	1	1	1723	1588	cfda340971563482
+cuts	psot0_sop_97.j2k	plain	4	1	13	133	122	8f2db8a946308410
+cuts	psot0_sop_97.j2k	plain	5	1	1	1723	0	9d69b6c398462cfb
+cuts	psot0_sop_97.j2k	plain	5	1	13	133	0	8b69e554ba37ade0
+cuts	psot0_sop_97.j2k	viewer	0	1	1	1723	1588	eb41816865f7eaff
+cuts	psot0_sop_97.j2k	viewer	0	1	13	133	122	8de15ef06cb71f79
+cuts	psot0_sop_97.j2k	viewer	1	1	1	1723	1588	93b0564db899d1e1
+cuts	psot0_sop_97.j2k	viewer	1	1	13	133	122	aef8d3402518b787
+cuts	psot0_sop_97.j2k	viewer	2	1	1	1723	1588	6002a0989f2b0c5d
+cuts	psot0_sop_97.j2k	viewer	2	1	13	133	122	b7629c8da5656d23
+cuts	psot0_sop_97.j2k	viewer	3	1	1	1723	1588	7e2dd64092bd4995
+cuts	psot0_sop_97.j2k	viewer	3	1	13	133	122	a663425608ecb24f
+cuts	psot0_sop_97.j2k	viewer	4	1	1	1723	1588	c50116de5ea55be1
+cuts	psot0_sop_97.j2k	viewer	4	1	13	133	122	f8a8ef7c2364c947
+cuts	psot0_sop_97.j2k	viewer	5	1	1	1723	1588	c50116de5ea55be1
+cuts	psot0_sop_97.j2k	viewer	5	1	13	133	122	f8a8ef7c2364c947
+whole	psot0_sop_noeoc_97.j2k	plain	0	1740	1	8a643276c702c8ce
+whole	psot0_sop_noeoc_97.j2k	plain	1	1740	1	d9759d5d8a3ee4d7
+whole	psot0_sop_noeoc_97.j2k	plain	2	1740	1	5e9fb72f048b9b6a
+whole	psot0_sop_noeoc_97.j2k	plain	3	1740	1	51af22ae917f1d98
+whole	psot0_sop_noeoc_97.j2k	plain	4	1740	1	bc542c921f78f73d
+whole	psot0_sop_noeoc_97.j2k	plain	5	1740	0	0000000000000000
+whole	psot0_sop_noeoc_97.j2k	viewer	0	1740	1	58bf674d84d990db
+whole	psot0_sop_noeoc_97.j2k	viewer	1	1740	1	f0615c815f68ca8d
+whole	psot0_sop_noeoc_97.j2k	viewer	2	1740	1	eb65d387e16eec71
+whole	psot0_sop_noeoc_97.j2k	viewer	3	1740	1	fca5392efe8dccf1
+whole	psot0_sop_noeoc_97.j2k	viewer	4	1740	1	0994d061072bb2c1
+whole	psot0_sop_noeoc_97.j2k	viewer	5	1740	1	0994d061072bb2c1
+cuts	psot0_sop_noeoc_97.j2k	plain	0	1	1	1739	1604	14f887b2ac736c99
+cuts	psot0_sop_noeoc_97.j2k	plain	0	1	13	134	123	f6dd968c473ae68c
+cuts	psot0_sop_noeoc_97.j2k	plain	1	1	1	1739	1604	6415c63bbcededfa
+cuts	psot0_sop_noeoc_97.j2k	plain	1	1	13	134	123	6910ff3ed5e1ff53
+cuts	psot0_sop_noeoc_97.j2k	plain	2	1	1	1739	1604	9176b0b2ea5432e0
+cuts	psot0_sop_noeoc_97.j2k	plain	2	1	13	134	123	6a0abe502444fc41
+cuts	psot0_sop_noeoc_97.j2k	plain	3	1	1	1739	1604	fa1d0ad5acc4300a
+cuts	psot0_sop_noeoc_97.j2k	plain	3	1	13	134	123	dafc9a405fe78296
+cuts	psot0_sop_noeoc_97.j2k	plain	4	1	1	1739	1604	b6dd287fa82dc00e
+cuts	psot0_sop_noeoc_97.j2k	plain	4	1	13	134	123	fa6aa633b91690d8
+cuts	psot0_sop_noeoc_97.j2k	plain	5	1	1	1739	0	349547ae1caa4e1b
+cuts	psot0_sop_noeoc_97.j2k	plain	5	1	13	134	0	dd564a8c2c122040
+cuts	psot0_sop_noeoc_97.j2k	viewer	0	1	1	1739	1604	c1fd87661b51dc73
+cuts	psot0_sop_noeoc_97.j2k	viewer	0	1	13	134	123	ea7f4f27273fb73e
+cuts	psot0_sop_noeoc_97.j2k	viewer	1	1	1	1739	1604	e31633f173ae6201
+cuts	psot0_sop_noeoc_97.j2k	viewer	1	1	13	134	123	ddf7e1dcd797b614
+cuts	psot0_sop_noeoc_97.j2k	viewer	2	1	1	1739	1604	a2feeba571ed3d16
+cuts	psot0_sop_noeoc_97.j2k	viewer	2	1	13	134	123	ad47a0e80cb832d4
+cuts	psot0_sop_noeoc_97.j2k	viewer	3	1	1	1739	1604	9b7f9defc713ddbd
+cuts	psot0_sop_noeoc_97.j2k	viewer	3	1	13	134	123	9ac679e6f6691745
+cuts	psot0_sop_noeoc_97.j2k	viewer	4	1	1	1739	1604	d4710194d9680cf2
+cuts	psot0_sop_noeoc_97.j2k	viewer	4	1	13	134	123	e9675a46436854cd
+cuts	psot0_sop_noeoc_97.j2k	viewer	5	1	1	1739	1604	d4710194d9680cf2
+cuts	psot0_sop_noeoc_97.j2k	viewer	5	1	13	134	123	e9675a46436854cd
+whole	psot0_tiles_97.j2k	plain	0	2958	1	53b914ba1216dc34
+whole	psot0_tiles_97.j2k	plain	1	2958	1	9b44b0767525415a
+whole	psot0_tiles_97.j2k	plain	2	2958	1	b9c01254616dbebe
+whole	psot0_tiles_97.j2k	plain	3	2958	1	85f4fa52d4b0b585
+whole	psot0_tiles_97.j2k	plain	4	2958	1	b94fc2b4638b001b
+whole	psot0_tiles_97.j2k	plain	5	2958	0	0000000000000000
+whole	psot0_tiles_97.j2k	viewer	0	2958	1	8f96bb6cf835774b
+whole	psot0_tiles_97.j2k	viewer	1	2958	1	bc10814fd7c16275
+whole	psot0_tiles_97.j2k	viewer	2	2958	1	0e64be6362be433c
+whole	psot0_tiles_97.j2k	viewer	3	2958	1	fa4ba3aa9f810884
+whole	psot0_tiles_97.j2k	viewer	4	2958	1	7c29f298c3bb80d9
+whole	psot0_tiles_97.j2k	viewer	5	2958	1	7c29f298c3bb80d9
+cuts	psot0_tiles_97.j2k	plain	0	1	1	2957	2786	1b1a26bf00d95475
+cuts	psot0_tiles_97.j2k	plain	0	1	13	228	214	dffeddee97d464ca
+cuts	psot0_tiles_97.j2k	plain	1	1	1	2957	2786	bd7afc8ed7e09e5e
+cuts	psot0_tiles_97.j2k	plain	1	1	13	228	214	69a7eba6b9761619
+cuts	psot0_tiles_97.j2k	plain	2	1	1	2957	2786	53b7c2bc0847b739
+cuts	psot0_tiles_97.j2k	plain	2	1	13	228	214	d2d8f050f9a4feeb
+cuts	psot0_tiles_97.j2k	plain	3	1	1	2957	2786	c6c5a21e2c038d40
+cuts	psot0_tiles_97.j2k	plain	3	1	13	228	214	b5bd9deb22eab06e
+cuts	psot0_tiles_97.j2k	plain	4	1	1	2957	2786	f3defe468857eb51
+cuts	psot0_tiles_97.j2k	plain	4	1	13	228	214	ba8e0aee064b8558
+cuts	psot0_tiles_97.j2k	plain	5	1	1	2957	0	ebaa7cd451fba9fe
+cuts	psot0_tiles_97.j2k	plain	5	1	13	228	0	1c5d7743dd11b951
+cuts	psot0_tiles_97.j2k	viewer	0	1	1	2957	2786	c9fa6e29375701a2
+cuts	psot0_tiles_97.j2k	viewer	0	1	13	228	214	0070f1ae6fe26b3e
+cuts	psot0_tiles_97.j2k	viewer	1	1	1	2957	2786	35407f5d3286e76a
+cuts	psot0_tiles_97.j2k	viewer	1	1	13	228	214	5fbc5113122026e7
+cuts	psot0_tiles_97.j2k	viewer	2	1	1	2957	2786	99583d6ce20549e2
+cuts	psot0_tiles_97.j2k	viewer	2	1	13	228	214	364962280b26aef8
+cuts	psot0_tiles_97.j2k	viewer	3	1	1	2957	2786	a75a9bdfc6778586
+cuts	psot0_tiles_97.j2k	viewer	3	1	13	228	214	7bde731adac78f72
+cuts	psot0_tiles_97.j2k	viewer	4	1	1	2957	2786	0f950a48cebd3d79
+cuts	psot0_tiles_97.j2k	viewer	4	1	13	228	214	14be8a9dd5025cc9
+cuts	psot0_tiles_97.j2k	viewer	5	1	1	2957	2786	0f950a48cebd3d79
+cuts	psot0_tiles_97.j2k	viewer	5	1	13	228	214	14be8a9dd5025cc9
+whole	psot0_tiles_noeoc_97.j2k	plain	0	2940	1	14878119a95c833a
+whole	psot0_tiles_noeoc_97.j2k	plain	1	2940	1	57ab45686edb4570
+whole	psot0_tiles_noeoc_97.j2k	plain	2	2940	1	4909b63f14b9f58b
+whole	psot0_tiles_noeoc_97.j2k	plain	3	2940	1	4f840180f6ff38a3
+whole	psot0_tiles_noeoc_97.j2k	plain	4	2940	1	efea286ffc5336f2
+whole	psot0_tiles_noeoc_97.j2k	plain	5	2940	0	0000000000000000
+whole	psot0_tiles_noeoc_97.j2k	viewer	0	2940	1	be71240987a67353
+whole	psot0_tiles_noeoc_97.j2k	viewer	1	2940	1	02b6172e665bfe8f
+whole	psot0_tiles_noeoc_97.j2k	viewer	2	2940	1	e526691e450304f6
+whole	psot0_tiles_noeoc_97.j2k	viewer	3	2940	1	5763343661905cfe
+whole	psot0_tiles_noeoc_97.j2k	viewer	4	2940	1	c231c6c0a0a7e17d
+whole	psot0_tiles_noeoc_97.j2k	viewer	5	2940	1	c231c6c0a0a7e17d
+cuts	psot0_tiles_noeoc_97.j2k	plain	0	1	1	2939	2768	284c1843d794e31e
+cuts	psot0_tiles_noeoc_97.j2k	plain	0	1	13	227	214	e89032650ac5a06d
+cuts	psot0_tiles_noeoc_97.j2k	plain	1	1	1	2939	2768	3f6de2611bcd9585
+cuts	psot0_tiles_noeoc_97.j2k	plain	1	1	13	227	214	a8a758ac435851df
+cuts	psot0_tiles_noeoc_97.j2k	plain	2	1	1	2939	2768	8e773dfa198ba455
+cuts	psot0_tiles_noeoc_97.j2k	plain	2	1	13	227	214	c35ea4c9e47b1c0a
+cuts	psot0_tiles_noeoc_97.j2k	plain	3	1	1	2939	2768	25ef8fb7ec144e46
+cuts	psot0_tiles_noeoc_97.j2k	plain	3	1	13	227	214	e6e6d3bd7a4d57e0
+cuts	psot0_tiles_noeoc_97.j2k	plain	4	1	1	2939	2768	7235b0b7f0d2b428
+cuts	psot0_tiles_noeoc_97.j2k	plain	4	1	13	227	214	13d5005cc504759a
+cuts	psot0_tiles_noeoc_97.j2k	plain	5	1	1	2939	0	09d521ab2b20b1af
+cuts	psot0_tiles_noeoc_97.j2k	plain	5	1	13	227	0	4981585fa3874360
+cuts	psot0_tiles_noeoc_97.j2k	viewer	0	1	1	2939	2768	efb903c7dbbdbb21
+cuts	psot0_tiles_noeoc_97.j2k	viewer	0	1	13	227	214	83a8b6172c0e6e01
+cuts	psot0_tiles_noeoc_97.j2k	viewer	1	1	1	2939	2768	2bdb16c64138b694
+cuts	psot0_tiles_noeoc_97.j2k	viewer	1	1	13	227	214	c11e329ffb1f5ef1
+cuts	psot0_tiles_noeoc_97.j2k	viewer	2	1	1	2939	2768	4ce6988b2ed048d1
+cuts	psot0_tiles_noeoc_97.j2k	viewer	2	1	13	227	214	549d95143906e4b0
+cuts	psot0_tiles_noeoc_97.j2k	viewer	3	1	1	2939	2768	8c5a053c1fe0673e
+cuts	psot0_tiles_noeoc_97.j2k	viewer	3	1	13	227	214	e0e6ccacf3d1390e
+cuts	psot0_tiles_noeoc_97.j2k	viewer	4	1	1	2939	2768	822559cf2a9c5dd8
+cuts	psot0_tiles_noeoc_97.j2k	viewer	4	1	13	227	214	57f498e49a82f97c
+cuts	psot0_tiles_noeoc_97.j2k	viewer	5	1	1	2939	2768	822559cf2a9c5dd8
+cuts	psot0_tiles_noeoc_97.j2k	viewer	5	1	13	227	214	57f498e49a82f97c
+whole	sgnd8_rgb.j2k	plain	0	4325	1	f4b2f3bace2cba87
+whole	sgnd8_rgb.j2k	plain	1	4325	1	1d9aa412b416b6ff
+whole	sgnd8_rgb.j2k	plain	2	4325	1	75bb9f91c0695c5d
+whole	sgnd8_rgb.j2k	plain	3	4325	1	480778ad85b9a917
+whole	sgnd8_rgb.j2k	plain	4	4325	0	0000000000000000
+whole	sgnd8_rgb.j2k	plain	5	4325	0	0000000000000000
+whole	sgnd8_rgb.j2k	viewer	0	4325	1	290f8b4ff63d1156
+whole	sgnd8_rgb.j2k	viewer	1	4325	1	125307c10c95a160
+whole	sgnd8_rgb.j2k	viewer	2	4325	1	916ff488cc459b33
+whole	sgnd8_rgb.j2k	viewer	3	4325	1	e6774ef699e53d8d
+whole	sgnd8_rgb.j2k	viewer	4	4325	1	e6774ef699e53d8d
+whole	sgnd8_rgb.j2k	viewer	5	4325	1	e6774ef699e53d8d
+whole	size_16x16_rgb_r5.j2k	plain	0	1032	1	08db9017f4ede0b5
+whole	size_16x16_rgb_r5.j2k	plain	1	1032	1	5301b15703e1a0f2
+whole	size_16x16_rgb_r5.j2k	plain	2	1032	1	994954e2718db862
+whole	size_16x16_rgb_r5.j2k	plain	3	1032	1	c1ef5baad97e5b9c
+whole	size_16x16_rgb_r5.j2k	plain	4	1032	1	601daccab9a76699
+whole	size_16x16_rgb_r5.j2k	plain	5	1032	0	0000000000000000
+whole	size_16x16_rgb_r5.j2k	viewer	0	1032	1	96204a78f5b92eaf
+whole	size_16x16_rgb_r5.j2k	viewer	1	1032	1	111ddc07e4bdd2dd
+whole	size_16x16_rgb_r5.j2k	viewer	2	1032	1	242d2ec5a26ce36b
+whole	size_16x16_rgb_r5.j2k	viewer	3	1032	1	ad55780241e89edd
+whole	size_16x16_rgb_r5.j2k	viewer	4	1032	1	3b685c8673a5a617
+whole	size_16x16_rgb_r5.j2k	viewer	5	1032	1	3b685c8673a5a617
+cuts	size_16x16_rgb_r5.j2k	plain	0	1	1	1031	909	3cd2f1a744a88a47
+cuts	size_16x16_rgb_r5.j2k	plain	0	1	13	80	70	1481570c59e148c4
+cuts	size_16x16_rgb_r5.j2k	plain	1	1	1	1031	909	fbaead8ce6ad6701
+cuts	size_16x16_rgb_r5.j2k	plain	1	1	13	80	70	1a9384201758c582
+cuts	size_16x16_rgb_r5.j2k	plain	2	1	1	1031	909	7e71305cc85e8b47
+cuts	size_16x16_rgb_r5.j2k	plain	2	1	13	80	70	cd533aef20990d15
+cuts	size_16x16_rgb_r5.j2k	plain	3	1	1	1031	909	c7cb21c95afde9c6
+cuts	size_16x16_rgb_r5.j2k	plain	3	1	13	80	70	4790a490bc5b3062
+cuts	size_16x16_rgb_r5.j2k	plain	4	1	1	1031	909	80481240de5119e2
+cuts	size_16x16_rgb_r5.j2k	plain	4	1	13	80	70	17dbe5560d73145a
+cuts	size_16x16_rgb_r5.j2k	plain	5	1	1	1031	0	9a1ae01270dd21a3
+cuts	size_16x16_rgb_r5.j2k	plain	5	1	13	80	0	826ce371f1094f8d
+cuts	size_16x16_rgb_r5.j2k	viewer	0	1	1	1031	909	782d8e054190b444
+cuts	size_16x16_rgb_r5.j2k	viewer	0	1	13	80	70	b998c6c7d04a6a07
+cuts	size_16x16_rgb_r5.j2k	viewer	1	1	1	1031	909	cb346eea182807de
+cuts	size_16x16_rgb_r5.j2k	viewer	1	1	13	80	70	92db53cc572760a5
+cuts	size_16x16_rgb_r5.j2k	viewer	2	1	1	1031	909	2317fa1740d76010
+cuts	size_16x16_rgb_r5.j2k	viewer	2	1	13	80	70	7278f902c6bc4c1d
+cuts	size_16x16_rgb_r5.j2k	viewer	3	1	1	1031	909	ba8a44efe660c6ed
+cuts	size_16x16_rgb_r5.j2k	viewer	3	1	13	80	70	63579fc54d1c278f
+cuts	size_16x16_rgb_r5.j2k	viewer	4	1	1	1031	909	1b1f046c480d2f40
+cuts	size_16x16_rgb_r5.j2k	viewer	4	1	13	80	70	42698a2063a0783a
+cuts	size_16x16_rgb_r5.j2k	viewer	5	1	1	1031	909	1b1f046c480d2f40
+cuts	size_16x16_rgb_r5.j2k	viewer	5	1	13	80	70	42698a2063a0783a
+whole	size_17x37_rgb_97.j2k	plain	0	642	1	371d54e762940350
+whole	size_17x37_rgb_97.j2k	plain	1	642	1	b30b25f2a63c85a1
+whole	size_17x37_rgb_97.j2k	plain	2	642	1	49e5f2b1a966e23d
+whole	size_17x37_rgb_97.j2k	plain	3	642	1	55ae2fa0a5f459a8
+whole	size_17x37_rgb_97.j2k	plain	4	642	0	0000000000000000
+whole	size_17x37_rgb_97.j2k	plain	5	642	0	0000000000000000
+whole	size_17x37_rgb_97.j2k	viewer	0	642	1	38c34ccce65c4830
+whole	size_17x37_rgb_97.j2k	viewer	1	642	1	97174c1966af13d4
+whole	size_17x37_rgb_97.j2k	viewer	2	642	1	377c6edc24637cb7
+whole	size_17x37_rgb_97.j2k	viewer	3	642	1	bf43d6945f3a4526
+whole	size_17x37_rgb_97.j2k	viewer	4	642	1	bf43d6945f3a4526
+whole	size_17x37_rgb_97.j2k	viewer	5	642	1	bf43d6945f3a4526
+cuts	size_17x37_rgb_97.j2k	plain	0	1	1	641	512	44473aec91e8344c
+cuts	size_17x37_rgb_97.j2k	plain	0	1	13	50	40	8c31e3ffa5c0d028
+cuts	size_17x37_rgb_97.j2k	plain	1	1	1	641	512	235d775f1836b930
+cuts	size_17x37_rgb_97.j2k	plain	1	1	13	50	40	6e2d6ca308d31eab
+cuts	size_17x37_rgb_97.j2k	plain	2	1	1	641	512	5836c1d1a5c57158
+cuts	size_17x37_rgb_97.j2k	plain	2	1	13	50	40	da3279cf367eb34a
+cuts	size_17x37_rgb_97.j2k	plain	3	1	1	641	512	9bc130ce821b4f62
+cuts	size_17x37_rgb_97.j2k	plain	3	1	13	50	40	b7c36ee9bc439140
+cuts	size_17x37_rgb_97.j2k	plain	4	1	1	641	0	bc93f165f7ca2aae
+cuts	size_17x37_rgb_97.j2k	plain	4	1	13	50	0	e8f667d308665480
+cuts	size_17x37_rgb_97.j2k	plain	5	1	1	641	0	bc93f165f7ca2aae
+cuts	size_17x37_rgb_97.j2k	plain	5	1	13	50	0	e8f667d308665480
+cuts	size_17x37_rgb_97.j2k	viewer	0	1	1	641	512	ac83291ef9214a92
+cuts	size_17x37_rgb_97.j2k	viewer	0	1	13	50	40	dfb8a2733e503b0e
+cuts	size_17x37_rgb_97.j2k	viewer	1	1	1	641	512	2254c4198104e41f
+cuts	size_17x37_rgb_97.j2k	viewer	1	1	13	50	40	f64bb1394d92174e
+cuts	size_17x37_rgb_97.j2k	viewer	2	1	1	641	512	34a6297367ebd8f8
+cuts	size_17x37_rgb_97.j2k	viewer	2	1	13	50	40	9d70a474cec2c289
+cuts	size_17x37_rgb_97.j2k	viewer	3	1	1	641	512	7e6dccddd432c76c
+cuts	size_17x37_rgb_97.j2k	viewer	3	1	13	50	40	d1f28b45038f589c
+cuts	size_17x37_rgb_97.j2k	viewer	4	1	1	641	512	7e6dccddd432c76c
+cuts	size_17x37_rgb_97.j2k	viewer	4	1	13	50	40	d1f28b45038f589c
+cuts	size_17x37_rgb_97.j2k	viewer	5	1	1	641	512	7e6dccddd432c76c
+cuts	size_17x37_rgb_97.j2k	viewer	5	1	13	50	40	d1f28b45038f589c
+whole	size_1x1_g.j2k	plain	0	111	1	19f25d1ec67187a4
+whole	size_1x1_g.j2k	plain	1	111	0	0000000000000000
+whole	size_1x1_g.j2k	plain	2	111	0	0000000000000000
+whole	size_1x1_g.j2k	plain	3	111	0	0000000000000000
+whole	size_1x1_g.j2k	plain	4	111	0	0000000000000000
+whole	size_1x1_g.j2k	plain	5	111	0	0000000000000000
+whole	size_1x1_g.j2k	viewer	0	111	1	5d4f38cab5bcdd83
+whole	size_1x1_g.j2k	viewer	1	111	1	5d4f38cab5bcdd83
+whole	size_1x1_g.j2k	viewer	2	111	1	5d4f38cab5bcdd83
+whole	size_1x1_g.j2k	viewer	3	111	1	5d4f38cab5bcdd83
+whole	size_1x1_g.j2k	viewer	4	111	1	5d4f38cab5bcdd83
+whole	size_1x1_g.j2k	viewer	5	111	1	5d4f38cab5bcdd83
+cuts	size_1x1_g.j2k	plain	0	1	1	110	6	e0c0cec9d2070480
+cuts	size_1x1_g.j2k	plain	0	1	13	9	1	bc136c7954cc4f3e
+cuts	size_1x1_g.j2k	plain	1	1	1	110	0	46df5b0b8a7a214c
+cuts	size_1x1_g.j2k	plain	1	1	13	9	0	ae6199d34bdb48b2
+cuts	size_1x1_g.j2k	plain	2	1	1	110	0	46df5b0b8a7a214c
+cuts	size_1x1_g.j2k	plain	2	1	13	9	0	ae6199d34bdb48b2
+cuts	size_1x1_g.j2k	plain	3	1	1	110	0	46df5b0b8a7a214c
+cuts	size_1x1_g.j2k	plain	3	1	13	9	0	ae6199d34bdb48b2
+cuts	size_1x1_g.j2k	plain	4	1	1	110	0	46df5b0b8a7a214c
+cuts	size_1x1_g.j2k	plain	4	1	13	9	0	ae6199d34bdb48b2
+cuts	size_1x1_g.j2k	plain	5	1	1	110	0	46df5b0b8a7a214c
+cuts	size_1x1_g.j2k	plain	5	1	13	9	0	ae6199d34bdb48b2
+cuts	size_1x1_g.j2k	viewer	0	1	1	110	6	a17ce8afa4b182f0
+cuts	size_1x1_g.j2k	viewer	0	1	13	9	1	1065614ea92ddddd
+cuts	size_1x1_g.j2k	viewer	1	1	1	110	6	a17ce8afa4b182f0
+cuts	size_1x1_g.j2k	viewer	1	1	13	9	1	1065614ea92ddddd
+cuts	size_1x1_g.j2k	viewer	2	1	1	110	6	a17ce8afa4b182f0
+cuts	size_1x1_g.j2k	viewer	2	1	13	9	1	1065614ea92ddddd
+cuts	size_1x1_g.j2k	viewer	3	1	1	110	6	a17ce8afa4b182f0
+cuts	size_1x1_g.j2k	viewer	3	1	13	9	1	1065614ea92ddddd
+cuts	size_1x1_g.j2k	viewer	4	1	1	110	6	a17ce8afa4b182f0
+cuts	size_1x1_g.j2k	viewer	4	1	13	9	1	1065614ea92ddddd
+cuts	size_1x1_g.j2k	viewer	5	1	1	110	6	a17ce8afa4b182f0
+cuts	size_1x1_g.j2k	viewer	5	1	13	9	1	1065614ea92ddddd
+whole	size_1x1_rgb.j2k	plain	0	127	1	a9cad397c1f5667d
+whole	size_1x1_rgb.j2k	plain	1	127	0	0000000000000000
+whole	size_1x1_rgb.j2k	plain	2	127	0	0000000000000000
+whole	size_1x1_rgb.j2k	plain	3	127	0	0000000000000000
+whole	size_1x1_rgb.j2k	plain	4	127	0	0000000000000000
+whole	size_1x1_rgb.j2k	plain	5	127	0	0000000000000000
+whole	size_1x1_rgb.j2k	viewer	0	127	1	f719abd860ba963b
+whole	size_1x1_rgb.j2k	viewer	1	127	1	f719abd860ba963b
+whole	size_1x1_rgb.j2k	viewer	2	127	1	f719abd860ba963b
+whole	size_1x1_rgb.j2k	viewer	3	127	1	f719abd860ba963b
+whole	size_1x1_rgb.j2k	viewer	4	127	1	f719abd860ba963b
+whole	size_1x1_rgb.j2k	viewer	5	127	1	f719abd860ba963b
+cuts	size_1x1_rgb.j2k	plain	0	1	1	126	16	224053ec777531b2
+cuts	size_1x1_rgb.j2k	plain	0	1	13	10	1	374a2ff5761d0fe2
+cuts	size_1x1_rgb.j2k	plain	1	1	1	126	0	a2896609125e75dc
+cuts	size_1x1_rgb.j2k	plain	1	1	13	10	0	dd769992fa3e4804
+cuts	size_1x1_rgb.j2k	plain	2	1	1	126	0	a2896609125e75dc
+cuts	size_1x1_rgb.j2k	plain	2	1	13	10	0	dd769992fa3e4804
+cuts	size_1x1_rgb.j2k	plain	3	1	1	126	0	a2896609125e75dc
+cuts	size_1x1_rgb.j2k	plain	3	1	13	10	0	dd769992fa3e4804
+cuts	size_1x1_rgb.j2k	plain	4	1	1	126	0	a2896609125e75dc
+cuts	size_1x1_rgb.j2k	plain	4	1	13	10	0	dd769992fa3e4804
+cuts	size_1x1_rgb.j2k	plain	5	1	1	126	0	a2896609125e75dc
+cuts	size_1x1_rgb.j2k	plain	5	1	13	10	0	dd769992fa3e4804
+cuts	size_1x1_rgb.j2k	viewer	0	1	1	126	16	183086c95570a12a
+cuts	size_1x1_rgb.j2k	viewer	0	1	13	10	1	bc1887aaf6a62756
+cuts	size_1x1_rgb.j2k	viewer	1	1	1	126	16	183086c95570a12a
+cuts	size_1x1_rgb.j2k	viewer	1	1	13	10	1	bc1887aaf6a62756
+cuts	size_1x1_rgb.j2k	viewer	2	1	1	126	16	183086c95570a12a
+cuts	size_1x1_rgb.j2k	viewer	2	1	13	10	1	bc1887aaf6a62756
+cuts	size_1x1_rgb.j2k	viewer	3	1	1	126	16	183086c95570a12a
+cuts	size_1x1_rgb.j2k	viewer	3	1	13	10	1	bc1887aaf6a62756
+cuts	size_1x1_rgb.j2k	viewer	4	1	1	126	16	183086c95570a12a
+cuts	size_1x1_rgb.j2k	viewer	4	1	13	10	1	bc1887aaf6a62756
+cuts	size_1x1_rgb.j2k	viewer	5	1	1	126	16	183086c95570a12a
+cuts	size_1x1_rgb.j2k	viewer	5	1	13	10	1	bc1887aaf6a62756
+whole	size_1x64_g.j2k	plain	0	169	1	dd48158196fe81ea
+whole	size_1x64_g.j2k	plain	1	169	0	0000000000000000
+whole	size_1x64_g.j2k	plain	2	169	0	0000000000000000
+whole	size_1x64_g.j2k	plain	3	169	0	0000000000000000
+whole	size_1x64_g.j2k	plain	4	169	0	0000000000000000
+whole	size_1x64_g.j2k	plain	5	169	0	0000000000000000
+whole	size_1x64_g.j2k	viewer	0	169	1	eff63d2277685107
+whole	size_1x64_g.j2k	viewer	1	169	1	eff63d2277685107
+whole	size_1x64_g.j2k	viewer	2	169	1	eff63d2277685107
+whole	size_1x64_g.j2k	viewer	3	169	1	eff63d2277685107
+whole	size_1x64_g.j2k	viewer	4	169	1	eff63d2277685107
+whole	size_1x64_g.j2k	viewer	5	169	1	eff63d2277685107
+cuts	size_1x64_g.j2k	plain	0	1	1	168	64	304e775570ae434b
+cuts	size_1x64_g.j2k	plain	0	1	13	13	5	08581686f236a7a0
+cuts	size_1x64_g.j2k	plain	1	1	1	168	0	a449f7580e72a9ab
+cuts	size_1x64_g.j2k	plain	1	1	13	13	0	5fab82dabde262ea
+cuts	size_1x64_g.j2k	plain	2	1	1	168	0	a449f7580e72a9ab
+cuts	size_1x64_g.j2k	plain	2	1	13	13	0	5fab82dabde262ea
+cuts	size_1x64_g.j2k	plain	3	1	1	168	0	a449f7580e72a9ab
+cuts	size_1x64_g.j2k	plain	3	1	13	13	0	5fab82dabde262ea
+cuts	size_1x64_g.j2k	plain	4	1	1	168	0	a449f7580e72a9ab
+cuts	size_1x64_g.j2k	plain	4	1	13	13	0	5fab82dabde262ea
+cuts	size_1x64_g.j2k	plain	5	1	1	168	0	a449f7580e72a9ab
+cuts	size_1x64_g.j2k	plain	5	1	13	13	0	5fab82dabde262ea
+cuts	size_1x64_g.j2k	viewer	0	1	1	168	64	8c8ccc1efaf6e3d3
+cuts	size_1x64_g.j2k	viewer	0	1	13	13	5	006426328978a993
+cuts	size_1x64_g.j2k	viewer	1	1	1	168	64	8c8ccc1efaf6e3d3
+cuts	size_1x64_g.j2k	viewer	1	1	13	13	5	006426328978a993
+cuts	size_1x64_g.j2k	viewer	2	1	1	168	64	8c8ccc1efaf6e3d3
+cuts	size_1x64_g.j2k	viewer	2	1	13	13	5	006426328978a993
+cuts	size_1x64_g.j2k	viewer	3	1	1	168	64	8c8ccc1efaf6e3d3
+cuts	size_1x64_g.j2k	viewer	3	1	13	13	5	006426328978a993
+cuts	size_1x64_g.j2k	viewer	4	1	1	168	64	8c8ccc1efaf6e3d3
+cuts	size_1x64_g.j2k	viewer	4	1	13	13	5	006426328978a993
+cuts	size_1x64_g.j2k	viewer	5	1	1	168	64	8c8ccc1efaf6e3d3
+cuts	size_1x64_g.j2k	viewer	5	1	13	13	5	006426328978a993
+whole	size_2x2_rgba_97.j2k	plain	0	151	1	5f919db1704cf151
+whole	size_2x2_rgba_97.j2k	plain	1	151	1	e523f8c6bc4958e7
+whole	size_2x2_rgba_97.j2k	plain	2	151	0	0000000000000000
+whole	size_2x2_rgba_97.j2k	plain	3	151	0	0000000000000000
+whole	size_2x2_rgba_97.j2k	plain	4	151	0	0000000000000000
+whole	size_2x2_rgba_97.j2k	plain	5	151	0	0000000000000000
+whole	size_2x2_rgba_97.j2k	viewer	0	151	1	88e62b423af1759c
+whole	size_2x2_rgba_97.j2k	viewer	1	151	1	622abab1621bdbd4
+whole	size_2x2_rgba_97.j2k	viewer	2	151	1	622abab1621bdbd4
+whole	size_2x2_rgba_97.j2k	viewer	3	151	1	622abab1621bdbd4
+whole	size_2x2_rgba_97.j2k	viewer	4	151	1	622abab1621bdbd4
+whole	size_2x2_rgba_97.j2k	viewer	5	151	1	622abab1621bdbd4
+cuts	size_2x2_rgba_97.j2k	plain	0	1	1	150	30	45d6e3df9510d921
+cuts	size_2x2_rgba_97.j2k	plain	0	1	13	12	2	7e779c5e79f0f7e8
+cuts	size_2x2_rgba_97.j2k	plain	1	1	1	150	30	19bcf3b314fcfee0
+cuts	size_2x2_rgba_97.j2k	plain	1	1	13	12	2	05ab8a0b33fdf243
+cuts	size_2x2_rgba_97.j2k	plain	2	1	1	150	0	923dc3b5a849a774
+cuts	size_2x2_rgba_97.j2k	plain	2	1	13	12	0	ed39a8d40dcfae57
+cuts	size_2x2_rgba_97.j2k	plain	3	1	1	150	0	923dc3b5a849a774
+cuts	size_2x2_rgba_97.j2k	plain	3	1	13	12	0	ed39a8d40dcfae57
+cuts	size_2x2_rgba_97.j2k	plain	4	1	1	150	0	923dc3b5a849a774
+cuts	size_2x2_rgba_97.j2k	plain	4	1	13	12	0	ed39a8d40dcfae57
+cuts	size_2x2_rgba_97.j2k	plain	5	1	1	150	0	923dc3b5a849a774
+cuts	size_2x2_rgba_97.j2k	plain	5	1	13	12	0	ed39a8d40dcfae57
+cuts	size_2x2_rgba_97.j2k	viewer	0	1	1	150	30	7e965480b09f9bb9
+cuts	size_2x2_rgba_97.j2k	viewer	0	1	13	12	2	6a8dd38136a5ea48
+cuts	size_2x2_rgba_97.j2k	viewer	1	1	1	150	30	e2bdcdd32bfa3e78
+cuts	size_2x2_rgba_97.j2k	viewer	1	1	13	12	2	4280307c8dbe42bb
+cuts	size_2x2_rgba_97.j2k	viewer	2	1	1	150	30	e2bdcdd32bfa3e78
+cuts	size_2x2_rgba_97.j2k	viewer	2	1	13	12	2	4280307c8dbe42bb
+cuts	size_2x2_rgba_97.j2k	viewer	3	1	1	150	30	e2bdcdd32bfa3e78
+cuts	size_2x2_rgba_97.j2k	viewer	3	1	13	12	2	4280307c8dbe42bb
+cuts	size_2x2_rgba_97.j2k	viewer	4	1	1	150	30	e2bdcdd32bfa3e78
+cuts	size_2x2_rgba_97.j2k	viewer	4	1	13	12	2	4280307c8dbe42bb
+cuts	size_2x2_rgba_97.j2k	viewer	5	1	1	150	30	e2bdcdd32bfa3e78
+cuts	size_2x2_rgba_97.j2k	viewer	5	1	13	12	2	4280307c8dbe42bb
+whole	size_3x5_g.j2k	plain	0	140	1	5646f596e89a3572
+whole	size_3x5_g.j2k	plain	1	140	1	e2bf0c0ef15a2cbe
+whole	size_3x5_g.j2k	plain	2	140	0	0000000000000000
+whole	size_3x5_g.j2k	plain	3	140	0	0000000000000000
+whole	size_3x5_g.j2k	plain	4	140	0	0000000000000000
+whole	size_3x5_g.j2k	plain	5	140	0	0000000000000000
+whole	size_3x5_g.j2k	viewer	0	140	1	1729cb1743c41ad2
+whole	size_3x5_g.j2k	viewer	1	140	1	61f6cf379bd704ed
+whole	size_3x5_g.j2k	viewer	2	140	1	61f6cf379bd704ed
+whole	size_3x5_g.j2k	viewer	3	140	1	61f6cf379bd704ed
+whole	size_3x5_g.j2k	viewer	4	140	1	61f6cf379bd704ed
+whole	size_3x5_g.j2k	viewer	5	140	1	61f6cf379bd704ed
+cuts	size_3x5_g.j2k	plain	0	1	1	139	32	f48bcc5b6ed7d56c
+cuts	size_3x5_g.j2k	plain	0	1	13	11	2	95ceac0fa88d2471
+cuts	size_3x5_g.j2k	plain	1	1	1	139	32	10cf69cf46fa815a
+cuts	size_3x5_g.j2k	plain	1	1	13	11	2	4d3f12587593b05b
+cuts	size_3x5_g.j2k	plain	2	1	1	139	0	07f9baa1ede99413
+cuts	size_3x5_g.j2k	plain	2	1	13	11	0	6aa869302bd97e37
+cuts	size_3x5_g.j2k	plain	3	1	1	139	0	07f9baa1ede99413
+cuts	size_3x5_g.j2k	plain	3	1	13	11	0	6aa869302bd97e37
+cuts	size_3x5_g.j2k	plain	4	1	1	139	0	07f9baa1ede99413
+cuts	size_3x5_g.j2k	plain	4	1	13	11	0	6aa869302bd97e37
+cuts	size_3x5_g.j2k	plain	5	1	1	139	0	07f9baa1ede99413
+cuts	size_3x5_g.j2k	plain	5	1	13	11	0	6aa869302bd97e37
+cuts	size_3x5_g.j2k	viewer	0	1	1	139	32	8a6d161dcf942501
+cuts	size_3x5_g.j2k	viewer	0	1	13	11	2	9d4a641df0da9b0e
+cuts	size_3x5_g.j2k	viewer	1	1	1	139	32	33bac1bbcb23bd04
+cuts	size_3x5_g.j2k	viewer	1	1	13	11	2	902e2e2746ba65bb
+cuts	size_3x5_g.j2k	viewer	2	1	1	139	32	33bac1bbcb23bd04
+cuts	size_3x5_g.j2k	viewer	2	1	13	11	2	902e2e2746ba65bb
+cuts	size_3x5_g.j2k	viewer	3	1	1	139	32	33bac1bbcb23bd04
+cuts	size_3x5_g.j2k	viewer	3	1	13	11	2	902e2e2746ba65bb
+cuts	size_3x5_g.j2k	viewer	4	1	1	139	32	33bac1bbcb23bd04
+cuts	size_3x5_g.j2k	viewer	4	1	13	11	2	902e2e2746ba65bb
+cuts	size_3x5_g.j2k	viewer	5	1	1	139	32	33bac1bbcb23bd04
+cuts	size_3x5_g.j2k	viewer	5	1	13	11	2	902e2e2746ba65bb
+whole	size_4x4_rgb_r3.j2k	plain	0	245	1	f853830467dc8130
+whole	size_4x4_rgb_r3.j2k	plain	1	245	1	c76a8eb03a2841b2
+whole	size_4x4_rgb_r3.j2k	plain	2	245	1	9a75ae25d5261dd4
+whole	size_4x4_rgb_r3.j2k	plain	3	245	0	0000000000000000
+whole	size_4x4_rgb_r3.j2k	plain	4	245	0	0000000000000000
+whole	size_4x4_rgb_r3.j2k	plain	5	245	0	0000000000000000
+whole	size_4x4_rgb_r3.j2k	viewer	0	245	1	89a5ee50a380e6c5
+whole	size_4x4_rgb_r3.j2k	viewer	1	245	1	36c67993c3e13dfd
+whole	size_4x4_rgb_r3.j2k	viewer	2	245	1	c11e6a691cdc3c91
+whole	size_4x4_rgb_r3.j2k	viewer	3	245	1	c11e6a691cdc3c91
+whole	size_4x4_rgb_r3.j2k	viewer	4	245	1	c11e6a691cdc3c91
+whole	size_4x4_rgb_r3.j2k	viewer	5	245	1	c11e6a691cdc3c91
+cuts	size_4x4_rgb_r3.j2k	plain	0	1	1	244	128	25b2a045f9b2f695
+cuts	size_4x4_rgb_r3.j2k	plain	0	1	13	19	10	685a727ccfda8052
+cuts	size_4x4_rgb_r3.j2k	plain	1	1	1	244	128	4d246a3e57be8f3b
+cuts	size_4x4_rgb_r3.j2k	plain	1	1	13	19	10	b394a01988426293
+cuts	size_4x4_rgb_r3.j2k	plain	2	1	1	244	128	e458c695222d31fa
+cuts	size_4x4_rgb_r3.j2k	plain	2	1	13	19	10	5d0ef2c31cc9f86e
+cuts	size_4x4_rgb_r3.j2k	plain	3	1	1	244	0	f6cc693feaef2f77
+cuts	size_4x4_rgb_r3.j2k	plain	3	1	13	19	0	83e0a2d597df3c87
+cuts	size_4x4_rgb_r3.j2k	plain	4	1	1	244	0	f6cc693feaef2f77
+cuts	size_4x4_rgb_r3.j2k	plain	4	1	13	19	0	83e0a2d597df3c87
+cuts	size_4x4_rgb_r3.j2k	plain	5	1	1	244	0	f6cc693feaef2f77
+cuts	size_4x4_rgb_r3.j2k	plain	5	1	13	19	0	83e0a2d597df3c87
+cuts	size_4x4_rgb_r3.j2k	viewer	0	1	1	244	128	e988184be1309b60
+cuts	size_4x4_rgb_r3.j2k	viewer	0	1	13	19	10	51725bcd631aae52
+cuts	size_4x4_rgb_r3.j2k	viewer	1	1	1	244	128	5ffbe039edc1d51e
+cuts	size_4x4_rgb_r3.j2k	viewer	1	1	13	19	10	c619b3dc6e8494a3
+cuts	size_4x4_rgb_r3.j2k	viewer	2	1	1	244	128	df5b4fdaf2194ced
+cuts	size_4x4_rgb_r3.j2k	viewer	2	1	13	19	10	d2a0f5a9365f4491
+cuts	size_4x4_rgb_r3.j2k	viewer	3	1	1	244	128	df5b4fdaf2194ced
+cuts	size_4x4_rgb_r3.j2k	viewer	3	1	13	19	10	d2a0f5a9365f4491
+cuts	size_4x4_rgb_r3.j2k	viewer	4	1	1	244	128	df5b4fdaf2194ced
+cuts	size_4x4_rgb_r3.j2k	viewer	4	1	13	19	10	d2a0f5a9365f4491
+cuts	size_4x4_rgb_r3.j2k	viewer	5	1	1	244	128	df5b4fdaf2194ced
+cuts	size_4x4_rgb_r3.j2k	viewer	5	1	13	19	10	d2a0f5a9365f4491
+whole	size_512x16_rgb_97_r5.j2k	plain	0	2472	1	5720df82a479dc11
+whole	size_512x16_rgb_97_r5.j2k	plain	1	2472	1	683a96899cdd3a2a
+whole	size_512x16_rgb_97_r5.j2k	plain	2	2472	1	f5492ed7151d31c9
+whole	size_512x16_rgb_97_r5.j2k	plain	3	2472	1	df4a55c3255689d5
+whole	size_512x16_rgb_97_r5.j2k	plain	4	2472	1	42329f541410b949
+whole	size_512x16_rgb_97_r5.j2k	plain	5	2472	0	0000000000000000
+whole	size_512x16_rgb_97_r5.j2k	viewer	0	2472	1	02a5a0163de5d7bd
+whole	size_512x16_rgb_97_r5.j2k	viewer	1	2472	1	0d0e11b143adcd72
+whole	size_512x16_rgb_97_r5.j2k	viewer	2	2472	1	bd31d41d0895d4bb
+whole	size_512x16_rgb_97_r5.j2k	viewer	3	2472	1	6fecd43bfc84a067
+whole	size_512x16_rgb_97_r5.j2k	viewer	4	2472	1	3a146375204637e2
+whole	size_512x16_rgb_97_r5.j2k	viewer	5	2472	1	3a146375204637e2
+cuts	size_512x16_rgb_97_r5.j2k	plain	0	1	1	2471	2336	3d7d9947438ae5fb
+cuts	size_512x16_rgb_97_r5.j2k	plain	0	1	13	191	180	cb07567167a5c4e2
+cuts	size_512x16_rgb_97_r5.j2k	plain	1	1	1	2471	2336	895af426153bc602
+cuts	size_512x16_rgb_97_r5.j2k	plain	1	1	13	191	180	facb2b321ba7f322
+cuts	size_512x16_rgb_97_r5.j2k	plain	2	1	1	2471	2336	1235b6e55adf2b1b
+cuts	size_512x16_rgb_97_r5.j2k	plain	2	1	13	191	180	e4d2fa2a0dae2136
+cuts	size_512x16_rgb_97_r5.j2k	plain	3	1	1	2471	2336	5aaf7278c991f71d
+cuts	size_512x16_rgb_97_r5.j2k	plain	3	1	13	191	180	2e1bb7848a5db9ec
+cuts	size_512x16_rgb_97_r5.j2k	plain	4	1	1	2471	2336	516e5745b36b9f86
+cuts	size_512x16_rgb_97_r5.j2k	plain	4	1	13	191	180	9f24bacc677f432b
+cuts	size_512x16_rgb_97_r5.j2k	plain	5	1	1	2471	0	01afabe4a52fe54b
+cuts	size_512x16_rgb_97_r5.j2k	plain	5	1	13	191	0	7f1cc1200d1a2cc4
+cuts	size_512x16_rgb_97_r5.j2k	viewer	0	1	1	2471	2336	d4e389d22ed795ea
+cuts	size_512x16_rgb_97_r5.j2k	viewer	0	1	13	191	180	9722e8041f08cf2e
+cuts	size_512x16_rgb_97_r5.j2k	viewer	1	1	1	2471	2336	2e9f28851a0d4a2f
+cuts	size_512x16_rgb_97_r5.j2k	viewer	1	1	13	191	180	dbcfcd76b220adec
+cuts	size_512x16_rgb_97_r5.j2k	viewer	2	1	1	2471	2336	1b1cea40a9c043b9
+cuts	size_512x16_rgb_97_r5.j2k	viewer	2	1	13	191	180	0b17e8f800921998
+cuts	size_512x16_rgb_97_r5.j2k	viewer	3	1	1	2471	2336	a74bcee213f6935f
+cuts	size_512x16_rgb_97_r5.j2k	viewer	3	1	13	191	180	e883f7c2f9a928d1
+cuts	size_512x16_rgb_97_r5.j2k	viewer	4	1	1	2471	2336	4ba2f1070d8995d6
+cuts	size_512x16_rgb_97_r5.j2k	viewer	4	1	13	191	180	90107aca272e16c8
+cuts	size_512x16_rgb_97_r5.j2k	viewer	5	1	1	2471	2336	4ba2f1070d8995d6
+cuts	size_512x16_rgb_97_r5.j2k	viewer	5	1	13	191	180	90107aca272e16c8
+whole	size_64x1_g.j2k	plain	0	168	1	b5b703835f502388
+whole	size_64x1_g.j2k	plain	1	168	0	0000000000000000
+whole	size_64x1_g.j2k	plain	2	168	0	0000000000000000
+whole	size_64x1_g.j2k	plain	3	168	0	0000000000000000
+whole	size_64x1_g.j2k	plain	4	168	0	0000000000000000
+whole	size_64x1_g.j2k	plain	5	168	0	0000000000000000
+whole	size_64x1_g.j2k	viewer	0	168	1	4b0e0f5d095f7a9d
+whole	size_64x1_g.j2k	viewer	1	168	1	4b0e0f5d095f7a9d
+whole	size_64x1_g.j2k	viewer	2	168	1	4b0e0f5d095f7a9d
+whole	size_64x1_g.j2k	viewer	3	168	1	4b0e0f5d095f7a9d
+whole	size_64x1_g.j2k	viewer	4	168	1	4b0e0f5d095f7a9d
+whole	size_64x1_g.j2k	viewer	5	168	1	4b0e0f5d095f7a9d
+cuts	size_64x1_g.j2k	plain	0	1	1	167	63	2abb9d973f78e4a7
+cuts	size_64x1_g.j2k	plain	0	1	13	13	5	2a015c2a3aaf6efe
+cuts	size_64x1_g.j2k	plain	1	1	1	167	0	19f5146bb9511913
+cuts	size_64x1_g.j2k	plain	1	1	13	13	0	5fab82dabde262ea
+cuts	size_64x1_g.j2k	plain	2	1	1	167	0	19f5146bb9511913
+cuts	size_64x1_g.j2k	plain	2	1	13	13	0	5fab82dabde262ea
+cuts	size_64x1_g.j2k	plain	3	1	1	167	0	19f5146bb9511913
+cuts	size_64x1_g.j2k	plain	3	1	13	13	0	5fab82dabde262ea
+cuts	size_64x1_g.j2k	plain	4	1	1	167	0	19f5146bb9511913
+cuts	size_64x1_g.j2k	plain	4	1	13	13	0	5fab82dabde262ea
+cuts	size_64x1_g.j2k	plain	5	1	1	167	0	19f5146bb9511913
+cuts	size_64x1_g.j2k	plain	5	1	13	13	0	5fab82dabde262ea
+cuts	size_64x1_g.j2k	viewer	0	1	1	167	63	e7368acc3d7311f8
+cuts	size_64x1_g.j2k	viewer	0	1	13	13	5	102846944812c7a5
+cuts	size_64x1_g.j2k	viewer	1	1	1	167	63	e7368acc3d7311f8
+cuts	size_64x1_g.j2k	viewer	1	1	13	13	5	102846944812c7a5
+cuts	size_64x1_g.j2k	viewer	2	1	1	167	63	e7368acc3d7311f8
+cuts	size_64x1_g.j2k	viewer	2	1	13	13	5	102846944812c7a5
+cuts	size_64x1_g.j2k	viewer	3	1	1	167	63	e7368acc3d7311f8
+cuts	size_64x1_g.j2k	viewer	3	1	13	13	5	102846944812c7a5
+cuts	size_64x1_g.j2k	viewer	4	1	1	167	63	e7368acc3d7311f8
+cuts	size_64x1_g.j2k	viewer	4	1	13	13	5	102846944812c7a5
+cuts	size_64x1_g.j2k	viewer	5	1	1	167	63	e7368acc3d7311f8
+cuts	size_64x1_g.j2k	viewer	5	1	13	13	5	102846944812c7a5
+whole	size_7x9_rgb_r1.j2k	plain	0	317	1	16c3a3a6bfb5ca19
+whole	size_7x9_rgb_r1.j2k	plain	1	317	0	0000000000000000
+whole	size_7x9_rgb_r1.j2k	plain	2	317	0	0000000000000000
+whole	size_7x9_rgb_r1.j2k	plain	3	317	0	0000000000000000
+whole	size_7x9_rgb_r1.j2k	plain	4	317	0	0000000000000000
+whole	size_7x9_rgb_r1.j2k	plain	5	317	0	0000000000000000
+whole	size_7x9_rgb_r1.j2k	viewer	0	317	1	eea88530f24d7515
+whole	size_7x9_rgb_r1.j2k	viewer	1	317	1	eea88530f24d7515
+whole	size_7x9_rgb_r1.j2k	viewer	2	317	1	eea88530f24d7515
+whole	size_7x9_rgb_r1.j2k	viewer	3	317	1	eea88530f24d7515
+whole	size_7x9_rgb_r1.j2k	viewer	4	317	1	eea88530f24d7515
+whole	size_7x9_rgb_r1.j2k	viewer	5	317	1	eea88530f24d7515
+cuts	size_7x9_rgb_r1.j2k	plain	0	1	1	316	206	2151e686c47505a4
+cuts	size_7x9_rgb_r1.j2k	plain	0	1	13	25	16	9c8171f130967cd1
+cuts	size_7x9_rgb_r1.j2k	plain	1	1	1	316	0	3f694ab688e5a950
+cuts	size_7x9_rgb_r1.j2k	plain	1	1	13	25	0	6a202c27eb2a7911
+cuts	size_7x9_rgb_r1.j2k	plain	2	1	1	316	0	3f694ab688e5a950
+cuts	size_7x9_rgb_r1.j2k	plain	2	1	13	25	0	6a202c27eb2a7911
+cuts	size_7x9_rgb_r1.j2k	plain	3	1	1	316	0	3f694ab688e5a950
+cuts	size_7x9_rgb_r1.j2k	plain	3	1	13	25	0	6a202c27eb2a7911
+cuts	size_7x9_rgb_r1.j2k	plain	4	1	1	316	0	3f694ab688e5a950
+cuts	size_7x9_rgb_r1.j2k	plain	4	1	13	25	0	6a202c27eb2a7911
+cuts	size_7x9_rgb_r1.j2k	plain	5	1	1	316	0	3f694ab688e5a950
+cuts	size_7x9_rgb_r1.j2k	plain	5	1	13	25	0	6a202c27eb2a7911
+cuts	size_7x9_rgb_r1.j2k	viewer	0	1	1	316	206	6a642b72377986f8
+cuts	size_7x9_rgb_r1.j2k	viewer	0	1	13	25	16	53876dda3fe88459
+cuts	size_7x9_rgb_r1.j2k	viewer	1	1	1	316	206	6a642b72377986f8
+cuts	size_7x9_rgb_r1.j2k	viewer	1	1	13	25	16	53876dda3fe88459
+cuts	size_7x9_rgb_r1.j2k	viewer	2	1	1	316	206	6a642b72377986f8
+cuts	size_7x9_rgb_r1.j2k	viewer	2	1	13	25	16	53876dda3fe88459
+cuts	size_7x9_rgb_r1.j2k	viewer	3	1	1	316	206	6a642b72377986f8
+cuts	size_7x9_rgb_r1.j2k	viewer	3	1	13	25	16	53876dda3fe88459
+cuts	size_7x9_rgb_r1.j2k	viewer	4	1	1	316	206	6a642b72377986f8
+cuts	size_7x9_rgb_r1.j2k	viewer	4	1	13	25	16	53876dda3fe88459
+cuts	size_7x9_rgb_r1.j2k	viewer	5	1	1	316	206	6a642b72377986f8
+cuts	size_7x9_rgb_r1.j2k	viewer	5	1	13	25	16	53876dda3fe88459
+whole	sl_128_rgba_97.j2k	plain	0	2057	1	998df999683a9fbb
+whole	sl_128_rgba_97.j2k	plain	1	2057	1	6876e8ddd02fdc6d
+whole	sl_128_rgba_97.j2k	plain	2	2057	1	ef63a5f993a3591c
+whole	sl_128_rgba_97.j2k	plain	3	2057	1	38c5610e3e95b699
+whole	sl_128_rgba_97.j2k	plain	4	2057	1	1e3c86611a3d29e0
+whole	sl_128_rgba_97.j2k	plain	5	2057	1	5632945ac63c321b
+whole	sl_128_rgba_97.j2k	viewer	0	2057	1	cb54f7e9d68a56ec
+whole	sl_128_rgba_97.j2k	viewer	1	2057	1	9a5e856261963668
+whole	sl_128_rgba_97.j2k	viewer	2	2057	1	0aab9b98f520ba3a
+whole	sl_128_rgba_97.j2k	viewer	3	2057	1	3132c12c691bacec
+whole	sl_128_rgba_97.j2k	viewer	4	2057	1	cdf9bc9396105c26
+whole	sl_128_rgba_97.j2k	viewer	5	2057	1	a42ad20a9c849c50
+cuts	sl_128_rgba_97.j2k	plain	0	1	1	2056	1912	0138e6c523a7070d
+cuts	sl_128_rgba_97.j2k	plain	0	1	13	159	147	501c84d138dac742
+cuts	sl_128_rgba_97.j2k	plain	1	1	1	2056	1912	965f83a7a0f7e543
+cuts	sl_128_rgba_97.j2k	plain	1	1	13	159	147	ef4f5b0dba4c8f66
+cuts	sl_128_rgba_97.j2k	plain	2	1	1	2056	1912	889a3a6139babdea
+cuts	sl_128_rgba_97.j2k	plain	2	1	13	159	147	426d2f5d5ed02409
+cuts	sl_128_rgba_97.j2k	plain	3	1	1	2056	1912	5aee7e4ae0c23390
+cuts	sl_128_rgba_97.j2k	plain	3	1	13	159	147	6146a0b8e28e31e3
+cuts	sl_128_rgba_97.j2k	plain	4	1	1	2056	1912	6727c193f892454f
+cuts	sl_128_rgba_97.j2k	plain	4	1	13	159	147	b20f8503efb1d497
+cuts	sl_128_rgba_97.j2k	plain	5	1	1	2056	1912	2bd532f7630a20cb
+cuts	sl_128_rgba_97.j2k	plain	5	1	13	159	147	bf70a34471b24c63
+cuts	sl_128_rgba_97.j2k	viewer	0	1	1	2056	1912	7712d66383865cbb
+cuts	sl_128_rgba_97.j2k	viewer	0	1	13	159	147	939bbfcde52681b2
+cuts	sl_128_rgba_97.j2k	viewer	1	1	1	2056	1912	12cb0facd2b6352e
+cuts	sl_128_rgba_97.j2k	viewer	1	1	13	159	147	84a5542039c1e1a8
+cuts	sl_128_rgba_97.j2k	viewer	2	1	1	2056	1912	489eac6697a0dab0
+cuts	sl_128_rgba_97.j2k	viewer	2	1	13	159	147	7ed52be9bf1714af
+cuts	sl_128_rgba_97.j2k	viewer	3	1	1	2056	1912	a63e5a02e2bd7276
+cuts	sl_128_rgba_97.j2k	viewer	3	1	13	159	147	28a5d215dc78fe4e
+cuts	sl_128_rgba_97.j2k	viewer	4	1	1	2056	1912	f35df952ee216c3a
+cuts	sl_128_rgba_97.j2k	viewer	4	1	13	159	147	27565e73ba93b651
+cuts	sl_128_rgba_97.j2k	viewer	5	1	1	2056	1912	ec1188681bcfb254
+cuts	sl_128_rgba_97.j2k	viewer	5	1	13	159	147	b303289325e700bc
+whole	sl_32_rgb_97.j2k	plain	0	782	1	c14b444da2c4befa
+whole	sl_32_rgb_97.j2k	plain	1	782	1	dadddd5970a1179a
+whole	sl_32_rgb_97.j2k	plain	2	782	1	1e2a406aab8b8fbc
+whole	sl_32_rgb_97.j2k	plain	3	782	1	91f4b20063d746cd
+whole	sl_32_rgb_97.j2k	plain	4	782	1	9b858deccd5d6e20
+whole	sl_32_rgb_97.j2k	plain	5	782	1	81a18de54a88874d
+whole	sl_32_rgb_97.j2k	viewer	0	782	1	44e6a7d11d972c36
+whole	sl_32_rgb_97.j2k	viewer	1	782	1	2e6c41b25f87e136
+whole	sl_32_rgb_97.j2k	viewer	2	782	1	f6b48313ac18a28c
+whole	sl_32_rgb_97.j2k	viewer	3	782	1	f36378e8a74b74ae
+whole	sl_32_rgb_97.j2k	viewer	4	782	1	31cf175de41610da
+whole	sl_32_rgb_97.j2k	viewer	5	782	1	f4ca14a9923c7a44
+cuts	sl_32_rgb_97.j2k	plain	0	1	1	781	640	6d2c2d943556dd9f
+cuts	sl_32_rgb_97.j2k	plain	0	1	13	61	50	a2a678e7b7243c4f
+cuts	sl_32_rgb_97.j2k	plain	1	1	1	781	640	b5771916ff0b7f25
+cuts	sl_32_rgb_97.j2k	plain	1	1	13	61	50	5a51c51b025dcfc3
+cuts	sl_32_rgb_97.j2k	plain	2	1	1	781	640	6e4934f8387dd106
+cuts	sl_32_rgb_97.j2k	plain	2	1	13	61	50	28c81b641c31197f
+cuts	sl_32_rgb_97.j2k	plain	3	1	1	781	640	0003124d471e1bfd
+cuts	sl_32_rgb_97.j2k	plain	3	1	13	61	50	224d9498c314064d
+cuts	sl_32_rgb_97.j2k	plain	4	1	1	781	640	6638eb5d6d343fcf
+cuts	sl_32_rgb_97.j2k	plain	4	1	13	61	50	f843273bf7b23c2e
+cuts	sl_32_rgb_97.j2k	plain	5	1	1	781	640	aa17471375defe92
+cuts	sl_32_rgb_97.j2k	plain	5	1	13	61	50	296a17e072936ebb
+cuts	sl_32_rgb_97.j2k	viewer	0	1	1	781	640	e855443c7c9c5b3b
+cuts	sl_32_rgb_97.j2k	viewer	0	1	13	61	50	f690e119c3147be5
+cuts	sl_32_rgb_97.j2k	viewer	1	1	1	781	640	589b9f9a76b15f60
+cuts	sl_32_rgb_97.j2k	viewer	1	1	13	61	50	480e6ab4899b80ee
+cuts	sl_32_rgb_97.j2k	viewer	2	1	1	781	640	c98455c46ebe194c
+cuts	sl_32_rgb_97.j2k	viewer	2	1	13	61	50	1180a1c4c8471ffb
+cuts	sl_32_rgb_97.j2k	viewer	3	1	1	781	640	f9b27a9172aca03c
+cuts	sl_32_rgb_97.j2k	viewer	3	1	13	61	50	3b5e1fc3c3fe9dc7
+cuts	sl_32_rgb_97.j2k	viewer	4	1	1	781	640	0e152eefd89f9548
+cuts	sl_32_rgb_97.j2k	viewer	4	1	13	61	50	9d3dabab0ba3dce8
+cuts	sl_32_rgb_97.j2k	viewer	5	1	1	781	640	1d34f19b43599636
+cuts	sl_32_rgb_97.j2k	viewer	5	1	13	61	50	aee788b7543f6c9f
+whole	sl_32_rgba_53.j2k	plain	0	3971	1	eb44aba0081fc1f6
+whole	sl_32_rgba_53.j2k	plain	1	3971	1	771da26edd419503
+whole	sl_32_rgba_53.j2k	plain	2	3971	1	a35b735b379223e7
+whole	sl_32_rgba_53.j2k	plain	3	3971	1	ca53913fa4566283
+whole	sl_32_rgba_53.j2k	plain	4	3971	1	1b0a15c7167f9ab5
+whole	sl_32_rgba_53.j2k	plain	5	3971	1	9a7d23d109722970
+whole	sl_32_rgba_53.j2k	viewer	0	3971	1	381fb8a09418c53a
+whole	sl_32_rgba_53.j2k	viewer	1	3971	1	55c81414a5b5b850
+whole	sl_32_rgba_53.j2k	viewer	2	3971	1	e93580f2ad89c07c
+whole	sl_32_rgba_53.j2k	viewer	3	3971	1	72a31472e2001852
+whole	sl_32_rgba_53.j2k	viewer	4	3971	1	89b8544804c16a24
+whole	sl_32_rgba_53.j2k	viewer	5	3971	1	17b2f459622697c2
+cuts	sl_32_rgba_53.j2k	plain	0	1	1	3970	3842	e4244b2d77b9930f
+cuts	sl_32_rgba_53.j2k	plain	0	1	13	306	296	8477972acb5053e9
+cuts	sl_32_rgba_53.j2k	plain	1	1	1	3970	3842	e636278c5488f700
+cuts	sl_32_rgba_53.j2k	plain	1	1	13	306	296	ce56bb9ccbe4a417
+cuts	sl_32_rgba_53.j2k	plain	2	1	1	3970	3842	b4d3196138615149
+cuts	sl_32_rgba_53.j2k	plain	2	1	13	306	296	85cf68546cba1772
+cuts	sl_32_rgba_53.j2k	plain	3	1	1	3970	3842	1fde413280db0add
+cuts	sl_32_rgba_53.j2k	plain	3	1	13	306	296	a1bc3e7e4249616d
+cuts	sl_32_rgba_53.j2k	plain	4	1	1	3970	3842	25bad99b3a5cc98e
+cuts	sl_32_rgba_53.j2k	plain	4	1	13	306	296	3de73db4e88bf8e0
+cuts	sl_32_rgba_53.j2k	plain	5	1	1	3970	3842	dbe2f7dce14afbc5
+cuts	sl_32_rgba_53.j2k	plain	5	1	13	306	296	9a17b434e47c8753
+cuts	sl_32_rgba_53.j2k	viewer	0	1	1	3970	3842	06cc9801444fa1bc
+cuts	sl_32_rgba_53.j2k	viewer	0	1	13	306	296	efe31177f8b4f3ec
+cuts	sl_32_rgba_53.j2k	viewer	1	1	1	3970	3842	a22d51b2273a027a
+cuts	sl_32_rgba_53.j2k	viewer	1	1	13	306	296	fe27e2b294d2e56a
+cuts	sl_32_rgba_53.j2k	viewer	2	1	1	3970	3842	c1628b69051f445d
+cuts	sl_32_rgba_53.j2k	viewer	2	1	13	306	296	efb8037e91918eca
+cuts	sl_32_rgba_53.j2k	viewer	3	1	1	3970	3842	5f7a27db31a70058
+cuts	sl_32_rgba_53.j2k	viewer	3	1	13	306	296	7105dccbb8139db5
+cuts	sl_32_rgba_53.j2k	viewer	4	1	1	3970	3842	f0239eb567d19eff
+cuts	sl_32_rgba_53.j2k	viewer	4	1	13	306	296	5422e564bec58b6d
+cuts	sl_32_rgba_53.j2k	viewer	5	1	1	3970	3842	7a267be205f06905
+cuts	sl_32_rgba_53.j2k	viewer	5	1	13	306	296	71abfc490c533bec
+whole	sl_64_bake5_97.j2k	plain	0	2573	1	9a01cbbadbbbe52c
+whole	sl_64_bake5_97.j2k	plain	1	2573	1	72a528813ee42ec2
+whole	sl_64_bake5_97.j2k	plain	2	2573	1	8f3cb2da78c08953
+whole	sl_64_bake5_97.j2k	plain	3	2573	1	b5b58f89f941531e
+whole	sl_64_bake5_97.j2k	plain	4	2573	1	9fb35da254cbc4d7
+whole	sl_64_bake5_97.j2k	plain	5	2573	1	fdff14bcc9b82107
+whole	sl_64_bake5_97.j2k	viewer	0	2573	1	79c0f920c86c531c
+whole	sl_64_bake5_97.j2k	viewer	1	2573	1	732153fe8d7fdec1
+whole	sl_64_bake5_97.j2k	viewer	2	2573	1	b947176295cfdda2
+whole	sl_64_bake5_97.j2k	viewer	3	2573	1	412c9da94dbbf9c3
+whole	sl_64_bake5_97.j2k	viewer	4	2573	1	d74847956fc248e5
+whole	sl_64_bake5_97.j2k	viewer	5	2573	1	338f5c3be6b595f9
+cuts	sl_64_bake5_97.j2k	plain	0	1	1	2572	2425	a18d938908a144fd
+cuts	sl_64_bake5_97.j2k	plain	0	1	13	198	186	dc5e6c662e8c11d3
+cuts	sl_64_bake5_97.j2k	plain	1	1	1	2572	2425	d687b38e76cb69a7
+cuts	sl_64_bake5_97.j2k	plain	1	1	13	198	186	a6d76281036ee7c6
+cuts	sl_64_bake5_97.j2k	plain	2	1	1	2572	2425	003fef87b2a6f7a5
+cuts	sl_64_bake5_97.j2k	plain	2	1	13	198	186	e9b1dbdc05f86f53
+cuts	sl_64_bake5_97.j2k	plain	3	1	1	2572	2425	ebaf5b6149938655
+cuts	sl_64_bake5_97.j2k	plain	3	1	13	198	186	e533af66563f0d09
+cuts	sl_64_bake5_97.j2k	plain	4	1	1	2572	2425	7fece5b97351f70f
+cuts	sl_64_bake5_97.j2k	plain	4	1	13	198	186	c385e0b4b49e171d
+cuts	sl_64_bake5_97.j2k	plain	5	1	1	2572	2425	8eace62583a2dacd
+cuts	sl_64_bake5_97.j2k	plain	5	1	13	198	186	427435f7f1880986
+cuts	sl_64_bake5_97.j2k	viewer	0	1	1	2572	2425	21de8cd444f1a0d6
+cuts	sl_64_bake5_97.j2k	viewer	0	1	13	198	186	2f62c4672fc8f389
+cuts	sl_64_bake5_97.j2k	viewer	1	1	1	2572	2425	9d23bc78aef7bc4d
+cuts	sl_64_bake5_97.j2k	viewer	1	1	13	198	186	86e522ab1ce6ce9f
+cuts	sl_64_bake5_97.j2k	viewer	2	1	1	2572	2425	40f2bc363e60b0e5
+cuts	sl_64_bake5_97.j2k	viewer	2	1	13	198	186	1d845383a506a1a0
+cuts	sl_64_bake5_97.j2k	viewer	3	1	1	2572	2425	ee83d5d36e603abb
+cuts	sl_64_bake5_97.j2k	viewer	3	1	13	198	186	11e2b2a2505cb478
+cuts	sl_64_bake5_97.j2k	viewer	4	1	1	2572	2425	4d28651f6c6e015d
+cuts	sl_64_bake5_97.j2k	viewer	4	1	13	198	186	210faf4b5198df04
+cuts	sl_64_bake5_97.j2k	viewer	5	1	1	2572	2425	8371daffeee49c40
+cuts	sl_64_bake5_97.j2k	viewer	5	1	13	198	186	e7f3030f981864c8
+whole	sl_64_rgb_97.j2k	plain	0	1503	1	f8da296d2be04559
+whole	sl_64_rgb_97.j2k	plain	1	1503	1	cd99f6a431597882
+whole	sl_64_rgb_97.j2k	plain	2	1503	1	37cf10e5f24b57e6
+whole	sl_64_rgb_97.j2k	plain	3	1503	1	926dc3190672c4ce
+whole	sl_64_rgb_97.j2k	plain	4	1503	1	ac5115a97db5bc48
+whole	sl_64_rgb_97.j2k	plain	5	1503	1	3e06bb30ef5c9c2a
+whole	sl_64_rgb_97.j2k	viewer	0	1503	1	f5d782f13dcf769e
+whole	sl_64_rgb_97.j2k	viewer	1	1503	1	26619e4ab9d5a630
+whole	sl_64_rgb_97.j2k	viewer	2	1503	1	1e71b5f667296400
+whole	sl_64_rgb_97.j2k	viewer	3	1503	1	2b0c3209aa09f2a4
+whole	sl_64_rgb_97.j2k	viewer	4	1503	1	33b232209ff1f018
+whole	sl_64_rgb_97.j2k	viewer	5	1503	1	d74274b577649784
+cuts	sl_64_rgb_97.j2k	plain	0	1	1	1502	1361	0afcb44bbcb17ead
+cuts	sl_64_rgb_97.j2k	plain	0	1	13	116	105	147c3c7e21806750
+cuts	sl_64_rgb_97.j2k	plain	1	1	1	1502	1361	825a40f827e95400
+cuts	sl_64_rgb_97.j2k	plain	1	1	13	116	105	e5be3028307e14b3
+cuts	sl_64_rgb_97.j2k	plain	2	1	1	1502	1361	f85f99c96e5a6797
+cuts	sl_64_rgb_97.j2k	plain	2	1	13	116	105	5d216fdf19933f44
+cuts	sl_64_rgb_97.j2k	plain	3	1	1	1502	1361	8c130953b28a2e6c
+cuts	sl_64_rgb_97.j2k	plain	3	1	13	116	105	85bd640b50e8dc1d
+cuts	sl_64_rgb_97.j2k	plain	4	1	1	1502	1361	d7b03e721f13bc2b
+cuts	sl_64_rgb_97.j2k	plain	4	1	13	116	105	fa6f1e31a617c3b8
+cuts	sl_64_rgb_97.j2k	plain	5	1	1	1502	1361	cde3a7ad11f1c7f1
+cuts	sl_64_rgb_97.j2k	plain	5	1	13	116	105	c8ac1c98760b3d4a
+cuts	sl_64_rgb_97.j2k	viewer	0	1	1	1502	1361	56ef24e404eed84a
+cuts	sl_64_rgb_97.j2k	viewer	0	1	13	116	105	5175ca4d41c7e044
+cuts	sl_64_rgb_97.j2k	viewer	1	1	1	1502	1361	06ad86369a7f97fa
+cuts	sl_64_rgb_97.j2k	viewer	1	1	13	116	105	312e5d3f3c5e585d
+cuts	sl_64_rgb_97.j2k	viewer	2	1	1	1502	1361	ee739d3f8cfa7c53
+cuts	sl_64_rgb_97.j2k	viewer	2	1	13	116	105	6e3fd67d4947b8be
+cuts	sl_64_rgb_97.j2k	viewer	3	1	1	1502	1361	88551509fe41e8a2
+cuts	sl_64_rgb_97.j2k	viewer	3	1	13	116	105	707c687d6a69688f
+cuts	sl_64_rgb_97.j2k	viewer	4	1	1	1502	1361	d939dbd2dc36fc4b
+cuts	sl_64_rgb_97.j2k	viewer	4	1	13	116	105	309403607de59227
+cuts	sl_64_rgb_97.j2k	viewer	5	1	1	1502	1361	6b4acbe0517daa5c
+cuts	sl_64_rgb_97.j2k	viewer	5	1	13	116	105	b1a4566d15d4b1f8
+whole	sub_420.j2k	plain	0	2800	1	0514eebb58928a91
+whole	sub_420.j2k	plain	1	2800	1	9445c15a3bde55e8
+whole	sub_420.j2k	plain	2	2800	1	363bc76c03648b3b
+whole	sub_420.j2k	plain	3	2800	1	873c2473b8c3d0c2
+whole	sub_420.j2k	plain	4	2800	0	0000000000000000
+whole	sub_420.j2k	plain	5	2800	0	0000000000000000
+whole	sub_420.j2k	viewer	0	2800	0	0000000000000000
+whole	sub_420.j2k	viewer	1	2800	0	0000000000000000
+whole	sub_420.j2k	viewer	2	2800	0	0000000000000000
+whole	sub_420.j2k	viewer	3	2800	0	0000000000000000
+whole	sub_420.j2k	viewer	4	2800	0	0000000000000000
+whole	sub_420.j2k	viewer	5	2800	0	0000000000000000
+cuts	sub_420.j2k	plain	0	1	1	2799	2680	2982567f7c6bff7a
+cuts	sub_420.j2k	plain	0	1	13	216	206	697005b71c8b4814
+cuts	sub_420.j2k	plain	1	1	1	2799	2680	cbfe8b9452d01758
+cuts	sub_420.j2k	plain	1	1	13	216	206	47325fa970a97ca6
+cuts	sub_420.j2k	plain	2	1	1	2799	2680	54d446843747139a
+cuts	sub_420.j2k	plain	2	1	13	216	206	79219861b41ab168
+cuts	sub_420.j2k	plain	3	1	1	2799	2680	d928de96c15ace12
+cuts	sub_420.j2k	plain	3	1	13	216	206	9267b6465d0ca9b1
+cuts	sub_420.j2k	plain	4	1	1	2799	0	f8ac1c1c5791bd53
+cuts	sub_420.j2k	plain	4	1	13	216	0	c14f53b49bd36b5a
+cuts	sub_420.j2k	plain	5	1	1	2799	0	f8ac1c1c5791bd53
+cuts	sub_420.j2k	plain	5	1	13	216	0	c14f53b49bd36b5a
+cuts	sub_420.j2k	viewer	0	1	1	2799	0	f8ac1c1c5791bd53
+cuts	sub_420.j2k	viewer	0	1	13	216	0	c14f53b49bd36b5a
+cuts	sub_420.j2k	viewer	1	1	1	2799	0	f8ac1c1c5791bd53
+cuts	sub_420.j2k	viewer	1	1	13	216	0	c14f53b49bd36b5a
+cuts	sub_420.j2k	viewer	2	1	1	2799	0	f8ac1c1c5791bd53
+cuts	sub_420.j2k	viewer	2	1	13	216	0	c14f53b49bd36b5a
+cuts	sub_420.j2k	viewer	3	1	1	2799	0	f8ac1c1c5791bd53
+cuts	sub_420.j2k	viewer	3	1	13	216	0	c14f53b49bd36b5a
+cuts	sub_420.j2k	viewer	4	1	1	2799	0	f8ac1c1c5791bd53
+cuts	sub_420.j2k	viewer	4	1	13	216	0	c14f53b49bd36b5a
+cuts	sub_420.j2k	viewer	5	1	1	2799	0	f8ac1c1c5791bd53
+cuts	sub_420.j2k	viewer	5	1	13	216	0	c14f53b49bd36b5a
+whole	tile_100x80_t64_97.j2k	plain	0	2961	1	eadc99f07ade2f6b
+whole	tile_100x80_t64_97.j2k	plain	1	2961	1	4d2e0d31385b11fb
+whole	tile_100x80_t64_97.j2k	plain	2	2961	1	c19239481c7e6c14
+whole	tile_100x80_t64_97.j2k	plain	3	2961	1	e4ce4e80c7a88096
+whole	tile_100x80_t64_97.j2k	plain	4	2961	1	b7b664044e0ad026
+whole	tile_100x80_t64_97.j2k	plain	5	2961	0	0000000000000000
+whole	tile_100x80_t64_97.j2k	viewer	0	2961	1	e89373c7b1ea6141
+whole	tile_100x80_t64_97.j2k	viewer	1	2961	1	0616209bb8877ce1
+whole	tile_100x80_t64_97.j2k	viewer	2	2961	1	afce76b9f3ba383c
+whole	tile_100x80_t64_97.j2k	viewer	3	2961	1	809710b6ed9cdea2
+whole	tile_100x80_t64_97.j2k	viewer	4	2961	1	fea21755de4c50bd
+whole	tile_100x80_t64_97.j2k	viewer	5	2961	1	fea21755de4c50bd
+cuts	tile_100x80_t64_97.j2k	plain	0	1	1	2960	2789	9bc35f44e9620a7c
+cuts	tile_100x80_t64_97.j2k	plain	0	1	13	228	214	ae3fe7c3faa3e4bc
+cuts	tile_100x80_t64_97.j2k	plain	1	1	1	2960	2789	d638ae5984a51d0b
+cuts	tile_100x80_t64_97.j2k	plain	1	1	13	228	214	22a1350af1f7b8e8
+cuts	tile_100x80_t64_97.j2k	plain	2	1	1	2960	2789	eb927221284ba6ff
+cuts	tile_100x80_t64_97.j2k	plain	2	1	13	228	214	d69abef2cf22e1b1
+cuts	tile_100x80_t64_97.j2k	plain	3	1	1	2960	2789	78a0d677141190a1
+cuts	tile_100x80_t64_97.j2k	plain	3	1	13	228	214	57a2c8e2922b4c84
+cuts	tile_100x80_t64_97.j2k	plain	4	1	1	2960	2789	ef36b72821455e43
+cuts	tile_100x80_t64_97.j2k	plain	4	1	13	228	214	fd0b88f7b13ed49e
+cuts	tile_100x80_t64_97.j2k	plain	5	1	1	2960	0	cbb06d0630e8e846
+cuts	tile_100x80_t64_97.j2k	plain	5	1	13	228	0	1c5d7743dd11b951
+cuts	tile_100x80_t64_97.j2k	viewer	0	1	1	2960	2789	69158251b6b4a490
+cuts	tile_100x80_t64_97.j2k	viewer	0	1	13	228	214	ce69c5893e9a08a5
+cuts	tile_100x80_t64_97.j2k	viewer	1	1	1	2960	2789	9079b1a354402a6a
+cuts	tile_100x80_t64_97.j2k	viewer	1	1	13	228	214	3014d3732c0de580
+cuts	tile_100x80_t64_97.j2k	viewer	2	1	1	2960	2789	aa3f894824f62319
+cuts	tile_100x80_t64_97.j2k	viewer	2	1	13	228	214	dcf1d8d7e9a58172
+cuts	tile_100x80_t64_97.j2k	viewer	3	1	1	2960	2789	4c569e57313f2e96
+cuts	tile_100x80_t64_97.j2k	viewer	3	1	13	228	214	6f2906bc2c8c54c6
+cuts	tile_100x80_t64_97.j2k	viewer	4	1	1	2960	2789	21bd5f501e970d88
+cuts	tile_100x80_t64_97.j2k	viewer	4	1	13	228	214	712dd302149b7c07
+cuts	tile_100x80_t64_97.j2k	viewer	5	1	1	2960	2789	21bd5f501e970d88
+cuts	tile_100x80_t64_97.j2k	viewer	5	1	13	228	214	712dd302149b7c07
+whole	tile_64_of_16.j2k	plain	0	2897	1	725a248f5f048ac5
+whole	tile_64_of_16.j2k	plain	1	2897	1	0d77485c1ac602ba
+whole	tile_64_of_16.j2k	plain	2	2897	1	07070f81b7602396
+whole	tile_64_of_16.j2k	plain	3	2897	0	0000000000000000
+whole	tile_64_of_16.j2k	plain	4	2897	0	0000000000000000
+whole	tile_64_of_16.j2k	plain	5	2897	0	0000000000000000
+whole	tile_64_of_16.j2k	viewer	0	2897	1	4dc74be21c9f2a5d
+whole	tile_64_of_16.j2k	viewer	1	2897	1	087b2cde21075729
+whole	tile_64_of_16.j2k	viewer	2	2897	1	79472230180cf487
+whole	tile_64_of_16.j2k	viewer	3	2897	1	79472230180cf487
+whole	tile_64_of_16.j2k	viewer	4	2897	1	79472230180cf487
+whole	tile_64_of_16.j2k	viewer	5	2897	1	79472230180cf487
+cuts	tile_64_of_16.j2k	plain	0	1	1	2896	2030	ebcf8a4872976ebc
+cuts	tile_64_of_16.j2k	plain	0	1	13	223	157	2ad6eacf499d1ceb
+cuts	tile_64_of_16.j2k	plain	1	1	1	2896	2030	848a8c7bf731e405
+cuts	tile_64_of_16.j2k	plain	1	1	13	223	157	d2fdb3d422cb7151
+cuts	tile_64_of_16.j2k	plain	2	1	1	2896	2030	8468515f2c0e5d93
+cuts	tile_64_of_16.j2k	plain	2	1	13	223	157	555e8eeeb305683b
+cuts	tile_64_of_16.j2k	plain	3	1	1	2896	0	c8da22eb02f72706
+cuts	tile_64_of_16.j2k	plain	3	1	13	223	0	477457c19581add4
+cuts	tile_64_of_16.j2k	plain	4	1	1	2896	0	c8da22eb02f72706
+cuts	tile_64_of_16.j2k	plain	4	1	13	223	0	477457c19581add4
+cuts	tile_64_of_16.j2k	plain	5	1	1	2896	0	c8da22eb02f72706
+cuts	tile_64_of_16.j2k	plain	5	1	13	223	0	477457c19581add4
+cuts	tile_64_of_16.j2k	viewer	0	1	1	2896	2030	aeb1d614ff5edc22
+cuts	tile_64_of_16.j2k	viewer	0	1	13	223	157	45ee638ac885e1a3
+cuts	tile_64_of_16.j2k	viewer	1	1	1	2896	2030	ac9365c2af68d787
+cuts	tile_64_of_16.j2k	viewer	1	1	13	223	157	d16771854595d7eb
+cuts	tile_64_of_16.j2k	viewer	2	1	1	2896	2030	24b0169ee63713a7
+cuts	tile_64_of_16.j2k	viewer	2	1	13	223	157	7bfefa0fc9fe8a98
+cuts	tile_64_of_16.j2k	viewer	3	1	1	2896	2030	24b0169ee63713a7
+cuts	tile_64_of_16.j2k	viewer	3	1	13	223	157	7bfefa0fc9fe8a98
+cuts	tile_64_of_16.j2k	viewer	4	1	1	2896	2030	24b0169ee63713a7
+cuts	tile_64_of_16.j2k	viewer	4	1	13	223	157	7bfefa0fc9fe8a98
+cuts	tile_64_of_16.j2k	viewer	5	1	1	2896	2030	24b0169ee63713a7
+cuts	tile_64_of_16.j2k	viewer	5	1	13	223	157	7bfefa0fc9fe8a98
+whole	tile_origin_61x47.j2k	plain	0	8270	1	399455700054a566
+whole	tile_origin_61x47.j2k	plain	1	8270	1	db89134775d5a9da
+whole	tile_origin_61x47.j2k	plain	2	8270	1	a62ea0940c796302
+whole	tile_origin_61x47.j2k	plain	3	8270	1	4b5a9f978a590f04
+whole	tile_origin_61x47.j2k	plain	4	8270	0	0000000000000000
+whole	tile_origin_61x47.j2k	plain	5	8270	0	0000000000000000
+whole	tile_origin_61x47.j2k	viewer	0	8270	1	3a166f333b284d8c
+whole	tile_origin_61x47.j2k	viewer	1	8270	1	cbf9dba243549cc9
+whole	tile_origin_61x47.j2k	viewer	2	8270	1	add41d08ddce5694
+whole	tile_origin_61x47.j2k	viewer	3	8270	1	d6e2db62d0f84a20
+whole	tile_origin_61x47.j2k	viewer	4	8270	1	d6e2db62d0f84a20
+whole	tile_origin_61x47.j2k	viewer	5	8270	1	d6e2db62d0f84a20
+whole	tile_origin_odd_97.j2k	plain	0	357	1	49d1457dc05d8249
+whole	tile_origin_odd_97.j2k	plain	1	357	1	f9cf85b55c42c038
+whole	tile_origin_odd_97.j2k	plain	2	357	1	d32445d9e03febd4
+whole	tile_origin_odd_97.j2k	plain	3	357	1	8758fa8242bbe1b3
+whole	tile_origin_odd_97.j2k	plain	4	357	0	0000000000000000
+whole	tile_origin_odd_97.j2k	plain	5	357	0	0000000000000000
+whole	tile_origin_odd_97.j2k	viewer	0	357	1	29a671c21c797a66
+whole	tile_origin_odd_97.j2k	viewer	1	357	1	c27710f3411fe250
+whole	tile_origin_odd_97.j2k	viewer	2	357	1	017d77706d643dfc
+whole	tile_origin_odd_97.j2k	viewer	3	357	1	2a83db9c6a02526b
+whole	tile_origin_odd_97.j2k	viewer	4	357	1	2a83db9c6a02526b
+whole	tile_origin_odd_97.j2k	viewer	5	357	1	2a83db9c6a02526b
+cuts	tile_origin_odd_97.j2k	plain	0	1	1	356	233	5829997d14ad605b
+cuts	tile_origin_odd_97.j2k	plain	0	1	13	28	18	5b9bdcc93e8e99b6
+cuts	tile_origin_odd_97.j2k	plain	1	1	1	356	233	59062d8780d80f8b
+cuts	tile_origin_odd_97.j2k	plain	1	1	13	28	18	5da9e44148ffeb44
+cuts	tile_origin_odd_97.j2k	plain	2	1	1	356	233	6c2e6c9ec0128676
+cuts	tile_origin_odd_97.j2k	plain	2	1	13	28	18	854c8939d90dc229
+cuts	tile_origin_odd_97.j2k	plain	3	1	1	356	233	b0dcb71aa273c6a8
+cuts	tile_origin_odd_97.j2k	plain	3	1	13	28	18	adb7c331f23e363f
+cuts	tile_origin_odd_97.j2k	plain	4	1	1	356	0	cba06733cef20c10
+cuts	tile_origin_odd_97.j2k	plain	4	1	13	28	0	6d15abb78164ed9f
+cuts	tile_origin_odd_97.j2k	plain	5	1	1	356	0	cba06733cef20c10
+cuts	tile_origin_odd_97.j2k	plain	5	1	13	28	0	6d15abb78164ed9f
+cuts	tile_origin_odd_97.j2k	viewer	0	1	1	356	233	c9355189d30c6b61
+cuts	tile_origin_odd_97.j2k	viewer	0	1	13	28	18	81d21d9eac97350c
+cuts	tile_origin_odd_97.j2k	viewer	1	1	1	356	233	6757edf5a1919777
+cuts	tile_origin_odd_97.j2k	viewer	1	1	13	28	18	7653df7c0fc0205f
+cuts	tile_origin_odd_97.j2k	viewer	2	1	1	356	233	92e08050a9b71ce8
+cuts	tile_origin_odd_97.j2k	viewer	2	1	13	28	18	bc27bc43a72e3c1d
+cuts	tile_origin_odd_97.j2k	viewer	3	1	1	356	233	bdefae76f8ede491
+cuts	tile_origin_odd_97.j2k	viewer	3	1	13	28	18	deef313b232b4028
+cuts	tile_origin_odd_97.j2k	viewer	4	1	1	356	233	bdefae76f8ede491
+cuts	tile_origin_odd_97.j2k	viewer	4	1	13	28	18	deef313b232b4028
+cuts	tile_origin_odd_97.j2k	viewer	5	1	1	356	233	bdefae76f8ede491
+cuts	tile_origin_odd_97.j2k	viewer	5	1	13	28	18	deef313b232b4028
