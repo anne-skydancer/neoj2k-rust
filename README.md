@@ -44,7 +44,7 @@ with one tile, RLCP progression and 64 × 64 code-blocks, using lossless 5/3 or 
 
 ## Toolchain
 
-The workspace pins its compiler in `rust/rust-toolchain.toml`:
+The workspace pins its compiler in `rust-toolchain.toml`:
 
 ```toml
 [toolchain]
@@ -53,9 +53,9 @@ components = ["rustfmt", "clippy"]
 profile = "minimal"
 ```
 
-Edition 2024, `rust-version = "1.100"`. In `rust/`, `rustup toolchain install` installs it.
+Edition 2024, `rust-version = "1.100"`. From the workspace root, `rustup toolchain install` installs it.
 
-Only Miri and the fuzzers use a nightly, pinned by date in `rust/nightly-toolchain`
+Only Miri and the fuzzers use a nightly, pinned by date in `nightly-toolchain`
 (`nightly-2026-11-03`, rustc 1.101.0-nightly 1c3a65069, Miri available for Linux and Windows); never
 the library or its tests. The fuzz workspace uses cargo-fuzz 0.13.2.
 
@@ -203,7 +203,7 @@ The parity suite runs at both CPU levels. The port preserves the C++ floating-po
 Calls into Rust, including jobs passed to a host executor, require the standard floating-point
 control settings for the Rust target. On x86-64 this includes round-to-nearest-even and gradual
 underflow.
-`f32::mul_add` and `f64::mul_add` are denied (`rust/clippy.toml`). Use separate target folders so the two
+`f32::mul_add` and `f64::mul_add` are denied (`clippy.toml`). Use separate target folders so the two
 builds do not rebuild each other:
 
 ```
@@ -293,7 +293,7 @@ generated corpus's headers and packet bodies, cut streams at decoder boundaries,
 clean input in the same decoder. They compare exact statuses and decoded samples at reduce 0
 and 5 in both strict and non-strict mode under the Second Life resource limits.
 
-Set `NJ2K_DAMAGED_FILES` to replay additional local inputs with the same options. Run from `rust/`:
+Set `NJ2K_DAMAGED_FILES` to replay additional local inputs with the same options. Run from the workspace root:
 
 ```sh
 cargo test --release --locked -p neo-j2k --test decode_options -- --nocapture
@@ -333,7 +333,7 @@ dependency graph (dev-dependencies left out) holds no crate with a build script,
 no build script; that the package holds Rust sources, manifests, readme and licence files only; and
 that the crate's sources hold no FFI (`extern "C"`, `#[link]`, `#[no_mangle]`, `#[export_name]`), no
 `unsafe` outside `src/simd/`, no `static mut` and no `thread_local!`. `cargo deny check` (with
-`rust/deny.toml`, cargo-deny 0.20.2 in CI) checks the licences, advisories and sources of the whole
+`deny.toml`, cargo-deny 0.20.2 in CI) checks the licences, advisories and sources of the whole
 workspace's graph and bans the C/C++ helper crates outright.
 
 ## Miri

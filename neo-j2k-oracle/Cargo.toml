@@ -2,7 +2,7 @@
 # Copyright (c) 2026, Anne Skydancer (neo-j2k)
 #
 # The C++ oracle of the Rust twin's differential tests (O4(a)): its build.rs builds and links the
-# C++ neo-j2k, OpenJPEG's oracle and the test-only shim (rust/README.md). The only crate of the
+# C++ neo-j2k, OpenJPEG's oracle and the test-only shim (README.md). The only crate of the
 # workspace with C++ or FFI in it. A dev-dependency only, never published: CI fails if it reaches
 # the normal dependency graph of neo-j2k.
 [package]

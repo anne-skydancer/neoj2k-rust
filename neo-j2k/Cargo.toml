@@ -3,7 +3,7 @@
 #
 # neo-j2k's native Rust twin: a transcription of the C++ library, bit-identical to it. Native Rust
 # only: no build script, no C or C++ in this crate or its dependency tree, no FFI. The C++ appears
-# only in the test-only dev-dependency neo-j2k-oracle; CI proves both (rust/README.md).
+# only in the test-only dev-dependency neo-j2k-oracle; CI proves both (README.md).
 [package]
 name = "neo-j2k"
 description = "JPEG 2000 Part 1 codec, the native Rust twin of the C++ neo-j2k"

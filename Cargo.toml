@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
 # Copyright (c) 2026, Anne Skydancer (neo-j2k)
 #
-# The native Rust twin of neo-j2k (rust/README.md): the crate, the test-only C++ oracle crate and
+# The native Rust twin of neo-j2k (README.md): the crate, the test-only C++ oracle crate and
 # the test kit. Fuzz targets use a separate workspace in fuzz/.
 [workspace]
 resolver = "3"
@@ -12,7 +12,7 @@ version = "0.1.2"
 edition = "2024"
 rust-version = "1.100"
 license = "BSD-2-Clause"
-repository = "https://github.com/anne-skydancer/neo-j2k"
+repository = "https://github.com/anne-skydancer/neoj2k-rust"
 authors = ["Anne Skydancer"]
 
 [workspace.dependencies]

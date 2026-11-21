@@ -13,7 +13,7 @@ The fuzz crate has its own Cargo workspace. libFuzzer and the optional C++ test 
 | `api_sequence` | Replays up to 16 header reads, reduce and memory-limit changes, and decodes against C++. Compares statuses, dimensions and samples as inputs are cut, retried or replaced. Requires `oracle`. |
 | `encode_options` | Uses the shared C++ seed format to compare encoder statuses, codestream bytes, and setup write-backs for the options expressible by the Rust API. Requires `oracle`. |
 
-Run from `rust/` with the nightly pinned in `nightly-toolchain` and cargo-fuzz 0.13.2. The first corpus directory receives generated inputs. The checked-in fixture directories are seed sources.
+Run from the workspace root with the nightly pinned in `nightly-toolchain` and cargo-fuzz 0.13.2. The first corpus directory receives generated inputs. The checked-in fixture directories are seed sources.
 
 The JP2 seeds wrap the generated `sl_64_rgb_97.j2k` and `size_3x5_g.j2k` fixtures. The latter adds a
 palette, component mapping and channel definitions.
@@ -56,4 +56,4 @@ changes to the memory limit, and a successful decode on retry. Run
 `cargo test --release --manifest-path fuzz/Cargo.toml --features oracle --lib --locked` to check
 those seeds and the differential seeds without the fuzz runner.
 
-Artifacts from local runs stay under `rust/fuzz/artifacts/`. Replay a saved input by passing its path in place of the corpus directories. Use `-runs=0` with the corpus directories for a seed-only replay.
+Artifacts from local runs stay under `fuzz/artifacts/`. Replay a saved input by passing its path in place of the corpus directories. Use `-runs=0` with the corpus directories for a seed-only replay.
