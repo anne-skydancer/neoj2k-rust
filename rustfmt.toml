@@ -1,0 +1,4 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+edition = "2024"
+max_width = 120

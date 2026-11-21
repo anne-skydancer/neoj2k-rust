@@ -1,0 +1,189 @@
+// SPDX-License-Identifier: BSD-2-Clause
+// Copyright (c) 2026, Anne Skydancer (neo-j2k)
+
+//! The raw bindings of `shim/nj2k_rust_shim.h` (ABI version 1) and the few public `nj2k_*`
+//! functions the wrapper calls. Written by hand from the header; `lib.rs` checks the ABI version
+//! before any other call. Nothing outside this crate sees these.
+
+use std::ffi::c_char;
+
+/// `nj2k_codec_t`, opaque.
+#[repr(C)]
+pub(crate) struct Codec {
+    _private: [u8; 0],
+}
+/// `nj2k_shim_backend_t`, opaque.
+#[repr(C)]
+pub(crate) struct Backend {
+    _private: [u8; 0],
+}
+/// `nj2k_shim_outcome_t`, opaque.
+#[repr(C)]
+pub(crate) struct Outcome {
+    _private: [u8; 0],
+}
+/// `nj2k_shim_pgx_t`, opaque.
+#[repr(C)]
+pub(crate) struct Pgx {
+    _private: [u8; 0],
+}
+
+pub(crate) const ABI_VERSION: u32 = 1;
+
+#[repr(C)]
+pub(crate) struct Layout {
+    pub(crate) name: *const c_char,
+    pub(crate) size: u64,
+    pub(crate) align: u64,
+}
+
+#[repr(C)]
+pub(crate) struct Request {
+    pub(crate) data: *const u8,
+    pub(crate) size: u64,
+    pub(crate) reduce: i32,
+    pub(crate) layers: i32,
+    pub(crate) mode: u32,
+    pub(crate) jp2: u32,
+    pub(crate) reduce_after_header: u32,
+    pub(crate) limits: u32,
+    pub(crate) max_memory: u64,
+}
+
+#[repr(C)]
+#[derive(Default)]
+pub(crate) struct OutcomeInfo {
+    pub(crate) ok: u32,
+    pub(crate) x0: u32,
+    pub(crate) y0: u32,
+    pub(crate) x1: u32,
+    pub(crate) y1: u32,
+    pub(crate) numcomps: u32,
+    pub(crate) color_space: i32,
+    pub(crate) warnings: u32,
+    pub(crate) errors: u32,
+    pub(crate) hash: u64,
+    pub(crate) u8_hash: u64,
+}
+
+#[repr(C)]
+#[derive(Default)]
+pub(crate) struct Component {
+    pub(crate) w: u32,
+    pub(crate) h: u32,
+    pub(crate) dx: u32,
+    pub(crate) dy: u32,
+    pub(crate) x0: u32,
+    pub(crate) y0: u32,
+    pub(crate) prec: u32,
+    pub(crate) sgnd: u32,
+    pub(crate) factor: u32,
+    pub(crate) resno_decoded: u32,
+}
+
+#[repr(C)]
+#[derive(Default)]
+pub(crate) struct Ledger {
+    pub(crate) header_reserved: u64,
+    pub(crate) tile_reserved: u64,
+    pub(crate) work_reserved: u64,
+    pub(crate) work_high_water: u64,
+    pub(crate) kept_bytes: u64,
+}
+
+pub(crate) const BACKEND_ORACLE: u32 = 0;
+pub(crate) const BACKEND_NEOJ2K: u32 = 1;
+pub(crate) const BACKEND_NEOJ2K_MEMORY: u32 = 2;
+pub(crate) const TEXT_STAGE: u32 = 0;
+pub(crate) const TEXT_LAST_ERROR: u32 = 1;
+pub(crate) const TEXT_WARNING_KINDS: u32 = 2;
+/// `NJ2K_CODEC_J2K`, `NJ2K_CODEC_JP2` (`neoj2k.h`)
+pub(crate) const CODEC_J2K: u32 = 0;
+pub(crate) const CODEC_JP2: u32 = 2;
+
+unsafe extern "C" {
+    pub(crate) fn nj2k_shim_abi_version() -> u32;
+    pub(crate) fn nj2k_shim_ready() -> u32;
+    pub(crate) fn nj2k_shim_console_reports();
+    pub(crate) fn nj2k_shim_layout_table(out: *mut *const Layout) -> usize;
+
+    pub(crate) fn nj2k_shim_backend_new(kind: u32) -> *mut Backend;
+    pub(crate) fn nj2k_shim_backend_free(backend: *mut Backend);
+    pub(crate) fn nj2k_shim_decode(backend: *mut Backend, request: *const Request) -> *mut Outcome;
+    pub(crate) fn nj2k_shim_outcome_free(outcome: *mut Outcome);
+    pub(crate) fn nj2k_shim_outcome_info(outcome: *const Outcome, info: *mut OutcomeInfo);
+    pub(crate) fn nj2k_shim_outcome_component(
+        outcome: *const Outcome,
+        c: u32,
+        comp: *mut Component,
+        samples: *mut *const i32,
+        count: *mut u64,
+    ) -> u32;
+    pub(crate) fn nj2k_shim_outcome_text(outcome: *const Outcome, which: u32, len: *mut u64) -> *const u8;
+
+    pub(crate) fn nj2k_shim_viewer_data_size_j2c(w: i32, h: i32, discard: i32) -> i64;
+    pub(crate) fn nj2k_shim_viewer_grid_side(tiles: u64, tile_size: u32) -> i32;
+    pub(crate) fn nj2k_shim_viewer_components_supported(components: u64) -> u32;
+    pub(crate) fn nj2k_shim_viewer_reduce_factor(
+        requested_discard: i32,
+        resolutions: i32,
+        width: i32,
+        height: i32,
+        max_image_size: i32,
+    ) -> i32;
+    pub(crate) fn nj2k_shim_viewer_decode_allowed(width: u64, height: u64, components: u64, reduce: u32) -> u32;
+
+    pub(crate) fn nj2k_shim_scan_summary(data: *const u8, size: usize, out: *mut c_char, cap: usize) -> usize;
+    pub(crate) fn nj2k_shim_read_pgx(path_utf8: *const c_char, why: *mut c_char, why_cap: usize) -> *mut Pgx;
+    pub(crate) fn nj2k_shim_pgx_info(
+        pgx: *const Pgx,
+        width: *mut i32,
+        height: *mut i32,
+        depth: *mut i32,
+        is_signed: *mut u32,
+        samples: *mut *const i32,
+        count: *mut u64,
+    );
+    pub(crate) fn nj2k_shim_pgx_free(pgx: *mut Pgx);
+
+    pub(crate) fn nj2k_shim_dc_shift_53_scalar(p: *mut i32, n: usize, shift: i32, lo: i32, hi: i32);
+    pub(crate) fn nj2k_shim_dc_shift_97_scalar(p: *mut i32, n: usize, shift: i32, lo: i32, hi: i32);
+    pub(crate) fn nj2k_shim_rct_scalar(
+        c0: *const i32,
+        c1: *const i32,
+        c2: *const i32,
+        o0: *mut i32,
+        o1: *mut i32,
+        o2: *mut i32,
+        n: usize,
+    );
+    pub(crate) fn nj2k_shim_ict_scalar(
+        c0: *const i32,
+        c1: *const i32,
+        c2: *const i32,
+        o0: *mut i32,
+        o1: *mut i32,
+        o2: *mut i32,
+        n: usize,
+    );
+
+    pub(crate) fn nj2k_shim_codec_new(format: u32, reduce: u32, max_memory: u64) -> *mut Codec;
+    pub(crate) fn nj2k_shim_codec_free(codec: *mut Codec);
+    pub(crate) fn nj2k_shim_codec_set_max_memory(codec: *mut Codec, max_memory: u64) -> u32;
+    pub(crate) fn nj2k_shim_codec_decode_i32(
+        codec: *mut Codec,
+        data: *const u8,
+        size: usize,
+        out: *mut i32,
+        cap: u64,
+        count: *mut u64,
+    ) -> i32;
+    pub(crate) fn nj2k_shim_ledger(codec: *mut Codec, ledger: *mut Ledger) -> u32;
+    pub(crate) fn nj2k_shim_set_parallel_thresholds(
+        codec: *mut Codec,
+        tile_samples: u64,
+        level_area: u64,
+        output_samples: u64,
+        clear_bytes: u64,
+    ) -> u32;
+}

@@ -1,0 +1,42 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# neo-j2k's native Rust twin: a transcription of the C++ library, bit-identical to it. Native Rust
+# only: no build script, no C or C++ in this crate or its dependency tree, no FFI. The C++ appears
+# only in the test-only dev-dependency neo-j2k-oracle; CI proves both (rust/README.md).
+[package]
+name = "neo-j2k"
+description = "JPEG 2000 Part 1 codec, the native Rust twin of the C++ neo-j2k"
+readme = "../README.md"
+keywords = ["jpeg2000", "j2k", "codec", "image"]
+categories = ["multimedia::images", "compression"]
+include = ["src/**/*.rs", "Cargo.toml"]
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lib]
+name = "neo_j2k"
+
+[features]
+default = ["std", "encode", "simd", "opensim"]
+# required in this version; reserved for a later no_std + alloc build
+std = []
+# the encoder; without it Encoder::new returns Error::Unsupported (stage R5)
+encode = []
+# the AVX2 kernels when the target has AVX2 (stage R3); without it the scalar kernels
+simd = []
+# the OpenSim decoder limit profile, as the C++'s NJ2K_PROFILE_OPENSIM (stage R1)
+opensim = []
+
+[dependencies]
+
+[dev-dependencies]
+neo-j2k-oracle.workspace = true
+neo-j2k-testkit.workspace = true
+
+[lints]
+workspace = true

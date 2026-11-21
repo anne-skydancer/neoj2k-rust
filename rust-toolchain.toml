@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# The compiler of the crate, its tests, tools and benches. Only Miri and the fuzzers use a
+# nightly, pinned by date in nightly-toolchain (rust/README.md).
+[toolchain]
+channel = "1.100.0"
+components = ["rustfmt", "clippy"]
+profile = "minimal"
