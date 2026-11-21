@@ -967,6 +967,13 @@ int32_t nj2k_shim_codec_decode_i32(nj2k_codec_t* codec, const uint8_t* data, siz
     if (!nj2k_read_header_memory(codec, data, size, &image)) {
         return nj2k_get_status(codec);
     }
+    // The size-only call is used to allocate the Rust output buffer. Apply the same decoded-side
+    // and working-memory checks as the subsequent decode before exposing that size; otherwise a
+    // hostile but syntactically valid SIZ marker can make the harness allocate from unchecked
+    // header dimensions even though nj2k_decode_memory() would reject them.
+    if (!nj2k_get_decoded_dimensions(codec, &image)) {
+        return nj2k_get_status(codec);
+    }
     try {
         std::uint64_t at = 0;
         for (std::uint32_t c = 0; c < image.numcomps; ++c) {
