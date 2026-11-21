@@ -5,7 +5,7 @@
 //! functions the wrapper calls. Written by hand from the header; `lib.rs` checks the ABI version
 //! before any other call. Nothing outside this crate sees these.
 
-use std::ffi::c_char;
+use std::ffi::{c_char, c_void};
 
 use super::{Limits, kernels::WaveletRect};
 
@@ -36,7 +36,13 @@ pub(crate) struct Header {
     _private: [u8; 0],
 }
 
-pub(crate) const ABI_VERSION: u32 = 5;
+/// `nj2k_shim_pool_t`, opaque.
+#[repr(C)]
+pub(crate) struct Pool {
+    _private: [u8; 0],
+}
+
+pub(crate) const ABI_VERSION: u32 = 6;
 
 /// `nj2k_shim_codestream_t`, opaque.
 #[repr(C)]
@@ -61,6 +67,13 @@ pub(crate) struct EncodeRequest {
     pub(crate) rate_count: usize,
     pub(crate) comment: *const u8,
     pub(crate) comment_len: usize,
+}
+
+#[repr(C)]
+pub(crate) struct EncodeUpdates {
+    pub(crate) max_codestream_size: u32,
+    pub(crate) layer_count: u32,
+    pub(crate) ratios: [f32; 100],
 }
 
 #[repr(C)]
@@ -230,6 +243,11 @@ unsafe extern "C" {
         reversible: u32,
     ) -> u32;
     pub(crate) fn nj2k_shim_encode_u8(request: *const EncodeRequest, out: *mut *mut Codestream) -> i32;
+    pub(crate) fn nj2k_shim_encode_u8_with_updates(
+        request: *const EncodeRequest,
+        updates: *mut EncodeUpdates,
+        out: *mut *mut Codestream,
+    ) -> i32;
     pub(crate) fn nj2k_shim_codestream_bytes(codestream: *const Codestream, len: *mut usize) -> *const u8;
     pub(crate) fn nj2k_shim_codestream_free(codestream: *mut Codestream);
 
@@ -261,6 +279,16 @@ unsafe extern "C" {
         len: *mut usize,
     ) -> u32;
     pub(crate) fn nj2k_shim_header_free(header: *mut Header);
+    pub(crate) fn nj2k_shim_codec_set_retained_bytes(codec: *mut Codec, retained_bytes: usize) -> u32;
+    pub(crate) fn nj2k_shim_pool_new(workers: u32) -> *mut Pool;
+    pub(crate) fn nj2k_shim_pool_free(pool: *mut Pool);
+    pub(crate) fn nj2k_shim_pool_batches(pool: *const Pool) -> u64;
+    pub(crate) fn nj2k_shim_pool_run(
+        pool: *mut Pool,
+        count: u32,
+        job: extern "C" fn(*mut c_void, u32),
+        context: *mut c_void,
+    ) -> u32;
     pub(crate) fn nj2k_shim_codec_decode_i32(
         codec: *mut Codec,
         data: *const u8,
@@ -268,6 +296,7 @@ unsafe extern "C" {
         out: *mut i32,
         cap: u64,
         count: *mut u64,
+        pool: *mut Pool,
     ) -> i32;
     pub(crate) fn nj2k_shim_ledger(codec: *mut Codec, ledger: *mut Ledger) -> u32;
     pub(crate) fn nj2k_shim_set_parallel_thresholds(

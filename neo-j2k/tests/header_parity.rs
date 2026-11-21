@@ -5,7 +5,9 @@
 
 #![cfg(not(miri))]
 
-use neo_j2k::{ComponentInfo, Decoder, DecoderConfig, Diagnostic, Format, Limits, ReducePolicy};
+use neo_j2k::{
+    ComponentInfo, DecodeParams, Decoder, DecoderConfig, Diagnostic, ErrorKind, Format, Limits, ReducePolicy,
+};
 use neo_j2k_oracle::{self as cpp, Codec};
 use neo_j2k_testkit::files::{base_name, corpus_dir, expand_inputs, testdata_dir};
 use neo_j2k_testkit::request::Component;
@@ -276,6 +278,45 @@ fn header_and_dimension_limits_refuse_at_the_same_stage() {
 }
 
 #[test]
+fn changing_header_limits_revalidates_the_same_bytes() {
+    let input = fixture("sl_64_rgb_97.j2k");
+    let mut decoder = Decoder::new(DecoderConfig::default());
+    assert_eq!(decoder.read_header(&input).unwrap().components.len(), 3);
+
+    decoder.set_limits(Limits {
+        max_components: 2,
+        ..Limits::default()
+    });
+    assert_eq!(decoder.read_header(&input).unwrap_err().kind(), ErrorKind::Limit);
+    assert_eq!(decoder.codestream_coding().unwrap_err().kind(), ErrorKind::State);
+
+    decoder.set_limits(Limits::default());
+    assert_eq!(decoder.read_header(&input).unwrap().components.len(), 3);
+}
+
+#[test]
+fn changing_memory_limits_on_a_reused_decoder_matches_cpp() {
+    let input = fixture("sl_64_rgb_97.j2k");
+    let (mut decoder, mut oracle) = codecs(DecoderConfig::default());
+    for (max_memory, expected_status) in [(0, 0), (1, LIMIT), (0, 0)] {
+        assert!(oracle.set_max_memory(max_memory));
+        decoder.set_limits(Limits {
+            max_memory,
+            ..Limits::default()
+        });
+        let (status, expected) = oracle.decode_i32(&input);
+        assert_eq!(status, expected_status, "C++ status at {max_memory} bytes");
+        match decoder.decode(&input, DecodeParams::default()) {
+            Ok(image) => {
+                assert_eq!(i32::from(image.truncated), status);
+                assert!(image.components.iter().flat_map(|plane| plane.samples()).eq(&expected));
+            }
+            Err(error) => assert_eq!(error.kind() as i32, status),
+        }
+    }
+}
+
+#[test]
 fn changing_reduce_after_the_header_matches_cpp() {
     let input = fixture("tile_origin_odd_97.j2k");
     for (policy, reduce, status) in [
@@ -303,6 +344,12 @@ fn changing_reduce_after_the_header_matches_cpp() {
             &expected.dimensions.unwrap(),
             &case,
         );
+        if reduce == 1 {
+            // The odd image origin yields 18 samples for decode-time sizing and 19 in the header.
+            assert_eq!(decoder.decoded_dimensions().unwrap()[0].width, 18);
+            assert_eq!(decoder.read_header(&input).unwrap().components[0].width, 19);
+            assert_eq!(decoder.read_header(&input).unwrap().components[0].width, 19);
+        }
     }
 }
 

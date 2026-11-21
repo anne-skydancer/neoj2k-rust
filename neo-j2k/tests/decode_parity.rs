@@ -63,11 +63,25 @@ fn whole_memory_decodes_match_cpp_at_every_reduce_level() {
 
 #[test]
 fn conformance_pixels_match_cpp_when_test_data_is_available() {
-    let Some(directory) = testdata_dir().map(|root| root.join("input/conformance")) else {
+    let Some(root) = testdata_dir() else {
         return;
     };
-    let files = expand_inputs(&directory, true);
-    assert!(!files.is_empty(), "no conformance files in {}", directory.display());
+    compare_openjpeg_files(&root.join("input/conformance"));
+}
+
+#[test]
+fn nonregression_pixels_match_cpp_when_the_full_test_data_is_available() {
+    if let Some(directory) = testdata_dir()
+        .map(|root| root.join("input/nonregression"))
+        .filter(|directory| directory.is_dir())
+    {
+        compare_openjpeg_files(&directory);
+    }
+}
+
+fn compare_openjpeg_files(directory: &std::path::Path) {
+    let files = expand_inputs(directory, true);
+    assert!(!files.is_empty(), "no codestreams in {}", directory.display());
     let memory = 64 << 20;
     for path in files {
         let jp2 = path
@@ -75,7 +89,7 @@ fn conformance_pixels_match_cpp_when_test_data_is_available() {
             .and_then(|ext| ext.to_str())
             .is_some_and(|ext| ext.eq_ignore_ascii_case("jp2") || ext.eq_ignore_ascii_case("jph"));
         let input = std::fs::read(&path).expect("a conformance file");
-        for reduce in [0, 2, 5] {
+        for reduce in 0..=5 {
             let mut rust = Decoder::new(DecoderConfig {
                 format: if jp2 {
                     neo_j2k::Format::Jp2

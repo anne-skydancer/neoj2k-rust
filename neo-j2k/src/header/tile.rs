@@ -529,7 +529,7 @@ mod tests {
         marker(&mut data, QCD, &[0, 0]);
         marker(&mut data, SOT, &[0, 0, 0, 0, 0, 0, 0, 1]);
         let main = super::super::parse_main_header(
-            &data,
+            &mut crate::stream::Source::Memory(&data),
             0,
             settings(),
             &mut HeaderLedger::default(),

@@ -40,6 +40,47 @@ pub(crate) fn inverse([y, u, v]: [&mut [i32]; 3], reversible: bool) {
     }
 }
 
+/// Transform and finish three complete, equally sized component planes in place.
+pub(crate) fn inverse_and_finish([y, u, v]: [&mut [i32]; 3], reversible: bool, finishes: [Finish; 3]) {
+    debug_assert!(y.len() == u.len() && u.len() == v.len());
+    if finishes.iter().any(|finish| finish.reversible != reversible) {
+        inverse([y, u, v], reversible);
+        for (finish, plane) in finishes.into_iter().zip([y, u, v]) {
+            finish.apply(plane);
+        }
+        return;
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+    let start = vector::inverse_and_finish(
+        [y, u, v],
+        reversible,
+        finishes.map(|finish| (finish.shift, finish.lo, finish.hi)),
+    );
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2")))]
+    let start = 0;
+    let tail = [&mut y[start..], &mut u[start..], &mut v[start..]];
+    if reversible {
+        inverse_and_finish_tail::<true>(tail, finishes);
+    } else {
+        inverse_and_finish_tail::<false>(tail, finishes);
+    }
+}
+
+fn inverse_and_finish_tail<const REVERSIBLE: bool>([y, u, v]: [&mut [i32]; 3], [red, green, blue]: [Finish; 3]) {
+    for ((y, u), v) in y.iter_mut().zip(u).zip(v) {
+        let samples = [*y, *u, *v];
+        let [r, g, b] = if REVERSIBLE {
+            inverse_reversible(samples)
+        } else {
+            inverse_irreversible(samples)
+        };
+        *y = red.sample_with::<REVERSIBLE>(r);
+        *u = green.sample_with::<REVERSIBLE>(g);
+        *v = blue.sample_with::<REVERSIBLE>(b);
+    }
+}
+
 /// DC level shift and clamp for one decoded component.
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct Finish {
@@ -68,19 +109,19 @@ impl Finish {
 
     #[inline]
     pub(crate) fn sample(self, sample: i32) -> i32 {
-        let integer = if self.reversible {
+        if self.reversible {
+            self.sample_with::<true>(sample)
+        } else {
+            self.sample_with::<false>(sample)
+        }
+    }
+
+    #[inline]
+    fn sample_with<const REVERSIBLE: bool>(self, sample: i32) -> i32 {
+        let integer = if REVERSIBLE {
             sample
         } else {
-            let value = f32::from_bits(sample.cast_unsigned());
-            if value >= 2_147_483_648.0 {
-                return self.hi;
-            }
-            if value < -2_147_483_648.0 || value.is_nan() {
-                return self.lo;
-            }
-            #[allow(clippy::cast_possible_truncation, reason = "the float was range checked and rounded")]
-            let rounded = value.round_ties_even() as i32;
-            rounded
+            round_sample(f32::from_bits(sample.cast_unsigned()))
         };
         integer.clamp(self.lo - self.shift, self.hi - self.shift) + self.shift
     }
@@ -96,8 +137,164 @@ impl Finish {
                 *sample = (*sample).clamp(lo, hi) + self.shift;
             }
         } else {
+            let (lo, hi) = (self.lo - self.shift, self.hi - self.shift);
             for sample in &mut line[start..] {
-                *sample = self.sample(*sample);
+                let value = f32::from_bits(sample.cast_unsigned());
+                *sample = round_sample(value).clamp(lo, hi) + self.shift;
+            }
+        }
+    }
+}
+
+#[inline]
+fn round_sample(value: f32) -> i32 {
+    if value >= 2_147_483_648.0 {
+        return i32::MAX;
+    }
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
+    let integer = crate::simd::round_i32(value);
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
+    #[allow(
+        clippy::cast_possible_truncation,
+        reason = "the saturating cast is on a rounded value"
+    )]
+    let integer = if value.is_nan() {
+        i32::MIN
+    } else {
+        value.round_ties_even() as i32
+    };
+    integer
+}
+
+#[cfg(test)]
+#[test]
+fn irreversible_finishing_matches_round_to_even_across_float_exponents() {
+    let finishes = [Finish::new(8, false, false), Finish::new(31, true, false)];
+    for sign in [0, 1 << 31] {
+        for exponent in 0..=255 {
+            for fraction in [0, 1, 0x3f_ffff, 0x40_0000, 0x40_0001, 0x7f_fffe, 0x7f_ffff] {
+                let bits = sign | (exponent << 23) | fraction;
+                let value = f32::from_bits(bits);
+                for finish in finishes {
+                    let expected = if value >= 2_147_483_648.0 {
+                        finish.hi
+                    } else if value < -2_147_483_648.0 || value.is_nan() {
+                        finish.lo
+                    } else {
+                        #[allow(clippy::cast_possible_truncation, reason = "it is a range-checked integer")]
+                        let rounded = value.round_ties_even() as i32;
+                        rounded.clamp(finish.lo - finish.shift, finish.hi - finish.shift) + finish.shift
+                    };
+                    let mut sample = [bits.cast_signed()];
+                    finish.apply(&mut sample);
+                    assert_eq!(sample[0], expected, "float bits {bits:08x}");
+                }
+            }
+        }
+    }
+}
+
+#[cfg(test)]
+#[test]
+fn avx2_and_scalar_fused_colour_finishing_match_staged_output() {
+    let float_bits = [
+        f32::NAN.to_bits(),
+        0x7fa0_0001,
+        f32::NEG_INFINITY.to_bits(),
+        f32::INFINITY.to_bits(),
+        (-2_147_483_648.0f32).to_bits(),
+        2_147_483_648.0f32.to_bits(),
+        2_147_483_520.0f32.to_bits(),
+        (-128.5f32).to_bits(),
+        (-1.5f32).to_bits(),
+        (-0.5f32).to_bits(),
+        0.5f32.to_bits(),
+        1.5f32.to_bits(),
+        127.5f32.to_bits(),
+        (-0.0f32).to_bits(),
+        0.0f32.to_bits(),
+        f32::MAX.to_bits(),
+        f32::MIN_POSITIVE.to_bits(),
+        1,
+    ];
+    let integers = [i32::MIN, i32::MAX, -1_073_741_824, 1_073_741_824, -32769, 255, 1, 0, -1];
+    for reversible in [true, false] {
+        for mixed in [false, true] {
+            // Invalid mixed transforms can expose an ICT NaN payload as an integer.
+            // Use bounded finite inputs for that fallback comparison.
+            let bits = if mixed { &float_bits[7..15] } else { &float_bits[..] };
+            let original: [[i32; 37]; 3] = core::array::from_fn(|plane| {
+                core::array::from_fn(|sample| {
+                    let index = plane * 7 + sample;
+                    if reversible {
+                        integers[index % integers.len()]
+                    } else {
+                        bits[index % bits.len()].cast_signed()
+                    }
+                })
+            });
+            for len in [0, 1, 7, 8, 9, 19, 37] {
+                let finishes = [
+                    Finish::new(31, false, reversible),
+                    Finish::new(8, true, reversible ^ mixed),
+                    Finish::new(1, false, reversible),
+                ];
+                let [mut r, mut g, mut b] = original;
+                inverse([&mut r[..len], &mut g[..len], &mut b[..len]], reversible);
+                for (finish, plane) in finishes.into_iter().zip([&mut r, &mut g, &mut b]) {
+                    finish.apply(&mut plane[..len]);
+                }
+
+                let [mut y, mut u, mut v] = original;
+                inverse_and_finish([&mut y[..len], &mut u[..len], &mut v[..len]], reversible, finishes);
+                assert_eq!([y, u, v], [r, g, b]);
+                for i in 0..len {
+                    let samples = original.each_ref().map(|plane| plane[i]);
+                    let rgb = if reversible {
+                        inverse_reversible(samples)
+                    } else {
+                        inverse_irreversible(samples)
+                    };
+                    assert_eq!([y[i], u[i], v[i]], core::array::from_fn(|c| finishes[c].sample(rgb[c])));
+                }
+            }
+        }
+    }
+}
+
+#[cfg(all(test, feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+mod avx2_tests {
+    use super::*;
+
+    #[test]
+    fn avx2_colour_and_finishing_match_scalar_with_tails() {
+        for reversible in [true, false] {
+            let original: [[i32; 19]; 3] = std::array::from_fn(|plane| {
+                std::array::from_fn(|sample| {
+                    let value = i16::try_from(plane * 16 + sample).unwrap() - 20;
+                    if reversible {
+                        i32::from(value).wrapping_mul(1 << 28)
+                    } else {
+                        (f32::from(value) * 19.5).to_bits().cast_signed()
+                    }
+                })
+            });
+            let [mut y, mut u, mut v] = original;
+            inverse([&mut y, &mut u, &mut v], reversible);
+            let transform = if reversible {
+                inverse_reversible
+            } else {
+                inverse_irreversible
+            };
+            for (index, actual) in y.iter().zip(&u).zip(&v).enumerate() {
+                let ((&y, &u), &v) = actual;
+                assert_eq!([y, u, v], transform(original.each_ref().map(|plane| plane[index])));
+            }
+            for signed in [false, true] {
+                let mut values = y;
+                let finish = Finish::new(8, signed, reversible);
+                finish.apply(&mut values);
+                assert_eq!(values, y.map(|sample| finish.sample(sample)));
             }
         }
     }

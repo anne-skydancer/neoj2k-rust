@@ -10,6 +10,7 @@ use crate::header::{
     tile::{self, TileDirectory, TileMarker},
 };
 use crate::mem::{CType, HeaderLedger, WorkBudget, capacity_bytes};
+use crate::stream::StreamBounds;
 use crate::{Error, ErrorKind, Limits};
 use core::ops::Range;
 
@@ -128,6 +129,7 @@ impl PartPages {
 
 pub(super) struct Walk<'a, 'data> {
     data: &'data [u8],
+    stream: Option<StreamBounds>,
     main: &'a MainHeader,
     pages: &'a mut PartPages,
     pub(super) overrides: &'a mut TileDirectory,
@@ -153,12 +155,14 @@ impl<'data> Walk<'_, 'data> {
         limits: Limits,
         reduce: u32,
         strict: bool,
+        stream: Option<StreamBounds>,
     ) -> Walk<'a, 'data> {
         let Pages { parts, overrides } = pages;
         parts.reset();
         overrides.reset();
         Walk {
             data,
+            stream,
             main,
             pages: parts,
             overrides,
@@ -183,6 +187,28 @@ impl<'data> Walk<'_, 'data> {
             strict,
             cut: false,
         }
+    }
+
+    fn bytes_left(&self) -> usize {
+        let Some(stream) = self.stream else {
+            return self.data.len() - self.pos;
+        };
+        stream.claimed_end.map_or(0, |end| {
+            usize::try_from(end.saturating_sub(self.pos as u64)).unwrap_or(usize::MAX)
+        })
+    }
+
+    fn final_eoc(&self, remaining: usize) -> bool {
+        if remaining < 2 {
+            return false;
+        }
+        if self.stream.is_some_and(|stream| !stream.has_seek) {
+            return true;
+        }
+        self.pos
+            .checked_add(remaining)
+            .and_then(|end| self.data.get(end - 2..end))
+            .is_none_or(|bytes| bytes == EOC.to_be_bytes())
     }
 
     pub(super) fn cut_or_incomplete(&self) -> bool {
@@ -278,7 +304,7 @@ impl<'data> Walk<'_, 'data> {
         };
         while !self.can_decode && marker != EOC {
             while marker != SOD {
-                if self.pos == self.data.len() {
+                if self.bytes_left() == 0 {
                     self.position = Position::Cut;
                     break;
                 }
@@ -294,7 +320,7 @@ impl<'data> Walk<'_, 'data> {
             self.check_tile_reduce()?;
             self.read_sod(budget, diagnostics)?;
             self.correct_part_count(diagnostics)?;
-            if !self.can_decode && !self.strict && self.open_ended && self.pos == self.data.len() {
+            if !self.can_decode && !self.strict && self.open_ended && self.bytes_left() == 0 {
                 self.position = Position::Cut;
                 break;
             }
@@ -354,7 +380,7 @@ impl<'data> Walk<'_, 'data> {
         if marker_len < 2 {
             return Err(header_error("Inconsistent marker size\n"));
         }
-        if code == 0x8080 && self.pos == self.data.len() {
+        if code == 0x8080 && self.bytes_left() == 0 {
             self.position = Position::Cut;
             return Ok(());
         }
@@ -377,8 +403,11 @@ impl<'data> Walk<'_, 'data> {
             ));
         }
         let size = usize::from(marker_len - 2);
-        if size > self.data.len() - self.pos {
+        if size > self.bytes_left() {
             return Err(need_data("Marker size inconsistent with stream length\n"));
+        }
+        if size > self.data.len() - self.pos {
+            return Err(short());
         }
         let body_start = self.pos;
         let body = &self.data[body_start..body_start + size];
@@ -407,9 +436,10 @@ impl<'data> Walk<'_, 'data> {
         };
         result.map_err(|error| {
             diagnostics.error(error.message());
-            Error::new(
+            Error::formatted(
                 error.kind(),
-                format!("Fail to read the current marker segment ({code:#x})\n"),
+                format_args!("Fail to read the current marker segment ({code:#x})\n"),
+                "Fail to read the current marker segment\n",
             )
         })
     }
@@ -510,10 +540,10 @@ impl<'data> Walk<'_, 'data> {
     }
 
     fn read_sod(&mut self, budget: &mut WorkBudget, diagnostics: &mut Diagnostics) -> Result<(), Error> {
-        let remaining = self.data.len() - self.pos;
+        let remaining = self.bytes_left();
         let mut length_from_cut = false;
         let length = if self.open_ended {
-            if self.strict || self.data[self.pos..].ends_with(&EOC.to_be_bytes()) {
+            if self.strict || self.final_eoc(remaining) {
                 remaining.checked_sub(2).ok_or_else(length_error)?
             } else {
                 self.cut = true;
@@ -534,7 +564,7 @@ impl<'data> Walk<'_, 'data> {
                 "p_j2k->m_specific_param.m_decoder.m_sot_length > UINT_MAX - OPJ_COMMON_CBLK_DATA_EXTRA",
             ));
         }
-        let read = length.min(remaining);
+        let read = length.min(self.data.len() - self.pos);
         let parts = self.pages.get_mut(self.current_tile);
         parts.seen |= length != 0 || !length_from_cut;
         if length != 0 && read == 0 {
@@ -570,12 +600,12 @@ impl<'data> Walk<'_, 'data> {
         }
         self.checked_correction = true;
         let parts = self.pages.get(self.current_tile).expect("the tile was read");
-        if parts.total_parts == 1 {
+        if parts.total_parts == 1 || self.stream.is_some_and(|stream| !stream.has_seek) {
             return Ok(());
         }
         let needs = self.look_for_wrong_part_count().map_err(|error| {
             diagnostics.error(error.message());
-            Error::new(error.kind(), "opj_j2k_apply_nb_tile_parts_correction error\n")
+            Error::static_message(error.kind(), "opj_j2k_apply_nb_tile_parts_correction error\n")
         })?;
         if needs {
             self.can_decode = false;
@@ -633,7 +663,7 @@ impl<'data> Walk<'_, 'data> {
                     self.position = Position::Eoc;
                 }
                 Some(SOT) => {}
-                Some(_) if self.pos == self.data.len() => {
+                Some(_) if self.bytes_left() == 0 => {
                     self.position = Position::Cut;
                     self.cut = true;
                     diagnostics.warn("Stream does not end with EOC\n");
@@ -693,7 +723,7 @@ fn length_error() -> Error {
 }
 
 fn no_memory() -> Error {
-    Error::new(ErrorKind::NoMemory, "Not enough memory to decode\n")
+    Error::static_message(ErrorKind::NoMemory, "Not enough memory to decode\n")
 }
 
 fn header_error(message: impl Into<String>) -> Error {

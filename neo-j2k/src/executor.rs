@@ -5,7 +5,7 @@
 
 use std::sync::Mutex;
 
-const MAX_JOBS: usize = 64;
+pub(crate) const MAX_JOBS: usize = 64;
 
 /// A host scheduler that can run independent parts of a large JPEG 2000 decode.
 ///
@@ -16,6 +16,7 @@ pub trait Executor: Sync {
     fn concurrency(&self) -> usize;
 
     /// Run each job index in `0..count` once and return after all jobs finish.
+    /// The batch can contain more jobs than `concurrency()` allows to run simultaneously.
     /// Jobs may run in any order, including on the calling thread.
     fn parallel_for(&self, count: usize, job: &(dyn Fn(usize) + Sync));
 }
@@ -67,5 +68,38 @@ impl<'a> Jobs<'a> {
                 work(part);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct TwoThreads;
+
+    impl Executor for TwoThreads {
+        fn concurrency(&self) -> usize {
+            2
+        }
+
+        fn parallel_for(&self, count: usize, job: &(dyn Fn(usize) + Sync)) {
+            assert_eq!(count, 2);
+            std::thread::scope(|scope| {
+                scope.spawn(|| job(1));
+                job(0);
+            });
+        }
+    }
+
+    #[test]
+    fn scoped_workers_write_distinct_rows() {
+        let mut rows = [[0; 4]; 4];
+        let jobs = Jobs::new(&TwoThreads).unwrap();
+        jobs.run(rows.chunks_mut(2).enumerate(), |(index, rows)| {
+            for row in rows {
+                row.fill(index + 1);
+            }
+        });
+        assert_eq!(rows, [[1; 4], [1; 4], [2; 4], [2; 4]]);
     }
 }

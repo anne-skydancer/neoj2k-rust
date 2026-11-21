@@ -49,6 +49,8 @@ mod passes;
 pub(crate) mod tables;
 
 use crate::error::Diagnostics;
+#[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+use crate::simd::t1 as vector;
 use crate::tile::Segment;
 use crate::{Error, ErrorKind};
 
@@ -92,7 +94,7 @@ pub(crate) struct Scratch {
 }
 
 fn no_memory() -> Error {
-    Error::new(ErrorKind::NoMemory, "Not enough memory to decode a code-block\n")
+    Error::static_message(ErrorKind::NoMemory, "Not enough memory to decode a code-block\n")
 }
 
 fn reserve_fixed<T: Copy + Default>(buffer: &mut Vec<T>, count: usize) -> Result<(), Error> {
@@ -104,15 +106,15 @@ fn reserve_fixed<T: Copy + Default>(buffer: &mut Vec<T>, count: usize) -> Result
 }
 
 fn invalid_dimensions() -> Error {
-    Error::new(ErrorKind::Data, "Invalid Tier-1 code-block dimensions\n")
+    Error::static_message(ErrorKind::Data, "Invalid Tier-1 code-block dimensions\n")
 }
 
 fn invalid_output() -> Error {
-    Error::new(ErrorKind::Output, "A code-block does not fit its tile component\n")
+    Error::static_message(ErrorKind::Output, "A code-block does not fit its tile component\n")
 }
 
 fn invalid_segment() -> Error {
-    Error::new(ErrorKind::Data, "Code-block segments exceed their available bytes\n")
+    Error::static_message(ErrorKind::Data, "Code-block segments exceed their available bytes\n")
 }
 
 fn bits_as_i32(value: u32) -> i32 {
@@ -147,7 +149,7 @@ impl Scratch {
             diagnostics.warn_fmt(format_args!(
                 "opj_t1_decode_cblk(): unsupported bpno_plus_one = {bitplane} >= 31\n"
             ));
-            return Err(Error::new(ErrorKind::Data, "Tier-1 rejected a code-block\n"));
+            return Err(Error::static_message(ErrorKind::Data, "Tier-1 rejected a code-block\n"));
         }
         if width > 1024 || height > 1024 || orient > 3 {
             return Err(invalid_dimensions());
@@ -245,35 +247,67 @@ impl Scratch {
                 }
             }
         }
-        let half_step = 0.5 * stepsize;
-        for (row, coefficients) in self.data[..samples].chunks_exact(width).enumerate() {
-            let start = offset + row * stride;
-            for (sample, &coefficient) in output[start..start + width].iter_mut().zip(coefficients) {
-                let value = undo_roi(coefficient, roishift);
-                *sample = if reversible {
-                    value / 2
-                } else {
-                    i32::from_ne_bytes(((value as f32) * half_step).to_ne_bytes())
-                };
-            }
-        }
+        store_coefficients::<true>(
+            &mut self.data[..samples],
+            &mut output[offset..last_end],
+            width,
+            stride,
+            roishift,
+            reversible,
+            stepsize,
+        );
         Ok(())
     }
 }
 
-fn undo_roi(value: i32, shift: u32) -> i32 {
-    if shift == 0 {
-        return value;
+/// Store a nonempty block in its validated destination, preserving row padding.
+fn store_coefficients<const VECTOR: bool>(
+    coefficients: &mut [i32],
+    output: &mut [i32],
+    width: usize,
+    stride: usize,
+    roishift: u32,
+    reversible: bool,
+    stepsize: f32,
+) {
+    // Undo ROI on the decoder's scratch as in C++. INT_MIN wraps on abs and is below the threshold.
+    match roishift {
+        0 => {}
+        31.. => coefficients.fill(0),
+        shift => {
+            let threshold = 1 << shift;
+            for value in &mut *coefficients {
+                let magnitude = value.wrapping_abs();
+                if magnitude >= threshold {
+                    let magnitude = magnitude >> shift;
+                    *value = if *value < 0 { -magnitude } else { magnitude };
+                }
+            }
+        }
     }
-    if shift >= 31 {
-        return 0;
+
+    let half_step = 0.5 * stepsize;
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+    if VECTOR && vector::store(coefficients, output, width, stride, reversible, half_step) {
+        return;
     }
-    let magnitude = value.wrapping_abs();
-    if magnitude < 1 << shift {
-        return value;
+
+    if reversible {
+        store_scalar(coefficients, output, width, stride, |value| value / 2);
+    } else {
+        store_scalar(coefficients, output, width, stride, |value| {
+            ((value as f32) * half_step).to_bits().cast_signed()
+        });
     }
-    let magnitude = magnitude >> shift;
-    if value < 0 { -magnitude } else { magnitude }
+}
+
+fn store_scalar(input: &[i32], output: &mut [i32], width: usize, stride: usize, convert: impl Fn(i32) -> i32) {
+    for (row, input) in input.chunks_exact(width).enumerate() {
+        let start = row * stride;
+        for (target, &value) in output[start..start + width].iter_mut().zip(input) {
+            *target = convert(value);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -285,6 +319,77 @@ mod tests {
         *state ^= *state >> 17;
         *state ^= *state << 5;
         state.to_le_bytes()[0]
+    }
+
+    #[test]
+    fn roi_store_matches_threshold_and_wrapping_magnitude_rules() {
+        let mut input = [i32::MIN, -17, -16, -15, 0, 15, 16, 17];
+        let mut output = [0; 8];
+        store_coefficients::<true>(&mut input, &mut output, 8, 8, 4, true, 0.0);
+        assert_eq!(output, [i32::MIN / 2, 0, 0, -7, 0, 7, 0, 0]);
+        store_coefficients::<true>(&mut input, &mut output, 8, 8, 31, true, 0.0);
+        assert_eq!(output, [0; 8]);
+    }
+
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+    #[test]
+    fn avx2_stores_match_scalar_with_tails_and_padding() {
+        const PADDING: i32 = 0x1234_5678;
+        let extremes = [
+            i32::MIN,
+            i32::MIN + 1,
+            -(1 << 24) - 1,
+            -257,
+            -7,
+            -1,
+            0,
+            1,
+            7,
+            257,
+            (1 << 24) + 1,
+            i32::MAX,
+        ];
+        for width in [1, 7, 8, 9, 15, 16, 17, 32, 64, 1_024] {
+            let stride = width + 5;
+            let input: Vec<i32> = extremes.into_iter().cycle().take(3 * width).collect();
+            for reversible in [true, false] {
+                for roishift in [0, 1, 8, 30, 31, u32::MAX] {
+                    for stepsize in [-0.0, f32::MIN_POSITIVE, 1.3, f32::MAX] {
+                        let end = 1 + 2 * stride + width;
+                        let mut scalar = vec![PADDING; end + 1];
+                        let mut vector = scalar.clone();
+                        store_coefficients::<false>(
+                            &mut input.clone(),
+                            &mut scalar[1..end],
+                            width,
+                            stride,
+                            roishift,
+                            reversible,
+                            stepsize,
+                        );
+                        store_coefficients::<true>(
+                            &mut input.clone(),
+                            &mut vector[1..end],
+                            width,
+                            stride,
+                            roishift,
+                            reversible,
+                            stepsize,
+                        );
+                        assert_eq!(
+                            vector, scalar,
+                            "width {width}, reversible {reversible}, ROI {roishift}, step {stepsize}"
+                        );
+                        assert_eq!(vector[0], PADDING);
+                        assert_eq!(vector[end], PADDING);
+                        for row in 0..2 {
+                            let padding = 1 + row * stride + width;
+                            assert_eq!(vector[padding..padding + 5], [PADDING; 5]);
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // Hashes recorded from the C++ Tier-1 entry point using the same three segments and output.

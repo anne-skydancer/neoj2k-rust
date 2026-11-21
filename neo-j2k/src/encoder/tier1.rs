@@ -61,7 +61,7 @@ struct Passes<'a> {
     flags: &'a mut [u32],
     width: usize,
     height: usize,
-    orientation: usize,
+    zero_context: &'static [u8; 512],
 }
 
 impl Passes<'_> {
@@ -79,11 +79,11 @@ impl Passes<'_> {
     }
 
     fn significance_context(&self, flags: u32) -> usize {
-        usize::from(ZERO_CONTEXT[(self.orientation << 9) | (flags & SIGMA_NEIGHBOURS) as usize])
+        usize::from(self.zero_context[(flags & SIGMA_NEIGHBOURS) as usize])
     }
 
-    fn sign(&mut self, coder: &mut Encoder<'_>, index: usize, lane: usize, sample: u32) {
-        let flags = self.flags[index];
+    fn sign(&mut self, coder: &mut Encoder<'_>, index: usize, lane: usize, sample: u32, column_flags: &mut u32) {
+        let flags = *column_flags;
         let shift = lane * 3;
         let mut lookup = (flags >> shift) & 0x00aa;
         lookup |= (self.flags[index - 1] >> (19 + shift)) & 1;
@@ -99,7 +99,7 @@ impl Passes<'_> {
         );
 
         self.flags[index - 1] |= (1 << 5) << shift;
-        self.flags[index] |= ((sign << 19) | SIGMA_THIS) << shift;
+        *column_flags |= ((sign << 19) | SIGMA_THIS) << shift;
         self.flags[index + 1] |= (1 << 3) << shift;
         if lane == 0 {
             let above = index - self.width - 2;
@@ -123,13 +123,14 @@ impl Passes<'_> {
             let rows = (self.height - row).min(4);
             for column in 0..self.width {
                 let index = (row / 4 + 1) * stride + column + 1;
-                if self.flags[index] == 0 {
+                let mut column_flags = self.flags[index];
+                if column_flags == 0 {
                     continue;
                 }
                 let samples = row * self.width + column * rows;
                 for lane in 0..rows {
                     let shift = lane * 3;
-                    let flags = self.flags[index] >> shift;
+                    let flags = column_flags >> shift;
                     if flags & (SIGMA_THIS | PI_THIS) != 0 || flags & SIGMA_NEIGHBOURS == 0 {
                         continue;
                     }
@@ -137,11 +138,12 @@ impl Passes<'_> {
                     let significant = u32::from(magnitude(sample) & one != 0);
                     coder.symbol(self.significance_context(flags), significant);
                     if significant != 0 {
-                        self.sign(coder, index, lane, sample);
+                        self.sign(coder, index, lane, sample, &mut column_flags);
                         change += distortion_decrease(sample, plane, false);
                     }
-                    self.flags[index] |= PI_THIS << shift;
+                    column_flags |= PI_THIS << shift;
                 }
+                self.flags[index] = column_flags;
             }
         }
         change
@@ -155,13 +157,14 @@ impl Passes<'_> {
             let rows = (self.height - row).min(4);
             for column in 0..self.width {
                 let index = (row / 4 + 1) * stride + column + 1;
-                if self.flags[index] == 0 {
+                let mut column_flags = self.flags[index];
+                if column_flags == 0 {
                     continue;
                 }
                 let samples = row * self.width + column * rows;
                 for lane in 0..rows {
                     let shift = lane * 3;
-                    let flags = self.flags[index] >> shift;
+                    let flags = column_flags >> shift;
                     if flags & (SIGMA_THIS | PI_THIS) != SIGMA_THIS {
                         continue;
                     }
@@ -173,8 +176,9 @@ impl Passes<'_> {
                     let sample = self.data[samples + lane];
                     coder.symbol(CONTEXT_MAGNITUDE + context, u32::from(magnitude(sample) & one != 0));
                     change += distortion_decrease(sample, plane, true);
-                    self.flags[index] |= MU_THIS << shift;
+                    column_flags |= MU_THIS << shift;
                 }
+                self.flags[index] = column_flags;
             }
         }
         change
@@ -189,7 +193,8 @@ impl Passes<'_> {
             for column in 0..self.width {
                 let index = (row / 4 + 1) * stride + column + 1;
                 let samples = row * self.width + column * rows;
-                let run_start = if rows == 4 && self.flags[index] == 0 {
+                let mut column_flags = self.flags[index];
+                let run_start = if rows == 4 && column_flags == 0 {
                     let run = self.data[samples..samples + 4]
                         .iter()
                         .position(|&sample| magnitude(sample) & one != 0);
@@ -204,7 +209,7 @@ impl Passes<'_> {
                 };
                 for lane in run_start.unwrap_or(0)..rows {
                     let shift = lane * 3;
-                    let flags = self.flags[index] >> shift;
+                    let flags = column_flags >> shift;
                     let sample = self.data[samples + lane];
                     let significant = if run_start == Some(lane) {
                         true
@@ -216,11 +221,12 @@ impl Passes<'_> {
                         false
                     };
                     if significant {
-                        self.sign(coder, index, lane, sample);
+                        self.sign(coder, index, lane, sample, &mut column_flags);
                         change += distortion_decrease(sample, plane, false);
                     }
-                    self.flags[index] &= !(PI_THIS << shift);
+                    column_flags &= !(PI_THIS << shift);
                 }
+                self.flags[index] = column_flags;
             }
         }
         change
@@ -278,7 +284,7 @@ pub(super) fn encode(
         flags: &mut workspace.flags[..flag_count],
         width,
         height,
-        orientation: usize::from(params.orientation),
+        zero_context: &ZERO_CONTEXT.as_chunks::<512>().0[usize::from(params.orientation)],
     };
     passes.initialize();
     let mut step_size = f64::from(params.step_size);

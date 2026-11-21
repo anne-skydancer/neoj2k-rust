@@ -131,7 +131,7 @@ pub(crate) fn read_packets<'work>(
             && usize::from(poc.compno0) >= components
             && let Some(name) = ["lrcp", "rlcp", "rpcl", "pcrl", "cprl"].get(usize::from(poc.prg))
         {
-            diagnostics.error(format!("opj_pi_next_{name}(): invalid compno0/compno1\n"));
+            diagnostics.error_fmt(format_args!("opj_pi_next_{name}(): invalid compno0/compno1\n"));
             continue;
         }
         first_pass_failed.fill(true);
@@ -191,7 +191,7 @@ fn packet_array<T: Copy>(
     budget.array(ty, count)?;
     array
         .try_reserve_exact(count.saturating_sub(array.len()))
-        .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory for a packet iterator array\n"))?;
+        .map_err(|_| Error::static_message(ErrorKind::NoMemory, "Not enough memory for a packet iterator array\n"))?;
     array.resize(count, value);
     array.fill(value);
     Ok(())
@@ -396,7 +396,7 @@ impl TagTree {
     pub(crate) fn configure(&mut self, width: u32, height: u32, total: usize) -> Result<(), Error> {
         self.nodes
             .try_reserve_exact(total.saturating_sub(self.nodes.len()))
-            .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory for a packet tag tree\n"))?;
+            .map_err(|_| Error::static_message(ErrorKind::NoMemory, "Not enough memory for a packet tag tree\n"))?;
         self.nodes.clear();
         self.nodes.resize(total, TagNode::UNSET);
         self.width = usize::try_from(width).map_err(|_| oversized_tree())?;

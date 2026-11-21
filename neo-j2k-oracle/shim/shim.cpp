@@ -21,6 +21,7 @@
 #include "decoder.h"
 #include "j2k_scan.h"
 #include "pgx.h"
+#include "thread_pool.h"
 
 // the library's internals (by their path: src/ is no include directory)
 #include "../../../src/codec.h"
@@ -134,7 +135,36 @@ struct nj2k_shim_codestream {
     std::vector<uint8_t> bytes;
 };
 
+struct nj2k_shim_pool {
+    explicit nj2k_shim_pool(uint32_t workers) : threads(workers) {}
+    nj2k::test::ThreadPool threads;
+};
+
 namespace {
+
+class BorrowedExecutor {
+public:
+    BorrowedExecutor(nj2k_codec_t* codec, nj2k_shim_pool_t* pool) noexcept : codec_(pool ? codec : nullptr)
+    {
+        if (codec_) {
+            const nj2k_executor_t executor = pool->threads.executor();
+            nj2k_decoder_set_executor(codec_, &executor);
+        }
+    }
+
+    ~BorrowedExecutor()
+    {
+        if (codec_) {
+            nj2k_decoder_set_executor(codec_, nullptr);
+        }
+    }
+
+    BorrowedExecutor(const BorrowedExecutor&) = delete;
+    BorrowedExecutor& operator=(const BorrowedExecutor&) = delete;
+
+private:
+    nj2k_codec_t* codec_;
+};
 
 NJ2K_SIZE_T append_encoded(void* buffer, NJ2K_SIZE_T count, void* cookie) noexcept
 {
@@ -552,7 +582,17 @@ uint32_t nj2k_shim_dwt_decode(int32_t* plane, size_t size, uint32_t stride, cons
 
 int32_t nj2k_shim_encode_u8(const nj2k_shim_encode_request_t* request, nj2k_shim_codestream_t** out)
 {
+    return nj2k_shim_encode_u8_with_updates(request, nullptr, out);
+}
+
+int32_t nj2k_shim_encode_u8_with_updates(const nj2k_shim_encode_request_t* request,
+                                       nj2k_shim_encode_updates_t* updates, nj2k_shim_codestream_t** out)
+{
     using nj2k::detail::Encoder;
+    static_assert(sizeof(nj2k_shim_encode_updates_t::ratios) == sizeof(float) * Encoder::kMaxLayers);
+    if (updates) {
+        *updates = {};
+    }
     if (!out) {
         return NJ2K_E_ARGUMENT;
     }
@@ -611,6 +651,11 @@ int32_t nj2k_shim_encode_u8(const nj2k_shim_encode_request_t* request, nj2k_shim
         }
         if (!nj2k_setup_encoder(codec.get(), &params, image.get())) {
             return nj2k_get_status(codec.get());
+        }
+        if (updates) {
+            updates->max_codestream_size = static_cast<uint32_t>(params.max_cs_size);
+            updates->layer_count = static_cast<uint32_t>(params.tcp_numlayers);
+            std::memcpy(updates->ratios, params.tcp_rates, updates->layer_count * sizeof(float));
         }
         for (uint32_t c = 0; c < r.components; ++c) {
             for (uint32_t y = 0; y < r.height; ++y) {
@@ -765,8 +810,46 @@ void nj2k_shim_header_free(nj2k_shim_header_t* header)
     delete header;
 }
 
+uint32_t nj2k_shim_codec_set_retained_bytes(nj2k_codec_t* codec, size_t retained_bytes)
+{
+    return nj2k_decoder_set_retained_bytes(codec, retained_bytes) ? 1u : 0u;
+}
+
+nj2k_shim_pool_t* nj2k_shim_pool_new(uint32_t workers)
+{
+    try {
+        return new nj2k_shim_pool_t(workers);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+void nj2k_shim_pool_free(nj2k_shim_pool_t* pool)
+{
+    delete pool;
+}
+
+uint64_t nj2k_shim_pool_batches(const nj2k_shim_pool_t* pool)
+{
+    return pool->threads.batches();
+}
+
+uint32_t nj2k_shim_pool_run(nj2k_shim_pool_t* pool, uint32_t count, nj2k_job_fn job, void* context)
+{
+    try {
+        nj2k::test::ThreadPool::run(&pool->threads, count, job, context);
+        return 1;
+    } catch (const std::bad_alloc&) {
+        // The only allocation queues the batch, before any worker can see the context.
+        return 0;
+    } catch (...) {
+        // A system error after queuing a batch cannot return through the C boundary.
+        std::terminate();
+    }
+}
+
 int32_t nj2k_shim_codec_decode_i32(nj2k_codec_t* codec, const uint8_t* data, size_t size, int32_t* out, uint64_t cap,
-                                   uint64_t* count)
+                                   uint64_t* count, nj2k_shim_pool_t* pool)
 {
     if (!codec || (!data && size) || !count || (!out && cap)) {
         return NJ2K_E_ARGUMENT;
@@ -800,6 +883,7 @@ int32_t nj2k_shim_codec_decode_i32(nj2k_codec_t* codec, const uint8_t* data, siz
         }
         const nj2k_output_t output{sizeof(nj2k_output_t), NJ2K_SAMPLE_I32, static_cast<uint32_t>(planes.size()),
                                    planes.data()};
+        const BorrowedExecutor executor(codec, pool);
         nj2k_decode_memory(codec, data, size, &output);
         return nj2k_get_status(codec);
     } catch (...) {

@@ -3,9 +3,11 @@
 
 //! The one-tile JPEG 2000 encoder and its caller-owned work buffers.
 
-use core::ops::Range;
+use core::{num::NonZeroUsize, ops::Range};
+use std::io::Write;
 
 use crate::error::Diagnostics;
+use crate::stream::{EncodePart, StreamWriter};
 use crate::{Diagnostic, Error, ErrorKind};
 
 #[cfg(all(test, not(miri)))]
@@ -116,27 +118,119 @@ impl Encoder {
 
     /// Encode one image. The codestream is borrowed from the encoder until its next use.
     pub fn encode(&mut self, image: &ImageView<'_>, params: &EncodeParams) -> Result<&[u8], Error> {
-        self.diagnostics.clear();
-        if let Err(error) = self.encode_inner(image, params) {
-            self.diagnostics.error(error.message());
-            return Err(error);
-        }
+        self.encode_with(image, params, |_, _| {}, |_, _| Ok(()))?;
         Ok(&self.buffers.output)
     }
 
-    fn encode_inner(&mut self, image: &ImageView<'_>, params: &EncodeParams) -> Result<(), Error> {
-        let settings = self.buffers.prepare(image, params, &mut self.diagnostics)?;
+    /// Encodes one image and writes back the effective layer ratios and codestream size cap.
+    ///
+    /// Accepted settings are updated even if writing or coding fails later. A size cap inferred
+    /// from the last requested layer applies only when the updated settings are used again.
+    pub fn encode_and_update(&mut self, image: &ImageView<'_>, params: &mut EncodeParams) -> Result<&[u8], Error> {
+        self.encode_with_updates(image, params, |_, _| Ok(()))?;
+        Ok(&self.buffers.output)
+    }
+
+    /// Encodes one image to a writer, offering chunks of up to `buffer_size` bytes.
+    ///
+    /// Retries short writes and `Interrupted`, then flushes the writer. On an output error, the
+    /// writer may already have received part of the codestream. The encoder can encode another
+    /// image after a failure.
+    pub fn encode_to(
+        &mut self,
+        image: &ImageView<'_>,
+        params: &EncodeParams,
+        writer: &mut (impl Write + ?Sized),
+        buffer_size: NonZeroUsize,
+    ) -> Result<(), Error> {
+        let mut output = StreamWriter::new(writer, buffer_size);
+        self.encode_with(image, params, |_, _| {}, |part, bytes| output.write(part, bytes))
+    }
+
+    /// Encodes to a writer and updates the settings as [`Self::encode_and_update`] does.
+    pub fn encode_to_and_update(
+        &mut self,
+        image: &ImageView<'_>,
+        params: &mut EncodeParams,
+        writer: &mut (impl Write + ?Sized),
+        buffer_size: NonZeroUsize,
+    ) -> Result<(), Error> {
+        let mut output = StreamWriter::new(writer, buffer_size);
+        self.encode_with_updates(image, params, |part, bytes| output.write(part, bytes))
+    }
+
+    fn encode_with_updates(
+        &mut self,
+        image: &ImageView<'_>,
+        params: &mut EncodeParams,
+        write: impl FnMut(EncodePart, &[u8]) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        // Only the implicit lossless layer can grow the caller's vector. Reserve it before any
+        // codestream bytes can be written, so propagating accepted settings cannot fail later.
+        if params.layer_ratios.is_empty() && params.layer_ratios.try_reserve_exact(1).is_err() {
+            self.diagnostics.clear();
+            let error = memory_error();
+            self.diagnostics.error(error.message());
+            return Err(error);
+        }
+        let mut ratios = [0.0; MAX_LAYERS];
+        let mut layers = 0;
+        let mut cap = 0;
+        let result = self.encode_with(
+            image,
+            params,
+            |resolved, size| {
+                layers = resolved.len();
+                ratios[..layers].copy_from_slice(resolved);
+                cap = size;
+            },
+            write,
+        );
+        if layers != 0 {
+            params.layer_ratios.clear();
+            params.layer_ratios.extend_from_slice(&ratios[..layers]);
+            params.max_codestream_size = cap;
+        }
+        result
+    }
+
+    fn encode_with(
+        &mut self,
+        image: &ImageView<'_>,
+        params: &EncodeParams,
+        update: impl FnOnce(&[f32], u32),
+        write: impl FnMut(EncodePart, &[u8]) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        self.diagnostics.clear();
+        if let Err(error) = self.encode_inner(image, params, update, write) {
+            self.diagnostics.error(error.message());
+            return Err(error);
+        }
+        Ok(())
+    }
+
+    fn encode_inner(
+        &mut self,
+        image: &ImageView<'_>,
+        params: &EncodeParams,
+        update: impl FnOnce(&[f32], u32),
+        mut write: impl FnMut(EncodePart, &[u8]) -> Result<(), Error>,
+    ) -> Result<(), Error> {
+        let settings = self.buffers.prepare(image, params, &mut self.diagnostics, update)?;
+        write(EncodePart::Header, &self.buffers.output)?;
         let code_blocks = &mut self.tier1;
         self.buffers
             .encode_blocks(&settings, |samples, width, height, params, block| {
                 tier1::encode(code_blocks, samples, width, height, params, block)
             })?;
         let packets = &mut self.tier2;
-        self.buffers
+        let output = self
+            .buffers
             .finish_packets(&settings, |layout, blocks, rates, output| {
                 tier2::encode_packets(packets, layout, blocks, rates, output)
             })?;
-        Ok(())
+        write(EncodePart::Tile, &output[..output.len() - 2])?;
+        write(EncodePart::End, output)
     }
 }
 
@@ -146,8 +240,9 @@ impl EncodingBuffers {
         image: &ImageView<'_>,
         params: &'p EncodeParams,
         diagnostics: &mut Diagnostics,
+        update: impl FnOnce(&[f32], u32),
     ) -> Result<Settings<'p>, Error> {
-        let settings = Settings::new(image, params, diagnostics)?;
+        let settings = Settings::new(image, params, diagnostics, update)?;
         let plane_len = settings.width * settings.height;
         resize_with(&mut self.samples, plane_len * settings.components, || 0)?;
         image.copy_samples(&settings, &mut self.samples);
@@ -155,7 +250,7 @@ impl EncodingBuffers {
             wavelet::colour_transform(&mut self.samples, plane_len, settings.reversible);
         }
         if settings.resolutions > 1 {
-            let line_len = settings.width.max(settings.height);
+            let line_len = wavelet::scratch_len(settings.width, settings.height, settings.reversible);
             resize_with(&mut self.wavelet_line, line_len, || 0)?;
             for plane in self.samples.chunks_exact_mut(plane_len) {
                 wavelet::forward(
@@ -305,7 +400,12 @@ struct Settings<'p> {
 }
 
 impl<'p> Settings<'p> {
-    fn new(image: &ImageView<'_>, params: &'p EncodeParams, diagnostics: &mut Diagnostics) -> Result<Self, Error> {
+    fn new(
+        image: &ImageView<'_>,
+        params: &'p EncodeParams,
+        diagnostics: &mut Diagnostics,
+        update: impl FnOnce(&[f32], u32),
+    ) -> Result<Self, Error> {
         let components = image.component_count();
         if components == 0 {
             return Err(Error::new(ErrorKind::Argument, "nj2k_setup_encoder: no image\n"));
@@ -391,8 +491,10 @@ impl<'p> Settings<'p> {
             comment,
             tile_capacity: tile_capacity(samples, components),
         };
+        let written_cap = settings.setup_rates(samples, params.max_codestream_size, diagnostics);
+        update(&settings.rates[..settings.layers], written_cap);
         image.validate_samples(&settings)?;
-        settings.update_rates(samples, params.max_codestream_size, diagnostics);
+        settings.update_rates(samples);
         for (index, step) in settings.steps[..3 * resolutions - 2].iter_mut().enumerate() {
             let resolution = if index == 0 { 0 } else { (index - 1) / 3 + 1 };
             let level = resolutions - 1 - resolution;
@@ -461,29 +563,43 @@ impl<'p> Settings<'p> {
         clippy::cast_possible_truncation,
         reason = "the C++ rate targets are rounded to float32"
     )]
-    fn update_rates(&mut self, samples: u32, cap: u32, diagnostics: &mut Diagnostics) {
+    fn setup_rates(&mut self, samples: u32, cap: u32, diagnostics: &mut Diagnostics) -> u32 {
+        let ratios = &mut self.rates[..self.layers];
+        if cap == 0 {
+            let last = ratios[self.layers - 1];
+            if last > 0.0 {
+                let size = (f64::from(samples) / f64::from(last)) as f32;
+                #[allow(clippy::cast_sign_loss, reason = "the quotient is nonnegative")]
+                return (size.floor() as u32).min(i32::MAX.unsigned_abs());
+            }
+            return 0;
+        }
+        let minimum_ratio = (f64::from(samples) / f64::from(cap)) as f32;
+        let mut capped = false;
+        for ratio in ratios.iter_mut().filter(|ratio| **ratio < minimum_ratio) {
+            *ratio = minimum_ratio;
+            capped = true;
+        }
+        if capped {
+            diagnostics
+                .warn("The desired maximum codestream size has limited\nat least one of the desired quality layers\n");
+        }
+        cap
+    }
+
+    #[allow(
+        clippy::cast_possible_truncation,
+        reason = "the C++ rate targets are rounded to float32"
+    )]
+    fn update_rates(&mut self, samples: u32) {
         let header = u32::try_from(self.header_size()).expect("encoder header fits in u32") as f32;
         let ratios = &mut self.rates[..self.layers];
-        let mut capped = false;
-        let minimum_ratio = if cap == 0 {
-            0.0
-        } else {
-            (f64::from(samples) / f64::from(cap)) as f32
-        };
         for ratio in ratios.iter_mut() {
-            if cap != 0 && *ratio < minimum_ratio {
-                *ratio = minimum_ratio;
-                capped = true;
-            }
             if *ratio <= 1.0 {
                 *ratio = 0.0;
             } else if *ratio > 0.0 {
                 *ratio = ((f64::from(samples) * 8.0) / f64::from(*ratio * 8.0)) as f32;
             }
-        }
-        if capped {
-            diagnostics
-                .warn("The desired maximum codestream size has limited\nat least one of the desired quality layers\n");
         }
         if ratios[0] > 0.0 {
             ratios[0] = (ratios[0] - header).max(30.0);
@@ -657,7 +773,7 @@ fn put16(dest: &mut Vec<u8>, value: u16) {
 }
 
 pub(super) fn memory_error() -> Error {
-    Error::new(ErrorKind::NoMemory, "Not enough memory to encode\n")
+    Error::static_message(ErrorKind::NoMemory, "Not enough memory to encode\n")
 }
 
 fn resize_with<T>(data: &mut Vec<T>, len: usize, value: impl FnMut() -> T) -> Result<(), Error> {
@@ -703,11 +819,11 @@ mod tests {
                 row_stride: 5,
             },
         };
-        encoder.prepare(&image, &params, &mut diagnostics).unwrap();
+        encoder.prepare(&image, &params, &mut diagnostics, |_, _| {}).unwrap();
         let expected = [-98, -88, -118, -108, -97, -87, -117, -107];
         assert_eq!(encoder.samples, expected);
         image.samples = ImageSamples::Planar(&planar);
-        encoder.prepare(&image, &params, &mut diagnostics).unwrap();
+        encoder.prepare(&image, &params, &mut diagnostics, |_, _| {}).unwrap();
         assert_eq!(encoder.samples, expected);
     }
 
@@ -737,7 +853,9 @@ mod tests {
             comment: Some(b"test\0ignored".to_vec()),
             ..EncodeParams::default()
         };
-        let settings = encoder.prepare(&image, &params, &mut Diagnostics::default()).unwrap();
+        let settings = encoder
+            .prepare(&image, &params, &mut Diagnostics::default(), |_, _| {})
+            .unwrap();
         assert_eq!(encoder.output.len(), settings.header_size());
         assert!(
             encoder
@@ -789,7 +907,7 @@ mod tests {
             ..EncodeParams::default()
         };
         let mut diagnostics = Diagnostics::default();
-        let settings = Settings::new(&image, &params, &mut diagnostics).unwrap();
+        let settings = Settings::new(&image, &params, &mut diagnostics, |_, _| {}).unwrap();
         let first = f32::from(512 - u16::try_from(settings.header_size()).unwrap());
         assert_eq!(&settings.rates[..3], &[first, first + 20.0, first + 40.0]);
         assert_eq!(diagnostics.entries().len(), 1);

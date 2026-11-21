@@ -3,10 +3,11 @@
 
 //! The codestream main header, from SOC through the first SOT marker.
 
-use std::num::NonZeroUsize;
+use std::{num::NonZeroUsize, ops::Range};
 
 use crate::error::Diagnostics;
 use crate::mem::{CType, HeaderLedger};
+use crate::stream::Source;
 use crate::{Error, ErrorKind, Limits};
 
 mod coding;
@@ -183,12 +184,12 @@ fn need_data(where_: &str) -> Error {
 }
 
 fn no_memory() -> Error {
-    Error::new(ErrorKind::NoMemory, "Not enough memory to read the headers\n")
+    Error::static_message(ErrorKind::NoMemory, "Not enough memory to read the headers\n")
 }
 
-fn wrap_error(error: Error, message: &str, diagnostics: &mut Diagnostics) -> Error {
+fn wrap_error(error: Error, message: &'static str, diagnostics: &mut Diagnostics) -> Error {
     diagnostics.error(error.message());
-    Error::new(error.kind(), message)
+    Error::static_message(error.kind(), message)
 }
 
 /// Charge the old and new capacities just as a C++ ArenaList growing in place in its arena does.
@@ -435,13 +436,12 @@ fn read_tlm(
     Ok(())
 }
 
-#[derive(Clone, Copy)]
-struct PackedChunk<'a> {
+struct PackedChunk {
     index: u8,
-    data: &'a [u8],
+    data: Range<usize>,
 }
 
-fn add_ppm<'a>(chunks: &mut Vec<PackedChunk<'a>>, body: &'a [u8], ledger: &mut HeaderLedger) -> Result<(), Error> {
+fn add_ppm(chunks: &mut Vec<PackedChunk>, body: &[u8], start: usize, ledger: &mut HeaderLedger) -> Result<(), Error> {
     if body.len() < 2 {
         return Err(invalid("Error reading PPM marker\n"));
     }
@@ -454,7 +454,7 @@ fn add_ppm<'a>(chunks: &mut Vec<PackedChunk<'a>>, body: &'a [u8], ledger: &mut H
         CType::PackedChunk,
         PackedChunk {
             index,
-            data: &body[1..],
+            data: start + 1..start + body.len(),
         },
         ledger,
     )
@@ -463,16 +463,18 @@ fn add_ppm<'a>(chunks: &mut Vec<PackedChunk<'a>>, body: &'a [u8], ledger: &mut H
 /// Visit lengths and data in separate events. Nppm fields must fit in a single marker, but the
 /// packet-header bytes they count can continue into the next marker.
 fn walk_ppm(
-    chunks: &[PackedChunk<'_>],
+    chunks: &[PackedChunk],
+    input: &[u8],
     mut length: impl FnMut(u32) -> Result<(), Error>,
     mut data: impl FnMut(&[u8]),
 ) -> Result<(), Error> {
     let mut remaining = 0;
     for chunk in chunks {
-        let carry = remaining.min(chunk.data.len());
-        data(&chunk.data[..carry]);
+        let chunk = &input[chunk.data.clone()];
+        let carry = remaining.min(chunk.len());
+        data(&chunk[..carry]);
         remaining -= carry;
-        let mut bytes = &chunk.data[carry..];
+        let mut bytes = &chunk[carry..];
         while !bytes.is_empty() {
             if bytes.len() < 4 {
                 return Err(invalid("Not enough bytes to read Nppm\n"));
@@ -492,11 +494,17 @@ fn walk_ppm(
     Ok(())
 }
 
-fn merge_ppm(chunks: &mut [PackedChunk<'_>], header: &mut MainHeader, ledger: &mut HeaderLedger) -> Result<(), Error> {
+fn merge_ppm(
+    chunks: &mut [PackedChunk],
+    input: &[u8],
+    header: &mut MainHeader,
+    ledger: &mut HeaderLedger,
+) -> Result<(), Error> {
     chunks.sort_unstable_by_key(|chunk| chunk.index);
     let mut total = 0u32;
     walk_ppm(
         chunks,
+        input,
         |length| {
             total = total
                 .checked_add(length)
@@ -511,23 +519,29 @@ fn merge_ppm(chunks: &mut [PackedChunk<'_>], header: &mut MainHeader, ledger: &m
     let total = total as usize;
     ledger.charge(total, 1)?;
     header.ppm_data.try_reserve_exact(total).map_err(|_| no_memory())?;
-    walk_ppm(chunks, |_| Ok(()), |bytes| header.ppm_data.extend_from_slice(bytes))
+    walk_ppm(
+        chunks,
+        input,
+        |_| Ok(()),
+        |bytes| header.ppm_data.extend_from_slice(bytes),
+    )
 }
 
 pub(crate) fn parse_main_header(
-    data: &[u8],
+    source: &mut Source<'_>,
     start: usize,
     settings: HeaderSettings,
     ledger: &mut HeaderLedger,
     diagnostics: &mut Diagnostics,
 ) -> Result<MainHeader, Error> {
-    let data = data.get(start..).unwrap_or_default();
-    let mut bytes = match data {
+    source.ensure(start.saturating_add(2))?;
+    match source.bytes().get(start..).unwrap_or_default() {
         [] => return Err(need_data("the main header (no bytes)")),
         [0xff] => return Err(need_data("the SOC marker")),
-        [0xff, 0x4f, rest @ ..] => rest,
+        [0xff, 0x4f, ..] => {}
         _ => return Err(Error::new(ErrorKind::NotJpeg2000, "Expected a SOC marker \n")),
-    };
+    }
+    let mut pos = start + 2;
     ledger.array(CType::MainHeader, 1)?;
     let mut header = MainHeader {
         start: start as u64,
@@ -538,10 +552,9 @@ pub(crate) fn parse_main_header(
     let mut has_cod = false;
     let mut has_qcd = false;
     loop {
-        let at = start + data.len() - bytes.len();
-        let (marker, rest) = bytes.split_at_checked(2).ok_or_else(|| need_data("the main header"))?;
-        let marker = be16(marker);
-        bytes = rest;
+        let at = pos;
+        let marker = be16(source.read(pos, 2)?.ok_or_else(|| need_data("the main header"))?);
+        pos += 2;
         if marker < 0xff00 {
             return Err(invalid(format!(
                 "A marker ID was expected (0xff--) instead of {marker:08x}\n"
@@ -570,8 +583,8 @@ pub(crate) fn parse_main_header(
             }
             _ => {}
         }
-        let (length, rest) = bytes.split_at_checked(2).ok_or_else(|| need_data("the main header"))?;
-        let length = be16(length);
+        let length = be16(source.read(pos, 2)?.ok_or_else(|| need_data("the main header"))?);
+        pos += 2;
         if length < 2 {
             return Err(invalid("Invalid marker size\n"));
         }
@@ -581,13 +594,12 @@ pub(crate) fn parse_main_header(
                 format!("Marker 0x{marker:04X} is a JPEG 2000 Part 2 extension, not supported\n"),
             ));
         }
-        let (body, rest) = rest
-            .split_at_checked(usize::from(length - 2))
+        let body_start = pos;
+        let count = usize::from(length - 2);
+        let body = source
+            .read_segment(body_start, count, || ledger.charge(count, 1))?
             .ok_or_else(|| need_data("the main header"))?;
-        bytes = rest;
-        if !body.is_empty() {
-            ledger.charge(body.len(), 1)?;
-        }
+        pos += body.len();
         match marker {
             SIZ => {
                 if header.numcomps != 0 {
@@ -618,7 +630,7 @@ pub(crate) fn parse_main_header(
                 header.rgn[usize::from(comp)] = Some(shift);
             }
             POC => read_poc(body, &mut header, ledger)?,
-            PPM => add_ppm(&mut packed, body, ledger)?,
+            PPM => add_ppm(&mut packed, body, body_start, ledger)?,
             TLM => read_tlm(body, &mut header, ledger, diagnostics)?,
             PLM if body.is_empty() => return Err(invalid("Error reading PLM marker\n")),
             CRG if body.len() != header.numcomps as usize * 4 => {
@@ -640,7 +652,7 @@ pub(crate) fn parse_main_header(
         return Err(invalid("required QCD marker not found in main header\n"));
     }
     if !packed.is_empty() {
-        merge_ppm(&mut packed, &mut header, ledger)
+        merge_ppm(&mut packed, source.bytes(), &mut header, ledger)
             .map_err(|error| wrap_error(error, "Failed to merge PPM data\n", diagnostics))?;
     }
     for comp in 0..header.numcomps {
@@ -681,7 +693,7 @@ mod tests {
 
     fn parse(data: &[u8]) -> Result<MainHeader, Error> {
         parse_main_header(
-            data,
+            &mut Source::Memory(data),
             0,
             HeaderSettings {
                 limits: Limits::default(),

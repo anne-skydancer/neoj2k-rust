@@ -47,6 +47,15 @@ pub struct DecodeTarget<'a> {
     pub planes: &'a [OutputPlane],
 }
 
+/// A writable plane of contiguous, top-down I32 samples.
+#[derive(Debug)]
+pub struct I32Plane<'a> {
+    /// The original codestream component index.
+    pub component: u32,
+    /// Storage for at least `width * height` samples. Extra samples are left untouched.
+    pub samples: &'a mut [i32],
+}
+
 pub(crate) fn validate(
     targets: &[DecodeTarget<'_>],
     sample: SampleType,

@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 
-use crate::decode::{self, DecodeParams, DecodeStatistics, DecodeTarget, DecodedImage, Jp2Channels, SampleType};
+use std::{fmt, io::Read};
+
+use crate::decode::{
+    self, DecodeParams, DecodeStatistics, DecodeTarget, DecodedImage, I32Plane, Jp2Channels, SampleType, TypedOutput,
+};
 use crate::error::Diagnostics;
 use crate::geometry::{self, Dimensions};
 use crate::header::{CodingStyle, HeaderSettings, MainHeader, Quantization, parse_main_header};
 use crate::jp2::{self, ColourSpec, Jp2Header};
 use crate::mem::{CType, HeaderLedger};
-use crate::{Diagnostic, Error, ErrorKind, Limits};
+use crate::stream::Source;
+use crate::{Diagnostic, Error, ErrorKind, Limits, StreamOptions};
 
 /// The input format expected by a decoder.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
@@ -321,7 +326,7 @@ pub struct DecoderConfig {
     /// Native working buffer capacity to retain after each decode, in bytes.
     /// The cached header, diagnostic messages and a borrowed decoded image have separate lifetimes.
     pub retain_bytes: u64,
-    /// Save ordered diagnostics for retrieval after a call.
+    /// Save ordered diagnostics for retrieval after a call. A message may be dropped if memory is unavailable.
     pub capture_diagnostics: bool,
 }
 
@@ -344,8 +349,24 @@ struct HeaderState {
     jp2: Option<Jp2Header>,
     info: Info,
     prefix: Vec<u8>,
+    limits: Limits,
     reduce: u32,
     estimate: Option<(u32, u64)>,
+}
+
+impl HeaderState {
+    fn needs_resize(&self) -> bool {
+        self.reduce > 0 && self.info.components[0].reduce == 0
+    }
+
+    fn resize_components(&mut self) -> Result<(), Error> {
+        for (info, &component) in self.info.components.iter_mut().zip(&self.main.comps) {
+            let dims =
+                geometry::resized_dimensions(&self.main, component, self.reduce).ok_or_else(unsupported_coordinates)?;
+            info.set_dimensions(dims, self.reduce);
+        }
+        Ok(())
+    }
 }
 
 /// Reusable decoder state for one image at a time.
@@ -356,6 +377,72 @@ pub struct Decoder {
     ledger: HeaderLedger,
     diagnostics: Diagnostics,
     work: decode::Workspace,
+}
+
+enum DecodeOutput<'targets, 'samples> {
+    Planar,
+    Bytes(SampleType, &'targets [DecodeTarget<'samples>]),
+    I32(TypedOutput<'targets, 'samples>),
+}
+
+/// A decoder and reader positioned just after the first tile-part marker.
+///
+/// Inspect the header or choose a reduce factor before consuming the stream in a decode.
+pub struct DecodeStream<'decoder, 'input> {
+    decoder: &'decoder mut Decoder,
+    source: Source<'input>,
+}
+
+impl fmt::Debug for DecodeStream<'_, '_> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("DecodeStream")
+            .field("info", self.info())
+            .finish_non_exhaustive()
+    }
+}
+
+impl<'decoder> DecodeStream<'decoder, '_> {
+    /// Information parsed from the stream's main header.
+    #[must_use]
+    pub fn info(&self) -> &Info {
+        &self
+            .decoder
+            .header
+            .as_ref()
+            .expect("the stream has a validated header")
+            .info
+    }
+
+    /// Sets the requested reduce factor for decoding this stream.
+    pub fn set_reduce(&mut self, reduce: u32) -> Result<(), Error> {
+        self.decoder.set_reduce(reduce)
+    }
+
+    /// Validates and returns decoded component dimensions before reading the tile data.
+    pub fn decoded_dimensions(&mut self) -> Result<&[ComponentInfo], Error> {
+        self.decoder.decoded_dimensions()
+    }
+
+    /// Consumes the stream and decodes into the decoder's reusable planar buffers.
+    pub fn decode(mut self, params: DecodeParams<'_>) -> Result<DecodedImage<'decoder>, Error> {
+        let result = self
+            .decoder
+            .decode_planes(&mut self.source, params, DecodeOutput::Planar);
+        self.decoder.finish_planar_decode(result)
+    }
+
+    /// Consumes the stream and decodes into caller buffers. Returns whether the input was truncated.
+    pub fn decode_into(
+        mut self,
+        params: DecodeParams<'_>,
+        sample: SampleType,
+        targets: &mut [DecodeTarget<'_>],
+    ) -> Result<bool, Error> {
+        let result = self
+            .decoder
+            .decode_planes(&mut self.source, params, DecodeOutput::Bytes(sample, targets));
+        self.decoder.finish_target_decode(result, Some((sample, targets)))
+    }
 }
 
 impl Decoder {
@@ -394,6 +481,14 @@ impl Decoder {
         }
     }
 
+    /// Changes the resource limits for the next header read or decode.
+    ///
+    /// A cached header read under different limits is validated again, even when the input
+    /// bytes match. Working buffers remain available for reuse.
+    pub fn set_limits(&mut self, limits: Limits) {
+        self.config.limits = limits;
+    }
+
     /// Change how much native working storage is kept after the next and subsequent decodes.
     pub fn set_retained_bytes(&mut self, bytes: u64) {
         self.config.retain_bytes = bytes;
@@ -414,7 +509,51 @@ impl Decoder {
             self.work.trim_retained(self.config.retain_bytes, false);
             return Err(error);
         }
-        let result = self.decode_planes(data, params, None);
+        let result = self.decode_planes(&mut Source::Memory(data), params, DecodeOutput::Planar);
+        self.finish_planar_decode(result)
+    }
+
+    /// Reads a J2K, JP2 or JPH stream into the decoder's reusable planar output.
+    ///
+    /// Reads and validates the header before buffering the codestream for decode. It reads at
+    /// most the declared stream length and stops at the end of a JP2/JPH codestream box when the
+    /// box gives its length. The stream buffer is outside the codec working-memory budget.
+    /// Supply the length of the available bytes for whole codestreams and the full advertised
+    /// length when decoding a stream that may end early.
+    pub fn decode_from(
+        &mut self,
+        reader: &mut dyn Read,
+        params: DecodeParams<'_>,
+        options: StreamOptions,
+    ) -> Result<DecodedImage<'_>, Error> {
+        self.read_header_from(reader, options)?.decode(params)
+    }
+
+    /// Reads and validates a stream header through the first tile-part marker.
+    ///
+    /// The returned session borrows the reader at that position and can resume the decode without
+    /// reading the header again. JP2 and JPH streams require an advertised input length.
+    pub fn read_header_from<'decoder, 'input>(
+        &'decoder mut self,
+        reader: &'input mut dyn Read,
+        options: StreamOptions,
+    ) -> Result<DecodeStream<'decoder, 'input>, Error> {
+        self.diagnostics.clear();
+        let mut source = Source::reader(reader, options);
+        let header = match self.load_header(&mut source) {
+            Ok(header) => header,
+            Err(error) => {
+                self.header = None;
+                self.work.trim_retained(self.config.retain_bytes, false);
+                self.diagnostics.error(error.message());
+                return Err(error);
+            }
+        };
+        self.header = Some(header);
+        Ok(DecodeStream { decoder: self, source })
+    }
+
+    fn finish_planar_decode(&mut self, result: Result<(), Error>) -> Result<DecodedImage<'_>, Error> {
         self.work.trim_retained(self.config.retain_bytes, result.is_ok());
         if let Err(error) = result {
             self.diagnostics.error(error.message());
@@ -435,37 +574,73 @@ impl Decoder {
             self.work.trim_retained(self.config.retain_bytes, false);
             return Err(error);
         }
-        let result = self.decode_planes(data, params, Some((sample, targets)));
+        let result = self.decode_planes(&mut Source::Memory(data), params, DecodeOutput::Bytes(sample, targets));
+        self.finish_target_decode(result, Some((sample, targets)))
+    }
+
+    /// Decodes into tight, top-down I32 planes. Returns whether the codestream was truncated.
+    ///
+    /// For a single tile matching the image, the decoder can use one plane per selected component
+    /// directly as its coefficient storage. Output can be partially modified if decoding then fails.
+    pub fn decode_into_i32(
+        &mut self,
+        data: &[u8],
+        params: DecodeParams<'_>,
+        targets: &mut [I32Plane<'_>],
+    ) -> Result<bool, Error> {
+        if let Err(error) = self.read_header(data) {
+            self.work.trim_retained(self.config.retain_bytes, false);
+            return Err(error);
+        }
+        let output = DecodeOutput::I32(TypedOutput::new(targets));
+        let result = self.decode_planes(&mut Source::Memory(data), params, output);
+        self.finish_target_decode(result, None)
+    }
+
+    fn finish_target_decode(
+        &mut self,
+        result: Result<(), Error>,
+        output: Option<(SampleType, &mut [DecodeTarget<'_>])>,
+    ) -> Result<bool, Error> {
         if let Err(error) = result {
             self.work.trim_retained(self.config.retain_bytes, false);
             self.diagnostics.error(error.message());
             return Err(error);
         }
-        self.work.write_targets(sample, targets);
+        if let Some((sample, targets)) = output {
+            self.work.write_targets(sample, targets);
+        }
         self.work.trim_retained(self.config.retain_bytes, false);
         Ok(self.work.truncated)
     }
 
     fn decode_planes(
         &mut self,
-        data: &[u8],
+        source: &mut Source<'_>,
         params: DecodeParams<'_>,
-        output: Option<(SampleType, &[DecodeTarget<'_>])>,
+        output: DecodeOutput<'_, '_>,
     ) -> Result<(), Error> {
         let state = self.header.as_mut().expect("decode reads the header first");
+        if matches!(source, Source::Reader(_)) && state.needs_resize() {
+            state.resize_components()?;
+        }
         let main = &state.main;
         let params = DecodeParams {
             components: params.components.filter(|indices| !indices.is_empty()),
             ..params
         };
         self.work.reset_selection(main.comps.len(), params.components)?;
-        if let Some((sample, targets)) = output {
-            decode::validate_targets(targets, sample, &state.info.components, self.work.slots())?;
+        match &output {
+            DecodeOutput::Planar => {}
+            DecodeOutput::Bytes(sample, targets) => {
+                decode::validate_targets(targets, *sample, &state.info.components, self.work.slots())?;
+            }
+            DecodeOutput::I32(typed) => typed.validate(&state.info.components, self.work.slots())?,
         }
         let channels = params.components.is_none() && state.jp2.as_ref().is_some_and(Jp2Header::changes_channels);
         if channels
             && (params.jp2_channels == Jp2Channels::Reject
-                || output.is_some() && params.jp2_channels == Jp2Channels::Apply)
+                || !matches!(output, DecodeOutput::Planar) && params.jp2_channels == Jp2Channels::Apply)
         {
             return Err(Error::new(
                 ErrorKind::Unsupported,
@@ -496,21 +671,32 @@ impl Decoder {
             }
         }
 
-        let end = state
+        let codestream_end = state
             .info
             .codestream_length
-            .and_then(|length| state.info.codestream_offset.checked_add(length))
-            .and_then(|length| usize::try_from(length).ok())
-            .map_or(data.len(), |end| end.min(data.len()));
+            .and_then(|length| state.main.start.checked_add(length));
+        let stream = source.bounds(codestream_end);
+        let end = codestream_end.and_then(|end| usize::try_from(end).ok());
+        source.ensure(end.unwrap_or(usize::MAX))?;
+        let data = source.bytes();
+        let end = end.map_or(data.len(), |end| end.min(data.len()));
         let input = decode::Input {
             data: &data[..end],
+            stream,
             header: &state.main,
             components: &state.info.components,
             reduce: state.reduce,
             limits,
             retain: self.config.retain_bytes,
         };
-        self.work.decode(input, params, &mut self.diagnostics)?;
+        let mut typed = match output {
+            DecodeOutput::I32(typed) => Some(typed),
+            _ => None,
+        };
+        self.work.decode(input, params, typed.as_mut(), &mut self.diagnostics)?;
+        if let Some(output) = &mut typed {
+            self.work.write_i32_targets(output);
+        }
         if let Some(jp2) = state
             .jp2
             .as_ref()
@@ -523,13 +709,12 @@ impl Decoder {
 
     /// Reads the input through the first SOT marker.
     ///
-    /// A later call starting with the same header prefix reuses the validated header.
+    /// A later call with the same header prefix and limits reuses the validated header.
     pub fn read_header(&mut self, data: &[u8]) -> Result<&Info, Error> {
         self.diagnostics.clear();
-        let cached = self
-            .header
-            .as_mut()
-            .filter(|state| !state.prefix.is_empty() && data.starts_with(&state.prefix));
+        let cached = self.header.as_mut().filter(|state| {
+            state.limits == self.config.limits && !state.prefix.is_empty() && data.starts_with(&state.prefix)
+        });
 
         let result = if let Some(state) = cached {
             let factor = choose_factor(&state.main, self.config, true, &mut self.diagnostics);
@@ -538,7 +723,8 @@ impl Decoder {
                 fill_components(&state.main, reduce, &mut state.info.components);
             })
         } else {
-            self.load_header(data).map(|state| self.header = Some(state))
+            self.load_header(&mut Source::Memory(data))
+                .map(|state| self.header = Some(state))
         };
 
         if let Err(error) = result {
@@ -553,13 +739,13 @@ impl Decoder {
             .info)
     }
 
-    fn load_header(&mut self, data: &[u8]) -> Result<HeaderState, Error> {
+    fn load_header(&mut self, source: &mut Source<'_>) -> Result<HeaderState, Error> {
         let retain_buffers = self.ledger.reserved() <= self.config.retain_bytes;
         self.ledger
             .reset(self.config.retain_bytes, self.config.limits.max_memory);
         let jp2 = match self.config.format {
             Format::J2k => None,
-            Format::Jp2 => Some(jp2::read_boxes(data, &mut self.ledger, &mut self.diagnostics)?),
+            Format::Jp2 => Some(jp2::read_boxes(source, &mut self.ledger, &mut self.diagnostics)?),
         };
         let settings = HeaderSettings {
             limits: self.config.limits,
@@ -568,12 +754,13 @@ impl Decoder {
             allow_varying_depth: jp2.as_ref().is_none_or(|container| container.bpc == 255),
         };
         let start = jp2.as_ref().map_or(0, |container| container.codestream_start);
-        let main = parse_main_header(data, start, settings, &mut self.ledger, &mut self.diagnostics)?;
+        let main = parse_main_header(source, start, settings, &mut self.ledger, &mut self.diagnostics)?;
+        let data = source.bytes();
         let reduce = choose_factor(&main, self.config, true, &mut self.diagnostics)?;
         let count = main.comps.len();
         self.ledger
             .array(CType::ImageComp, count)
-            .map_err(|error| Error::new(error.kind(), "Not enough memory for the image header\n"))?;
+            .map_err(|error| Error::static_message(error.kind(), "Not enough memory for the image header\n"))?;
 
         let (mut components, mut prefix) = self
             .header
@@ -583,7 +770,7 @@ impl Decoder {
         components.clear();
         components
             .try_reserve_exact(count)
-            .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory for the image header\n"))?;
+            .map_err(|_| Error::static_message(ErrorKind::NoMemory, "Not enough memory for the image header\n"))?;
         fill_components(&main, reduce, &mut components);
 
         prefix.clear();
@@ -591,7 +778,8 @@ impl Decoder {
             .ok()
             .and_then(|offset| offset.checked_add(2))
             .expect("the main header consumed its SOT marker");
-        if let Some(bytes) = data.get(..end)
+        if matches!(source, Source::Memory(_))
+            && let Some(bytes) = data.get(..end)
             && self.ledger.charge(bytes.len(), 16).is_ok()
             && prefix.try_reserve_exact(bytes.len()).is_ok()
         {
@@ -616,15 +804,16 @@ impl Decoder {
             components,
             color_space: jp2.as_ref().map_or(ColorSpace::Unspecified, ColorSpace::from_jp2),
             color_profile,
-            codestream_offset: main.start,
+            codestream_offset: source.input_offset(main.start),
             codestream_length: jp2.as_ref().and_then(|container| container.codestream_len),
-            first_tile_offset: main.end,
+            first_tile_offset: source.input_offset(main.end),
         };
         Ok(HeaderState {
             main,
             jp2,
             info,
             prefix,
+            limits: self.config.limits,
             reduce,
             estimate: None,
         })
@@ -744,7 +933,7 @@ fn color_profile(jp2: Option<&Jp2Header>, data: &[u8]) -> Result<Option<ColorPro
             let mut profile = Vec::new();
             profile
                 .try_reserve_exact(contents.len())
-                .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory for the ICC profile\n"))?;
+                .map_err(|_| Error::static_message(ErrorKind::NoMemory, "Not enough memory for the ICC profile\n"))?;
             profile.extend_from_slice(contents);
             Ok(Some(ColorProfile::Icc(profile)))
         }
@@ -756,16 +945,12 @@ fn color_profile(jp2: Option<&Jp2Header>, data: &[u8]) -> Result<Option<ColorPro
 }
 
 fn validate_dimensions(state: &mut HeaderState, limits: Limits) -> Result<&[ComponentInfo], Error> {
-    let resize = state.reduce > 0 && state.info.components[0].reduce == 0;
+    let resize = state.needs_resize();
     let main = &state.main;
     for (index, (&stored, &component)) in state.info.components.iter().zip(&main.comps).enumerate() {
         let (width, height) = if resize {
-            let dims = geometry::resized_dimensions(main, component, state.reduce).ok_or_else(|| {
-                Error::new(
-                    ErrorKind::Unsupported,
-                    "Image coordinates above INT_MAX are not supported\n",
-                )
-            })?;
+            let dims =
+                geometry::resized_dimensions(main, component, state.reduce).ok_or_else(unsupported_coordinates)?;
             (dims.width, dims.height)
         } else {
             (stored.width, stored.height)
@@ -790,13 +975,16 @@ fn validate_dimensions(state: &mut HeaderState, limits: Limits) -> Result<&[Comp
     }
 
     if resize {
-        for (stored, &component) in state.info.components.iter_mut().zip(&state.main.comps) {
-            let dims = geometry::resized_dimensions(&state.main, component, state.reduce)
-                .expect("the dimensions were validated above");
-            stored.set_dimensions(dims, state.reduce);
-        }
+        state.resize_components()?;
     }
     Ok(&state.info.components)
+}
+
+fn unsupported_coordinates() -> Error {
+    Error::new(
+        ErrorKind::Unsupported,
+        "Image coordinates above INT_MAX are not supported\n",
+    )
 }
 
 fn estimate(state: &mut HeaderState) -> u64 {

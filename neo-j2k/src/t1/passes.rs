@@ -39,12 +39,11 @@ impl Passes<'_> {
         }
     }
 
-    fn significance_context(&self, flags: u32) -> usize {
-        usize::from(ZERO_CONTEXT[(self.orient << 9) | (flags & SIGMA_NEIGHBOURS) as usize])
+    fn significance_context(zero_context: &[u8; 512], flags: u32) -> usize {
+        usize::from(zero_context[(flags & SIGMA_NEIGHBOURS) as usize])
     }
 
-    fn sign(&self, decoder: &mut Decoder<'_>, index: usize, row: usize) -> u32 {
-        let flags = self.flags[index];
+    fn sign(&self, decoder: &mut Decoder<'_>, index: usize, row: usize, flags: u32) -> u32 {
         let shift = row * 3;
         let mut lu = (flags >> shift) & 0x00aa;
         lu |= (self.flags[index - 1] >> (19 + shift)) & 1;
@@ -56,10 +55,10 @@ impl Passes<'_> {
         decoder.symbol(usize::from(SIGN_CONTEXT[lu])) ^ u32::from(SIGN_PREDICTION[lu])
     }
 
-    fn mark_significant(&mut self, index: usize, row: usize, sign: u32) {
+    // Update the neighbouring columns and return the bits for the current column.
+    fn mark_significant(&mut self, index: usize, row: usize, sign: u32) -> u32 {
         let shift = row * 3;
         self.flags[index - 1] |= (1 << 5) << shift;
-        self.flags[index] |= ((sign << 19) | SIGMA_THIS) << shift;
         self.flags[index + 1] |= (1 << 3) << shift;
         if row == 0 && !self.vertical_causal {
             let above = index - self.width - 2;
@@ -73,45 +72,48 @@ impl Passes<'_> {
             self.flags[below - 1] |= 1 << 2;
             self.flags[below + 1] |= 1;
         }
+        ((sign << 19) | SIGMA_THIS) << shift
     }
 
     pub(super) fn significance<const RAW: bool>(&mut self, decoder: &mut Decoder<'_>, bitplane: u32) {
         let one = 1i32 << bitplane;
         let magnitude = one | (one >> 1);
         let stride = self.width + 2;
+        let zero_context = &ZERO_CONTEXT.as_chunks::<512>().0[self.orient];
         for row in (0..self.height).step_by(4) {
             let rows = (self.height - row).min(4);
             let data_start = row * self.width;
             let flag_start = (row / 4 + 1) * stride + 1;
             for col in 0..self.width {
                 let index = flag_start + col;
-                let column = self.flags[index];
+                let mut column = self.flags[index];
                 if column == 0 || (column | (column >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
                     continue;
                 }
                 for lane in 0..rows {
                     let shift = lane * 3;
-                    let flags = self.flags[index] >> shift;
+                    let flags = column >> shift;
                     if flags & (SIGMA_THIS | PI_THIS) != 0 || flags & SIGMA_NEIGHBOURS == 0 {
                         continue;
                     }
                     let significant = if RAW {
                         decoder.raw()
                     } else {
-                        decoder.symbol(self.significance_context(flags))
+                        decoder.symbol(Self::significance_context(zero_context, flags))
                     };
                     if significant != 0 {
                         let sign = if RAW {
                             decoder.raw()
                         } else {
-                            self.sign(decoder, index, lane)
+                            self.sign(decoder, index, lane, column)
                         };
                         self.data[data_start + col + lane * self.width] =
                             if sign != 0 { -magnitude } else { magnitude };
-                        self.mark_significant(index, lane, sign);
+                        column |= self.mark_significant(index, lane, sign);
                     }
-                    self.flags[index] |= PI_THIS << shift;
+                    column |= PI_THIS << shift;
                 }
+                self.flags[index] = column;
             }
         }
     }
@@ -156,40 +158,44 @@ impl Passes<'_> {
         let one = 1i32 << bitplane;
         let magnitude = one | (one >> 1);
         let stride = self.width + 2;
+        let zero_context = &ZERO_CONTEXT.as_chunks::<512>().0[self.orient];
         for row in (0..self.height).step_by(4) {
             let rows = (self.height - row).min(4);
             let data_start = row * self.width;
             let flag_start = (row / 4 + 1) * stride + 1;
             for col in 0..self.width {
                 let index = flag_start + col;
-                let column = self.flags[index];
+                let mut column = self.flags[index];
                 if (column | (column >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
                     self.flags[index] = column & !ALL_PI;
                     continue;
                 }
-                let run_start = if rows == 4 && column == 0 {
+                let mut mark = |decoder: &mut Decoder<'_>, column: &mut u32, lane: usize| {
+                    let sign = self.sign(decoder, index, lane, *column);
+                    self.data[data_start + col + lane * self.width] = if sign != 0 { -magnitude } else { magnitude };
+                    *column |= self.mark_significant(index, lane, sign);
+                };
+                let start = if rows == 4 && column == 0 {
                     if decoder.symbol(CONTEXT_AGGREGATE) == 0 {
                         continue;
                     }
                     let first = decoder.symbol(CONTEXT_UNIFORM) as usize;
                     let second = decoder.symbol(CONTEXT_UNIFORM) as usize;
-                    Some((first << 1) | second)
+                    let lane = (first << 1) | second;
+                    mark(decoder, &mut column, lane);
+                    lane + 1
                 } else {
-                    None
+                    0
                 };
-                for lane in run_start.unwrap_or(0)..rows {
-                    let flags = self.flags[index] >> (lane * 3);
-                    if run_start.is_none() && flags & (SIGMA_THIS | PI_THIS) != 0 {
-                        continue;
+                for lane in start..rows {
+                    let flags = column >> (lane * 3);
+                    if flags & (SIGMA_THIS | PI_THIS) == 0
+                        && decoder.symbol(Self::significance_context(zero_context, flags)) != 0
+                    {
+                        mark(decoder, &mut column, lane);
                     }
-                    if run_start != Some(lane) && decoder.symbol(self.significance_context(flags)) == 0 {
-                        continue;
-                    }
-                    let sign = self.sign(decoder, index, lane);
-                    self.data[data_start + col + lane * self.width] = if sign != 0 { -magnitude } else { magnitude };
-                    self.mark_significant(index, lane, sign);
                 }
-                self.flags[index] &= !ALL_PI;
+                self.flags[index] = column & !ALL_PI;
             }
         }
         if segment_symbol {

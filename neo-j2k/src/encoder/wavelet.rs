@@ -50,6 +50,7 @@ const GAMMA: f32 = f32::from_bits(0x3f62_0676);
 const DELTA: f32 = f32::from_bits(0x3ee3_1355);
 const K: f32 = f32::from_bits(0x3f9d_7658);
 const INV_K: f32 = f32::from_bits(0x3f50_19c3);
+const COLUMN_BATCH_53: usize = 8;
 
 const NORMS: [[f64; 10]; 4] = [
     [1.000, 1.500, 2.750, 5.375, 10.68, 21.34, 42.67, 85.33, 170.7, 341.3],
@@ -180,6 +181,45 @@ fn lift_53(line: &mut [i32]) {
     }
 }
 
+fn lift_53_columns(line: &mut [[i32; COLUMN_BATCH_53]]) {
+    let last = line.len() - 1;
+    for row in (1..last).step_by(2) {
+        let [above, centre, below] = [line[row - 1], line[row], line[row + 1]];
+        line[row] = core::array::from_fn(|i| centre[i].wrapping_sub(above[i].wrapping_add(below[i]) >> 1));
+    }
+    if last % 2 == 1 {
+        let [centre, above] = [line[last], line[last - 1]];
+        line[last] = core::array::from_fn(|i| centre[i].wrapping_sub(above[i]));
+    }
+    for row in (0..=last).step_by(2) {
+        let above = line[row.abs_diff(1)];
+        let below = line[if row == last { last - 1 } else { row + 1 }];
+        let centre = line[row];
+        line[row] =
+            core::array::from_fn(|i| centre[i].wrapping_add(above[i].wrapping_add(below[i]).wrapping_add(2) >> 2));
+    }
+}
+
+fn forward_columns_53(plane: &mut [i32], stride: usize, cols: usize, rows: usize, line: &mut [i32]) -> usize {
+    if cols < COLUMN_BATCH_53 || rows < 2 {
+        return 0;
+    }
+    let lanes = line[..rows * COLUMN_BATCH_53].as_chunks_mut::<COLUMN_BATCH_53>().0;
+    let end = cols / COLUMN_BATCH_53 * COLUMN_BATCH_53;
+    for col in (0..end).step_by(COLUMN_BATCH_53) {
+        let range = col..col + COLUMN_BATCH_53;
+        for (tmp, row) in lanes.iter_mut().zip(plane.chunks_exact(stride)) {
+            tmp.copy_from_slice(&row[range.clone()]);
+        }
+        lift_53_columns(lanes);
+        let bands = lanes.iter().step_by(2).chain(lanes.iter().skip(1).step_by(2));
+        for (row, tmp) in plane.chunks_exact_mut(stride).zip(bands) {
+            row[range.clone()].copy_from_slice(tmp);
+        }
+    }
+    end
+}
+
 fn lift_97(line: &mut [i32], parity: usize, coefficient: f32) {
     let last = line.len() - 1;
     for at in (parity..last).step_by(2) {
@@ -218,15 +258,22 @@ fn forward_line(data: &mut [i32], stride: usize, reversible: bool, line: &mut [i
     } else {
         lift_and_scale_97(line);
     }
-    let low = line.len().div_ceil(2);
-    for (i, &sample) in line.iter().enumerate() {
-        let output = i / 2 + (i % 2) * low;
-        data[output * stride] = sample;
+    let bands = line.iter().step_by(2).chain(line.iter().skip(1).step_by(2));
+    for (dst, &sample) in data.iter_mut().step_by(stride).zip(bands) {
+        *dst = sample;
+    }
+}
+
+pub(super) fn scratch_len(width: usize, height: usize, reversible: bool) -> usize {
+    if reversible && width >= COLUMN_BATCH_53 {
+        width.max(height * COLUMN_BATCH_53)
+    } else {
+        width.max(height)
     }
 }
 
 /// Work down from the largest resolution. Each step writes the low-pass rows and columns first.
-/// `line` holds at least the longer of the tile-component's sides.
+/// `line` has the size returned by `scratch_len`.
 pub(super) fn forward(
     plane: &mut [i32],
     width: usize,
@@ -238,7 +285,12 @@ pub(super) fn forward(
     let (mut cols, mut rows) = (width, height);
     for _ in 1..levels {
         // The C++ encoder transforms columns before rows, the reverse of its decoder.
-        for col in 0..cols {
+        let batched = if reversible {
+            forward_columns_53(plane, width, cols, rows, line)
+        } else {
+            0
+        };
+        for col in batched..cols {
             forward_line(&mut plane[col..], width, reversible, &mut line[..rows]);
         }
         for row in 0..rows {

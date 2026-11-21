@@ -28,22 +28,43 @@ mod jp2;
 mod limits;
 mod mct;
 mod mem;
-#[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+#[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
 #[allow(unsafe_code)]
 mod simd;
+mod stream;
 mod t1;
 mod t2;
 mod tile;
 
 pub use decode::{
-    DecodeParams, DecodeStatistics, DecodeTarget, DecodedComponent, DecodedImage, Jp2Channels, OutputPlane, SampleType,
+    DecodeParams, DecodeStatistics, DecodeTarget, DecodedComponent, DecodedImage, I32Plane, Jp2Channels, OutputPlane,
+    SampleType,
 };
 pub use decoder::{
-    CodestreamCoding, ColorProfile, ColorSpace, ComponentCoding, ComponentInfo, Decoder, DecoderConfig, Format, Info,
-    Progression, QuantizationStep, QuantizationStyle, ReducePolicy, Wavelet,
+    CodestreamCoding, ColorProfile, ColorSpace, ComponentCoding, ComponentInfo, DecodeStream, Decoder, DecoderConfig,
+    Format, Info, Progression, QuantizationStep, QuantizationStyle, ReducePolicy, Wavelet,
 };
 #[cfg(feature = "encode")]
 pub use encoder::{EncodeParams, Encoder, ImageSamples, ImageView, Plane};
 pub use error::{Diagnostic, Error, ErrorKind};
 pub use executor::Executor;
 pub use limits::Limits;
+pub use stream::StreamOptions;
+
+/// The codec's full release version, including the patch number.
+#[must_use]
+pub const fn version() -> &'static str {
+    env!("CARGO_PKG_VERSION")
+}
+
+/// The codec's name and major/minor release line for display and logging.
+/// A host that caches decoded samples can version those separately.
+#[must_use]
+pub const fn engine_string() -> &'static str {
+    concat!(
+        "neo-j2k ",
+        env!("CARGO_PKG_VERSION_MAJOR"),
+        ".",
+        env!("CARGO_PKG_VERSION_MINOR")
+    )
+}

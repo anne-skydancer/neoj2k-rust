@@ -75,6 +75,33 @@ pub(crate) fn inverse_97_rows(data: &mut [i32], stride: usize, parity: usize, sc
     unsafe { inverse_97_rows_avx2(data, stride, parity, scratch) };
 }
 
+/// Transform eight columns whose rows are borrowed separately by an executor job.
+pub(crate) fn inverse_stripe(
+    rows: &mut [&mut [i32]],
+    column: usize,
+    parity: usize,
+    reversible: bool,
+    scratch: &mut [Lane],
+) {
+    let len = scratch.len();
+    let low_len = len / 2 + (len % 2) * (1 - parity);
+    let columns = column..column + LANES;
+    for (index, lanes) in scratch.iter_mut().enumerate() {
+        let row = index / 2 + usize::from(index % 2 != parity) * low_len;
+        lanes.copy_from_slice(&rows[row][columns.clone()]);
+    }
+    if reversible {
+        // SAFETY: this module is compiled only when AVX2 is a target feature.
+        unsafe { inverse_53(scratch, parity) };
+    } else {
+        // SAFETY: this module is compiled only when AVX2 is a target feature.
+        unsafe { inverse_97(scratch, parity) };
+    }
+    for (row, lanes) in rows.iter_mut().zip(scratch) {
+        row[columns.clone()].copy_from_slice(lanes);
+    }
+}
+
 #[target_feature(enable = "avx2")]
 fn read(lanes: &Lane) -> __m256i {
     // SAFETY: a Lane has exactly 32 initialized bytes, and loadu permits its alignment.
@@ -200,6 +227,70 @@ fn read_float(lanes: &Lane) -> __m256 {
 #[target_feature(enable = "avx2")]
 fn write_float(lanes: &mut Lane, value: __m256) {
     write(lanes, _mm256_castps_si256(value));
+}
+
+pub(crate) fn sweep_97_rows<const ODD: bool>(low: &mut [&mut [i32]; 4], high: &mut [&mut [i32]; 3]) -> usize {
+    // SAFETY: this module is compiled only when AVX2 is a target feature.
+    unsafe { sweep_97_avx2::<ODD>(low, high) }
+}
+
+#[target_feature(enable = "avx2")]
+fn read_row(row: &[i32], column: usize) -> __m256 {
+    read_float(row[column..column + LANES].try_into().expect("an AVX2 group"))
+}
+
+#[target_feature(enable = "avx2")]
+fn write_row(row: &mut [i32], column: usize, samples: __m256) {
+    write_float(
+        (&mut row[column..column + LANES]).try_into().expect("an AVX2 group"),
+        samples,
+    );
+}
+
+#[target_feature(enable = "avx2")]
+fn lift_rows(sample: __m256, a: __m256, b: __m256, coefficient: __m256) -> __m256 {
+    _mm256_add_ps(sample, _mm256_mul_ps(_mm256_add_ps(a, b), coefficient))
+}
+
+#[target_feature(enable = "avx2")]
+fn sweep_97_avx2<const ODD: bool>(low: &mut [&mut [i32]; 4], high: &mut [&mut [i32]; 3]) -> usize {
+    let [l0, l1, l2, l3] = low;
+    let [h0, h1, h2] = high;
+    let width = l0.len();
+    let end = width / LANES * LANES;
+    let (k, two_inv_k) = (_mm256_set1_ps(K), _mm256_set1_ps(TWO_INV_K));
+    let (delta, gamma) = (_mm256_set1_ps(-DELTA), _mm256_set1_ps(-GAMMA));
+    let (beta, alpha) = (_mm256_set1_ps(-BETA), _mm256_set1_ps(-ALPHA));
+    for x in (0..end).step_by(LANES) {
+        let lk = _mm256_mul_ps(read_row(l0, x), k);
+        let hk = _mm256_mul_ps(read_row(h0, x), two_inv_k);
+        let hk1 = read_row(h1, x);
+        let hk2 = read_row(h2, x);
+        let lk1 = read_row(l1, x);
+        let lk2 = read_row(l2, x);
+        if ODD {
+            let d = lift_rows(lk1, hk1, hk, delta);
+            let g = lift_rows(hk1, lk2, d, gamma);
+            let b = lift_rows(lk2, hk2, g, beta);
+            let a = lift_rows(hk2, read_row(l3, x), b, alpha);
+            write_row(l0, x, lk);
+            write_row(l1, x, d);
+            write_row(l2, x, b);
+            write_row(h1, x, g);
+            write_row(h2, x, a);
+        } else {
+            let d = lift_rows(lk, hk1, hk, delta);
+            let g = lift_rows(hk1, lk1, d, gamma);
+            let b = lift_rows(lk1, hk2, g, beta);
+            let a = lift_rows(hk2, lk2, b, alpha);
+            write_row(l0, x, d);
+            write_row(l1, x, b);
+            write_row(h1, x, g);
+            write_row(h2, x, a);
+        }
+        write_row(h0, x, hk);
+    }
+    end
 }
 
 #[target_feature(enable = "avx2")]

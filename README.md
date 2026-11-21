@@ -27,10 +27,20 @@ The decoder supports the five progression orders, POC, packed packet headers, re
 layer-limited output, and partial inputs. It can return reusable planar samples or write
 into planar or interleaved caller buffers. JP2 palette and channel metadata can be applied
 to planar output through `Jp2Channels::Apply`.
+`Decoder::decode_into_i32` can decode a matching single tile directly into tight, top-down
+caller planes, one per selected component, without allocating another image-sized plane.
+
+`Decoder::decode_from` reads from `std::io::Read`. It validates the header and working-memory
+limits before buffering the tile data. Set `StreamOptions::length` to the advertised byte length
+and `StreamOptions::seekable` when the source allows codestream look-ahead. The buffer ends at
+the declared stream length or the end of the JP2/JPH codestream box, whichever comes first.
+Use `Decoder::read_header_from` to inspect the header or select a reduce factor before resuming
+from the same reader with `DecodeStream::decode` or `DecodeStream::decode_into`.
 
 The encoder takes planar or interleaved unsigned 8-bit samples. It writes a J2K codestream
 with one tile, RLCP progression and 64 × 64 code-blocks, using lossless 5/3 or irreversible
-9/7 wavelets with optional quality layers.
+9/7 wavelets with optional quality layers. Use `Encoder::encode_to` to write the codestream to a
+`std::io::Write`, with a caller-chosen buffer size and support for short writes.
 
 ## Toolchain
 
@@ -74,6 +84,11 @@ The decoder reads up to the first tile-part and caches the validated header pref
 `Format::Jp2` for JP2 and JPH containers. An incomplete header reports `ErrorKind::NeedData`
 so the caller can retry with more bytes.
 
+For a `Read` input, use `Decoder::read_header_from` with `StreamOptions` to obtain a
+`DecodeStream`. It keeps the reader positioned after the header and lets the caller inspect
+dimensions or choose a reduce factor before decoding. Supply the byte length for a complete
+decode or a JP2/JPH header read. `DecodeStream::decode_into` writes to caller buffers.
+
 After reading the header, `Decoder::codestream_coding` borrows the tile defaults and component
 coding settings from the parsed header. Use `component(index)` to inspect the effective
 code-block and precinct sizes, quantization, wavelet, and ROI shift for that codestream component.
@@ -87,6 +102,11 @@ fn decode_first_component(data: &[u8]) -> Result<Vec<i32>, Error> {
     Ok(image.components[0].samples().to_vec())
 }
 ```
+
+`Decoder::decode_into_i32` accepts tightly packed `I32Plane` buffers and can use them for
+reconstruction of a single tile that matches the image. Those buffers may be partially modified
+if decoding fails. `Decoder::decode_into` also accepts byte buffers with explicit row and
+sample strides for U8, U16, and I32 output.
 
 ```rust,no_run
 use neo_j2k::{EncodeParams, Encoder, Error, ImageSamples, ImageView};
@@ -107,6 +127,9 @@ fn encode_rgb(width: u32, height: u32, rgb: &[u8]) -> Result<Vec<u8>, Error> {
 }
 ```
 
+Use `Encoder::encode_to` for a `Write` output. `encode_and_update` and `encode_to_and_update`
+also return the effective layer ratios and codestream size cap through the caller's `EncodeParams`.
+
 The small-image release tests compare whole, reduced, and partial decodes against C++ and check
 that a warmed Rust decoder performs no heap calls on the selected fixtures. The opt-in timing
 tests use matching inputs and settings, and compare lossless and lossy encodes byte for byte:
@@ -115,6 +138,16 @@ tests use matching inputs and settings, and compare lossless and lossy encodes b
 cargo test --release -p neo-j2k --test small_image_gates -- --ignored --nocapture --test-threads=1
 ```
 
+The large-image benchmark compares direct caller-owned I32 planes using the same persistent
+executor at widths 1, 2, 4 and 8. Use a C++ oracle configured with `-DNJ2K_SIMD=SCALAR` for
+scalar timing and the AVX2 oracle for an `x86-64-v3` Rust build.
+
+```sh
+cargo test --release -p neo-j2k --test small_image_gates -- --ignored --exact large_image_executor_latency --nocapture
+```
+
+`Decoder::set_limits` changes the resource limits for subsequent requests. The decoder checks the
+header again under the new limits and can reuse its working buffers.
 `Decoder::statistics` exposes the codec's budget and arena accounting. Use
 `Decoder::set_retained_bytes` to cap the reusable native buffers that survive a decode and
 `Decoder::retained_work_bytes` to read their live capacity. A host can lend its executor through
@@ -144,7 +177,7 @@ cargo build --release -p neo-j2k --no-default-features --features std
 |---|---|---|
 | `std` | yes | required in this version (reserved for a later `no_std` + `alloc` build) |
 | `encode` | yes | the native JPEG 2000 encoder |
-| `simd` | yes | the AVX2 kernels on builds that target AVX2 |
+| `simd` | yes | x86-64 instruction intrinsics, including the AVX2 kernels on AVX2 builds |
 | `opensim` | yes | the OpenSim limit profile, as the C++'s `NJ2K_PROFILE_OPENSIM` |
 
 The workspace's release profile (`lto = "fat"`, `codegen-units = 1`, `panic = "unwind"`) applies to
@@ -156,7 +189,7 @@ The crate selects kernels at compile time, as in the C++ (decision D8).
 
 | Build | How | Kernels |
 |---|---|---|
-| baseline x86-64 | the default | scalar |
+| baseline x86-64 | the default | scalar with SSE sample rounding |
 | x86-64-v3 (AVX2, the viewer's floor) | `RUSTFLAGS="-C target-cpu=x86-64-v3"`, or in the consumer's `.cargo/config.toml`: `[build] rustflags = ["-C", "target-cpu=x86-64-v3"]` | AVX2 in `mod simd` |
 
 The parity suite runs at both CPU levels. The port preserves the C++ floating-point operation order.
@@ -215,7 +248,8 @@ cargo fmt --all --check
 | `NJ2K_ORACLE_PRESET` | the CMake preset `build.rs` uses when it builds the oracle itself |
 | `NJ2K_ORACLE_CONFIG` | the configuration of the oracle's build (default `RelWithDebInfo`) |
 | `NJ2K_ORACLE_NO_BUILD` | `1`: no C++ build and no link, for commands that compile without linking (`cargo clippy`, `cargo doc`, `cargo metadata`); a test build then fails to link |
-| `NJ2K_TESTDATA` | the fetched conformance data (`python -I tools/fetch_testdata.py`); the tests that use it (the scanner and PGX differentials on the conformance files) cover it only when it is set, as in CTest |
+| `NJ2K_TESTDATA` | the fetched conformance data (`python -I tools/fetch_testdata.py`). Add `--all` to fetch the non-regression data too. |
+| `NJ2K_DAMAGED_FILES` | an optional local directory or text file list of damaged codestreams for differential replay |
 | `NJ2K_TEST_TMP` | the folder for the tests' temporary files, e.g. the repository's Defender-excluded `.fixture-tmp`; also set `TEMP`/`TMP` (Windows) or `TMPDIR` (Linux) to it for the C++ |
 
 The tests never open a dialog: panics and assertion output go to stderr, and the oracle sends the C
@@ -235,6 +269,28 @@ The release tests compare native Rust pixel planes and statuses against the C++ 
 codestreams, small prefixes, reduced and layer-limited output, and packed packet headers. They
 compare the encoder's bytes against the C++ on the generated image and settings matrix.
 The local [fuzz targets](fuzz/README.md) cover decode, round trips and differential comparison.
+
+The native reference replay compares hashes from Rust decoding against the committed OpenJPEG
+tables. It checks the documented empty packed-header tile departure separately. Set
+`NJ2K_ORACLE_NO_BUILD=1` to run the standard table without linking the C++ oracle.
+
+```sh
+cargo test --release --locked -p neo-j2k --test reference_replay
+```
+
+Use `-- --ignored --exact nightly_reference_cuts` with the same command for the extended table.
+
+When `NJ2K_TESTDATA` points at the fetched OpenJPEG data, the pixel tests compare every conformance
+and available non-regression codestream at reduce levels 0 to 5. The damage tests mutate the
+generated corpus's headers and packet bodies, cut streams at decoder boundaries, and retry with
+clean input in the same decoder. They compare exact statuses and decoded samples at reduce 0
+and 5 in both strict and non-strict mode under the Second Life resource limits.
+
+Set `NJ2K_DAMAGED_FILES` to replay additional local inputs with the same options. Run from `rust/`:
+
+```sh
+cargo test --release --locked -p neo-j2k --test decode_options -- --nocapture
+```
 
 ### Oracle and harness checks
 
@@ -275,16 +331,19 @@ workspace's graph and bans the C/C++ helper crates outright.
 
 ## Miri
 
-Miri runs the crates' own unit tests; they never call the oracle (`cfg(not(miri))` keeps the
-differential tests out, and the oracle's build script does nothing under Miri):
+Miri checks the Rust unit tests, the host job dispatcher with two threads, and small decoder
+requests across all reduce levels, including retries after incomplete input. The AVX2 pass
+exercises the wavelet, colour, Tier-1 sample stores and packed output kernels. The oracle's
+build script does nothing under Miri.
 
 ```
 cd rust
 cargo +nightly-2026-11-03 miri setup
 NJ2K_ORACLE_NO_BUILD=1 cargo +nightly-2026-11-03 miri test -p neo-j2k-testkit -p neo-j2k --lib
+NJ2K_ORACLE_NO_BUILD=1 cargo +nightly-2026-11-03 miri test -p neo-j2k --test miri_decode --locked
+NJ2K_ORACLE_NO_BUILD=1 RUSTFLAGS="-C target-feature=+avx2" CARGO_TARGET_DIR=target-miri-avx2 \
+  cargo +nightly-2026-11-03 miri test -p neo-j2k --lib --locked -- avx2_ interleaved_targets_match_plane_writes_at_every_channel_count
 ```
-
-Test the `simd` module with `RUSTFLAGS="-C target-feature=+avx2"`.
 
 ## Windows and Linux
 
@@ -296,8 +355,11 @@ Test the `simd` module with `RUSTFLAGS="-C target-feature=+avx2"`.
 | Temporary files | `TEMP`/`TMP` and `NJ2K_TEST_TMP` | `TMPDIR` and `NJ2K_TEST_TMP` |
 | Miri | works (it interprets; no oracle) | the CI job runs here |
 
-CI (`.github/workflows/rust.yml`) runs the lint job (fmt, clippy at both CPU levels, docs,
-cargo-deny, the native-Rust check, and `cargo package --locked -p neo-j2k`), Windows (MSVC),
-Linux (GCC 15), Ubuntu 24.04 (GCC 14, the oracle
-built by `build.rs` itself) each at both CPU levels, Miri, and seeded AddressSanitizer fuzzing
-at both CPU levels on Windows.
+CI (`.github/workflows/rust.yml`) runs the lint job (fmt, clippy at both CPU levels and for the
+decoder-only configuration, docs, cargo-deny, the native-Rust check, and
+`cargo package --locked -p neo-j2k`). Tests run at both CPU levels on Windows (MSVC), Linux
+(GCC 15, with the full conformance and non-regression data), and Ubuntu 24.04 (GCC 14,
+with the oracle built by `build.rs`). CI also runs scalar and AVX2 Miri and seeded
+AddressSanitizer fuzzing at both CPU levels on Windows. Scheduled and manually dispatched runs replay
+the extended cut table and allow ten minutes per fuzz target at each CPU level. See the
+[Rust port design](../doc/rust.md) for implementation notes.

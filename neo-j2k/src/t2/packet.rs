@@ -217,15 +217,18 @@ impl<'data, 'cursor, 'ppm> Reader<'data, 'cursor, 'ppm> {
                     if len > self.data.len() - self.pos {
                         if self.strict || !self.cut_warned {
                             let mode = if skip { "skip" } else { "read" };
-                            let message = format!(
+                            let mut report = |message| {
+                                if self.strict {
+                                    return Err(Error::formatted(ErrorKind::Data, message, "Invalid packet data\n"));
+                                }
+                                diagnostics.warn_fmt(message);
+                                Ok(())
+                            };
+                            report(format_args!(
                                 "{mode}: segment too long ({newlen}) with max ({max_length}) for codeblock \
                                  {block_index} (p={}, b={band_index}, r={}, c={})\n",
                                 packet.precinct, packet.res, packet.comp,
-                            );
-                            if self.strict {
-                                return Err(bad_packet(message));
-                            }
-                            diagnostics.warn(message);
+                            ))?;
                             self.cut_warned = true;
                         }
                         partial = true;
@@ -362,12 +365,12 @@ fn skip_passes(block: &mut CodeBlock, mut at: usize) {
     }
 }
 
-fn next_capacity(len: usize, description: &str) -> Result<usize, Error> {
+fn next_capacity(len: usize, description: &'static str) -> Result<usize, Error> {
     if len == 0 {
         Ok(4)
     } else {
         len.checked_mul(2)
-            .ok_or_else(|| Error::new(ErrorKind::NoMemory, description))
+            .ok_or_else(|| Error::static_message(ErrorKind::NoMemory, description))
     }
 }
 
@@ -380,7 +383,7 @@ fn init_segment(block: &mut CodeBlock, at: usize, cblksty: u8, budget: &mut Work
         block
             .segs
             .try_reserve_exact(new - old)
-            .map_err(|_| Error::new(ErrorKind::NoMemory, MESSAGE))?;
+            .map_err(|_| Error::static_message(ErrorKind::NoMemory, MESSAGE))?;
         block.segs.resize(new, Segment::default());
     }
     let maxpasses = if cblksty & TERMINATE_ALL != 0 {
@@ -412,7 +415,7 @@ fn grow_chunks(block: &mut CodeBlock, budget: &mut WorkBudget) -> Result<(), Err
         block
             .chunks
             .try_reserve_exact(capacity - len)
-            .map_err(|_| Error::new(ErrorKind::NoMemory, MESSAGE))?;
+            .map_err(|_| Error::static_message(ErrorKind::NoMemory, MESSAGE))?;
     }
     Ok(())
 }

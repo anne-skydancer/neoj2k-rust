@@ -400,5 +400,5 @@ fn unsupported(message: &'static str) -> Error {
 }
 
 fn no_memory() -> Error {
-    Error::new(ErrorKind::NoMemory, "Not enough memory to decode\n")
+    Error::static_message(ErrorKind::NoMemory, "Not enough memory to decode\n")
 }

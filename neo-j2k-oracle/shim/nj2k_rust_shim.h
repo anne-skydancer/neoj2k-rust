@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#define NJ2K_SHIM_ABI_VERSION 5u
+#define NJ2K_SHIM_ABI_VERSION 6u
 
 uint32_t nj2k_shim_abi_version(void);
 /* 1 when the harness's backends were made before main() (their making clears OPJ_NUM_THREADS, an
@@ -142,6 +142,13 @@ typedef struct nj2k_shim_encode_request {
 typedef struct nj2k_shim_codestream nj2k_shim_codestream_t;
 /* Returns the C++ encoder's status; on success out owns the codestream until it is freed. */
 int32_t nj2k_shim_encode_u8(const nj2k_shim_encode_request_t *request, nj2k_shim_codestream_t **out);
+typedef struct nj2k_shim_encode_updates {
+    uint32_t max_codestream_size, layer_count;
+    float ratios[100];
+} nj2k_shim_encode_updates_t;
+/* A nonzero layer_count records the settings written back by a successful setup, even if encoding fails. */
+int32_t nj2k_shim_encode_u8_with_updates(const nj2k_shim_encode_request_t *request,
+                                       nj2k_shim_encode_updates_t *updates, nj2k_shim_codestream_t **out);
 const uint8_t *nj2k_shim_codestream_bytes(const nj2k_shim_codestream_t *codestream, size_t *len);
 void nj2k_shim_codestream_free(nj2k_shim_codestream_t *codestream);
 
@@ -151,6 +158,13 @@ nj2k_codec_t *nj2k_shim_codec_new(uint32_t format, uint32_t reduce, uint32_t red
                                   const nj2k_decoder_limits_t *limits, uint32_t max_layers, uint32_t strict);
 void nj2k_shim_codec_free(nj2k_codec_t *codec);
 uint32_t nj2k_shim_codec_set_max_memory(nj2k_codec_t *codec, uint64_t max_memory);
+uint32_t nj2k_shim_codec_set_retained_bytes(nj2k_codec_t *codec, size_t retained_bytes);
+typedef struct nj2k_shim_pool nj2k_shim_pool_t;
+nj2k_shim_pool_t *nj2k_shim_pool_new(uint32_t workers);
+void nj2k_shim_pool_free(nj2k_shim_pool_t *pool);
+uint64_t nj2k_shim_pool_batches(const nj2k_shim_pool_t *pool);
+/* Run the jobs synchronously, holding no references to job or context after returning. */
+uint32_t nj2k_shim_pool_run(nj2k_shim_pool_t *pool, uint32_t count, nj2k_job_fn job, void *context);
 typedef struct nj2k_shim_header nj2k_shim_header_t;
 typedef struct nj2k_shim_header_info {
     uint32_t x0, y0, x1, y1, numcomps;
@@ -169,9 +183,10 @@ uint32_t nj2k_shim_header_diagnostic(const nj2k_shim_header_t *header, size_t in
                                      const uint8_t **text, size_t *len);
 void nj2k_shim_header_free(nj2k_shim_header_t *header);
 /* Read the header and report the total number of samples through count. A null out queries this
- * count only. Otherwise decode into cap samples, packed by component, skipping empty planes. */
+ * count only. Otherwise decode into cap samples, packed by component, skipping empty planes.
+ * An optional pool is borrowed for the decode only. */
 int32_t nj2k_shim_codec_decode_i32(nj2k_codec_t *codec, const uint8_t *data, size_t size, int32_t *out,
-                                   uint64_t cap, uint64_t *count);
+                                   uint64_t cap, uint64_t *count, nj2k_shim_pool_t *pool);
 typedef struct nj2k_shim_ledger_s {
     uint64_t header_reserved;  /* the header arena's reserved bytes */
     uint64_t tile_reserved;    /* the tile-part arena's */

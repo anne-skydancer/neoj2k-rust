@@ -5,6 +5,13 @@ use neo_j2k::{
     DecodeParams, DecodeTarget, DecodedImage, Decoder, DecoderConfig, EncodeParams, Encoder, Format, ImageSamples,
     ImageView, Jp2Channels, Limits, OutputPlane, ReducePolicy, SampleType,
 };
+#[cfg(feature = "oracle")]
+use neo_j2k_oracle::{Codec, Format as OracleFormat, Header, Limits as OracleLimits, ReducePolicy as OracleReduce};
+
+#[cfg(feature = "oracle")]
+mod encode_options;
+#[cfg(feature = "oracle")]
+pub use encode_options::encode_options;
 
 const LIMITS: Limits = Limits {
     max_tiles: 256,
@@ -93,14 +100,17 @@ const DIFFERENTIAL_SEEDS: [&[u8]; 7] = [
 
 #[cfg(feature = "oracle")]
 pub fn differential(data: &[u8]) {
-    use neo_j2k_oracle::{Codec, Format as OracleFormat, Limits as OracleLimits, ReducePolicy as OracleReduce};
-
     if data.len() > 1 << 17 {
         return;
     }
-    let control = |index| data.get(index).copied().unwrap_or(0);
+    let raw_j2k = data.starts_with(&[0xff, 0x4f]);
+    let raw_jp2 = data.starts_with(&JP2_SIGNATURE[..8]);
+    let raw = raw_j2k || raw_jp2;
+    // The first three codestream bytes are always the SOC and the start of SIZ.
+    let options = if raw { &data[data.len() / 2..] } else { data };
+    let control = |index| options.get(index).copied().unwrap_or(0);
     let mut mutated;
-    let candidate = if data.starts_with(&[0xff, 0x4f]) {
+    let candidate = if raw {
         data
     } else {
         let seed = DIFFERENTIAL_SEEDS[usize::from(control(0)) % DIFFERENTIAL_SEEDS.len()];
@@ -116,36 +126,228 @@ pub fn differential(data: &[u8]) {
             }
         }
     };
+    let format = if raw_jp2 { Format::Jp2 } else { Format::J2k };
     let reduce = u32::from(control(2) % 6);
-    let mut native = Decoder::new(DecoderConfig {
-        limits: LIMITS,
+    let (policy, params) = decode_options(control(6));
+    let (mut native, mut oracle) = differential_codecs(format, reduce, policy, params, LIMITS);
+    compare_decode(&mut native, &mut oracle, candidate, params);
+
+    let cut = usize::from(u16::from_le_bytes([control(7), control(8)])) % (candidate.len() + 1);
+    compare_decode(&mut native, &mut oracle, &candidate[..cut], params);
+    compare_decode(&mut native, &mut oracle, candidate, params);
+}
+
+#[cfg(feature = "oracle")]
+fn decode_options(settings: u8) -> (ReducePolicy, DecodeParams<'static>) {
+    let policy = if settings & 1 == 0 {
+        ReducePolicy::Exact
+    } else {
+        ReducePolicy::Clamp
+    };
+    let params = DecodeParams {
+        strict: settings & 2 != 0,
+        max_layers: u32::from(settings >> 2 & 7),
+        ..DecodeParams::default()
+    };
+    (policy, params)
+}
+
+#[cfg(feature = "oracle")]
+fn differential_codecs(
+    format: Format,
+    reduce: u32,
+    reduce_policy: ReducePolicy,
+    params: DecodeParams<'_>,
+    limits: Limits,
+) -> (Decoder, Codec) {
+    let native = Decoder::new(DecoderConfig {
+        format,
         reduce,
+        reduce_policy,
+        limits,
         ..DecoderConfig::default()
     });
-    let mut oracle = Codec::with_limits(
-        OracleFormat::J2k,
-        reduce,
-        OracleReduce::Exact,
-        OracleLimits {
-            max_tiles: LIMITS.max_tiles,
-            max_components: LIMITS.max_components,
-            max_layers: LIMITS.max_layers,
-            max_decoded_side: LIMITS.max_decoded_side,
-            max_memory: LIMITS.max_memory,
+    let oracle = Codec::with_options(
+        match format {
+            Format::J2k => OracleFormat::J2k,
+            Format::Jp2 => OracleFormat::Jp2,
         },
+        reduce,
+        match reduce_policy {
+            ReducePolicy::Exact => OracleReduce::Exact,
+            ReducePolicy::Clamp => OracleReduce::Clamp,
+        },
+        OracleLimits {
+            max_tiles: limits.max_tiles,
+            max_components: limits.max_components,
+            max_layers: limits.max_layers,
+            max_decoded_side: limits.max_decoded_side,
+            max_memory: limits.max_memory,
+        },
+        params.max_layers,
+        params.strict,
     )
     .expect("the C++ oracle decoder can be configured");
-    let (status, samples) = oracle.decode_i32(candidate);
-    match native.decode(candidate, DecodeParams::default()) {
+    (native, oracle)
+}
+
+#[cfg(feature = "oracle")]
+fn compare_decode(native: &mut Decoder, oracle: &mut Codec, data: &[u8], params: DecodeParams<'_>) -> i32 {
+    let (status, samples) = oracle.decode_i32(data);
+    match native.decode(data, params) {
         Ok(image) => {
-            assert_eq!(i32::from(image.truncated), status, "decode status at reduce {reduce}");
+            assert_eq!(
+                i32::from(image.truncated),
+                status,
+                "decode status for {} bytes",
+                data.len()
+            );
             let planes = image.components.iter().map(|component| component.samples());
             assert_eq!(planes.clone().map(<[i32]>::len).sum::<usize>(), samples.len());
             for (index, (&ours, &theirs)) in planes.flatten().zip(&samples).enumerate() {
-                assert_eq!(ours, theirs, "coefficient {index} at reduce {reduce}");
+                assert_eq!(ours, theirs, "sample {index} for {} bytes", data.len());
             }
         }
-        Err(error) => assert_eq!(error.kind() as i32, status, "{error} at reduce {reduce}"),
+        Err(error) => assert_eq!(error.kind() as i32, status, "{error} for {} bytes", data.len()),
+    }
+    status
+}
+
+#[cfg(feature = "oracle")]
+fn compare_header(native: &mut Decoder, oracle: &mut Codec, data: &[u8]) -> bool {
+    let expected = oracle.read_header(data);
+    match native.read_header(data) {
+        Ok(header) => {
+            let expected = expected.expect("C++ accepts the header");
+            assert_eq!([header.x0, header.y0, header.x1, header.y1], expected.bounds);
+            assert_eq!(header.min_resolutions, expected.min_resolutions);
+            assert_eq!(header.components.len(), expected.components.len());
+            compare_dimensions(native, expected);
+            true
+        }
+        Err(error) => {
+            assert_eq!(error.kind() as i32, expected.expect_err("C++ refuses the header"));
+            assert_eq!(
+                native.decoded_dimensions().unwrap_err().kind(),
+                neo_j2k::ErrorKind::State
+            );
+            false
+        }
+    }
+}
+
+#[cfg(feature = "oracle")]
+fn compare_dimensions(native: &mut Decoder, expected: Header) {
+    match native.decoded_dimensions() {
+        Ok(actual) => {
+            let expected = expected.dimensions.expect("C++ accepts the dimensions");
+            assert_eq!(actual.len(), expected.len());
+            for (a, b) in actual.iter().zip(expected) {
+                assert_eq!((a.x0, a.y0, a.width, a.height), (b.x0, b.y0, b.w, b.h));
+                assert_eq!((a.dx, a.dy, a.precision, a.reduce), (b.dx, b.dy, b.prec, b.factor));
+                assert_eq!(u32::from(a.signed), b.sgnd);
+            }
+        }
+        Err(error) => assert_eq!(
+            error.kind() as i32,
+            expected.dimensions.expect_err("C++ refuses the dimensions")
+        ),
+    }
+}
+
+#[cfg(feature = "oracle")]
+pub fn api_sequence(data: &[u8]) {
+    let Some(([selector, settings], commands)) = data.split_first_chunk::<2>() else {
+        return;
+    };
+    let seed = usize::from(*selector) % DIFFERENTIAL_SEEDS.len();
+    let (policy, params) = decode_options(*settings);
+    // The oracle's setter changes the memory limit and leaves the other limits unrestricted.
+    let mut limits = Limits {
+        max_memory: LIMITS.max_memory,
+        ..Limits::default()
+    };
+    let (mut native, mut oracle) = differential_codecs(Format::J2k, 0, policy, params, limits);
+    let mut header_input = None;
+    for &command in commands.iter().take(16) {
+        let fixture = DIFFERENTIAL_SEEDS[(seed + usize::from(command >> 7)) % DIFFERENTIAL_SEEDS.len()];
+        let input = match command >> 5 & 3 {
+            0 => fixture,
+            1 => &fixture[..2],
+            2 => &fixture[..fixture.len() - 2],
+            _ => &fixture[..fixture.len() / 2],
+        };
+        match command & 3 {
+            0 => header_input = compare_header(&mut native, &mut oracle, input).then_some(input),
+            1 => {
+                let reduce = u32::from(command >> 2 & 7);
+                let result = native.set_reduce(reduce);
+                if let Some(data) = header_input {
+                    let expected = oracle
+                        .read_header_then_reduce(data, reduce)
+                        .expect("C++ retains the header");
+                    assert_eq!(
+                        result.as_ref().err().map_or(0, |error| error.kind() as i32),
+                        expected.reduce_status.unwrap()
+                    );
+                    compare_dimensions(&mut native, expected);
+                } else {
+                    assert_eq!(result.unwrap_err().kind(), neo_j2k::ErrorKind::State);
+                    oracle = differential_codecs(Format::J2k, reduce, policy, params, limits).1;
+                }
+            }
+            2 => {
+                header_input = compare_header(&mut native, &mut oracle, input).then_some(input);
+                compare_decode(&mut native, &mut oracle, input, params);
+            }
+            _ => {
+                let next_memory = if command & 4 == 0 { 1 } else { LIMITS.max_memory };
+                if limits.max_memory != next_memory {
+                    limits.max_memory = next_memory;
+                    assert!(oracle.set_max_memory(next_memory));
+                    native.set_limits(limits);
+                    if let Some(data) = header_input {
+                        header_input = compare_header(&mut native, &mut oracle, data).then_some(data);
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[cfg(all(test, feature = "oracle"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn decoder_sequence_seeds_cover_failure_and_recovery() {
+        let (policy, params) = decode_options(0);
+        let (mut native, mut oracle) = differential_codecs(Format::J2k, 0, policy, params, LIMITS);
+        let input = DIFFERENTIAL_SEEDS[0];
+        for (data, status) in [
+            (input, 0),
+            (&input[..input.len() - 2], 1),
+            (&input[..2], neo_j2k::ErrorKind::NeedData as i32),
+            (input, 0),
+        ] {
+            assert_eq!(compare_decode(&mut native, &mut oracle, data, params), status);
+        }
+        for sequence in [
+            &include_bytes!("../seeds/api_sequence/retries")[..],
+            &include_bytes!("../seeds/api_sequence/options")[..],
+        ] {
+            api_sequence(sequence);
+        }
+    }
+
+    #[test]
+    fn differential_replays_j2k_and_jp2_seeds() {
+        for seed in DIFFERENTIAL_SEEDS.into_iter().chain([
+            &include_bytes!("../seeds/jp2/palette-3x5.jp2")[..],
+            &include_bytes!("../seeds/jp2/rgb-64.jp2")[..],
+        ]) {
+            differential(seed);
+        }
     }
 }
 

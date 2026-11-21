@@ -46,6 +46,7 @@ use core::ops::Range;
 
 use crate::error::Diagnostics;
 use crate::mem::{CType, HeaderLedger};
+use crate::stream::Source;
 use crate::{DecodedComponent, Error, ErrorKind, Limits};
 
 pub(crate) const MAGIC: [u8; 12] = *b"\x00\x00\x00\x0cjP  \x0d\x0a\x87\x0a";
@@ -145,13 +146,13 @@ fn arena_failure(error: Error) -> Error {
     } else {
         "Not enough memory to read the JP2 boxes\n"
     };
-    Error::new(error.kind(), message)
+    Error::static_message(error.kind(), message)
 }
 
 /// Read the boxes before the first codestream without copying their payloads. The ledger still
 /// charges each of the C++ reader's allocations in order so memory limits give the same result.
 pub(crate) fn read_boxes(
-    data: &[u8],
+    source: &mut Source<'_>,
     ledger: &mut HeaderLedger,
     diagnostics: &mut Diagnostics,
 ) -> Result<Jp2Header, Error> {
@@ -164,9 +165,10 @@ pub(crate) fn read_boxes(
     let mut signature = false;
     let mut file_type = false;
     let mut header = false;
-    let mut start = 0;
+    let mut start = 0_usize;
     loop {
-        let tail = &data[start..];
+        source.ensure(start.saturating_add(8))?;
+        let tail = &source.bytes()[start..];
         if !signature && !MAGIC.starts_with(&tail[..tail.len().min(8)]) {
             return Err(Error::new(
                 ErrorKind::NotJpeg2000,
@@ -178,7 +180,7 @@ pub(crate) fn read_boxes(
         let kind = box_type(prefix);
         let mut prefix_len = 8;
         if length == 1 {
-            let extended = tail.get(..16).ok_or_else(need_data)?;
+            let extended = source.read(start, 16)?.ok_or_else(need_data)?;
             prefix_len = 16;
             if be32(extended, 8) != 0 {
                 if !header {
@@ -215,26 +217,35 @@ pub(crate) fn read_boxes(
             let name = core::str::from_utf8(&kind).expect("known box types are ASCII");
             reader
                 .diagnostics
-                .warn(format!("Found a misplaced '{name}' box outside jp2h box\n"));
+                .warn_fmt(format_args!("Found a misplaced '{name}' box outside jp2h box\n"));
             if !header {
-                reader.diagnostics.warn(format!(
+                reader.diagnostics.warn_fmt(format_args!(
                     "JPEG2000 Header box not read yet, '{name}' box will be ignored\n"
                 ));
             }
         }
         let handled = matches!(kind, SIGNATURE | FILE_TYPE | JP2_HEADER) || (image_box && header);
-        if !handled && !file_type {
-            return Err(invalid("Malformed JP2 file format: second box must be file type box\n"));
-        }
-        let body = tail.get(prefix_len..size).ok_or_else(need_data)?;
-        let body_start = start + prefix_len;
-        start += size;
         if !handled {
+            if !file_type {
+                return Err(invalid("Malformed JP2 file format: second box must be file type box\n"));
+            }
+            start = source.skip(start, size)?.ok_or_else(need_data)?;
             continue;
         }
-        if !body.is_empty() {
-            reader.ledger.charge(body.len(), 4).map_err(arena_failure)?;
+        if size > prefix_len && source.bounds(None).is_some_and(|bounds| bounds.claimed_end.is_none()) {
+            return Err(Error::new(
+                ErrorKind::Unsupported,
+                "Cannot read the JP2 boxes: the stream's length is not given (nj2k_stream_set_user_data_length)\n",
+            ));
         }
+        let body_start = start + prefix_len;
+        let body_len = size - prefix_len;
+        let body = source
+            .read_segment(body_start, body_len, || {
+                reader.ledger.charge(body_len, 4).map_err(arena_failure)
+            })?
+            .ok_or_else(need_data)?;
+        start += size;
         match kind {
             SIGNATURE => {
                 if signature {
@@ -357,7 +368,7 @@ impl Reader<'_> {
         self.header.bpc = data[10];
         let compression = data[11];
         if compression != 7 {
-            self.diagnostics.info(format!(
+            self.diagnostics.info_fmt(format_args!(
                 "JP2 IHDR box: compression type indicate that the file is not a conforming JP2 file ({compression}) \n"
             ));
         }
@@ -366,7 +377,7 @@ impl Reader<'_> {
 
     fn bits_per_component(&mut self, data: &[u8], start: usize) -> Result<(), Error> {
         if self.header.bpc != 255 {
-            self.diagnostics.warn(format!(
+            self.diagnostics.warn_fmt(format_args!(
                 "A BPCC header box is available although BPC given by the IHDR box ({}) indicate components bit depth is constant\n",
                 self.header.bpc
             ));
@@ -404,13 +415,13 @@ impl Reader<'_> {
                         }
                     } else if len != 7 {
                         self.diagnostics
-                            .warn(format!("Bad COLR header box (CIELab, bad size: {len})\n"));
+                            .warn_fmt(format_args!("Bad COLR header box (CIELab, bad size: {len})\n"));
                     }
                     Some(values)
                 } else {
                     if len > 7 {
                         self.diagnostics
-                            .warn(format!("Bad COLR header box (bad size: {len})\n"));
+                            .warn_fmt(format_args!("Bad COLR header box (bad size: {len})\n"));
                     }
                     None
                 };
@@ -423,7 +434,7 @@ impl Reader<'_> {
                 ColourSpec::Icc(start + 3..start + len)
             }
             method => {
-                self.diagnostics.info(format!(
+                self.diagnostics.info_fmt(format_args!(
                     "COLR BOX meth value is not a regular value ({method}), so we will ignore the entire Colour Specification box. \n"
                 ));
                 return Ok(());
@@ -697,7 +708,7 @@ fn assign_channels(defs: &[u8], image: &mut [DecodedComponent]) -> Result<(), Er
     let mut positions = Vec::new();
     positions
         .try_reserve_exact(image.len())
-        .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory for the channel definitions\n"))?;
+        .map_err(|_| Error::static_message(ErrorKind::NoMemory, "Not enough memory for the channel definitions\n"))?;
     // Keep each original channel's current position and each position's original channel.
     // This follows the swaps without rewriting every later definition.
     positions.extend((0..image.len()).map(|index| (index, index)));
@@ -794,7 +805,11 @@ mod tests {
     }
 
     fn inspect(data: &[u8]) -> Result<Jp2Header, Error> {
-        read_boxes(data, &mut HeaderLedger::default(), &mut Diagnostics::default())
+        read_boxes(
+            &mut Source::Memory(data),
+            &mut HeaderLedger::default(),
+            &mut Diagnostics::default(),
+        )
     }
 
     #[test]
@@ -831,7 +846,12 @@ mod tests {
         data[size_at..size_at + 4].copy_from_slice(&1_u32.to_be_bytes());
         data.extend((1_u64 << 32).to_be_bytes());
         let mut diagnostics = Diagnostics::default();
-        let header = read_boxes(&data, &mut HeaderLedger::default(), &mut diagnostics).unwrap();
+        let header = read_boxes(
+            &mut Source::Memory(&data),
+            &mut HeaderLedger::default(),
+            &mut diagnostics,
+        )
+        .unwrap();
         assert_eq!(header.codestream_start, data.len());
         assert_eq!(header.codestream_len, None);
         assert_eq!(
@@ -861,14 +881,24 @@ mod tests {
         append_box(&mut extra, PALETTE, &[2, 0, 1, 7]);
         let mut ledger = HeaderLedger::default();
         ledger.reset(0, 2048);
-        let error = read_boxes(&prefix(&extra), &mut ledger, &mut Diagnostics::default()).unwrap_err();
+        let error = read_boxes(
+            &mut Source::Memory(&prefix(&extra)),
+            &mut ledger,
+            &mut Diagnostics::default(),
+        )
+        .unwrap_err();
         assert_eq!(error.kind(), ErrorKind::Header);
         let mut palette = vec![2, 0, 1, 7];
         palette.resize(4 + 512, 0);
         extra.clear();
         append_box(&mut extra, PALETTE, &palette);
         ledger.reset(0, 2048);
-        let error = read_boxes(&prefix(&extra), &mut ledger, &mut Diagnostics::default()).unwrap_err();
+        let error = read_boxes(
+            &mut Source::Memory(&prefix(&extra)),
+            &mut ledger,
+            &mut Diagnostics::default(),
+        )
+        .unwrap_err();
         assert_eq!(error.kind(), ErrorKind::Limit);
         assert_eq!(
             error.message(),

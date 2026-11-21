@@ -29,6 +29,9 @@ use neo_j2k_testkit::pgx::Pgx;
 use neo_j2k_testkit::request::{Backend, Component, Mode, Outcome, Request};
 
 mod ffi;
+mod pool;
+
+pub use pool::BenchmarkPool;
 
 /// Checks the shim once: its ABI version, and that its backends were made before `main` (so that
 /// making them, which writes the environment, never raced a test thread). Also sends the C++'s
@@ -490,6 +493,42 @@ impl Drop for Codestream {
 
 /// Encode into a memory output stream. Errors are the C++ encoder's status codes.
 pub fn encode_u8(request: &EncodeRequest<'_>) -> Result<Vec<u8>, i32> {
+    encode_request(request, |raw, out| {
+        // SAFETY: encode_request supplies the live input and a writable output handle.
+        unsafe { ffi::nj2k_shim_encode_u8(raw, out) }
+    })
+}
+
+/// The parameters written back by a successful encoder setup.
+#[derive(Clone, Debug)]
+pub struct EncodeUpdates {
+    pub max_codestream_size: u32,
+    pub layer_ratios: Vec<f32>,
+}
+
+/// Encodes and returns the settings written back by the C++ encoder's setup call, if it succeeded.
+pub fn encode_u8_with_updates(request: &EncodeRequest<'_>) -> (Result<Vec<u8>, i32>, Option<EncodeUpdates>) {
+    let mut updates = ffi::EncodeUpdates {
+        max_codestream_size: 0,
+        layer_count: 0,
+        ratios: [0.0; 100],
+    };
+    let output = encode_request(request, |raw, out| {
+        // SAFETY: encode_request supplies the live input and writable output handle. The update
+        // record is a local with the C struct's repr(C) layout and stays live through the call.
+        unsafe { ffi::nj2k_shim_encode_u8_with_updates(raw, &raw mut updates, out) }
+    });
+    let updates = (updates.layer_count != 0).then(|| EncodeUpdates {
+        max_codestream_size: updates.max_codestream_size,
+        layer_ratios: updates.ratios[..updates.layer_count as usize].to_vec(),
+    });
+    (output, updates)
+}
+
+fn encode_request(
+    request: &EncodeRequest<'_>,
+    encode: impl FnOnce(*const ffi::EncodeRequest, *mut *mut ffi::Codestream) -> i32,
+) -> Result<Vec<u8>, i32> {
     init();
     let (comment, comment_len) = request.comment.map_or((std::ptr::null(), 0), |c| (c.as_ptr(), c.len()));
     let raw = ffi::EncodeRequest {
@@ -510,9 +549,7 @@ pub fn encode_u8(request: &EncodeRequest<'_>) -> Result<Vec<u8>, i32> {
         comment_len,
     };
     let mut out = std::ptr::null_mut();
-    // SAFETY: raw's pointers come from live slices and supply the exact lengths. The output handle
-    // is written to a local, and no handle or pointer to the slices is kept by the shim.
-    let status = unsafe { ffi::nj2k_shim_encode_u8(&raw const raw, &raw mut out) };
+    let status = encode(&raw const raw, &raw mut out);
     if status != 0 {
         return Err(status);
     }
@@ -724,6 +761,12 @@ impl Codec {
         unsafe { ffi::nj2k_shim_codec_set_max_memory(self.0.as_ptr(), max_memory) != 0 }
     }
 
+    /// Change the capacity the C++ codec can retain after a decode.
+    pub fn set_retained_bytes(&mut self, bytes: usize) -> bool {
+        // SAFETY: the codec is live and the byte limit is passed by value.
+        unsafe { ffi::nj2k_shim_codec_set_retained_bytes(self.0.as_ptr(), bytes) != 0 }
+    }
+
     /// Read a memory header and check decoded dimensions without decoding samples.
     /// Returns the exact C++ status if the header read fails.
     pub fn read_header(&mut self, data: &[u8]) -> Result<Header, i32> {
@@ -803,7 +846,7 @@ impl Codec {
 
     /// Query the header once and keep its input and decoder settings for repeated decodes.
     pub fn prepare_i32<'a>(&'a mut self, data: &'a [u8]) -> PreparedI32<'a> {
-        let (status, need) = self.decode_i32_into(data, None);
+        let (status, need) = self.decode_i32_into(data, None, None);
         PreparedI32 {
             codec: self,
             data,
@@ -812,13 +855,22 @@ impl Codec {
         }
     }
 
-    fn decode_i32_into(&mut self, data: &[u8], output: Option<&mut [i32]>) -> (i32, u64) {
+    fn decode_i32_into(&mut self, data: &[u8], output: Option<&mut [i32]>, pool: Option<&BenchmarkPool>) -> (i32, u64) {
         let mut count = 0u64;
         let (ptr, cap) = output.map_or((std::ptr::null_mut(), 0), |out| (out.as_mut_ptr(), out.len() as u64));
-        // SAFETY: the codec, slices and count are live. The shim only offsets the output pointer
-        // for nonempty planes after checking their full length against cap.
+        let pool = pool.map_or(std::ptr::null_mut(), BenchmarkPool::as_ptr);
+        // SAFETY: the codec, slices and count are live, and the shim borrows a pool only for this call.
+        // The shim only offsets the output pointer for nonempty planes after checking their length.
         let st = unsafe {
-            ffi::nj2k_shim_codec_decode_i32(self.0.as_ptr(), data.as_ptr(), data.len(), ptr, cap, &raw mut count)
+            ffi::nj2k_shim_codec_decode_i32(
+                self.0.as_ptr(),
+                data.as_ptr(),
+                data.len(),
+                ptr,
+                cap,
+                &raw mut count,
+                pool,
+            )
         };
         (st, count)
     }
@@ -865,13 +917,18 @@ impl PreparedI32<'_> {
 
     /// Decode into a reusable sample buffer. Returns the status and required sample count.
     pub fn decode_into(&mut self, output: &mut [i32]) -> (i32, u64) {
+        self.decode_into_with_pool(output, None)
+    }
+
+    /// Decode into a reusable sample buffer, optionally lending the C++ benchmark pool for this call.
+    pub fn decode_into_with_pool(&mut self, output: &mut [i32], pool: Option<&BenchmarkPool>) -> (i32, u64) {
         if self.status != 0 {
             return (self.status, self.need);
         }
         if (output.len() as u64) < self.need {
             return (-9, self.need);
         }
-        self.codec.decode_i32_into(self.data, Some(output))
+        self.codec.decode_i32_into(self.data, Some(output), pool)
     }
 }
 

@@ -9,7 +9,9 @@ The fuzz crate has its own Cargo workspace. libFuzzer and the optional C++ test 
 |---|---|
 | `header_decode` | Reads J2K and JP2 headers and decodes whole inputs and prefixes. Exercises reduce policies, layer limits, strictness, component selection, JP2 palette and channel handling, and shared decoder state with a 32 MiB codec budget. |
 | `roundtrip` | Encodes bounded 8-bit images with both wavelets. Checks reversible samples, irreversible sample bounds, geometry, quality layers, reduced previews, and padded packed output in both row directions. |
-| `differential` | Compares status and decoded samples from the native and C++ memory decoders on bounded J2K inputs, including cuts and mutations of repository fixtures. Requires the `oracle` feature. |
+| `differential` | Compares statuses and decoded samples on bounded J2K and JP2 inputs with different reduce policies, layer limits and strictness. Reuses the decoder for a prefix and a retry of the original input. Requires `oracle`. |
+| `api_sequence` | Replays up to 16 header reads, reduce and memory-limit changes, and decodes against C++. Compares statuses, dimensions and samples as inputs are cut, retried or replaced. Requires `oracle`. |
+| `encode_options` | Uses the shared C++ seed format to compare encoder statuses, codestream bytes, and setup write-backs for the options expressible by the Rust API. Requires `oracle`. |
 
 Run from `rust/` with the nightly pinned in `nightly-toolchain` and cargo-fuzz 0.13.2. The first corpus directory receives generated inputs. The checked-in fixture directories are seed sources.
 
@@ -43,8 +45,15 @@ On Windows, configure and build `nj2k_rust_shim` with the `windows-msvc-asan` pr
 annotations.
 
 ```sh
-mkdir -p fuzz/corpus/differential
-cargo +"$nightly" fuzz run --features oracle differential fuzz/corpus/differential ../corpus/generated -- -max_len=131072 -max_total_time=120 -timeout=5 -print_final_stats=1
+mkdir -p fuzz/corpus/differential fuzz/corpus/encode_options fuzz/corpus/api_sequence
+cargo +"$nightly" fuzz run --features oracle differential fuzz/corpus/differential ../corpus/generated fuzz/seeds/jp2 -- -max_len=131072 -max_total_time=120 -timeout=5 -print_final_stats=1
+cargo +"$nightly" fuzz run --features oracle encode_options fuzz/corpus/encode_options ../fuzz/seeds/encode -- -max_len=16400 -max_total_time=120 -timeout=5 -print_final_stats=1
+cargo +"$nightly" fuzz run --features oracle api_sequence fuzz/corpus/api_sequence fuzz/seeds/api_sequence -- -max_len=18 -max_total_time=45 -timeout=10 -seed=137 -print_final_stats=1
 ```
+
+The API sequence seeds exercise calls before a successful header read, shortened codestreams,
+changes to the memory limit, and a successful decode on retry. Run
+`cargo test --release --manifest-path fuzz/Cargo.toml --features oracle --lib --locked` to check
+those seeds and the differential seeds without the fuzz runner.
 
 Artifacts from local runs stay under `rust/fuzz/artifacts/`. Replay a saved input by passing its path in place of the corpus directories. Use `-runs=0` with the corpus directories for a seed-only replay.

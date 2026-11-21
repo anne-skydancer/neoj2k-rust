@@ -105,7 +105,7 @@ pub(super) struct Grid {
 }
 
 fn no_memory() -> Error {
-    Error::new(ErrorKind::NoMemory, "Not enough memory for the packet iterator\n")
+    Error::static_message(ErrorKind::NoMemory, "Not enough memory for the packet iterator\n")
 }
 
 fn grow<T: Default>(array: &mut Vec<T>, len: usize) -> Result<(), Error> {

@@ -27,7 +27,7 @@ default = ["std", "encode", "simd", "opensim"]
 std = []
 # exposes the native encoder API
 encode = []
-# the AVX2 kernels when the target has AVX2 (stage R3); without it the scalar kernels
+# architecture intrinsics for SSE rounding and AVX2, with portable scalar fallbacks
 simd = []
 # the OpenSim decoder limit profile, as the C++'s NJ2K_PROFILE_OPENSIM (stage R1)
 opensim = []

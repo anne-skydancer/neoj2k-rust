@@ -122,7 +122,7 @@ impl WorkBudget {
             }
             self.blocks
                 .try_reserve(1)
-                .map_err(|_| Error::new(ErrorKind::NoMemory, "Not enough memory to decode\n"))?;
+                .map_err(|_| Error::static_message(ErrorKind::NoMemory, "Not enough memory to decode\n"))?;
             self.blocks.push(block_size);
             self.enter(self.blocks.len() - 1, self.reserved);
             self.reserved = reserved;
