@@ -7,18 +7,21 @@ The fuzz crate has its own Cargo workspace. libFuzzer and the optional C++ test 
 
 | Target | Property |
 |---|---|
-| `header_decode` | Reads J2K and JP2 headers and decodes whole inputs and prefixes. Exercises reduce policies, layer limits, strictness, component selection, and shared decoder state with a 32 MiB codec budget. |
-| `roundtrip` | Encodes bounded 8-bit images with the two wavelets. Verifies reversible samples exactly, checks irreversible sample bounds and geometry, and exercises quality layers and reduced previews. |
+| `header_decode` | Reads J2K and JP2 headers and decodes whole inputs and prefixes. Exercises reduce policies, layer limits, strictness, component selection, JP2 palette and channel handling, and shared decoder state with a 32 MiB codec budget. |
+| `roundtrip` | Encodes bounded 8-bit images with both wavelets. Checks reversible samples, irreversible sample bounds, geometry, quality layers, reduced previews, and padded packed output in both row directions. |
 | `differential` | Compares status and decoded samples from the native and C++ memory decoders on bounded J2K inputs, including cuts and mutations of repository fixtures. Requires the `oracle` feature. |
 
 Run from `rust/` with the nightly pinned in `nightly-toolchain` and cargo-fuzz 0.13.2. The first corpus directory receives generated inputs. The checked-in fixture directories are seed sources.
+
+The JP2 seeds wrap the generated `sl_64_rgb_97.j2k` and `size_3x5_g.j2k` fixtures. The latter adds a
+palette, component mapping and channel definitions.
 
 ```sh
 nightly=$(cat nightly-toolchain)
 rustup toolchain install "$nightly" --profile minimal
 cargo install cargo-fuzz --version 0.13.2 --locked
 mkdir -p fuzz/corpus/header_decode fuzz/corpus/roundtrip
-cargo +"$nightly" fuzz run header_decode fuzz/corpus/header_decode ../corpus/generated -- -max_len=1048576 -max_total_time=120 -timeout=5 -print_final_stats=1
+cargo +"$nightly" fuzz run header_decode fuzz/corpus/header_decode ../corpus/generated fuzz/seeds/jp2 -- -max_len=1048576 -max_total_time=120 -timeout=5 -print_final_stats=1
 cargo +"$nightly" fuzz run roundtrip fuzz/corpus/roundtrip ../fuzz/seeds/roundtrip -- -max_len=16400 -max_total_time=120 -timeout=5 -print_final_stats=1
 ```
 
@@ -29,7 +32,7 @@ $nightly = (Get-Content nightly-toolchain -Raw).Trim()
 rustup toolchain install $nightly --profile minimal
 cargo install cargo-fuzz --version 0.13.2 --locked
 New-Item -ItemType Directory -Force fuzz/corpus/header_decode, fuzz/corpus/roundtrip
-cargo "+$nightly" fuzz run header_decode fuzz/corpus/header_decode ../corpus/generated -- -max_len=1048576 -max_total_time=120 -timeout=5 -print_final_stats=1
+cargo "+$nightly" fuzz run header_decode fuzz/corpus/header_decode ../corpus/generated fuzz/seeds/jp2 -- -max_len=1048576 -max_total_time=120 -timeout=5 -print_final_stats=1
 cargo "+$nightly" fuzz run roundtrip fuzz/corpus/roundtrip ../fuzz/seeds/roundtrip -- -max_len=16400 -max_total_time=120 -timeout=5 -print_final_stats=1
 ```
 

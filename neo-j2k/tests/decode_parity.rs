@@ -204,3 +204,52 @@ fn u8_interleaved_output_supports_bottom_up_rows_and_preserves_padding() {
     assert_eq!(error.kind(), ErrorKind::Output);
     assert_eq!(original, bytes);
 }
+
+#[test]
+fn caller_owned_targets_must_reference_selected_components() {
+    let data = std::fs::read(corpus_dir().join("sl_64_rgb_97.j2k")).unwrap();
+    let (mut rust, _) = codecs(0);
+    let params = DecodeParams {
+        components: Some(&[2, 0]),
+        ..DecodeParams::default()
+    };
+    let image = rust.decode(&data, params).unwrap();
+    let expected: Vec<u8> = image.components[0]
+        .samples()
+        .iter()
+        .map(|sample| sample.to_le_bytes()[0])
+        .collect();
+    let mut bytes = vec![0xab; 64 * 64];
+    let plane = OutputPlane {
+        component: 1,
+        offset: 0,
+        row_stride: 64,
+        sample_stride: 1,
+    };
+    let invalid = rust.decode_into(
+        &data,
+        params,
+        SampleType::U8,
+        &mut [DecodeTarget {
+            bytes: &mut bytes,
+            planes: &[plane],
+        }],
+    );
+    assert_eq!(invalid.unwrap_err().kind(), ErrorKind::Output);
+    assert!(bytes.iter().all(|&sample| sample == 0xab));
+
+    let selected = OutputPlane { component: 2, ..plane };
+    let partial = rust
+        .decode_into(
+            &data,
+            params,
+            SampleType::U8,
+            &mut [DecodeTarget {
+                bytes: &mut bytes,
+                planes: &[selected],
+            }],
+        )
+        .unwrap();
+    assert!(!partial);
+    assert_eq!(bytes, expected);
+}

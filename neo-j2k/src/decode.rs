@@ -110,12 +110,16 @@ pub struct DecodedImage<'a> {
     pub truncated: bool,
 }
 
-/// Work arena accounting as reported by the C++ memory decoder.
+/// Arena accounting using the C++ decoder's reservation model.
 #[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
 pub struct DecodeStatistics {
+    /// Bytes reserved for the validated main header.
     pub header_reserved: u64,
+    /// Bytes reserved for tile-part metadata.
     pub tile_reserved: u64,
+    /// Bytes reserved for the modeled work arena.
     pub work_reserved: u64,
+    /// Highest modeled work-arena use during the decode.
     pub work_high_water: u64,
 }
 

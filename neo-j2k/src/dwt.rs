@@ -48,6 +48,7 @@ use crate::simd::dwt as vector;
 use crate::{Error, ErrorKind};
 
 const GROUP_WIDTH_53: usize = 16;
+const COLUMN_BATCH_97: usize = 8;
 
 pub(crate) const ALPHA: f32 = f32::from_bits(0xbfcb_0673);
 pub(crate) const BETA: f32 = f32::from_bits(0xbd59_01ae);
@@ -57,7 +58,7 @@ pub(crate) const K: f32 = f32::from_bits(0x3f9d_7658);
 // OpenJPEG keeps this high-band scale and compensates for it in dequantisation.
 pub(crate) const TWO_INV_K: f32 = f32::from_bits(0x3fd0_1800);
 
-/// Scratch for one scalar line or eight SIMD lines, reused across tile-components.
+/// Scratch for a line or a batch of adjacent lines, reused across tile-components.
 #[derive(Debug, Default)]
 pub(crate) struct Workspace {
     line: Vec<i32>,
@@ -146,6 +147,13 @@ fn inverse_with<const VECTOR: bool>(
     } else {
         scratch_size
     };
+    let use_column_batches =
+        !reversible && (!VECTOR || !cfg!(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2")));
+    let scratch_size = if use_column_batches && width >= COLUMN_BATCH_97 {
+        scratch_size.max(height.checked_mul(COLUMN_BATCH_97).ok_or_else(no_memory)?)
+    } else {
+        scratch_size
+    };
     if workspace.line.len() < scratch_size {
         workspace
             .line
@@ -214,6 +222,18 @@ fn inverse_with<const VECTOR: bool>(
         } else {
             columns_done
         };
+        let columns_done = if use_column_batches && width >= COLUMN_BATCH_97 {
+            let columns = width / COLUMN_BATCH_97 * COLUMN_BATCH_97;
+            let scratch = workspace.line[..height * COLUMN_BATCH_97]
+                .as_chunks_mut::<COLUMN_BATCH_97>()
+                .0;
+            for col in (0..columns).step_by(COLUMN_BATCH_97) {
+                inverse_97_columns(&mut data[col..], stride, y_parity, scratch);
+            }
+            columns
+        } else {
+            columns_done
+        };
         for col in columns_done..width {
             inverse_line(
                 &mut data[col..],
@@ -238,13 +258,10 @@ fn inverse_line(data: &mut [i32], stride: usize, parity: usize, reversible: bool
     }
     let low_len = len / 2 + (len % 2) * (1 - parity);
     if !reversible {
-        for (i, sample) in line.iter_mut().enumerate() {
-            let index = if i % 2 == parity { i / 2 } else { low_len + i / 2 };
-            *sample = data[index * stride];
-        }
-        inverse_97(line, parity);
-        for (i, &sample) in line.iter().enumerate() {
-            data[i * stride] = sample;
+        if stride == 1 {
+            inverse_97_row(&mut data[..len], line, parity, low_len);
+        } else {
+            inverse_97_columns(data, stride, parity, line.as_chunks_mut::<1>().0);
         }
         return;
     }
@@ -349,31 +366,99 @@ fn to_sample(sample: f32) -> i32 {
     sample.to_bits().cast_signed()
 }
 
-fn lift_97(line: &mut [i32], parity: usize, coefficient: f32) {
-    let last = line.len() - 1;
-    for at in (parity..last).step_by(2) {
-        // OpenJPEG adds the two neighbours in order even when both mirror the first one.
-        let sum = from_sample(line[at.abs_diff(1)]) + from_sample(line[at + 1]);
-        line[at] = to_sample(from_sample(line[at]) + sum * coefficient);
+// Keep each band contiguous during the four lifts so interior samples can be processed together.
+fn inverse_97_row(data: &mut [i32], line: &mut [i32], parity: usize, low_len: usize) {
+    let (low, high) = line.split_at_mut(low_len);
+    let (input_low, input_high) = data.split_at(low_len);
+    for (out, &sample) in low.iter_mut().zip(input_low) {
+        *out = to_sample(from_sample(sample) * K);
     }
-    if last % 2 == parity {
-        // The far edge doubles the coefficient before it multiplies the mirrored sample.
-        let product = (coefficient + coefficient) * from_sample(line[last - 1]);
-        line[last] = to_sample(from_sample(line[last]) + product);
+    for (out, &sample) in high.iter_mut().zip(input_high) {
+        *out = to_sample(from_sample(sample) * TWO_INV_K);
+    }
+    lift_97_split(low, high, parity == 0, -DELTA);
+    lift_97_split(high, low, parity == 1, -GAMMA);
+    lift_97_split(low, high, parity == 0, -BETA);
+    lift_97_split(high, low, parity == 1, -ALPHA);
+    let (first, second) = if parity == 0 { (low, high) } else { (high, low) };
+    let (pairs, tail) = data.as_chunks_mut::<2>();
+    for ((&a, &b), out) in first.iter().zip(second.iter()).zip(pairs) {
+        *out = [a, b];
+    }
+    if let [last] = tail {
+        *last = first[first.len() - 1];
     }
 }
 
-fn inverse_97(line: &mut [i32], parity: usize) {
-    for sample in line.iter_mut().skip(parity).step_by(2) {
-        *sample = to_sample(from_sample(*sample) * K);
+fn lift_97_split(mut band: &mut [i32], neighbour: &[i32], first: bool, coefficient: f32) {
+    if first {
+        let (sample, rest) = band.split_first_mut().expect("leading wavelet sample");
+        // Add both neighbours even when they mirror the same sample.
+        let mirrored = from_sample(neighbour[0]);
+        *sample = to_sample(from_sample(*sample) + (mirrored + mirrored) * coefficient);
+        band = rest;
     }
-    for sample in line.iter_mut().skip(1 - parity).step_by(2) {
-        *sample = to_sample(from_sample(*sample) * TWO_INV_K);
+    let span = band.len().min(neighbour.len() - 1);
+    let (body, tail) = band.split_at_mut(span);
+    for ((sample, &left), &right) in body.iter_mut().zip(neighbour).zip(&neighbour[1..]) {
+        let sum = from_sample(left) + from_sample(right);
+        *sample = to_sample(from_sample(*sample) + sum * coefficient);
     }
-    lift_97(line, parity, -DELTA);
-    lift_97(line, 1 - parity, -GAMMA);
-    lift_97(line, parity, -BETA);
-    lift_97(line, 1 - parity, -ALPHA);
+    if let [last] = tail {
+        // Match the far edge's doubled coefficient before multiplying the mirrored sample.
+        let product = (coefficient + coefficient) * from_sample(neighbour[neighbour.len() - 1]);
+        *last = to_sample(from_sample(*last) + product);
+    }
+}
+
+// Adjacent columns are contiguous in the tile and in scratch, including on baseline targets.
+fn inverse_97_columns<const LANES: usize>(data: &mut [i32], stride: usize, parity: usize, line: &mut [[i32; LANES]]) {
+    if line.len() < 2 {
+        return;
+    }
+    let low_len = line.len() / 2 + line.len() % 2 * (1 - parity);
+    let rows = data.chunks(stride);
+    for (samples, row) in line.iter_mut().skip(parity).step_by(2).zip(rows.clone()) {
+        scale_97_batch(samples, &row[..LANES], K);
+    }
+    for (samples, row) in line.iter_mut().skip(1 - parity).step_by(2).zip(rows.skip(low_len)) {
+        scale_97_batch(samples, &row[..LANES], TWO_INV_K);
+    }
+    lift_97_batch(line, parity, -DELTA);
+    lift_97_batch(line, 1 - parity, -GAMMA);
+    lift_97_batch(line, parity, -BETA);
+    lift_97_batch(line, 1 - parity, -ALPHA);
+    for (row, samples) in data.chunks_mut(stride).zip(line) {
+        row[..LANES].copy_from_slice(samples);
+    }
+}
+
+fn scale_97_batch<const LANES: usize>(samples: &mut [i32; LANES], input: &[i32], scale: f32) {
+    for (out, &sample) in samples.iter_mut().zip(input) {
+        *out = to_sample(from_sample(sample) * scale);
+    }
+}
+
+fn lift_97_batch<const LANES: usize>(line: &mut [[i32; LANES]], parity: usize, coefficient: f32) {
+    let last = line.len() - 1;
+    for at in (parity..last).step_by(2) {
+        let left = line[at.abs_diff(1)];
+        let right = line[at + 1];
+        let samples = &mut line[at];
+        for lane in 0..LANES {
+            let sum = from_sample(left[lane]) + from_sample(right[lane]);
+            samples[lane] = to_sample(from_sample(samples[lane]) + sum * coefficient);
+        }
+    }
+    if last % 2 == parity {
+        let previous = line[last - 1];
+        let samples = &mut line[last];
+        let doubled = coefficient + coefficient;
+        for lane in 0..LANES {
+            let product = doubled * from_sample(previous[lane]);
+            samples[lane] = to_sample(from_sample(samples[lane]) + product);
+        }
+    }
 }
 
 #[cfg(test)]
@@ -561,6 +646,8 @@ mod differential {
                 0 | 1 => (4, 4, 3, 5, 533, 525),
                 // Full 16-column groups followed by a scalar remainder in the reversible path.
                 3 => (2, 2, 1, 1, 17, 4),
+                // A contiguous vertical line at each level must touch only its active samples.
+                6 => (4, 4, 0, 3, 1, 13),
                 _ => {
                     let levels = 1 + next() % 7;
                     let decoded = if next().is_multiple_of(4) {
@@ -578,7 +665,7 @@ mod differential {
                     )
                 }
             };
-            let stride = width + 1 + next() % 19;
+            let stride = if case == 6 { 1 } else { width + 1 + next() % 19 };
             let len = usize::try_from(stride * height).unwrap();
             let stride_usize = usize::try_from(stride).unwrap();
             let mut rust: Vec<_> = (0..len).map(|_| random_samples(next(), reversible)).collect();

@@ -2,8 +2,8 @@
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 
 use neo_j2k::{
-    DecodeParams, DecodedImage, Decoder, DecoderConfig, EncodeParams, Encoder, Format, ImageSamples, ImageView, Limits,
-    ReducePolicy,
+    DecodeParams, DecodeTarget, DecodedImage, Decoder, DecoderConfig, EncodeParams, Encoder, Format, ImageSamples,
+    ImageView, Jp2Channels, Limits, OutputPlane, ReducePolicy, SampleType,
 };
 
 const LIMITS: Limits = Limits {
@@ -21,7 +21,8 @@ fn check_geometry(image: &DecodedImage<'_>) {
     for component in image.components {
         let info = component.info();
         assert!(info.dx > 0 && info.dy > 0);
-        assert!((1..=31).contains(&info.precision));
+        // JP2 palette metadata can declare up to 128 bits for a column.
+        assert!((1..=128).contains(&info.precision));
         assert_eq!(component.samples().len(), info.width as usize * info.height as usize);
     }
 }
@@ -63,6 +64,11 @@ pub fn header_decode(data: &[u8]) {
         max_layers: u32::from(tail_byte(data, 3) & 7),
         strict: flags & 4 != 0,
         components: if flags & 8 == 0 { None } else { Some(&selection) },
+        jp2_channels: match (flags >> 4) & 3 {
+            1 => Jp2Channels::Apply,
+            2 => Jp2Channels::Ignore,
+            _ => Jp2Channels::Reject,
+        },
         ..DecodeParams::default()
     };
     if let Ok(image) = decoder.decode(data, params) {
@@ -209,6 +215,44 @@ pub fn roundtrip(data: &[u8]) {
                     }
                 }
             }
+        }
+        if flags & 0x10 != 0 {
+            let bottom_up = flags & 0x20 != 0;
+            let row_bytes = stride + usize::from(*selector >> 4);
+            let row_stride = isize::try_from(row_bytes).unwrap();
+            let mut expected = vec![0xa5; row_bytes * height as usize];
+            for (channel, component) in image.components.iter().enumerate() {
+                for (row, values) in component.samples().chunks_exact(width as usize).enumerate() {
+                    let y = if bottom_up { height as usize - 1 - row } else { row };
+                    for (x, &sample) in values.iter().enumerate() {
+                        expected[y * row_bytes + x * usize::from(components) + channel] = sample.to_le_bytes()[0];
+                    }
+                }
+            }
+            let planes = [0, 1, 2, 3].map(|component| OutputPlane {
+                component,
+                offset: (if bottom_up {
+                    (height as usize - 1) * row_bytes
+                } else {
+                    0
+                }) + component as usize,
+                row_stride: if bottom_up { -row_stride } else { row_stride },
+                sample_stride: usize::from(components),
+            });
+            let mut actual = vec![0xa5; expected.len()];
+            let truncated = decoder
+                .decode_into(
+                    bytes,
+                    DecodeParams::default(),
+                    SampleType::U8,
+                    &mut [DecodeTarget {
+                        bytes: &mut actual,
+                        planes: &planes[..usize::from(components)],
+                    }],
+                )
+                .expect("the output buffer fits the decoded image");
+            assert!(!truncated);
+            assert_eq!(actual, expected, "packed pixels and padding");
         }
         if layered {
             let preview = decoder

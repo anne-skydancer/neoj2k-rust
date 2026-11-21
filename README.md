@@ -120,6 +120,20 @@ cargo test --release -p neo-j2k --test small_image_gates -- --ignored --nocaptur
 `Decoder::retained_work_bytes` to read their live capacity. A host can lend its executor through
 `DecodeParams::executor` for large tiles. Small requests stay serial.
 
+On Windows, five paired runs on one core of a Ryzen 9 9950X3D gave these median Rust/C++
+latency ratios for warmed whole-image caller-owned I32 decodes. The Rust and MSVC C++ builds
+used the same instruction-set floor.
+
+| Fixture | Scalar | AVX2 |
+|---|---:|---:|
+| 32 × 32 RGBA, 5/3 | 1.076 | 1.041 |
+| 64 × 64 RGB, 9/7 | 0.961 | 0.980 |
+| 128 × 128 RGBA, 9/7 | 1.070 | 1.014 |
+
+The widest observed median ratio was 1.119 at reduce 2 and 1.081 with a missing EOC marker.
+The warmed allocation test covers both output APIs on seven fixtures, including packed headers,
+16-bit samples and 4:2:0 subsampling.
+
 ```
 cd rust
 cargo build --release -p neo-j2k
