@@ -152,6 +152,35 @@ scalar timing and the AVX2 oracle for an `x86-64-v3` Rust build.
 cargo test --release -p neo-j2k --test small_image_gates -- --ignored --exact large_image_executor_latency --nocapture
 ```
 
+The same 21 November 2026 system produced the following large-image scaling results. Both codecs
+wrote caller-owned I32 planes through the same persistent pool; worker count includes the calling
+thread. Each latency is the median of nine alternating rounds with two decodes per round.
+
+| Build | Fixture | Workers | Rust ms | C++ ms | Rust speedup | C++ speedup | Rust/C++ |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Scalar | 1024² RGB 9/7 | 1 | 7.694 | 8.459 | 1.00× | 1.00× | 0.910 |
+| Scalar | 1024² RGB 9/7 | 2 | 4.452 | 4.887 | 1.73× | 1.73× | 0.911 |
+| Scalar | 1024² RGB 9/7 | 4 | 2.720 | 2.940 | 2.83× | 2.88× | 0.925 |
+| Scalar | 1024² RGB 9/7 | 8 | 1.815 | 1.881 | 4.24× | 4.50× | 0.965 |
+| Scalar | 4096² grayscale 9/7 | 1 | 23.240 | 28.279 | 1.00× | 1.00× | 0.822 |
+| Scalar | 4096² grayscale 9/7 | 2 | 12.301 | 14.983 | 1.89× | 1.89× | 0.821 |
+| Scalar | 4096² grayscale 9/7 | 4 | 7.229 | 9.064 | 3.21× | 3.12× | 0.798 |
+| Scalar | 4096² grayscale 9/7 | 8 | 4.516 | 5.298 | 5.15× | 5.34× | 0.852 |
+| AVX2 | 1024² RGB 9/7 | 1 | 4.725 | 4.780 | 1.00× | 1.00× | 0.989 |
+| AVX2 | 1024² RGB 9/7 | 2 | 2.999 | 3.041 | 1.58× | 1.57× | 0.986 |
+| AVX2 | 1024² RGB 9/7 | 4 | 1.865 | 1.984 | 2.53× | 2.41× | 0.940 |
+| AVX2 | 1024² RGB 9/7 | 8 | 1.372 | 1.413 | 3.44× | 3.38× | 0.971 |
+| AVX2 | 4096² grayscale 9/7 | 1 | 11.025 | 11.960 | 1.00× | 1.00× | 0.922 |
+| AVX2 | 4096² grayscale 9/7 | 2 | 6.520 | 6.992 | 1.69× | 1.71× | 0.933 |
+| AVX2 | 4096² grayscale 9/7 | 4 | 4.138 | 4.840 | 2.66× | 2.47× | 0.855 |
+| AVX2 | 4096² grayscale 9/7 | 8 | 3.017 | 3.158 | 3.65× | 3.79× | 0.956 |
+
+The decoder deliberately does not query the host executor below 2^18 component samples: the C++
+measurements found small decodes about 2% slower when dispatched across threads. This keeps the
+measured small-image path serial while applying parallel Tier-1, wavelet, colour/output, and clearing
+work to images large enough to benefit. The `decode_executor` tests enforce both sides of that
+crossover and compare scheduled output with serial output at job widths 2, 4, 8, 16, and 64.
+
 `Decoder::set_limits` changes the resource limits for subsequent requests. The decoder checks the
 header again under the new limits and can reuse its working buffers.
 `Decoder::statistics` exposes the codec's budget and arena accounting. Use
