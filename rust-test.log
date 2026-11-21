@@ -1,0 +1,77 @@
+   Compiling neo-j2k-oracle v0.1.0 (C:\Users\annes\source\repos\neo-j2k\rust\neo-j2k-oracle)
+   Compiling neo-j2k v0.1.0 (C:\Users\annes\source\repos\neo-j2k\rust\neo-j2k)
+    Finished `release` profile [optimized + debuginfo] target(s) in 5.74s
+     Running unittests src\lib.rs (target\release\build\neo-j2k/b9af89a853ea3148\out\neo_j2k-b9af89a853ea3148.exe)
+
+running 2 tests
+test mem::layout::table_tests::variants_name_their_rows ... ok
+test mem::layout::tests::equals_the_cpp_size_table ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\lib.rs (target\release\build\neo-j2k-oracle/1aacf61900c5951f\out\neo_j2k_oracle-1aacf61900c5951f.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+     Running tests\differential.rs (target\release\build\neo-j2k-oracle/a4aa08e892321d81\out\differential-a4aa08e892321d81.exe)
+
+running 9 tests
+test kernels_run ... ok
+test the_size_table_holds_the_arena_types ... ok
+test a_codec_decodes_and_reports_its_arenas ... ok
+test backends_agree_on_a_corpus_file ... ok
+test viewer_rules_equal_the_cpp ... ok
+test digests_reproduce_three_reference_lines ... ok
+test pgx_reader_equals_the_cpp ... ok
+test scanner_equals_the_cpp ... ok
+test digests_reproduce_every_whole_line ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.98s
+
+     Running unittests src\lib.rs (target\release\build\neo-j2k-testkit/a3cbb186fb248756\out\neo_j2k_testkit-a3cbb186fb248756.exe)
+
+running 22 tests
+test digest::tests::cut_digest_counts_every_step ... ok
+test digest::tests::failed_outcomes_hash_to_zero ... ok
+test digest::tests::viewer_image_is_bottom_up_interleaved_low_bytes ... ok
+test fnv::tests::the_cpp_offset_basis ... ok
+test fnv::tests::hex_round_trip ... ok
+test fnv::tests::integers_are_little_endian ... ok
+test digest::tests::viewer_value_combines_both_hashes ... ok
+test pgx::tests::reads_both_byte_orders_and_signs ... ok
+test pgx::tests::refusals_carry_the_cpp_reasons ... ok
+test files::tests::the_corpus_lists_sorted ... ok
+test reference::tests::parses_both_kinds ... ok
+test reference::tests::refuses_bad_lines ... ok
+test request::tests::mode_names_round_trip ... ok
+test pool::tests::jobs_write_disjoint_slots ... ok
+test scan::tests::refusals_carry_the_cpp_reasons ... ok
+test scan::tests::reads_a_tiny_codestream ... ok
+test scan::tests::every_prefix_scans_without_panic ... ok
+test viewer::tests::data_size_at_known_points ... ok
+test viewer::tests::grid_side_wraps_to_32_bits ... ok
+test viewer::tests::guards ... ok
+test viewer::tests::reduce_clamps_to_the_coarsest_level ... ok
+test pool::tests::every_job_runs_once ... ok
+
+test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests neo_j2k
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests neo_j2k_oracle
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests neo_j2k_testkit
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
