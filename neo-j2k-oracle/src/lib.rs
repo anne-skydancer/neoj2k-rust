@@ -13,7 +13,7 @@
 //! - [`viewer`], [`scan_summary`], [`read_pgx`]: the C++ harness's rules, scanner and PGX reader,
 //!   for the test kit's differential tests;
 //! - [`kernels`]: the library's scalar row kernels;
-//! - [`Codec`]: a memory codec of neo-j2k with its arena numbers and parallel thresholds.
+//! - [`Codec`]: a memory codec of neo-j2k with header facts, decoded dimensions, arena numbers and parallel thresholds.
 //!
 //! Every call first checks the shim's ABI version ([`init`]). The C++ never throws across the
 //! boundary (the shim catches); a failure of the harness itself is a panic here, which is a test
@@ -235,18 +235,7 @@ impl OwnedOutcome {
             if more == 0 {
                 break;
             }
-            o.comps.push(Component {
-                w: k.w,
-                h: k.h,
-                dx: k.dx,
-                dy: k.dy,
-                x0: k.x0,
-                y0: k.y0,
-                prec: k.prec,
-                sgnd: k.sgnd,
-                factor: k.factor,
-                resno_decoded: k.resno_decoded,
-            });
+            o.comps.push(Component::from(k));
             if !samples.is_null() && count > 0 {
                 let count = usize::try_from(count).expect("a plane larger than memory");
                 // SAFETY: samples points to count samples owned by the outcome, which outlives
@@ -264,6 +253,23 @@ impl OwnedOutcome {
                 u8_hash: info.u8_hash,
             },
         )
+    }
+}
+
+impl From<ffi::Component> for Component {
+    fn from(raw: ffi::Component) -> Self {
+        Self {
+            w: raw.w,
+            h: raw.h,
+            dx: raw.dx,
+            dy: raw.dy,
+            x0: raw.x0,
+            y0: raw.y0,
+            prec: raw.prec,
+            sgnd: raw.sgnd,
+            factor: raw.factor,
+            resno_decoded: raw.resno_decoded,
+        }
     }
 }
 
@@ -434,6 +440,115 @@ pub enum Format {
     Jp2,
 }
 
+/// Reduce policies of the C++ decoder.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[repr(u32)]
+pub enum ReducePolicy {
+    /// Refuse a reduce factor above the coarsest resolution.
+    Exact = 0,
+    /// Lower the factor to the coarsest resolution shared by all components.
+    Clamp = 1,
+}
+
+/// Resource limits of the C++ decoder. An individual zero leaves the resource unbounded.
+#[derive(Clone, Copy, Debug, Default)]
+#[repr(C)]
+pub struct Limits {
+    /// Tiles in the reference grid.
+    pub max_tiles: u32,
+    /// Components in the image.
+    pub max_components: u32,
+    /// Quality layers in the main header or a tile.
+    pub max_layers: u32,
+    /// Width or height of a decoded component.
+    pub max_decoded_side: u32,
+    /// Bytes available to the decoder's allocations.
+    pub max_memory: u64,
+}
+
+/// Header facts from the C++ memory API and the result of its separate dimensions check.
+#[derive(Debug)]
+pub struct Header {
+    /// Image bounds `[x0, y0, x1, y1]` on the reference grid.
+    pub bounds: [u32; 4],
+    /// Tile grid `[x0, y0, tile width, tile height, columns, rows]`.
+    pub tiles: [u32; 6],
+    /// The quality layer count in the main header.
+    pub layers: u32,
+    /// The fewest resolutions any component has in the main header.
+    pub min_resolutions: u32,
+    /// Progression Order in the main header (`NJ2K_PROG_ORDER`).
+    pub progression: u32,
+    /// `NJ2K_COLOR_SPACE` of the image.
+    pub color_space: i32,
+    /// Components as reported directly by `nj2k_read_header_memory`.
+    pub components: Vec<Component>,
+    /// Status of a reduce change requested after the header read, if requested.
+    pub reduce_status: Option<i32>,
+    /// Components after `nj2k_get_decoded_dimensions`, or its exact failure status.
+    pub dimensions: Result<Vec<Component>, i32>,
+}
+
+/// A diagnostic from the C++ header read, as emitted by the codec callback.
+#[derive(Debug, PartialEq, Eq)]
+pub enum HeaderDiagnostic {
+    /// An informational message.
+    Info(Vec<u8>),
+    /// A recoverable warning.
+    Warning(Vec<u8>),
+    /// An error message.
+    Error(Vec<u8>),
+}
+
+struct OwnedHeader(NonNull<ffi::Header>);
+
+impl OwnedHeader {
+    fn components(&self, count: u32, sized: bool) -> Vec<Component> {
+        let count = usize::try_from(count).expect("component count fits in memory");
+        // SAFETY: the snapshot is live. When sized is true, the dimensions check succeeded.
+        let components = unsafe { ffi::nj2k_shim_header_components(self.0.as_ptr(), u32::from(sized)) };
+        assert!(!components.is_null(), "an empty header component array");
+        // SAFETY: the shim filled count entries for this snapshot and it outlives the copy.
+        unsafe { std::slice::from_raw_parts(components, count) }
+            .iter()
+            .copied()
+            .map(Component::from)
+            .collect()
+    }
+
+    fn diagnostics(&self) -> Vec<HeaderDiagnostic> {
+        let mut diagnostics = Vec::new();
+        for index in 0.. {
+            let mut severity = 0;
+            let mut text = std::ptr::null();
+            let mut len = 0;
+            // SAFETY: the snapshot is live and the out-pointers valid; 0 past the last message.
+            let present = unsafe {
+                ffi::nj2k_shim_header_diagnostic(self.0.as_ptr(), index, &raw mut severity, &raw mut text, &raw mut len)
+            };
+            if present == 0 {
+                break;
+            }
+            // SAFETY: the shim returns len text bytes owned by the live snapshot.
+            let bytes = unsafe { std::slice::from_raw_parts(text, len) }.to_vec();
+            diagnostics.push(match severity {
+                0 => HeaderDiagnostic::Info(bytes),
+                1 => HeaderDiagnostic::Warning(bytes),
+                2 => HeaderDiagnostic::Error(bytes),
+                _ => panic!("unexpected C++ diagnostic severity {severity}"),
+            });
+        }
+        diagnostics
+    }
+}
+
+impl Drop for OwnedHeader {
+    fn drop(&mut self) {
+        // SAFETY: the snapshot came from nj2k_shim_codec_header and is freed once.
+        unsafe { ffi::nj2k_shim_header_free(self.0.as_ptr()) };
+    }
+}
+
 /// The C++ arenas' numbers of a codec (`nj2k_shim_ledger_t`).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Ledger {
@@ -461,19 +576,99 @@ impl Codec {
     /// A decoder at a reduce factor, with `max_memory` as its only limit when not 0.
     #[must_use]
     pub fn new(format: Format, reduce: u32, max_memory: u64) -> Option<Self> {
+        Self::with_limits(
+            format,
+            reduce,
+            ReducePolicy::Exact,
+            Limits {
+                max_memory,
+                ..Limits::default()
+            },
+        )
+    }
+
+    /// A decoder with explicit reduce policy and resource limits.
+    #[must_use]
+    pub fn with_limits(format: Format, reduce: u32, reduce_policy: ReducePolicy, limits: Limits) -> Option<Self> {
         init();
         let f = match format {
             Format::J2k => ffi::CODEC_J2K,
             Format::Jp2 => ffi::CODEC_JP2,
         };
-        // SAFETY: plain values; the result is a new codec or null.
-        NonNull::new(unsafe { ffi::nj2k_shim_codec_new(f, reduce, max_memory) }).map(Self)
+        // SAFETY: limits is valid for the call and copied by the shim. The result is a new codec or null.
+        NonNull::new(unsafe { ffi::nj2k_shim_codec_new(f, reduce, reduce_policy as u32, &raw const limits) }).map(Self)
     }
 
     /// New limits (`max_memory` alone); false when the codec refuses them now.
     pub fn set_max_memory(&mut self, max_memory: u64) -> bool {
         // SAFETY: the codec is live.
         unsafe { ffi::nj2k_shim_codec_set_max_memory(self.0.as_ptr(), max_memory) != 0 }
+    }
+
+    /// Read a memory header and check decoded dimensions without decoding samples.
+    /// Returns the exact C++ status if the header read fails.
+    pub fn read_header(&mut self, data: &[u8]) -> Result<Header, i32> {
+        self.read_header_request(data, None, false).0
+    }
+
+    /// Read a header, set a new reduce factor, then check decoded dimensions on the original image.
+    pub fn read_header_then_reduce(&mut self, data: &[u8], reduce: u32) -> Result<Header, i32> {
+        self.read_header_request(data, Some(reduce), false).0
+    }
+
+    /// Read a header and also return ordered diagnostics from the read itself.
+    pub fn read_header_with_diagnostics(&mut self, data: &[u8]) -> (Result<Header, i32>, Vec<HeaderDiagnostic>) {
+        self.read_header_request(data, None, true)
+    }
+
+    fn read_header_request(
+        &mut self,
+        data: &[u8],
+        reduce_after_header: Option<u32>,
+        capture_diagnostics: bool,
+    ) -> (Result<Header, i32>, Vec<HeaderDiagnostic>) {
+        let mut info = ffi::HeaderInfo::default();
+        let mut raw = std::ptr::null_mut();
+        let reduce = reduce_after_header
+            .as_ref()
+            .map_or(std::ptr::null(), std::ptr::from_ref);
+        // SAFETY: the codec is live, data valid for its length, and reduce null or valid for the call.
+        // The shim writes to valid out-pointers info and raw.
+        let status = unsafe {
+            ffi::nj2k_shim_codec_header(
+                self.0.as_ptr(),
+                data.as_ptr(),
+                data.len(),
+                reduce,
+                u32::from(capture_diagnostics),
+                &raw mut info,
+                &raw mut raw,
+            )
+        };
+        let header = NonNull::new(raw).map(OwnedHeader);
+        let diagnostics = header.as_ref().map_or_else(Vec::new, OwnedHeader::diagnostics);
+        if status != 0 {
+            return (Err(status), diagnostics);
+        }
+        let header = header.expect("the C++ shim did not return a header snapshot");
+        (
+            Ok(Header {
+                bounds: [info.x0, info.y0, info.x1, info.y1],
+                tiles: [info.tx0, info.ty0, info.tdx, info.tdy, info.tw, info.th],
+                layers: info.numlayers,
+                min_resolutions: info.min_resolutions,
+                progression: info.progression,
+                color_space: info.color_space,
+                components: header.components(info.numcomps, false),
+                reduce_status: reduce_after_header.map(|_| info.reduce_status),
+                dimensions: if info.dimensions_status == 0 {
+                    Ok(header.components(info.numcomps, true))
+                } else {
+                    Err(info.dimensions_status)
+                },
+            }),
+            diagnostics,
+        )
     }
 
     /// The header from memory, then the decode into planar `int32` planes (each component `w x h`,

@@ -34,6 +34,7 @@ using nj2k::test::Backend;
 using nj2k::test::Mode;
 using nj2k::test::Outcome;
 using nj2k::test::Request;
+using nj2k::detail::Messages;
 
 // The stateless backends, made before main(): making the oracle's clears OPJ_NUM_THREADS
 // (single_thread_openjpeg), an environment write that must not race the Rust test threads, which
@@ -54,6 +55,57 @@ struct Shared {
 };
 const Shared g_shared;
 
+struct HeaderMessage {
+    Messages::Kind severity;
+    std::string text;
+};
+
+class HeaderDiagnostics {
+public:
+    HeaderDiagnostics(Messages& messages, std::vector<HeaderMessage>& entries, bool enabled) noexcept
+        : messages_(messages), previous_(messages), entries_(entries)
+    {
+        if (enabled) {
+            messages_.set(Messages::Info, record<Messages::Info>, this);
+            messages_.set(Messages::Warning, record<Messages::Warning>, this);
+            messages_.set(Messages::Error, record<Messages::Error>, this);
+        }
+    }
+
+    ~HeaderDiagnostics() { messages_ = previous_; }
+
+    bool failed() const noexcept { return failed_; }
+
+private:
+    template <Messages::Kind Kind>
+    static void record(const char* text, void* cookie) noexcept
+    {
+        auto& capture = *static_cast<HeaderDiagnostics*>(cookie);
+        try {
+            capture.entries_.push_back(HeaderMessage{Kind, text});
+        } catch (...) {
+            capture.failed_ = true;
+        }
+    }
+
+    Messages& messages_;
+    Messages previous_;
+    std::vector<HeaderMessage>& entries_;
+    bool failed_ = false;
+};
+
+std::vector<nj2k_shim_component_t> copy_components(const nj2k_image_t& image)
+{
+    std::vector<nj2k_shim_component_t> out;
+    out.reserve(image.numcomps);
+    for (uint32_t c = 0; c < image.numcomps; ++c) {
+        const nj2k_image_comp_t& k = image.comps[c];
+        out.push_back(nj2k_shim_component_t{k.w, k.h, k.dx, k.dy, k.x0, k.y0, k.prec, k.sgnd, k.factor,
+                                            k.resno_decoded});
+    }
+    return out;
+}
+
 }  // namespace
 
 // A backend handle: a shared stateless one, or a memory backend of its own (a codec it keeps).
@@ -68,6 +120,11 @@ struct nj2k_shim_outcome {
 
 struct nj2k_shim_pgx {
     nj2k::test::Pgx p;
+};
+
+struct nj2k_shim_header {
+    std::vector<nj2k_shim_component_t> original, sized;
+    std::vector<HeaderMessage> diagnostics;
 };
 
 extern "C" {
@@ -424,7 +481,8 @@ uint32_t nj2k_shim_codec_set_max_memory(nj2k_codec_t* codec, uint64_t max_memory
     return codec && nj2k_decoder_set_limits(codec, &limits) ? 1u : 0u;
 }
 
-nj2k_codec_t* nj2k_shim_codec_new(uint32_t format, uint32_t reduce, uint64_t max_memory)
+nj2k_codec_t* nj2k_shim_codec_new(uint32_t format, uint32_t reduce, uint32_t reduce_policy,
+                                  const nj2k_decoder_limits_t* limits)
 {
     if (format != NJ2K_CODEC_J2K && format != NJ2K_CODEC_JP2) {
         return nullptr;
@@ -437,7 +495,7 @@ nj2k_codec_t* nj2k_shim_codec_new(uint32_t format, uint32_t reduce, uint64_t max
     nj2k_set_default_decoder_parameters(&p);
     p.cp_reduce = reduce;
     if (!nj2k_setup_decoder(codec, &p) || !nj2k_decoder_set_strict_mode(codec, NJ2K_FALSE) ||
-        (max_memory && !nj2k_shim_codec_set_max_memory(codec, max_memory))) {
+        !nj2k_decoder_set_reduce_policy(codec, reduce_policy) || !nj2k_decoder_set_limits(codec, limits)) {
         nj2k_destroy_codec(codec);
         return nullptr;
     }
@@ -449,6 +507,83 @@ void nj2k_shim_codec_free(nj2k_codec_t* codec)
     if (codec) {
         nj2k_destroy_codec(codec);
     }
+}
+
+int32_t nj2k_shim_codec_header(nj2k_codec_t* codec, const uint8_t* data, size_t size, const uint32_t* reduce_after_header,
+                               uint32_t capture_diagnostics, nj2k_shim_header_info_t* info, nj2k_shim_header_t** out)
+{
+    auto* decoder = nj2k::detail::Decoder::from(codec);
+    if (!decoder || (!data && size) || !info || !out) {
+        return NJ2K_E_ARGUMENT;
+    }
+    *out = nullptr;
+    try {
+        auto header = std::make_unique<nj2k_shim_header>();
+        nj2k_image_t image{};
+        int32_t header_status;
+        {
+            HeaderDiagnostics capture(decoder->messages, header->diagnostics, capture_diagnostics != 0);
+            nj2k_read_header_memory(codec, data, size, &image);
+            header_status = nj2k_get_status(codec);
+            if (capture.failed()) {
+                return NJ2K_E_NO_MEMORY;
+            }
+        }
+        if (header_status != NJ2K_OK) {
+            *out = header.release();
+            return header_status;
+        }
+        nj2k_codestream_layout_t layout{};
+        layout.struct_size = sizeof layout;
+        if (!nj2k_get_codestream_layout(codec, &layout)) {
+            return nj2k_get_status(codec);
+        }
+        header->original = copy_components(image);
+        int32_t reduce_status = NJ2K_OK;
+        if (reduce_after_header) {
+            nj2k_set_decoded_resolution_factor(codec, *reduce_after_header);
+            reduce_status = nj2k_get_status(codec);
+        }
+        if (nj2k_get_decoded_dimensions(codec, &image)) {
+            header->sized = copy_components(image);
+        }
+        *info = nj2k_shim_header_info_t{image.x0,      image.y0,         image.x1,              image.y1,
+                                        image.numcomps, static_cast<int32_t>(image.color_space),
+                                        layout.tx0,     layout.ty0,        layout.tdx,             layout.tdy,
+                                        layout.tw,      layout.th,         layout.numlayers,       layout.min_resolutions,
+                                        decoder->header->cod.prg,          reduce_status,          nj2k_get_status(codec)};
+        *out = header.release();
+        return NJ2K_OK;
+    } catch (...) {
+        return NJ2K_E_NO_MEMORY;
+    }
+}
+
+const nj2k_shim_component_t* nj2k_shim_header_components(const nj2k_shim_header_t* header, uint32_t sized)
+{
+    if (!header) {
+        return nullptr;
+    }
+    const auto& components = sized ? header->sized : header->original;
+    return components.empty() ? nullptr : components.data();
+}
+
+uint32_t nj2k_shim_header_diagnostic(const nj2k_shim_header_t* header, size_t index, uint32_t* severity,
+                                     const uint8_t** text, size_t* len)
+{
+    if (!header || index >= header->diagnostics.size() || !severity || !text || !len) {
+        return 0;
+    }
+    const auto& entry = header->diagnostics[index];
+    *severity = static_cast<uint32_t>(entry.severity);
+    *text = reinterpret_cast<const uint8_t*>(entry.text.data());
+    *len = entry.text.size();
+    return 1;
+}
+
+void nj2k_shim_header_free(nj2k_shim_header_t* header)
+{
+    delete header;
 }
 
 int32_t nj2k_shim_codec_decode_i32(nj2k_codec_t* codec, const uint8_t* data, size_t size, int32_t* out, uint64_t cap,

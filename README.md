@@ -3,10 +3,9 @@
 
 # neo-j2k in Rust
 
-The native Rust twin of neo-j2k: a transcription of the C++ library in this repository, module for
-module, bit-identical to it. Same samples, statuses, messages and encoded bytes for the same inputs,
-on every executor and at both CPU levels. The C++ is the oracle: the differential tests build and link
-it, and nothing else does.
+The native Rust port of neo-j2k uses the C++ library as its test oracle. The port targets the same
+samples, statuses, messages and encoded bytes for the same inputs, on every executor and at both CPU
+levels.
 
 **Native Rust.** The crate `neo-j2k` has no build script, no C or C++, no `-sys` crate and no FFI, in
 itself or in its dependency tree; it has no runtime dependency at all. `unsafe` is allowed only in its
@@ -16,16 +15,16 @@ dev-dependency that is never published. CI proves both on every pull request
 
 Paths below are relative to the repository root.
 
-## State: stage R0, the scaffolding
+## State: stage R1, header inspection
 
 | Crate | What | Published |
 |---|---|---|
-| `neo-j2k/` | the twin; in R0 the C++ size table its byte ledger will charge (`src/mem/layout.rs`) | later, on the owner's approval |
+| `neo-j2k/` | native J2K and JP2/JPH main-header parsing, component geometry, resource limits, and decode preflight | after codec parity |
 | `neo-j2k-testkit/` | the Rust side of the C++ harness in `tests/common`: requests and outcomes, the viewer's rules, `nj2k_diff`'s digests and reference tables, the codestream scanner, the PGX reader, a test pool executor. Pure Rust, no dependency | never |
 | `neo-j2k-oracle/` | the C++ neo-j2k, OpenJPEG at the oracle's pin and the C++ harness, built by CMake and linked through the test-only shim (`neo-j2k-oracle/shim`), behind a safe interface | never |
 
-The header, the decoder, the SIMD kernels, threads and the encoder follow in stages R1 to R5, the
-fuzz targets and benches in R6 (`doc/stages.md`).
+Stages R2 to R5 add pixel decoding, SIMD kernels, the executor and the encoder. Stage R6 adds the
+fuzz targets and benchmarks (`doc/stages.md`).
 
 ## Toolchain
 
@@ -50,18 +49,41 @@ rustup toolchain install nightly-2026-11-03 --profile minimal --component miri,r
 
 ## The library
 
+```rust
+use neo_j2k::{Decoder, DecoderConfig, Error, Limits, ReducePolicy};
+
+fn dimensions(codestream: &[u8]) -> Result<(u32, u32), Error> {
+    let mut decoder = Decoder::new(DecoderConfig {
+        limits: Limits::SECOND_LIFE,
+        reduce_policy: ReducePolicy::Clamp,
+        ..DecoderConfig::default()
+    });
+    decoder.read_header(codestream)?;
+    let components = decoder.decoded_dimensions()?;
+    Ok((components[0].width, components[0].height))
+}
+```
+
+The decoder reads up to the first tile-part and caches the validated header prefix. Use
+`Format::Jp2` for JP2 and JPH containers. An incomplete header reports `ErrorKind::NeedData`
+so the caller can retry with more bytes.
+
+The small-image release gates compare whole, reduced, and partial decodes against the C++ output
+and compare both lossless and lossy encodes byte for byte. Benchmarks use the same input and
+settings for both implementations and track latency, peak memory, and allocator calls. The
+existing warmed-up decode gate covers the viewer's requests through 512 × 512 (`doc/bench.md`).
+
 ```
 cd rust
-cargo build --release -p neo-j2k                                                    # decode + encode, std, simd, opensim
-cargo build --release -p neo-j2k --no-default-features --features std               # decoder only, scalar, no OpenSim profile
-cargo build --release -p neo-j2k --no-default-features --features std,encode,simd   # Vulkanstorm's set (Second Life only)
+cargo build --release -p neo-j2k
+cargo build --release -p neo-j2k --no-default-features --features std
 ```
 
 | Feature | Default | What it does |
 |---|---|---|
 | `std` | yes | required in this version (reserved for a later `no_std` + `alloc` build) |
-| `encode` | yes | the encoder (stage R5); without it `Encoder::new` returns `Error::Unsupported` |
-| `simd` | yes | the AVX2 kernels when the target has AVX2 (stage R3); without it, or on a target without AVX2, the scalar kernels |
+| `encode` | yes | reserved for the encoder in stage R5 |
+| `simd` | yes | reserved for the AVX2 kernels in stage R3 |
 | `opensim` | yes | the OpenSim limit profile (stage R1), as the C++'s `NJ2K_PROFILE_OPENSIM` |
 
 The workspace's release profile (`lto = "fat"`, `codegen-units = 1`, `panic = "unwind"`) applies to
@@ -69,16 +91,16 @@ its tests, tools and benches; a program that depends on the crate uses its own p
 
 ## Target CPU
 
-The kernels are chosen at compile time, as in the C++ (decision D8):
+Stage R3 selects kernels at compile time, as in the C++ (decision D8):
 
 | Build | How | Kernels |
 |---|---|---|
 | baseline x86-64 | the default | scalar |
 | x86-64-v3 (AVX2, the viewer's floor) | `RUSTFLAGS="-C target-cpu=x86-64-v3"`, or in the consumer's `.cargo/config.toml`: `[build] rustflags = ["-C", "target-cpu=x86-64-v3"]` | AVX2 in `mod simd` |
 
-Both builds give identical results, bit for bit, and identical to the C++. No FMA is ever used: Rust
-never fuses on its own, `f32::mul_add` and `f64::mul_add` are denied (`rust/clippy.toml`), and no FMA
-intrinsic is called. Use separate target folders so the two builds do not rebuild each other:
+The parity suite runs at both CPU levels. The port preserves the C++ floating-point operation order.
+`f32::mul_add` and `f64::mul_add` are denied (`rust/clippy.toml`). Use separate target folders so the two
+builds do not rebuild each other:
 
 ```
 cargo test --release --workspace                                                    # baseline
@@ -135,7 +157,14 @@ cargo fmt --all --check
 The tests never open a dialog: panics and assertion output go to stderr, and the oracle sends the C
 runtime's reports to the console (`console_reports()`) before its first call.
 
-### What R0's tests prove
+### Header parity
+
+`neo-j2k/tests/header_parity.rs` compares header and sizing results with the C++ on the generated
+codestream corpus, selected prefixes and a JP2 container. It checks the reference-grid bounds,
+tile layout, component geometry, reduce policies and limits. Targeted cases also compare the
+diagnostics in order and the header arena reservation.
+
+### Oracle and harness checks
 
 - **The size table** (`neo-j2k/src/mem/layout.rs`): the twin's copy of `sizeof` and `alignof` of the
   35 C++ types the arenas hold equals the C++ compiler's, row for row, on every CI platform (MSVC,

@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#define NJ2K_SHIM_ABI_VERSION 1u
+#define NJ2K_SHIM_ABI_VERSION 2u
 
 uint32_t nj2k_shim_abi_version(void);
 /* 1 when the harness's backends were made before main() (their making clears OPJ_NUM_THREADS, an
@@ -121,11 +121,28 @@ void nj2k_shim_ict_scalar(const int32_t *c0, const int32_t *c1, const int32_t *c
                           int32_t *o2, size_t n);
 
 /* ---- a memory codec of neo-j2k, its ledger numbers and its thresholds ------------------------- */
-/* a non-strict memory decoder (NJ2K_CODEC_J2K or NJ2K_CODEC_JP2) at the reduce factor; with
- * max_memory != 0, the limits are NJ2K_DECODER_LIMITS_NONE with that max_memory */
-nj2k_codec_t *nj2k_shim_codec_new(uint32_t format, uint32_t reduce, uint64_t max_memory);
+/* a non-strict memory decoder (NJ2K_CODEC_J2K or NJ2K_CODEC_JP2) with the given reduce settings and limits */
+nj2k_codec_t *nj2k_shim_codec_new(uint32_t format, uint32_t reduce, uint32_t reduce_policy,
+                                  const nj2k_decoder_limits_t *limits);
 void nj2k_shim_codec_free(nj2k_codec_t *codec);
 uint32_t nj2k_shim_codec_set_max_memory(nj2k_codec_t *codec, uint64_t max_memory);
+typedef struct nj2k_shim_header nj2k_shim_header_t;
+typedef struct nj2k_shim_header_info {
+    uint32_t x0, y0, x1, y1, numcomps;
+    int32_t color_space;
+    uint32_t tx0, ty0, tdx, tdy, tw, th, numlayers, min_resolutions, progression;
+    int32_t reduce_status, dimensions_status;
+} nj2k_shim_header_info_t;
+/* Returns the header status. The optional reduce change is applied between the header read and the dimensions
+ * check. Even on a rejected header, out can own a diagnostic trace of the header read. */
+int32_t nj2k_shim_codec_header(nj2k_codec_t *codec, const uint8_t *data, size_t size, const uint32_t *reduce_after_header,
+                               uint32_t capture_diagnostics, nj2k_shim_header_info_t *info, nj2k_shim_header_t **out);
+/* each result points to info->numcomps entries until the snapshot is freed; NULL if the dimensions check failed */
+const nj2k_shim_component_t *nj2k_shim_header_components(const nj2k_shim_header_t *header, uint32_t sized);
+/* The next message's severity (0 info, 1 warning, 2 error) and bytes; returns 0 at the end of the trace. */
+uint32_t nj2k_shim_header_diagnostic(const nj2k_shim_header_t *header, size_t index, uint32_t *severity,
+                                     const uint8_t **text, size_t *len);
+void nj2k_shim_header_free(nj2k_shim_header_t *header);
 /* the header from memory, then the decode into planar int32 planes (each component w x h, one
  * after the other) in out (cap samples; the samples needed through *count): the status */
 int32_t nj2k_shim_codec_decode_i32(nj2k_codec_t *codec, const uint8_t *data, size_t size, int32_t *out,

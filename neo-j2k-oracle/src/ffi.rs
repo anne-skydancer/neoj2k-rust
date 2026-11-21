@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 
-//! The raw bindings of `shim/nj2k_rust_shim.h` (ABI version 1) and the few public `nj2k_*`
+//! The raw bindings of `shim/nj2k_rust_shim.h` and the few public `nj2k_*`
 //! functions the wrapper calls. Written by hand from the header; `lib.rs` checks the ABI version
 //! before any other call. Nothing outside this crate sees these.
 
 use std::ffi::c_char;
+
+use super::Limits;
 
 /// `nj2k_codec_t`, opaque.
 #[repr(C)]
@@ -28,7 +30,13 @@ pub(crate) struct Pgx {
     _private: [u8; 0],
 }
 
-pub(crate) const ABI_VERSION: u32 = 1;
+/// `nj2k_shim_header_t`, opaque.
+#[repr(C)]
+pub(crate) struct Header {
+    _private: [u8; 0],
+}
+
+pub(crate) const ABI_VERSION: u32 = 2;
 
 #[repr(C)]
 pub(crate) struct Layout {
@@ -67,7 +75,7 @@ pub(crate) struct OutcomeInfo {
 }
 
 #[repr(C)]
-#[derive(Default)]
+#[derive(Clone, Copy, Default)]
 pub(crate) struct Component {
     pub(crate) w: u32,
     pub(crate) h: u32,
@@ -79,6 +87,28 @@ pub(crate) struct Component {
     pub(crate) sgnd: u32,
     pub(crate) factor: u32,
     pub(crate) resno_decoded: u32,
+}
+
+#[repr(C)]
+#[derive(Default)]
+pub(crate) struct HeaderInfo {
+    pub(crate) x0: u32,
+    pub(crate) y0: u32,
+    pub(crate) x1: u32,
+    pub(crate) y1: u32,
+    pub(crate) numcomps: u32,
+    pub(crate) color_space: i32,
+    pub(crate) tx0: u32,
+    pub(crate) ty0: u32,
+    pub(crate) tdx: u32,
+    pub(crate) tdy: u32,
+    pub(crate) tw: u32,
+    pub(crate) th: u32,
+    pub(crate) numlayers: u32,
+    pub(crate) min_resolutions: u32,
+    pub(crate) progression: u32,
+    pub(crate) reduce_status: i32,
+    pub(crate) dimensions_status: i32,
 }
 
 #[repr(C)]
@@ -167,9 +197,32 @@ unsafe extern "C" {
         n: usize,
     );
 
-    pub(crate) fn nj2k_shim_codec_new(format: u32, reduce: u32, max_memory: u64) -> *mut Codec;
+    pub(crate) fn nj2k_shim_codec_new(
+        format: u32,
+        reduce: u32,
+        reduce_policy: u32,
+        limits: *const Limits,
+    ) -> *mut Codec;
     pub(crate) fn nj2k_shim_codec_free(codec: *mut Codec);
     pub(crate) fn nj2k_shim_codec_set_max_memory(codec: *mut Codec, max_memory: u64) -> u32;
+    pub(crate) fn nj2k_shim_codec_header(
+        codec: *mut Codec,
+        data: *const u8,
+        size: usize,
+        reduce_after_header: *const u32,
+        capture_diagnostics: u32,
+        info: *mut HeaderInfo,
+        out: *mut *mut Header,
+    ) -> i32;
+    pub(crate) fn nj2k_shim_header_components(header: *const Header, sized: u32) -> *const Component;
+    pub(crate) fn nj2k_shim_header_diagnostic(
+        header: *const Header,
+        index: usize,
+        severity: *mut u32,
+        text: *mut *const u8,
+        len: *mut usize,
+    ) -> u32;
+    pub(crate) fn nj2k_shim_header_free(header: *mut Header);
     pub(crate) fn nj2k_shim_codec_decode_i32(
         codec: *mut Codec,
         data: *const u8,
