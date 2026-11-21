@@ -7,7 +7,7 @@
 
 use std::ffi::c_char;
 
-use super::Limits;
+use super::{Limits, kernels::WaveletRect};
 
 /// `nj2k_codec_t`, opaque.
 #[repr(C)]
@@ -36,7 +36,7 @@ pub(crate) struct Header {
     _private: [u8; 0],
 }
 
-pub(crate) const ABI_VERSION: u32 = 2;
+pub(crate) const ABI_VERSION: u32 = 3;
 
 #[repr(C)]
 pub(crate) struct Layout {
@@ -196,6 +196,14 @@ unsafe extern "C" {
         o2: *mut i32,
         n: usize,
     );
+    pub(crate) fn nj2k_shim_dwt_decode(
+        plane: *mut i32,
+        size: usize,
+        stride: u32,
+        resolutions: *const WaveletRect,
+        count: usize,
+        reversible: u32,
+    ) -> u32;
 
     pub(crate) fn nj2k_shim_codec_new(
         format: u32,

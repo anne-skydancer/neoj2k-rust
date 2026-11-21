@@ -26,6 +26,10 @@ Paths below are relative to the repository root.
 Stages R2 to R5 add pixel decoding, SIMD kernels, the executor and the encoder. Stage R6 adds the
 fuzz targets and benchmarks (`doc/stages.md`).
 
+The first R2 tests cover tile-part headers, packet header bits and tag trees, scalar 5/3 and 9/7
+inverse wavelets, and colour transforms and sample finishing. These components run in the unit
+suite while the decode pipeline is under construction.
+
 ## Toolchain
 
 The workspace pins its compiler in `rust/rust-toolchain.toml`:
@@ -160,9 +164,10 @@ runtime's reports to the console (`console_reports()`) before its first call.
 ### Header parity
 
 `neo-j2k/tests/header_parity.rs` compares header and sizing results with the C++ on the generated
-codestream corpus, selected prefixes and a JP2 container. It checks the reference-grid bounds,
-tile layout, component geometry, reduce policies and limits. Targeted cases also compare the
-diagnostics in order and the header arena reservation.
+codestream corpus, selected prefixes and JP2 containers, including the conformance files when
+`NJ2K_TESTDATA` is set. It checks the reference-grid bounds, tile layout, component geometry,
+reduce policies, limits, and header arena reservations. Targeted cases also compare diagnostics
+in order.
 
 ### Oracle and harness checks
 

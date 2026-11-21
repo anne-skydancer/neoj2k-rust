@@ -18,12 +18,18 @@
 compile_error!("neo-j2k needs the std feature in this version");
 
 mod decoder;
+#[cfg(test)]
+mod dwt;
 mod error;
 mod geometry;
 mod header;
 mod jp2;
 mod limits;
+#[cfg(test)]
+mod mct;
 mod mem;
+#[cfg(test)]
+mod t2;
 
 pub use decoder::{
     ColorProfile, ColorSpace, ComponentInfo, Decoder, DecoderConfig, Format, Info, Progression, ReducePolicy,

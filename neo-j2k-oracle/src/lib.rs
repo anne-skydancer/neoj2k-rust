@@ -12,7 +12,7 @@
 //! - [`layout_table`]: the C++ size table the twin's byte ledger mirrors;
 //! - [`viewer`], [`scan_summary`], [`read_pgx`]: the C++ harness's rules, scanner and PGX reader,
 //!   for the test kit's differential tests;
-//! - [`kernels`]: the library's scalar row kernels;
+//! - [`kernels`]: the library's scalar row kernels and inverse wavelet transform;
 //! - [`Codec`]: a memory codec of neo-j2k with header facts, decoded dimensions, arena numbers and parallel thresholds.
 //!
 //! Every call first checks the shim's ABI version ([`init`]). The C++ never throws across the
@@ -378,7 +378,7 @@ pub fn read_pgx(path: &Path) -> Result<Pgx, String> {
     })
 }
 
-/// The library's scalar row kernels, as the library compiled them.
+/// The library's scalar row kernels and inverse wavelet transform, as the library compiled them.
 pub mod kernels {
     use crate::{ffi, init};
 
@@ -428,6 +428,36 @@ pub mod kernels {
     #[must_use]
     pub fn ict_scalar(c: [&[i32]; 3]) -> [Vec<i32>; 3] {
         colour(ffi::nj2k_shim_ict_scalar, c)
+    }
+
+    /// The bounds of one resolution of a tile-component in that resolution's coordinates.
+    #[derive(Clone, Copy, Debug)]
+    #[repr(C)]
+    pub struct WaveletRect {
+        pub x0: u32,
+        pub y0: u32,
+        pub x1: u32,
+        pub y1: u32,
+    }
+
+    /// Inverse wavelet on the given tile-component. Resolutions go from coarsest to finest.
+    /// The plane includes the full `stride` of each row, and holds float bits for 9/7.
+    /// Returns false if the shim refuses the geometry or cannot allocate scratch.
+    #[must_use]
+    pub fn dwt_decode(plane: &mut [i32], stride: u32, resolutions: &[WaveletRect], reversible: bool) -> bool {
+        init();
+        // SAFETY: both slices are valid for the call. Before the transform the shim checks the
+        // chain of resolutions, every coordinate and the complete strided plane size.
+        unsafe {
+            ffi::nj2k_shim_dwt_decode(
+                plane.as_mut_ptr(),
+                plane.len(),
+                stride,
+                resolutions.as_ptr(),
+                resolutions.len(),
+                u32::from(reversible),
+            ) != 0
+        }
     }
 }
 

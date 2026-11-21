@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#define NJ2K_SHIM_ABI_VERSION 2u
+#define NJ2K_SHIM_ABI_VERSION 3u
 
 uint32_t nj2k_shim_abi_version(void);
 /* 1 when the harness's backends were made before main() (their making clears OPJ_NUM_THREADS, an
@@ -119,6 +119,14 @@ void nj2k_shim_rct_scalar(const int32_t *c0, const int32_t *c1, const int32_t *c
                           int32_t *o2, size_t n);
 void nj2k_shim_ict_scalar(const int32_t *c0, const int32_t *c1, const int32_t *c2, int32_t *o0, int32_t *o1,
                           int32_t *o2, size_t n);
+
+typedef struct nj2k_shim_wavelet_rect {
+    uint32_t x0, y0, x1, y1;
+} nj2k_shim_wavelet_rect_t;
+/* Inverse whole-tile-component wavelet. The plane holds size samples, stride samples per row.
+ * Resolutions go from coarsest to finest. Returns 0 for invalid geometry or unavailable scratch. */
+uint32_t nj2k_shim_dwt_decode(int32_t *plane, size_t size, uint32_t stride, const nj2k_shim_wavelet_rect_t *resolutions,
+                              size_t count, uint32_t reversible);
 
 /* ---- a memory codec of neo-j2k, its ledger numbers and its thresholds ------------------------- */
 /* a non-strict memory decoder (NJ2K_CODEC_J2K or NJ2K_CODEC_JP2) with the given reduce settings and limits */

@@ -2,7 +2,7 @@
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 //
 // The test-only C interface of nj2k_rust_shim.h: the harness's backends and requests, the viewer's
-// rules, the scanner and the PGX reader of tests/common, the library's scalar row kernels, and a
+// rules, the scanner and the PGX reader of tests/common, the library's transform kernels, and a
 // memory codec with its ledger numbers and thresholds.
 #include "nj2k_rust_shim.h"
 
@@ -10,6 +10,7 @@
 #include <cstdio>
 #include <cstring>
 #include <exception>
+#include <limits>
 #include <memory>
 #include <new>
 #include <span>
@@ -23,6 +24,7 @@
 
 // the library's internals (by their path: src/ is no include directory)
 #include "../../../src/codec.h"
+#include "../../../src/dwt.h"
 #include "../../../src/mct.h"
 #include "../../../src/parallel.h"
 
@@ -471,6 +473,60 @@ void nj2k_shim_ict_scalar(const int32_t* c0, const int32_t* c1, const int32_t* c
                           int32_t* o2, size_t n)
 {
     nj2k::detail::kernels::ict_scalar(c0, c1, c2, o0, o1, o2, n);
+}
+
+uint32_t nj2k_shim_dwt_decode(int32_t* plane, size_t size, uint32_t stride, const nj2k_shim_wavelet_rect_t* resolutions,
+                              size_t count, uint32_t reversible)
+{
+    using namespace nj2k::detail;
+    if (!plane || !resolutions || count == 0 || count > kMaxResolutions) {
+        return 0;
+    }
+    ResRect rects[kMaxResolutions];
+    constexpr auto max_coordinate = static_cast<uint32_t>(std::numeric_limits<int32_t>::max());
+    const auto half = [](uint32_t n) { return n / 2 + (n & 1u); };
+    for (size_t i = 0; i < count; ++i) {
+        const auto& r = resolutions[i];
+        if (r.x0 > r.x1 || r.y0 > r.y1 || r.x1 > max_coordinate || r.y1 > max_coordinate) {
+            return 0;
+        }
+        if (i > 0) {
+            const auto& low = resolutions[i - 1];
+            if (low.x0 != half(r.x0) || low.y0 != half(r.y0) || low.x1 != half(r.x1) || low.y1 != half(r.y1)) {
+                return 0;
+            }
+        }
+        rects[i] = ResRect{static_cast<int32_t>(r.x0), static_cast<int32_t>(r.y0), static_cast<int32_t>(r.x1),
+                           static_cast<int32_t>(r.y1)};
+    }
+    const auto& last = resolutions[count - 1];
+    const size_t width = last.x1 - last.x0, height = last.y1 - last.y0;
+    if (width > stride || (stride && height > size / stride)) {
+        return 0;
+    }
+    if (count == 1 || !width || !height) {
+        return 1;
+    }
+    // dwt_scratch_bytes needs at most 64 bytes per sample of the longer side.
+    constexpr size_t alignment = 64;
+    constexpr size_t max_side = std::numeric_limits<size_t>::max() / alignment;
+    if (width > max_side || height > max_side) {
+        return 0;
+    }
+    const auto numres = static_cast<uint32_t>(count);
+    const size_t bytes = dwt_scratch_bytes(rects, numres, reversible != 0);
+    struct alignas(alignment) ScratchBlock {
+        char bytes[alignment];
+    };
+    try {
+        // Zero the unused lanes of partial column groups as well.
+        std::vector<ScratchBlock> scratch((bytes + alignment - 1) / alignment);
+        const DefaultFpEnv fp;
+        dwt_decode(plane, stride, rects, numres, reversible != 0, scratch.data());
+        return 1;
+    } catch (...) {
+        return 0;
+    }
 }
 
 uint32_t nj2k_shim_codec_set_max_memory(nj2k_codec_t* codec, uint64_t max_memory)
