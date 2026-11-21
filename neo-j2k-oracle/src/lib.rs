@@ -957,8 +957,18 @@ impl Codec {
     /// one after the other): the status (`NJ2K_OK`, `NJ2K_TRUNCATED` or an error) and the samples.
     pub fn decode_i32(&mut self, data: &[u8]) -> (i32, Vec<i32>) {
         let mut prepared = self.prepare_i32(data);
+        if prepared.status != 0 {
+            return (prepared.status, Vec::new());
+        }
         let need = prepared.samples_needed();
-        let mut out = vec![0i32; usize::try_from(need).expect("an image larger than memory")];
+        let Ok(need_usize) = usize::try_from(need) else {
+            return (-7, Vec::new());
+        };
+        let mut out = Vec::new();
+        if out.try_reserve_exact(need_usize).is_err() {
+            return (-7, out);
+        }
+        out.resize(need_usize, 0i32);
         let (st, count) = prepared.decode_into(&mut out);
         assert_eq!(count, need, "the header changed between two reads of the same bytes");
         (st, out)

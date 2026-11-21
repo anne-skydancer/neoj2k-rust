@@ -392,3 +392,34 @@ fn a_codec_decodes_and_reports_its_arenas() {
     let mut small = Codec::new(Format::J2k, 0, 4096).expect("a codec");
     assert_eq!(small.decode_i32(&data).0, -6);
 }
+
+#[test]
+fn decode_i32_rejects_oversized_header_before_allocating_output() {
+    let mut data = corpus_file("sl_64_rgb_97.j2k");
+    let siz = data
+        .windows(2)
+        .position(|marker| marker == [0xff, 0x51])
+        .expect("the fixture has a SIZ marker");
+    // Xsiz is six bytes after the SIZ marker. This is the shape found by the differential fuzzer:
+    // the header is parseable, but its decoded width is far above the configured limit.
+    data[siz + 6..siz + 10].copy_from_slice(&u32::MAX.to_be_bytes());
+
+    let mut codec = Codec::with_options(
+        Format::J2k,
+        0,
+        neo_j2k_oracle::ReducePolicy::Exact,
+        neo_j2k_oracle::Limits {
+            max_tiles: 256,
+            max_components: 8,
+            max_layers: 64,
+            max_decoded_side: 1_024,
+            max_memory: 32 << 20,
+        },
+        0,
+        false,
+    )
+    .expect("a bounded codec");
+    let (status, samples) = codec.decode_i32(&data);
+    assert_eq!(status, -4, "NJ2K_E_UNSUPPORTED");
+    assert!(samples.is_empty());
+}
