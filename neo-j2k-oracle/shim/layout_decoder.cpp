@@ -13,12 +13,12 @@
 
 #include <neoj2k/neoj2k.h>
 
-#include "../../../src/decode.h"
-#include "../../../src/dwt.h"
-#include "../../../src/header.h"
-#include "../../../src/jp2.h"
-#include "../../../src/t1.h"
-#include "../../../src/tile.h"
+#include "decode.h"
+#include "dwt.h"
+#include "header.h"
+#include "jp2.h"
+#include "t1.h"
+#include "tile.h"
 
 #include "layout.h"
 

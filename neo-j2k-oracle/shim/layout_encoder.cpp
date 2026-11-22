@@ -8,7 +8,7 @@
 #include <cstdint>
 #include <type_traits>
 
-#include "../../../src/enc_tile.h"
+#include "enc_tile.h"
 
 #include "layout.h"
 

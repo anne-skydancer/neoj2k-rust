@@ -323,12 +323,13 @@ this order:
 
 1. `NJ2K_ORACLE_DIR`: an existing CMake build folder of the C++
    [neo-j2k repository](https://github.com/anne-skydancer/neo-j2k), configured with
-   `-DNJ2K_BUILD_RUST_SHIM=ON` (off by default), with the target `nj2k_rust_shim` built. The build
+   `-DNJ2K_BUILD_RUST_SHIM=ON` (off by default) and this repository's
+   `neo-j2k-oracle/shim` supplied as `NJ2K_RUST_SHIM_SOURCE`, with the target `nj2k_rust_shim` built. The build
    folder's link manifest, `nj2k-rust-shim-<config>.txt`, names the libraries (`nj2k_rust_shim`,
    `nj2k_test_common`, `nj2k_oracle`, `neoj2k_static`) and, on Linux, the C++ runtime:
 
    ```
-   cmake --preset windows-msvc -DNJ2K_BUILD_RUST_SHIM=ON          # or linux-gcc; the presets' flags:
+   cmake --preset windows-msvc -DNJ2K_BUILD_RUST_SHIM=ON -DNJ2K_RUST_SHIM_SOURCE=/path/to/neoj2k-rust/neo-j2k-oracle/shim
    cmake --build --preset windows-msvc --target nj2k_rust_shim    # /fp:precise /arch:AVX2; -ffp-contract=off -fno-fast-math
    NJ2K_ORACLE_DIR=/path/to/neo-j2k/build/windows-msvc cargo test --release --workspace
    ```

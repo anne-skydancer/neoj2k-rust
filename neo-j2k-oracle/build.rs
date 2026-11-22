@@ -10,8 +10,8 @@
 //!    `NJ2K_ORACLE_PRESET` (default `windows-msvc` on Windows, `linux-gcc` elsewhere): the static
 //!    library, the OpenJPEG oracle, the harness and the shim only.
 //!
-//! Either way the build folder's link manifest (`nj2k-rust-shim-<config>.txt`, written by
-//! `rust/neo-j2k-oracle/shim/CMakeLists.txt` in that C++ checkout; config
+//! Either way the build folder's link manifest (`nj2k-rust-shim-<config>.txt`, written by this
+//! crate's `shim/CMakeLists.txt`; config
 //! `NJ2K_ORACLE_CONFIG`, default
 //! `RelWithDebInfo`) names the libraries in link order. `NJ2K_ORACLE_NO_BUILD=1` skips all of it
 //! for commands that compile without linking (clippy, doc), and so does Miri, whose tests never
@@ -37,6 +37,7 @@ fn run(cmd: &mut Command) {
 fn build_oracle(repo: &Path, preset: &str, config: &str) -> PathBuf {
     let out = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR"));
     let dir = out.join(format!("cmake-{preset}"));
+    let shim = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("shim");
     // A change to the C++ re-runs this script; CMake then rebuilds what changed.
     for watched in [
         "CMakeLists.txt",
@@ -46,17 +47,19 @@ fn build_oracle(repo: &Path, preset: &str, config: &str) -> PathBuf {
         "src",
         "oracle",
         "tests/common",
-        "rust/neo-j2k-oracle/shim",
     ] {
         println!("cargo::rerun-if-changed={}", repo.join(watched).display());
     }
-    run(Command::new("cmake")
+    println!("cargo::rerun-if-changed={}", shim.display());
+    let mut configure = Command::new("cmake");
+    configure
         .arg("-S")
         .arg(repo)
         .arg("-B")
         .arg(&dir)
         .arg("--preset")
         .arg(preset)
+        .arg(format!("-DNJ2K_RUST_SHIM_SOURCE={}", shim.display()))
         .args([
             "-DNJ2K_BUILD_RUST_SHIM=ON",
             "-DNJ2K_BUILD_TESTS=OFF",
@@ -66,7 +69,8 @@ fn build_oracle(repo: &Path, preset: &str, config: &str) -> PathBuf {
             "-DNJ2K_BUILD_SHARED=OFF",
             "-DNJ2K_BUILD_STATIC=ON",
             "-DNJ2K_INSTALL=OFF",
-        ]));
+        ]);
+    run(&mut configure);
     run(Command::new("cmake").arg("--build").arg(&dir).args([
         "--config",
         config,

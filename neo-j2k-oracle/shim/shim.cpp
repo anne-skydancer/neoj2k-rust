@@ -25,12 +25,12 @@
 #include "pgx.h"
 #include "thread_pool.h"
 
-// the library's internals (by their path: src/ is no include directory)
-#include "../../../src/codec.h"
-#include "../../../src/dwt.h"
-#include "../../../src/encode.h"
-#include "../../../src/mct.h"
-#include "../../../src/parallel.h"
+// The C++ checkout exposes its internals to this test-only target through its src include path.
+#include "codec.h"
+#include "dwt.h"
+#include "encode.h"
+#include "mct.h"
+#include "parallel.h"
 
 #include "layout.h"
 

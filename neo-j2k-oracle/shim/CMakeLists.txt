@@ -8,6 +8,7 @@
 # link order, so that the crate's build.rs needs no knowledge of the generator's folder layout.
 add_library(nj2k_rust_shim STATIC shim.cpp layout_decoder.cpp layout_encoder.cpp)
 target_include_directories(nj2k_rust_shim PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
+target_include_directories(nj2k_rust_shim PRIVATE "${PROJECT_SOURCE_DIR}/src")
 target_link_libraries(nj2k_rust_shim PUBLIC nj2k_test_common neoj2k_static)
 nj2k_fp_strict(nj2k_rust_shim)
 nj2k_simd(nj2k_rust_shim)
