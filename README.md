@@ -136,6 +136,39 @@ also return the effective layer ratios and codestream size cap through the calle
 `EncodeParams::extra_options` accepts the core encoder's `PLT=NO`, `TLM=NO`, and `GUARD_BITS=2`.
 The encoder checks these options after setup, before writing the main header.
 
+## OpenJPEG 2.5.4 versus neo-j2k C++ versus native Rust
+
+“OpenJPEG2000” below means the pinned OpenJPEG 2.5.4 oracle. There are two direct, paired benchmark suites:
+the C++ repository measures OpenJPEG against neo-j2k C++, and this repository measures native Rust against
+the same neo-j2k C++ implementation. The fixtures and output APIs differ between suites, so the table keeps
+the two ratios separate instead of multiplying them into an invented Rust/OpenJPEG result. Lower ratios are
+faster; every comparison produces identical decoded samples or encoded bytes.
+
+| Direct paired measurement | Threads | OpenJPEG | neo-j2k C++ | neo-j2k Rust | Measured result |
+|---|---:|---:|---:|---:|---|
+| Decode 64² whole, C++ viewer suite | 1 | 373 µs | 316 µs | — | C++ / OpenJPEG 0.85 |
+| Decode 1,024² whole, C++ viewer suite | 1 | 37.176 ms | 26.158 ms | — | C++ / OpenJPEG 0.70 |
+| Decode 4,096² one-tile 9/7, C++ large suite | 8 | 136 ms | 46 ms | — | C++ / OpenJPEG 0.34 |
+| Decode 1,024² RGB 9/7, direct I32 AVX2 suite | 1 | — | 4.780 ms | 4.725 ms | Rust / C++ 0.989 |
+| Decode 1,024² RGB 9/7, direct I32 AVX2 suite | 8 | — | 1.413 ms | 1.372 ms | Rust / C++ 0.971 |
+| Decode 4,096² grayscale 9/7, direct I32 AVX2 suite | 8 | — | 3.158 ms | 3.017 ms | Rust / C++ 0.956 |
+| Encode 1,024² RGB lossy, C++ upload suite | 1 | 250.0 ms | 284.5 ms | — | C++ / OpenJPEG 1.14 |
+| Encode 1,024² RGB lossless, C++ upload suite | 1 | 262.8 ms | 295.9 ms | — | C++ / OpenJPEG 1.13 |
+| Encode 32²-128² RGB, paired AVX2 suite | 1 | — | baseline | within 0.979-1.013× | Rust is within about 2% of C++ |
+
+What this establishes directly:
+
+- neo-j2k C++ is faster than OpenJPEG on every listed decode, from 1.18× to 2.96×.
+- Native Rust is slightly faster than C++ on the listed large AVX2 decodes, by 1-4% while preserving the same
+  multi-core scaling model.
+- One-thread C++ encoding is 13-14% slower than OpenJPEG at 1,024² in the upload benchmark. Rust small-image
+  encoding is approximately equal to C++; the Rust encoder is currently serial, so a three-way large
+  multi-core encode result has not yet been claimed.
+
+The complete C++/OpenJPEG tables are in the
+[neo-j2k C++ README](https://github.com/anne-skydancer/neo-j2k#how-fast). The complete paired Rust/C++ scaling
+table and reproduction commands are below.
+
 The small-image release tests compare whole, reduced, and partial decodes against C++ and check
 that a warmed Rust decoder performs no heap calls on the selected fixtures. The opt-in timing
 tests use matching inputs and settings, and compare lossless and lossy encodes byte for byte:
