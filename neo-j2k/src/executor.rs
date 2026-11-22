@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 
-//! Synchronous jobs borrowed from the host for one decode.
+//! Synchronous jobs borrowed from the host for one encode or decode.
 
 use std::sync::Mutex;
 
 pub(crate) const MAX_JOBS: usize = 64;
 
-/// A host scheduler that can run independent parts of a large JPEG 2000 decode.
+/// A host scheduler that can run independent parts of a large JPEG 2000 encode or decode.
 ///
-/// The codec calls the scheduler only during the decode and creates no threads of its own.
+/// The codec calls the scheduler only during the codec operation and creates no threads of its own.
 pub trait Executor: Sync {
     /// Maximum simultaneous jobs, including the calling thread if it participates.
     /// Returning zero or one keeps the work on the calling thread.

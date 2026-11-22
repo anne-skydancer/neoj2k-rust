@@ -24,7 +24,7 @@ fn image(pixels: &[u8]) -> ImageView<'_> {
     }
 }
 
-fn request<'a>(pixels: &'a [u8], params: &'a EncodeParams) -> EncodeRequest<'a> {
+fn request<'a>(pixels: &'a [u8], params: &'a EncodeParams<'_>) -> EncodeRequest<'a> {
     EncodeRequest {
         pixels,
         row_stride: SIDE as usize,

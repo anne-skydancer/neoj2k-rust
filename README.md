@@ -39,7 +39,8 @@ from the same reader with `DecodeStream::decode` or `DecodeStream::decode_into`.
 The encoder takes planar or interleaved unsigned 8-bit samples. It writes a J2K codestream
 with one tile, RLCP progression and 64 × 64 code-blocks, using lossless 5/3 or irreversible
 9/7 wavelets with optional quality layers. Use `Encoder::encode_to` to write the codestream to a
-`std::io::Write`, with a caller-chosen buffer size and support for short writes.
+`std::io::Write`, with a caller-chosen buffer size and support for short writes. A host executor can
+parallelize component wavelets and Tier-1 code-block encoding; the crate creates no private threads.
 
 ## Toolchain
 
@@ -135,6 +136,8 @@ also return the effective layer ratios and codestream size cap through the calle
 
 `EncodeParams::extra_options` accepts the core encoder's `PLT=NO`, `TLM=NO`, and `GUARD_BITS=2`.
 The encoder checks these options after setup, before writing the main header.
+Set `EncodeParams::executor` to a host scheduler to enable multi-core encoding. Images below
+256 × 256 samples per component remain serial because dispatch overhead is not beneficial there.
 
 ## OpenJPEG 2.5.4 versus neo-j2k C++ versus native Rust
 
@@ -162,8 +165,9 @@ What this establishes directly:
 - Native Rust is slightly faster than C++ on the listed large AVX2 decodes, by 1-4% while preserving the same
   multi-core scaling model.
 - One-thread C++ encoding is 13-14% slower than OpenJPEG at 1,024² in the upload benchmark. Rust small-image
-  encoding is approximately equal to C++; the Rust encoder is currently serial, so a three-way large
-  multi-core encode result has not yet been claimed.
+  encoding is approximately equal to C++. Native Rust encoding scales by 4.27-5.47× lossless and
+  4.36-5.38× lossy at eight workers on 256²-1,024² inputs. A direct three-way large-encode ratio is not
+  claimed because the OpenJPEG/C++ and Rust scaling suites use different inputs and harnesses.
 
 The complete C++/OpenJPEG tables are in the
 [neo-j2k C++ README](https://github.com/anne-skydancer/neo-j2k#how-fast). The complete paired Rust/C++ scaling
@@ -207,6 +211,33 @@ thread. Each latency is the median of nine alternating rounds with two decodes p
 | AVX2 | 4096² grayscale 9/7 | 2 | 6.520 | 6.992 | 1.69× | 1.71× | 0.933 |
 | AVX2 | 4096² grayscale 9/7 | 4 | 4.138 | 4.840 | 2.66× | 2.47× | 0.855 |
 | AVX2 | 4096² grayscale 9/7 | 8 | 3.017 | 3.158 | 3.65× | 3.79× | 0.956 |
+
+The native encoder uses the same borrowed-executor model. It divides component wavelets and the
+flattened Tier-1 code-block sequence into bounded worker-local batches while retaining codestream
+order and byte-for-byte serial output. On 22 November 2026, the release benchmark on the same system
+measured these median end-to-end encode latencies:
+
+| Fixture | Workers 1 | Workers 2 | Workers 4 | Workers 8 | 8-worker speedup |
+|---|---:|---:|---:|---:|---:|
+| 256² RGB lossless 5/3 | 15.818 ms | 9.463 ms | 5.669 ms | 3.706 ms | 4.27× |
+| 256² RGB lossy 9/7 | 19.992 ms | 11.147 ms | 6.602 ms | 4.586 ms | 4.36× |
+| 512² RGB lossless 5/3 | 59.154 ms | 32.906 ms | 18.070 ms | 10.895 ms | 5.43× |
+| 512² RGB lossy 9/7 | 78.967 ms | 42.944 ms | 23.293 ms | 14.771 ms | 5.35× |
+| 1,024² RGB lossless 5/3 | 222.519 ms | 124.848 ms | 67.604 ms | 40.648 ms | 5.47× |
+| 1,024² RGB lossy 9/7 | 319.312 ms | 180.977 ms | 95.287 ms | 59.399 ms | 5.38× |
+
+Every worker count emits exactly the serial codestream. Tests cover widths 2, 4, 8, 16, and 64,
+and enforce that 128² stays serial while 256² uses the supplied executor. Reproduce the table with:
+
+```sh
+cargo test --release -p neo-j2k --test small_image_gates -- --ignored --exact large_encoder_executor_latency --nocapture --test-threads=1
+```
+
+An `x86-64-v3` assessment produced no consistent encoder improvement: eight-worker speedups ranged
+from 4.15-5.61× lossless and 4.28-5.51× lossy, but absolute times moved within noise in both
+directions. The encoder therefore retains the profitable SIMD-friendly eight-column 5/3 wavelet
+layout and compile-time AVX2 target support without an encoder-only intrinsic path. Tier-1's MQ coder
+is sequential within each code-block, so independent code-block parallelism supplies the material gain.
 
 The decoder deliberately does not query the host executor below 2^18 component samples: the C++
 measurements found small decodes about 2% slower when dispatched across threads. This keeps the
@@ -252,7 +283,7 @@ cargo build --release -p neo-j2k --no-default-features --features std
 | Feature | Default | What it does |
 |---|---|---|
 | `std` | yes | required in this version (reserved for a later `no_std` + `alloc` build) |
-| `encode` | yes | the native JPEG 2000 encoder |
+| `encode` | yes | the native JPEG 2000 encoder, including borrowed-executor parallelism |
 | `simd` | yes | x86-64 instruction intrinsics, including the AVX2 kernels on AVX2 builds |
 | `opensim` | yes | the OpenSim limit profile, as the C++'s `NJ2K_PROFILE_OPENSIM` |
 

@@ -71,7 +71,12 @@ impl Write for Writer {
     }
 }
 
-fn cpp_trace(image: &ImageView<'_>, params: &EncodeParams, writer: &Writer, buffer_size: NonZeroUsize) -> EncodeTrace {
+fn cpp_trace(
+    image: &ImageView<'_>,
+    params: &EncodeParams<'_>,
+    writer: &Writer,
+    buffer_size: NonZeroUsize,
+) -> EncodeTrace {
     let ImageSamples::Interleaved {
         samples,
         components,

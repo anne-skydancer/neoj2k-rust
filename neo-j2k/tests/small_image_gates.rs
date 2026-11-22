@@ -517,3 +517,84 @@ fn small_encoder_median_latency() {
         }
     }
 }
+
+#[cfg(feature = "encode")]
+#[test]
+#[ignore = "run with --release and --nocapture on a quiet machine"]
+fn large_encoder_executor_latency() {
+    use std::hint::black_box;
+
+    use neo_j2k::{EncodeParams, Encoder, ImageSamples, ImageView};
+
+    println!("Encoder is reused; executor workers include the calling thread. Times are medians of nine rounds.");
+    println!("{:<34} {:>7} {:>10} {:>10}", "Request", "Workers", "Rust ms", "Speedup");
+    for side in [256usize, 512, 1024] {
+        let stride = side * 3;
+        let pixels: Vec<u8> = (0..side * stride)
+            .map(|index| {
+                let x = (index % stride) / 3;
+                let y = index / stride;
+                let component = index % 3;
+                (3 * x + 5 * y + 13 * (x ^ y) + 23 * component).to_le_bytes()[0]
+            })
+            .collect();
+        let side_u32 = u32::try_from(side).expect("the benchmark image side fits u32");
+        let image = ImageView {
+            width: side_u32,
+            height: side_u32,
+            flip_vertical: false,
+            samples: ImageSamples::Interleaved {
+                samples: &pixels,
+                components: 3,
+                row_stride: stride,
+            },
+        };
+        for reversible in [true, false] {
+            let mut serial_params = EncodeParams::default();
+            serial_params.reversible = reversible;
+            serial_params.mct = true;
+            let expected = Encoder::new().encode(&image, &serial_params).unwrap().to_vec();
+            let mut baseline = Duration::ZERO;
+            for width in [1u32, 2, 4, 8] {
+                let pool = SharedPool(BenchmarkPool::new(width).unwrap());
+                let mut params = EncodeParams::default();
+                params.reversible = reversible;
+                params.mct = true;
+                params.executor = Some(&pool);
+                let mut encoder = Encoder::new();
+                assert_eq!(encoder.encode(&image, &params).unwrap(), expected);
+                let before = pool.0.batches();
+                let batch = if side == 256 {
+                    4
+                } else if side == 512 {
+                    2
+                } else {
+                    1
+                };
+                let mut times = [Duration::ZERO; 9];
+                for time in &mut times {
+                    *time = elapsed(
+                        || {
+                            black_box(encoder.encode(black_box(&image), &params).unwrap());
+                        },
+                        batch,
+                    );
+                }
+                times.sort_unstable();
+                let median = times[times.len() / 2];
+                if width == 1 {
+                    baseline = median;
+                    assert_eq!(pool.0.batches(), before, "one worker must remain serial");
+                } else {
+                    assert!(pool.0.batches() > before, "threaded encode must use its executor");
+                }
+                let wavelet = if reversible { "lossless" } else { "lossy" };
+                println!(
+                    "{side}x{side} RGB {wavelet:<17} {width:>7} {:>10.3} {:>9.2}x",
+                    median.as_secs_f64() * 1000.0,
+                    baseline.as_secs_f64() / median.as_secs_f64(),
+                );
+            }
+        }
+    }
+}

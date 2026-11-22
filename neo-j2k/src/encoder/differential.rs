@@ -7,7 +7,7 @@ use neo_j2k_testkit::request::{Backend, Mode, Request};
 
 use super::{EncodeParams, Encoder, ImageSamples, ImageView};
 
-fn compare(encoder: &mut Encoder, image: &ImageView<'_>, params: &EncodeParams, what: &str) -> bool {
+fn compare(encoder: &mut Encoder, image: &ImageView<'_>, params: &EncodeParams<'_>, what: &str) -> bool {
     let ImageSamples::Interleaved {
         samples,
         components,

@@ -7,8 +7,9 @@ use core::{num::NonZeroUsize, ops::Range};
 use std::io::Write;
 
 use crate::error::Diagnostics;
+use crate::executor::Jobs;
 use crate::stream::{EncodePart, StreamWriter};
-use crate::{Diagnostic, Error, ErrorKind};
+use crate::{Diagnostic, Error, ErrorKind, Executor};
 
 #[cfg(all(test, not(miri)))]
 mod differential;
@@ -23,6 +24,7 @@ const MAX_LAYERS: usize = 100;
 const MAX_RESOLUTIONS: usize = 13;
 const MAX_BANDS: usize = 3 * MAX_RESOLUTIONS - 2;
 const BLOCK_SIDE: usize = 64;
+const PARALLEL_ENCODE_SAMPLES: u64 = 1 << 16;
 const DEFAULT_COMMENT: &[u8] = b"Created by OpenJPEG version 2.5.4";
 
 /// One eight-bit unsigned plane of a planar input image.
@@ -54,9 +56,9 @@ pub struct ImageView<'a> {
 }
 
 /// Settings for the one-tile RLCP codestream with 64-by-64 code-blocks.
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 #[non_exhaustive]
-pub struct EncodeParams {
+pub struct EncodeParams<'a> {
     /// True selects the reversible 5/3 wavelet. False selects the irreversible 9/7 wavelet.
     pub reversible: bool,
     /// Number of resolutions. The default is six or the most that fit, whichever is smaller.
@@ -73,9 +75,27 @@ pub struct EncodeParams {
     /// OpenJPEG-style `KEY=VALUE` options. The core accepts `PLT=NO`, `TLM=NO`, and `GUARD_BITS=2`.
     /// Options are checked in order after setup and before any output is written. NUL ends an option.
     pub extra_options: Vec<String>,
+    /// A host scheduler for images of at least 256 by 256 samples per component. The encoder
+    /// creates no threads of its own; smaller images remain on the calling thread.
+    pub executor: Option<&'a dyn Executor>,
 }
 
-impl Default for EncodeParams {
+impl core::fmt::Debug for EncodeParams<'_> {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        f.debug_struct("EncodeParams")
+            .field("reversible", &self.reversible)
+            .field("resolutions", &self.resolutions)
+            .field("mct", &self.mct)
+            .field("layer_ratios", &self.layer_ratios)
+            .field("max_codestream_size", &self.max_codestream_size)
+            .field("comment", &self.comment)
+            .field("extra_options", &self.extra_options)
+            .field("has_executor", &self.executor.is_some())
+            .finish()
+    }
+}
+
+impl Default for EncodeParams<'_> {
     fn default() -> Self {
         Self {
             reversible: true,
@@ -85,6 +105,7 @@ impl Default for EncodeParams {
             max_codestream_size: 0,
             comment: None,
             extra_options: Vec::new(),
+            executor: None,
         }
     }
 }
@@ -94,6 +115,7 @@ impl Default for EncodeParams {
 pub struct Encoder {
     buffers: EncodingBuffers,
     tier1: tier1::Workspace,
+    tier1_workers: Vec<EncodeWorker>,
     tier2: tier2::Workspace,
     diagnostics: Diagnostics,
 }
@@ -102,9 +124,26 @@ pub struct Encoder {
 struct EncodingBuffers {
     layout: TileLayout,
     blocks: Vec<Block>,
+    block_jobs: Vec<BlockJob>,
     samples: Vec<i32>,
     wavelet_line: Vec<i32>,
+    wavelet_lines: Vec<Vec<i32>>,
     output: Vec<u8>,
+}
+
+#[derive(Debug, Default)]
+struct EncodeWorker {
+    tier1: tier1::Workspace,
+    zigzag: Vec<i32>,
+    error: Option<Error>,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct BlockJob {
+    sample_start: usize,
+    width: usize,
+    height: usize,
+    params: T1Params,
 }
 
 impl Encoder {
@@ -121,7 +160,7 @@ impl Encoder {
     }
 
     /// Encode one image. The codestream is borrowed from the encoder until its next use.
-    pub fn encode(&mut self, image: &ImageView<'_>, params: &EncodeParams) -> Result<&[u8], Error> {
+    pub fn encode(&mut self, image: &ImageView<'_>, params: &EncodeParams<'_>) -> Result<&[u8], Error> {
         self.encode_with(image, params, |_, _| {}, |_, _| Ok(()))?;
         Ok(&self.buffers.output)
     }
@@ -130,7 +169,7 @@ impl Encoder {
     ///
     /// Accepted settings are updated even if writing or coding fails later. A size cap inferred
     /// from the last requested layer applies only when the updated settings are used again.
-    pub fn encode_and_update(&mut self, image: &ImageView<'_>, params: &mut EncodeParams) -> Result<&[u8], Error> {
+    pub fn encode_and_update(&mut self, image: &ImageView<'_>, params: &mut EncodeParams<'_>) -> Result<&[u8], Error> {
         self.encode_with_updates(image, params, |_, _| Ok(()))?;
         Ok(&self.buffers.output)
     }
@@ -143,7 +182,7 @@ impl Encoder {
     pub fn encode_to(
         &mut self,
         image: &ImageView<'_>,
-        params: &EncodeParams,
+        params: &EncodeParams<'_>,
         writer: &mut (impl Write + ?Sized),
         buffer_size: NonZeroUsize,
     ) -> Result<(), Error> {
@@ -155,7 +194,7 @@ impl Encoder {
     pub fn encode_to_and_update(
         &mut self,
         image: &ImageView<'_>,
-        params: &mut EncodeParams,
+        params: &mut EncodeParams<'_>,
         writer: &mut (impl Write + ?Sized),
         buffer_size: NonZeroUsize,
     ) -> Result<(), Error> {
@@ -166,7 +205,7 @@ impl Encoder {
     fn encode_with_updates(
         &mut self,
         image: &ImageView<'_>,
-        params: &mut EncodeParams,
+        params: &mut EncodeParams<'_>,
         write: impl FnMut(EncodePart, &[u8]) -> Result<(), Error>,
     ) -> Result<(), Error> {
         // Only the implicit lossless layer can grow the caller's vector. Reserve it before any
@@ -201,7 +240,7 @@ impl Encoder {
     fn encode_with(
         &mut self,
         image: &ImageView<'_>,
-        params: &EncodeParams,
+        params: &EncodeParams<'_>,
         update: impl FnOnce(&[f32], u32),
         write: impl FnMut(EncodePart, &[u8]) -> Result<(), Error>,
     ) -> Result<(), Error> {
@@ -216,17 +255,29 @@ impl Encoder {
     fn encode_inner(
         &mut self,
         image: &ImageView<'_>,
-        params: &EncodeParams,
+        params: &EncodeParams<'_>,
         update: impl FnOnce(&[f32], u32),
         mut write: impl FnMut(EncodePart, &[u8]) -> Result<(), Error>,
     ) -> Result<(), Error> {
-        let settings = self.buffers.prepare(image, params, &mut self.diagnostics, update)?;
+        let jobs = if u64::from(image.width) * u64::from(image.height) >= PARALLEL_ENCODE_SAMPLES {
+            params.executor.and_then(Jobs::new)
+        } else {
+            None
+        };
+        let settings = self
+            .buffers
+            .prepare(image, params, jobs, &mut self.diagnostics, update)?;
         write(EncodePart::Header, &self.buffers.output)?;
-        let code_blocks = &mut self.tier1;
-        self.buffers
-            .encode_blocks(&settings, |samples, width, height, params, block| {
-                tier1::encode(code_blocks, samples, width, height, params, block)
-            })?;
+        if let Some(jobs) = jobs {
+            self.buffers
+                .encode_blocks_parallel(&settings, jobs, &mut self.tier1_workers)?;
+        } else {
+            let code_blocks = &mut self.tier1;
+            self.buffers
+                .encode_blocks(&settings, |samples, width, height, params, block| {
+                    tier1::encode(code_blocks, samples, width, height, params, block)
+                })?;
+        }
         let packets = &mut self.tier2;
         let output = self
             .buffers
@@ -242,7 +293,8 @@ impl EncodingBuffers {
     fn prepare<'p>(
         &mut self,
         image: &ImageView<'_>,
-        params: &'p EncodeParams,
+        params: &'p EncodeParams<'_>,
+        jobs: Option<Jobs<'_>>,
         diagnostics: &mut Diagnostics,
         update: impl FnOnce(&[f32], u32),
     ) -> Result<Settings<'p>, Error> {
@@ -255,20 +307,42 @@ impl EncodingBuffers {
         }
         if settings.resolutions > 1 {
             let line_len = wavelet::scratch_len(settings.width, settings.height, settings.reversible);
-            resize_with(&mut self.wavelet_line, line_len, || 0)?;
-            for plane in self.samples.chunks_exact_mut(plane_len) {
-                wavelet::forward(
-                    plane,
-                    settings.width,
-                    settings.height,
-                    settings.resolutions,
-                    settings.reversible,
-                    &mut self.wavelet_line,
-                );
+            if let Some(jobs) = jobs.filter(|_| settings.components > 1) {
+                resize_with(&mut self.wavelet_lines, settings.components, Vec::new)?;
+                for line in &mut self.wavelet_lines {
+                    resize_with(line, line_len, || 0)?;
+                }
+                let parts = self
+                    .samples
+                    .chunks_exact_mut(plane_len)
+                    .zip(self.wavelet_lines.iter_mut());
+                jobs.run(parts, |(plane, line)| {
+                    wavelet::forward(
+                        plane,
+                        settings.width,
+                        settings.height,
+                        settings.resolutions,
+                        settings.reversible,
+                        line,
+                    );
+                });
+            } else {
+                resize_with(&mut self.wavelet_line, line_len, || 0)?;
+                for plane in self.samples.chunks_exact_mut(plane_len) {
+                    wavelet::forward(
+                        plane,
+                        settings.width,
+                        settings.height,
+                        settings.resolutions,
+                        settings.reversible,
+                        &mut self.wavelet_line,
+                    );
+                }
             }
         }
         let count = self.layout.reset(&settings)?;
         resize_with(&mut self.blocks, count, Block::default)?;
+        self.reset_block_jobs(&settings, count)?;
 
         self.output.clear();
         self.output
@@ -310,6 +384,96 @@ impl EncodingBuffers {
                 }
             }
         }
+        Ok(())
+    }
+
+    fn encode_blocks_parallel(
+        &mut self,
+        settings: &Settings<'_>,
+        jobs: Jobs<'_>,
+        workers: &mut Vec<EncodeWorker>,
+    ) -> Result<(), Error> {
+        let width = jobs.width();
+        resize_with(workers, width, EncodeWorker::default)?;
+        for worker in &mut *workers {
+            resize_with(&mut worker.zigzag, BLOCK_SIDE * BLOCK_SIDE, || 0)?;
+        }
+
+        let samples = &self.samples;
+        let blocks = &mut self.blocks;
+        let block_jobs = &self.block_jobs;
+        for (batch, descriptors) in blocks.chunks_mut(width).zip(block_jobs.chunks(width)) {
+            let active = batch.len();
+            for worker in &mut workers[..active] {
+                worker.error = None;
+            }
+            let parts = workers[..active]
+                .iter_mut()
+                .zip(batch.iter_mut())
+                .zip(descriptors.iter().copied());
+            jobs.run(parts, |((worker, block), descriptor)| {
+                let zigzag = &mut worker.zigzag[..descriptor.width * descriptor.height];
+                gather_samples(
+                    &samples[descriptor.sample_start..],
+                    settings.width,
+                    descriptor.width,
+                    descriptor.height,
+                    descriptor.params,
+                    zigzag,
+                );
+                worker.error = tier1::encode(
+                    &mut worker.tier1,
+                    zigzag,
+                    descriptor.width,
+                    descriptor.height,
+                    descriptor.params,
+                    block,
+                )
+                .err();
+            });
+            // Report the first failure in code-block order, independent of scheduling.
+            for worker in &mut workers[..active] {
+                if let Some(error) = worker.error.take() {
+                    return Err(error);
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn reset_block_jobs(&mut self, settings: &Settings<'_>, count: usize) -> Result<(), Error> {
+        self.block_jobs.clear();
+        self.block_jobs.try_reserve_exact(count).map_err(|_| memory_error())?;
+        let stride = settings.width;
+        let plane_len = stride * settings.height;
+        for component in 0..settings.components {
+            for resolution in 0..settings.resolutions {
+                let level = settings.resolutions - 1 - resolution;
+                for band in self.layout.bands(component, resolution) {
+                    let params = T1Params {
+                        orientation: band.orientation,
+                        level,
+                        component,
+                        reversible: settings.reversible,
+                        step_size: band.step_size,
+                        mct: settings.mct,
+                    };
+                    for index in 0..band.blocks.len() {
+                        let x = (index % band.block_columns) * BLOCK_SIDE;
+                        let y = (index / band.block_columns) * BLOCK_SIDE;
+                        let width = BLOCK_SIDE.min(band.width - x);
+                        let height = BLOCK_SIDE.min(band.height - y);
+                        self.block_jobs.push(BlockJob {
+                            sample_start: component * plane_len + (band.y + y) * stride + band.x + x,
+                            width,
+                            height,
+                            params,
+                        });
+                    }
+                }
+            }
+        }
+        debug_assert_eq!(self.block_jobs.len(), count);
         Ok(())
     }
 
@@ -406,7 +570,7 @@ struct Settings<'p> {
 impl<'p> Settings<'p> {
     fn new(
         image: &ImageView<'_>,
-        params: &'p EncodeParams,
+        params: &'p EncodeParams<'_>,
         diagnostics: &mut Diagnostics,
         update: impl FnOnce(&[f32], u32),
     ) -> Result<Self, Error> {
@@ -875,11 +1039,15 @@ mod tests {
                 row_stride: 5,
             },
         };
-        encoder.prepare(&image, &params, &mut diagnostics, |_, _| {}).unwrap();
+        encoder
+            .prepare(&image, &params, None, &mut diagnostics, |_, _| {})
+            .unwrap();
         let expected = [-98, -88, -118, -108, -97, -87, -117, -107];
         assert_eq!(encoder.samples, expected);
         image.samples = ImageSamples::Planar(&planar);
-        encoder.prepare(&image, &params, &mut diagnostics, |_, _| {}).unwrap();
+        encoder
+            .prepare(&image, &params, None, &mut diagnostics, |_, _| {})
+            .unwrap();
         assert_eq!(encoder.samples, expected);
     }
 
@@ -910,7 +1078,7 @@ mod tests {
             ..EncodeParams::default()
         };
         let settings = encoder
-            .prepare(&image, &params, &mut Diagnostics::default(), |_, _| {})
+            .prepare(&image, &params, None, &mut Diagnostics::default(), |_, _| {})
             .unwrap();
         assert_eq!(encoder.output.len(), settings.header_size());
         assert!(
