@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# No fused multiply-add anywhere: the twin must give the C++'s results bit for bit, and the C++
+# never contracts (/fp:precise, -ffp-contract=off). Rust never fuses on its own; these are the
+# only ways to ask for it.
+disallowed-methods = [
+    { path = "f32::mul_add", reason = "no FMA: results must equal the C++'s bit for bit" },
+    { path = "f64::mul_add", reason = "no FMA: results must equal the C++'s bit for bit" },
+]

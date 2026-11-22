@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# The native Rust twin of neo-j2k (rust/README.md): the crate, the test-only C++ oracle crate and
+# the test kit. Fuzz targets use a separate workspace in fuzz/.
+[workspace]
+resolver = "3"
+members = ["neo-j2k", "neo-j2k-oracle", "neo-j2k-testkit"]
+
+[workspace.package]
+version = "0.1.2"
+edition = "2024"
+rust-version = "1.100"
+license = "BSD-2-Clause"
+repository = "https://github.com/anne-skydancer/neo-j2k"
+authors = ["Anne Skydancer"]
+
+[workspace.dependencies]
+neo-j2k-oracle = { path = "neo-j2k-oracle" }
+neo-j2k-testkit = { path = "neo-j2k-testkit" }
+
+[workspace.lints.rust]
+unsafe_op_in_unsafe_fn = "deny"
+missing_debug_implementations = "warn"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+undocumented_unsafe_blocks = "deny"
+multiple_unsafe_ops_per_block = "deny"
+disallowed_methods = "deny"
+# integer casts are reviewed where they narrow: `as` truncates
+cast_possible_truncation = "warn"
+cast_sign_loss = "warn"
+cast_possible_wrap = "warn"
+
+# The tests, tools and benches of this workspace; a program that depends on the crate uses its own
+# profile.
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+debug = "line-tables-only"
+

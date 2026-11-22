@@ -22,6 +22,9 @@ Paths below are relative to the repository root.
 | `neo-j2k-testkit/` | the Rust side of the C++ harness in `tests/common`: requests and outcomes, the viewer's rules, `nj2k_diff`'s digests and reference tables, the codestream scanner, the PGX reader, a test pool executor. Pure Rust, no dependency | never |
 | `neo-j2k-oracle/` | the C++ neo-j2k, OpenJPEG at the oracle's pin and the C++ harness, built by CMake and linked through the test-only shim (`neo-j2k-oracle/shim`), behind a safe interface | never |
 
+`archive/rust/` preserves the final embedded Rust workspace moved from the C++ repository. It is a
+historical snapshot, not a workspace member; the maintained and publishable crate is `neo-j2k/`.
+
 The decoder supports the five progression orders, POC, packed packet headers, reduced and
 layer-limited output, and partial inputs. It can return reusable planar samples or write
 into planar or interleaved caller buffers. JP2 palette and channel metadata can be applied

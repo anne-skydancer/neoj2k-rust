@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# The C++ oracle of the Rust twin's differential tests (O4(a)): its build.rs builds and links the
+# C++ neo-j2k, OpenJPEG's oracle and the test-only shim (rust/README.md). The only crate of the
+# workspace with C++ or FFI in it. A dev-dependency only, never published: CI fails if it reaches
+# the normal dependency graph of neo-j2k.
+[package]
+name = "neo-j2k-oracle"
+description = "The C++ neo-j2k and OpenJPEG as the Rust twin's test oracle (test-only, never published)"
+publish = false
+build = "build.rs"
+links = "nj2k_rust_shim"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[dependencies]
+neo-j2k-testkit.workspace = true
+
+[lints]
+workspace = true

@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# The Rust side of the test harness (tests/common in the C++): requests, the viewer's rules,
+# nj2k_diff's digests and reference tables, the codestream scanner, the PGX reader and a test pool
+# executor. Pure Rust with no dependencies, so Miri runs it; the C++ oracle's crate builds on it.
+# Never published.
+[package]
+name = "neo-j2k-testkit"
+description = "Test kit of neo-j2k's Rust twin (test-only, never published)"
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[lints]
+workspace = true
