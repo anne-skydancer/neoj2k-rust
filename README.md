@@ -379,14 +379,15 @@ Whole-image decode and encode, measured by the C++ repository's suites. The base
 | Decode 64² whole | C++ viewer suite | 1 | 373 µs | 316 µs | -15.0 % |
 | Decode 1,024² whole | C++ viewer suite | 1 | 37.176 ms | 26.158 ms | -30.0 % |
 | Decode 4,096² one-tile 9/7 | C++ large suite | 8 | 136 ms | 46 ms | -66.0 % |
-| Encode 1,024² RGB lossy | C++ upload suite | 1 | 250.0 ms | 284.5 ms | +14.0 % |
-| Encode 1,024² RGB lossless | C++ upload suite | 1 | 262.8 ms | 295.9 ms | +13.0 % |
+| Encode 1,024² RGB lossy | C++ upload suite | 1 | 240.4 ms | 183.7 ms | -24.0 % |
+| Encode 1,024² RGB lossless | C++ upload suite | 1 | 253.9 ms | 178.8 ms | -30.0 % |
 
 - neo-j2k C++ is faster than OpenJPEG on every listed decode, from 1.18× to 2.96×.
-- One-thread C++ encoding is 13-14% slower than OpenJPEG at 1,024² in the upload benchmark.
+- One-thread C++ encoding is 24-30% faster than OpenJPEG at 1,024² in the upload benchmark, measured after the
+  C++ encoder's MQ-coder redesign (the C++ README's encode rows; later encoder steps take a few percent more off).
 
 The complete C++/OpenJPEG tables are in the
-[neo-j2k C++ README](https://github.com/anne-skydancer/neo-j2k#how-fast).
+[neo-j2k C++ README](https://github.com/anne-skydancer/neo-j2k#performance).
 
 ### Native Rust versus neo-j2k C++
 
@@ -546,7 +547,7 @@ built-in limit profiles and parts of its test harness follow their requests.
 ### Performance
 
 This repository holds no viewer-specific benchmark. The viewer measurements of the C++ library are in the
-[neo-j2k C++ README](https://github.com/anne-skydancer/neo-j2k#how-fast).
+[neo-j2k C++ README](https://github.com/anne-skydancer/neo-j2k#performance).
 
 ## Scope and roadmap
 
