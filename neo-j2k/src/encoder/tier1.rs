@@ -22,6 +22,8 @@ const SIGMA_NEIGHBOURS: u32 = 0x1ef;
 const MU_THIS: u32 = 1 << 20;
 const PI_THIS: u32 = 1 << 21;
 const ALL_PI: u32 = PI_THIS | (PI_THIS << 3) | (PI_THIS << 6) | (PI_THIS << 9);
+const ALL_SIGMA: u32 = SIGMA_THIS | (SIGMA_THIS << 3) | (SIGMA_THIS << 6) | (SIGMA_THIS << 9);
+const PI_TO_SIGMA: u32 = PI_THIS.trailing_zeros() - SIGMA_THIS.trailing_zeros();
 const CONTEXT_MAGNITUDE: usize = 14;
 
 #[derive(Debug, Default)]
@@ -46,14 +48,41 @@ fn magnitude(value: u32) -> u32 {
     value & 0x7fff_ffff
 }
 
-fn distortion_decrease(value: u32, plane: u32, refinement: bool) -> i32 {
-    let table = match (refinement, plane == 0) {
+fn distortion_table(refinement: bool, plane: u32) -> &'static [i16; 128] {
+    match (refinement, plane == 0) {
         (false, false) => &distortion::SIGNIFICANCE,
         (false, true) => &distortion::SIGNIFICANCE_PLANE_ZERO,
         (true, false) => &distortion::REFINEMENT,
         (true, true) => &distortion::REFINEMENT_PLANE_ZERO,
-    };
-    i32::from(table[((magnitude(value) >> plane) & 0x7f) as usize])
+    }
+}
+
+/// What the three passes need of a bit-plane: the magnitude bit, the distortion table and the shift.
+#[derive(Clone, Copy)]
+struct Plane {
+    one: u32,
+    shift: u32,
+    significance: &'static [i16; 128],
+    refinement: &'static [i16; 128],
+}
+
+impl Plane {
+    fn new(shift: u32) -> Self {
+        Self {
+            one: 1 << (shift + FRACTIONAL_BITS),
+            shift,
+            significance: distortion_table(false, shift),
+            refinement: distortion_table(true, shift),
+        }
+    }
+
+    fn bit(self, sample: u32) -> u32 {
+        u32::from(sample & self.one != 0)
+    }
+
+    fn decrease(self, table: &[i16; 128], sample: u32) -> i32 {
+        i32::from(table[((magnitude(sample) >> self.shift) & 0x7f) as usize])
+    }
 }
 
 struct Passes<'a> {
@@ -115,33 +144,55 @@ impl Passes<'_> {
         }
     }
 
-    fn significance(&mut self, coder: &mut Encoder<'_>, plane: u32) -> i32 {
-        let one = 1 << (plane + FRACTIONAL_BITS);
-        let stride = self.width + 2;
+    /// One lane of the significance-propagation pass. The caller has bounded `lane` by the
+    /// stripe's rows.
+    #[inline(always)]
+    fn significance_lane(
+        &mut self,
+        coder: &mut Encoder<'_>,
+        index: usize,
+        lane: usize,
+        sample: u32,
+        plane: Plane,
+        column_flags: &mut u32,
+    ) -> i32 {
+        let shift = lane * 3;
+        let flags = *column_flags >> shift;
+        let mut change = 0;
+        if flags & (SIGMA_THIS | PI_THIS) == 0 && flags & SIGMA_NEIGHBOURS != 0 {
+            let significant = plane.bit(sample);
+            coder.symbol(self.significance_context(flags), significant);
+            if significant != 0 {
+                self.sign(coder, index, lane, sample, column_flags);
+                change = plane.decrease(plane.significance, sample);
+            }
+            *column_flags |= PI_THIS << shift;
+        }
+        change
+    }
+
+    /// The flags index of a stripe's first column, and the samples of a stripe column.
+    fn stripe_base(&self, row: usize) -> usize {
+        (row / 4 + 1) * (self.width + 2) + 1
+    }
+
+    fn significance(&mut self, coder: &mut Encoder<'_>, plane: Plane) -> i32 {
+        let data = self.data;
         let mut change = 0;
         for row in (0..self.height).step_by(4) {
             let rows = (self.height - row).min(4);
+            let base = self.stripe_base(row);
             for column in 0..self.width {
-                let index = (row / 4 + 1) * stride + column + 1;
+                let index = base + column;
                 let mut column_flags = self.flags[index];
-                if column_flags == 0 {
+                // Nothing to code in a column with no flags, or whose lanes are all significant
+                // or padding (padding is marked visited).
+                if column_flags == 0 || (column_flags | (column_flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
                     continue;
                 }
-                let samples = row * self.width + column * rows;
-                for lane in 0..rows {
-                    let shift = lane * 3;
-                    let flags = column_flags >> shift;
-                    if flags & (SIGMA_THIS | PI_THIS) != 0 || flags & SIGMA_NEIGHBOURS == 0 {
-                        continue;
-                    }
-                    let sample = self.data[samples + lane];
-                    let significant = u32::from(magnitude(sample) & one != 0);
-                    coder.symbol(self.significance_context(flags), significant);
-                    if significant != 0 {
-                        self.sign(coder, index, lane, sample, &mut column_flags);
-                        change += distortion_decrease(sample, plane, false);
-                    }
-                    column_flags |= PI_THIS << shift;
+                let samples = &data[row * self.width + column * rows..][..rows];
+                for (lane, &sample) in samples.iter().enumerate() {
+                    change += self.significance_lane(coder, index, lane, sample, plane, &mut column_flags);
                 }
                 self.flags[index] = column_flags;
             }
@@ -149,80 +200,87 @@ impl Passes<'_> {
         change
     }
 
-    fn refine(&mut self, coder: &mut Encoder<'_>, plane: u32) -> i32 {
-        let one = 1 << (plane + FRACTIONAL_BITS);
-        let stride = self.width + 2;
+    fn refine(&mut self, coder: &mut Encoder<'_>, plane: Plane) -> i32 {
+        let data = self.data;
         let mut change = 0;
         for row in (0..self.height).step_by(4) {
             let rows = (self.height - row).min(4);
+            let base = self.stripe_base(row);
             for column in 0..self.width {
-                let index = (row / 4 + 1) * stride + column + 1;
-                let mut column_flags = self.flags[index];
-                if column_flags == 0 {
+                let index = base + column;
+                let column_flags = self.flags[index];
+                // Padding lanes never get SIGMA_THIS, so only real samples are eligible.
+                let mut eligible = (column_flags & !(column_flags >> PI_TO_SIGMA)) & ALL_SIGMA;
+                if eligible == 0 {
                     continue;
                 }
-                let samples = row * self.width + column * rows;
-                for lane in 0..rows {
-                    let shift = lane * 3;
+                let samples = &data[row * self.width + column * rows..][..rows];
+                let mut refined = 0;
+                while eligible != 0 {
+                    let shift = eligible.trailing_zeros() - SIGMA_THIS.trailing_zeros();
                     let flags = column_flags >> shift;
-                    if flags & (SIGMA_THIS | PI_THIS) != SIGMA_THIS {
-                        continue;
-                    }
                     let context = if flags & MU_THIS != 0 {
                         2
                     } else {
                         usize::from(flags & SIGMA_NEIGHBOURS != 0)
                     };
-                    let sample = self.data[samples + lane];
-                    coder.symbol(CONTEXT_MAGNITUDE + context, u32::from(magnitude(sample) & one != 0));
-                    change += distortion_decrease(sample, plane, true);
-                    column_flags |= MU_THIS << shift;
+                    let sample = samples[(shift / 3) as usize];
+                    coder.symbol(CONTEXT_MAGNITUDE + context, plane.bit(sample));
+                    change += plane.decrease(plane.refinement, sample);
+                    refined |= MU_THIS << shift;
+                    eligible &= eligible - 1;
                 }
-                self.flags[index] = column_flags;
+                self.flags[index] = column_flags | refined;
             }
         }
         change
     }
 
-    fn cleanup(&mut self, coder: &mut Encoder<'_>, plane: u32) -> i32 {
-        let one = 1 << (plane + FRACTIONAL_BITS);
-        let stride = self.width + 2;
+    fn cleanup(&mut self, coder: &mut Encoder<'_>, plane: Plane) -> i32 {
+        let data = self.data;
         let mut change = 0;
         for row in (0..self.height).step_by(4) {
             let rows = (self.height - row).min(4);
+            let base = self.stripe_base(row);
+            // The visited marks of this stripe's real lanes; padding lanes stay marked.
+            let real_pi = if rows == 4 {
+                ALL_PI
+            } else {
+                ALL_PI & !(u32::MAX << (21 + rows * 3))
+            };
             for column in 0..self.width {
-                let index = (row / 4 + 1) * stride + column + 1;
-                let samples = row * self.width + column * rows;
+                let index = base + column;
                 let mut column_flags = self.flags[index];
-                let run_start = if rows == 4 && column_flags == 0 {
-                    let run = self.data[samples..samples + 4]
-                        .iter()
-                        .position(|&sample| magnitude(sample) & one != 0);
-                    coder.symbol(CONTEXT_AGGREGATE, u32::from(run.is_some()));
-                    let Some(run) = run else { continue };
-                    let run_bits = u32::try_from(run).expect("run fits in two bits");
-                    coder.symbol(CONTEXT_UNIFORM, run_bits >> 1);
-                    coder.symbol(CONTEXT_UNIFORM, run_bits & 1);
-                    Some(run)
-                } else {
-                    None
-                };
-                for lane in run_start.unwrap_or(0)..rows {
+                if (column_flags | (column_flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
+                    self.flags[index] = column_flags & !real_pi;
+                    continue;
+                }
+                let samples = &data[row * self.width + column * rows..][..rows];
+                let mut run = None;
+                if rows == 4 && column_flags == 0 {
+                    let first = samples.iter().position(|&sample| sample & plane.one != 0);
+                    coder.symbol(CONTEXT_AGGREGATE, u32::from(first.is_some()));
+                    let Some(first) = first else { continue };
+                    let bits = u32::try_from(first).expect("run fits in two bits");
+                    coder.symbol(CONTEXT_UNIFORM, bits >> 1);
+                    coder.symbol(CONTEXT_UNIFORM, bits & 1);
+                    run = Some(first);
+                }
+                for (lane, &sample) in samples.iter().enumerate().skip(run.unwrap_or(0)) {
                     let shift = lane * 3;
                     let flags = column_flags >> shift;
-                    let sample = self.data[samples + lane];
-                    let significant = if run_start == Some(lane) {
+                    let significant = if run == Some(lane) {
                         true
                     } else if flags & (SIGMA_THIS | PI_THIS) == 0 {
-                        let bit = magnitude(sample) & one != 0;
-                        coder.symbol(self.significance_context(flags), u32::from(bit));
-                        bit
+                        let bit = plane.bit(sample);
+                        coder.symbol(self.significance_context(flags), bit);
+                        bit != 0
                     } else {
                         false
                     };
                     if significant {
                         self.sign(coder, index, lane, sample, &mut column_flags);
-                        change += distortion_decrease(sample, plane, false);
+                        change += plane.decrease(plane.significance, sample);
                     }
                     column_flags &= !(PI_THIS << shift);
                 }
@@ -300,12 +358,13 @@ pub(super) fn encode(
         * step_size;
     let mut total_distortion = 0.0;
     for plane in (0..numbps).rev() {
+        let context = Plane::new(plane);
         let first = if plane == numbps - 1 { 2 } else { 0 };
         for pass_index in first..3 {
             let decrease = match pass_index {
-                0 => passes.significance(&mut coder, plane),
-                1 => passes.refine(&mut coder, plane),
-                _ => passes.cleanup(&mut coder, plane),
+                0 => passes.significance(&mut coder, context),
+                1 => passes.refine(&mut coder, context),
+                _ => passes.cleanup(&mut coder, context),
             };
             let mut weighted = weight * f64::from(1 << plane);
             weighted *= weighted * f64::from(decrease) / 8192.0;
