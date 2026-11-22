@@ -12,10 +12,12 @@ env:
   CARGO_INCREMENTAL: "0"
   CARGO_TERM_COLOR: always
   NJ2K_ORACLE_PRESET: linux-gcc
+  CC: gcc-15
+  CXX: g++-15
 
 jobs:
   differential:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -27,11 +29,25 @@ jobs:
           repository: anne-skydancer/neo-j2k
           persist-credentials: false
           path: cpp
+      - name: C++ toolchain
+        run: sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq && sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ninja-build g++-15
       - name: Toolchain
         working-directory: rust
         run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          workspaces: |
+            rust
+            rust/fuzz
+          cache-on-failure: true
       - name: Differential workspace tests
         working-directory: rust
         env:
           NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
         run: cargo test --release --workspace --locked -- --test-threads=1
+      - name: Fuzz harness against the C++ oracle (seeds and regression inputs)
+        working-directory: rust
+        env:
+          NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+        run: cargo test --release --manifest-path fuzz/Cargo.toml --features oracle --lib --locked -- --test-threads=1

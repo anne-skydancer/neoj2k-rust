@@ -1,0 +1,60 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# Short fuzzing of every pull request that touches code (ClusterFuzzLite, libFuzzer): the
+# header_decode and roundtrip targets with AddressSanitizer, five minutes, from the corpus batch
+# fuzzing stores (cflite-batch.yml, pruned by cflite-prune.yml) and the seeds
+# .clusterfuzzlite/build.sh packs (the generated corpus, the JP2 seeds, the round-trip seeds), on the
+# code the change touches (the coverage report of cflite-coverage.yml). The targets that compare
+# with the C++ oracle run in nightly.yml.
+name: ClusterFuzzLite PR fuzzing
+
+on:
+  pull_request:
+    paths:
+      - 'neo-j2k/src/**'
+      - 'neo-j2k/Cargo.toml'
+      - 'fuzz/**'
+      - 'corpus/generated/**'
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'rust-toolchain.toml'
+      - 'nightly-toolchain'
+      - '.clusterfuzzlite/**'
+      - '.github/workflows/cflite-pr.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # run_fuzzers reads the corpus and the coverage report the batch, prune and coverage workflows
+  # store as artifacts; until they have run it starts from the seeds. Any crash fails the pull
+  # request.
+  actions: read
+
+jobs:
+  fuzz:
+    name: fuzz (${{ matrix.sanitizer }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    concurrency:
+      group: cflite-${{ matrix.sanitizer }}-${{ github.event.pull_request.number || github.ref }}
+      cancel-in-progress: true
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address]
+    steps:
+      - name: Build fuzzers (${{ matrix.sanitizer }})
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1  # v1
+        with:
+          language: rust
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          sanitizer: ${{ matrix.sanitizer }}
+      - name: Run fuzzers (${{ matrix.sanitizer }})
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1  # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: 300
+          mode: code-change
+          sanitizer: ${{ matrix.sanitizer }}
+          output-sarif: false
