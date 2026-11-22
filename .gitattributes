@@ -1,0 +1,3 @@
+# the ClusterFuzzLite image runs these on Linux: LF whatever the checkout
+.clusterfuzzlite/* text eol=lf
+*.sh text eol=lf

@@ -1,0 +1,145 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# Nightly, on Linux: ten minutes of libFuzzer (cargo-fuzz, the nightly pinned in nightly-toolchain)
+# per fuzz target with AddressSanitizer, one job each. The two targets that need no C++ run on the
+# stock runner; the three that compare with the C++ oracle (differential, encode_options,
+# api_sequence) check out the C++ repository and build the oracle with GCC 15, as oracle.yml does.
+# The fuzzers start from the corpus the earlier nights grew, kept in the Actions cache (minimised to
+# the inputs that add coverage), and from the checked-in seeds; findings are uploaded as an artifact.
+# ClusterFuzzLite (cflite-*.yml) fuzzes the first two targets on pull requests and in batch too.
+name: Nightly fuzzing
+
+on:
+  schedule:
+    - cron: '17 3 * * *'
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: Fuzzing time per target, in seconds
+        default: '600'
+
+permissions:
+  contents: read
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+  NJ2K_ORACLE_PRESET: linux-gcc
+  CC: gcc-15
+  CXX: g++-15
+
+jobs:
+  fuzz:
+    name: ${{ matrix.target }}
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: header_decode
+            seeds: corpus/generated fuzz/seeds/jp2
+            max_len: 1048576
+            timeout: 5
+          - target: roundtrip
+            seeds: fuzz/seeds/roundtrip
+            max_len: 16400
+            timeout: 5
+          - target: differential
+            oracle: true
+            seeds: corpus/generated fuzz/seeds/jp2
+            max_len: 131072
+            timeout: 5
+          - target: encode_options
+            oracle: true
+            seeds: fuzz/seeds/encode
+            max_len: 16400
+            timeout: 5
+          - target: api_sequence
+            oracle: true
+            seeds: fuzz/seeds/api_sequence
+            max_len: 18
+            timeout: 10
+    env:
+      FEATURES: ${{ matrix.oracle && '--features oracle' || '' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: C++ oracle sources
+        if: matrix.oracle
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          persist-credentials: false
+          path: cpp
+      - name: C++ toolchain
+        if: matrix.oracle
+        run: |
+          set -euo pipefail
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ninja-build g++-15
+          echo "NJ2K_CPP_SOURCE=$GITHUB_WORKSPACE/cpp" >> "$GITHUB_ENV"
+      - name: Toolchain
+        run: |
+          set -euo pipefail
+          nightly="$(cat nightly-toolchain)"
+          rustup toolchain install "$nightly" --profile minimal
+          echo "NIGHTLY=$nightly" >> "$GITHUB_ENV"
+      - name: cargo-fuzz
+        uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2.90.8
+        with:
+          tool: cargo-fuzz@0.13.2
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          workspaces: fuzz
+          cache-on-failure: true
+          shared-key: fuzz-${{ matrix.oracle && 'oracle' || 'plain' }}
+      - name: Corpus of the earlier nights (cache)
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          key: nightly-rust-corpus-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: nightly-rust-corpus-${{ matrix.target }}-
+      - name: Seeds and regression inputs replay
+        run: |
+          set -euo pipefail
+          mkdir -p "fuzz/corpus/${{ matrix.target }}"
+          # every kept input and seed once, before the new fuzzing: a regression fails here, fast
+          # shellcheck disable=SC2086
+          cargo +"$NIGHTLY" fuzz run --fuzz-dir fuzz $FEATURES "${{ matrix.target }}" \
+            "fuzz/corpus/${{ matrix.target }}" ${{ matrix.seeds }} fuzz/regressions \
+            -- -runs=0 -max_len=${{ matrix.max_len }} -timeout=${{ matrix.timeout }}
+      - name: Fuzz
+        run: |
+          set -euo pipefail
+          # new inputs go to the first folder: the corpus the cache keeps
+          # shellcheck disable=SC2086
+          cargo +"$NIGHTLY" fuzz run --fuzz-dir fuzz $FEATURES "${{ matrix.target }}" \
+            "fuzz/corpus/${{ matrix.target }}" ${{ matrix.seeds }} \
+            -- -max_len=${{ matrix.max_len }} -max_total_time=${{ inputs.seconds || '600' }} \
+            -timeout=${{ matrix.timeout }} -dict=fuzz/j2k.dict -print_final_stats=1
+      - name: Minimise the corpus
+        if: always()
+        run: |
+          set -uo pipefail
+          # keep only the inputs that add coverage, so the cache stays small
+          # shellcheck disable=SC2086
+          cargo +"$NIGHTLY" fuzz cmin --fuzz-dir fuzz $FEATURES "${{ matrix.target }}" \
+            || echo "cmin failed, the corpus is kept as it is"
+          echo "${{ matrix.target }}: $(find "fuzz/corpus/${{ matrix.target }}" -type f | wc -l) inputs kept"
+      - name: Keep the corpus (cache)
+        if: always()
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: fuzz/corpus/${{ matrix.target }}
+          key: nightly-rust-corpus-${{ matrix.target }}-${{ github.run_id }}
+      - name: Upload findings
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-findings-${{ matrix.target }}
+          path: fuzz/artifacts/${{ matrix.target }}/
+          if-no-files-found: ignore
