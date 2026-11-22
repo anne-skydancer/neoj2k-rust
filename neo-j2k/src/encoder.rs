@@ -306,7 +306,7 @@ impl EncodingBuffers {
             wavelet::colour_transform(&mut self.samples, plane_len, settings.reversible);
         }
         if settings.resolutions > 1 {
-            let line_len = wavelet::scratch_len(settings.width, settings.height, settings.reversible);
+            let line_len = wavelet::scratch_len(settings.width, settings.height);
             if let Some(jobs) = jobs.filter(|_| settings.components > 1) {
                 resize_with(&mut self.wavelet_lines, settings.components, Vec::new)?;
                 for line in &mut self.wavelet_lines {

@@ -137,7 +137,7 @@ mod tests {
 
     #[test]
     fn shared_encoder_seeds() {
-        let fuzz = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../fuzz");
+        let fuzz = Path::new(env!("CARGO_MANIFEST_DIR"));
         for entry in std::fs::read_dir(fuzz.join("seeds/encode")).unwrap() {
             let path = entry.unwrap().path();
             if path.extension().is_some_and(|extension| extension == "bin") {

@@ -550,3 +550,84 @@ fn compare_encoding(
     let mismatch = bytes.iter().zip(&oracle).position(|(ours, theirs)| ours != theirs);
     assert_eq!(mismatch, None, "first different encoded byte");
 }
+
+/// Every file of `fuzz/regressions` and the checked-in seeds, through the targets: a defect a
+/// fuzzer found stays fixed. The inputs are named `<target>-<finding>.bin` after the C++ targets
+/// they came from; the Rust targets read the same byte formats or take any bytes, so every input
+/// goes through every target that takes it.
+#[cfg(test)]
+mod replay {
+    use std::fs;
+    use std::path::{Path, PathBuf};
+
+    fn inputs(dir: &str) -> Vec<(String, Vec<u8>)> {
+        let dir: PathBuf = Path::new(env!("CARGO_MANIFEST_DIR")).join(dir);
+        let mut files: Vec<_> = fs::read_dir(&dir)
+            .unwrap_or_else(|e| panic!("{}: {e}", dir.display()))
+            .map(|entry| entry.expect("directory entry").path())
+            .filter(|path| path.is_file() && path.file_name().is_some_and(|n| n != "README.md"))
+            .collect();
+        files.sort();
+        files
+            .into_iter()
+            .map(|path| {
+                let data = fs::read(&path).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+                (
+                    path.file_name().expect("file name").to_string_lossy().into_owned(),
+                    data,
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn regressions_are_not_empty_and_named_after_a_target() {
+        let regressions = inputs("regressions");
+        assert!(!regressions.is_empty());
+        for (name, _) in regressions {
+            assert!(
+                ["header-", "decode-", "roundtrip-", "encode-"]
+                    .iter()
+                    .any(|p| name.starts_with(p)),
+                "{name}: not named <target>-<finding>.bin"
+            );
+        }
+    }
+
+    #[test]
+    fn regressions_and_seeds_replay_through_the_native_targets() {
+        for dir in ["regressions", "seeds/jp2", "seeds/roundtrip"] {
+            for (name, data) in inputs(dir) {
+                eprintln!("header_decode {dir}/{name}");
+                super::header_decode(&data);
+            }
+        }
+        for dir in ["regressions", "seeds/roundtrip"] {
+            for (name, data) in inputs(dir) {
+                eprintln!("roundtrip {dir}/{name}");
+                super::roundtrip(&data);
+            }
+        }
+    }
+
+    #[cfg(feature = "oracle")]
+    #[test]
+    fn regressions_and_seeds_replay_against_the_oracle() {
+        for dir in ["regressions", "seeds/jp2"] {
+            for (name, data) in inputs(dir) {
+                eprintln!("differential {dir}/{name}");
+                super::differential(&data);
+            }
+        }
+        for dir in ["regressions", "seeds/encode"] {
+            for (name, data) in inputs(dir) {
+                eprintln!("encode_options {dir}/{name}");
+                super::encode_options(&data);
+            }
+        }
+        for (name, data) in inputs("seeds/api_sequence") {
+            eprintln!("api_sequence {name}");
+            super::api_sequence(&data);
+        }
+    }
+}

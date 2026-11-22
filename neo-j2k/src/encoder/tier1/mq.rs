@@ -4,6 +4,35 @@
 
 use crate::t1::tables::MQ_STATES;
 
+#[derive(Clone, Copy)]
+struct State {
+    qeval: u16,
+    next_mps: u8,
+    next_lps: u8,
+}
+
+/// `MQ_STATES` without the most probable symbol, which is the low bit of the state index.
+#[allow(clippy::cast_possible_truncation, reason = "Qe is asserted to fit sixteen bits")]
+static STATES: [State; 94] = {
+    let mut states = [State {
+        qeval: 0,
+        next_mps: 0,
+        next_lps: 0,
+    }; 94];
+    let mut index = 0;
+    while index < 94 {
+        let (qeval, mps, next_mps, next_lps) = MQ_STATES[index];
+        assert!(mps as usize == index & 1 && qeval <= 0x5601);
+        states[index] = State {
+            qeval: qeval as u16,
+            next_mps,
+            next_lps,
+        };
+        index += 1;
+    }
+    states
+};
+
 pub(super) const CONTEXT_AGGREGATE: usize = 17;
 pub(super) const CONTEXT_UNIFORM: usize = 18;
 
@@ -46,6 +75,7 @@ impl<'a> Encoder<'a> {
         self.overflow
     }
 
+    #[inline(always)]
     fn byte_out(&mut self) {
         if self.position >= self.bytes.len() - 1 {
             self.overflow = true;
@@ -76,41 +106,45 @@ impl<'a> Encoder<'a> {
         }
     }
 
-    fn renormalize(&mut self) {
-        while self.a & 0x8000 == 0 {
-            self.a <<= 1;
-            self.c <<= 1;
-            self.bits -= 1;
-            if self.bits == 0 {
-                self.byte_out();
-            }
+    /// Shift `c` left by `shift` bits, emitting a byte at each byte boundary crossed. Chunked
+    /// shifts hand `byte_out` the same `c` as shifting one bit at a time.
+    #[cold]
+    #[inline(never)]
+    fn shift_with_bytes(&mut self, mut shift: u32) {
+        while shift >= self.bits {
+            shift -= self.bits;
+            self.c <<= self.bits;
+            self.byte_out();
         }
+        self.c <<= shift;
+        self.bits -= shift;
     }
 
-    #[inline]
+    /// Branch-free form of OpenJPEG's `opj_mqc_encode`: the outcome of a symbol is data
+    /// dependent and mispredicts badly as a branch, so the conditional exchange, the state
+    /// transition and the renormalisation shift are all computed without one.
+    #[inline(always)]
     pub(super) fn symbol(&mut self, context: usize, bit: u32) {
-        let (qeval, mps, next_mps, next_lps) = MQ_STATES[usize::from(self.contexts[context])];
-        self.a -= qeval;
-        if mps == bit {
-            if self.a & 0x8000 != 0 {
-                self.c = self.c.wrapping_add(qeval);
-                return;
-            }
-            if self.a < qeval {
-                self.a = qeval;
-            } else {
-                self.c = self.c.wrapping_add(qeval);
-            }
-            self.contexts[context] = next_mps;
+        let state = self.contexts[context];
+        let entry = STATES[usize::from(state)];
+        let qeval = u32::from(entry.qeval);
+        let lps = u32::from(state & 1) ^ bit;
+        let a = self.a - qeval;
+        // MPS: a < qe takes the exchange (a = qe), else c += qe. LPS: the opposite test.
+        let exchange = u32::from(a < qeval) ^ lps != 0;
+        self.c = self.c.wrapping_add(if exchange { 0 } else { qeval });
+        let renormalize = lps != 0 || a < 0x8000;
+        let a = if exchange { qeval } else { a };
+        let next = if lps != 0 { entry.next_lps } else { entry.next_mps };
+        self.contexts[context] = if renormalize { next } else { state };
+        let shift = a.leading_zeros() - 16;
+        self.a = a << shift;
+        if shift >= self.bits {
+            self.shift_with_bytes(shift);
         } else {
-            if self.a < qeval {
-                self.c = self.c.wrapping_add(qeval);
-            } else {
-                self.a = qeval;
-            }
-            self.contexts[context] = next_lps;
+            self.c <<= shift;
+            self.bits -= shift;
         }
-        self.renormalize();
     }
 
     pub(super) fn flush(&mut self) {

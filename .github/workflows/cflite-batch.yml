@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# ClusterFuzzLite batch fuzzing, daily on main: the header_decode and roundtrip targets (the targets
+# without the C++ oracle; nightly.yml fuzzes the others) for an hour with AddressSanitizer. Rust has
+# no UndefinedBehaviorSanitizer or MemorySanitizer build here: safe code cannot reach undefined
+# behaviour, the debug assertions of the fuzz build catch arithmetic overflow, and Miri covers the
+# `unsafe` of src/simd (ci.yml). The corpus each
+# run grows is kept as a workflow artifact (cifuzz-corpus-<target>), so pull request runs
+# (cflite-pr.yml) start from it rather than from the seeds alone, and crashes are reported as
+# artifacts. Prune (cflite-prune.yml) keeps the corpus small; coverage (cflite-coverage.yml) gives
+# the pull request runs their coverage report.
+name: ClusterFuzzLite batch fuzzing
+
+on:
+  schedule:
+    - cron: '41 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  # the corpus and the crashes are stored as artifacts of this workflow
+  actions: write
+
+jobs:
+  batch:
+    name: batch (${{ matrix.sanitizer }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    concurrency:
+      group: cflite-batch-${{ matrix.sanitizer }}
+      cancel-in-progress: false
+    strategy:
+      fail-fast: false
+      matrix:
+        sanitizer: [address]
+    steps:
+      - name: Build fuzzers (${{ matrix.sanitizer }})
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1  # v1
+        with:
+          language: rust
+          sanitizer: ${{ matrix.sanitizer }}
+      - name: Run fuzzers (${{ matrix.sanitizer }})
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1  # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: 3600
+          mode: batch
+          sanitizer: ${{ matrix.sanitizer }}
+          output-sarif: false

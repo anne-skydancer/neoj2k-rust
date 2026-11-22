@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# ClusterFuzzLite coverage, daily after pruning (cflite-prune.yml): the stored corpus run through the
+# targets built for coverage, stored as the artifact cifuzz-coverage-latest, which pull request runs
+# (cflite-pr.yml) read to fuzz the code a change touches.
+name: ClusterFuzzLite coverage
+
+on:
+  schedule:
+    - cron: '7 5 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  coverage:
+    name: coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    concurrency:
+      group: cflite-coverage
+      cancel-in-progress: false
+    steps:
+      - name: Build fuzzers (coverage)
+        uses: google/clusterfuzzlite/actions/build_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1  # v1
+        with:
+          language: rust
+          sanitizer: coverage
+      - name: Run fuzzers (coverage)
+        uses: google/clusterfuzzlite/actions/run_fuzzers@884713a6c30a92e5e8544c39945cd7cb630abcd1  # v1
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          fuzz-seconds: 600
+          mode: coverage
+          sanitizer: coverage
+          output-sarif: false
