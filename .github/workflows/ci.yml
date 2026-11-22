@@ -150,3 +150,176 @@ jobs:
         run: cargo test --release -p neo-j2k --test reference_replay --locked -- --test-threads=1
       - name: Fuzz harness, seeds and regression inputs
         run: cargo test --release --manifest-path fuzz/Cargo.toml --locked --lib
+
+  # The jobs below test against the C++ oracle: the C++ neo-j2k repository is checked out beside the
+  # crate (cpp/) and the oracle crate's build.rs builds it with CMake (NJ2K_CPP_SOURCE). Each job
+  # runs every test at the baseline x86-64 and at x86-64-v3, and the fuzz crate's seed and
+  # regression replay against the oracle.
+  oracle-windows:
+    name: Oracle tests (Windows, MSVC)
+    runs-on: windows-2025
+    timeout-minutes: 60
+    env:
+      NJ2K_ORACLE_NO_BUILD: "0"
+      NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+      NJ2K_TESTDATA: ${{ github.workspace }}/.testdata/openjpeg-data
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          persist-credentials: false
+          path: cpp
+      - name: Conformance data (cache)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .testdata/openjpeg-data
+          key: openjpeg-data-conformance-${{ hashFiles('tools/fetch_testdata.py') }}-windows
+      - name: Conformance data (fetch)
+        run: python -I tools/fetch_testdata.py
+      - name: Toolchain
+        run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          shared-key: oracle-windows
+          workspaces: |
+            .
+            fuzz
+      - name: Test (baseline x86-64)
+        run: |
+          set -euo pipefail
+          export NJ2K_TEST_TMP="$RUNNER_TEMP" TEMP="$RUNNER_TEMP" TMP="$RUNNER_TEMP"
+          cargo test --release --workspace --locked
+          cargo test --release --manifest-path fuzz/Cargo.toml --features oracle --locked --lib
+      - name: Test (x86-64-v3)
+        env:
+          RUSTFLAGS: -C target-cpu=x86-64-v3
+          CARGO_TARGET_DIR: target-v3
+        run: |
+          set -euo pipefail
+          export NJ2K_TEST_TMP="$RUNNER_TEMP" TEMP="$RUNNER_TEMP" TMP="$RUNNER_TEMP"
+          cargo test --release --workspace --locked
+          cargo test --release --manifest-path fuzz/Cargo.toml --features oracle --locked --lib
+  oracle-linux:
+    name: Oracle tests (Linux, GCC 15)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    env:
+      NJ2K_ORACLE_NO_BUILD: "0"
+      NJ2K_ORACLE_PRESET: linux-gcc
+      NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+      NJ2K_TESTDATA: ${{ github.workspace }}/.testdata/openjpeg-data
+      CC: gcc-15
+      CXX: g++-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          persist-credentials: false
+          path: cpp
+      - name: C++ toolchain
+        run: |
+          set -euo pipefail
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ninja-build g++-15
+          "$CXX" --version | head -n 1
+      - name: Conformance and non-regression data (cache)
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .testdata/openjpeg-data
+          key: openjpeg-data-full-${{ hashFiles('tools/fetch_testdata.py') }}-linux
+      - name: Conformance and non-regression data (fetch)
+        run: python3 -I tools/fetch_testdata.py --all
+      - name: Toolchain
+        run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          shared-key: oracle-linux
+          workspaces: |
+            .
+            fuzz
+      - name: Test (baseline x86-64)
+        run: |
+          export NJ2K_TEST_TMP="$RUNNER_TEMP" TMPDIR="$RUNNER_TEMP"
+          cargo test --release --workspace --locked
+          cargo test --release --manifest-path fuzz/Cargo.toml --features oracle --locked --lib
+      - name: Test (x86-64-v3)
+        env:
+          RUSTFLAGS: -C target-cpu=x86-64-v3
+          CARGO_TARGET_DIR: target-v3
+        run: |
+          export NJ2K_TEST_TMP="$RUNNER_TEMP" TMPDIR="$RUNNER_TEMP"
+          cargo test --release --workspace --locked
+          cargo test --release --manifest-path fuzz/Cargo.toml --features oracle --locked --lib
+  oracle-linux-lts:
+    name: Oracle tests (Ubuntu 24.04, GCC 14)
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    container:
+      image: ubuntu:24.04
+      options: --dns 168.63.129.16 --dns 8.8.8.8 --dns 1.1.1.1
+    env:
+      NJ2K_ORACLE_NO_BUILD: "0"
+      NJ2K_ORACLE_PRESET: linux-gcc
+      NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+      CC: gcc-14
+      CXX: g++-14
+      # link with the GCC the oracle is built with: its driver finds its own libstdc++ (the
+      # container's cc is another GCC, whose search path does not hold GCC 14's)
+      CARGO_TARGET_X86_64_UNKNOWN_LINUX_GNU_LINKER: gcc-14
+      # the container runs as root, whose home is /root, while the runner sets HOME to
+      # /github/home: rustup reports that mismatch, so HOME is root's and rustup has its own homes
+      HOME: /root
+      RUSTUP_HOME: /opt/rustup
+      CARGO_HOME: /opt/cargo
+    steps:
+      - name: Toolchain
+        run: |
+          set -eu
+          # the runners' in-Azure mirror, bounded fetches, one retry
+          sed -i 's#http://archive.ubuntu.com/ubuntu#http://azure.archive.ubuntu.com/ubuntu#g; s#http://security.ubuntu.com/ubuntu#http://azure.archive.ubuntu.com/ubuntu#g' /etc/apt/sources.list.d/ubuntu.sources
+          apt_opts="-o Acquire::Retries=3 -o Acquire::http::Timeout=30"
+          for attempt in 1 2; do
+            if apt-get $apt_opts update -qq && DEBIAN_FRONTEND=noninteractive apt-get $apt_opts install -y -qq g++-14 cmake ninja-build python3 git ca-certificates curl; then
+              break
+            fi
+            if [ "$attempt" = 2 ]; then echo "::error::apt failed twice"; exit 1; fi
+            echo "apt failed (attempt $attempt of 2); retrying in 30 s"; sleep 30
+          done
+          curl --proto '=https' --tlsv1.2 -fsSL --retry 5 https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain none --no-modify-path
+          echo "$CARGO_HOME/bin" >> "$GITHUB_PATH"
+          gcc-14 --version | head -n 1
+          cmake --version | head -n 1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          persist-credentials: false
+          path: cpp
+      - name: Rust (rust-toolchain.toml)
+        run: |
+          rustup toolchain install || rustup show
+          rustc --version
+      - name: Test (baseline x86-64)
+        run: |
+          export NJ2K_TEST_TMP="$RUNNER_TEMP" TMPDIR="$RUNNER_TEMP"
+          cargo test --release --workspace --locked
+      - name: Test (x86-64-v3)
+        env:
+          RUSTFLAGS: -C target-cpu=x86-64-v3
+          CARGO_TARGET_DIR: target-v3
+        run: |
+          export NJ2K_TEST_TMP="$RUNNER_TEMP" TMPDIR="$RUNNER_TEMP"
+          cargo test --release --workspace --locked

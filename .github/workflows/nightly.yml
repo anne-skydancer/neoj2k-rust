@@ -143,3 +143,100 @@ jobs:
           name: fuzz-findings-${{ matrix.target }}
           path: fuzz/artifacts/${{ matrix.target }}/
           if-no-files-found: ignore
+  reference:
+    name: extended reference cuts
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NJ2K_ORACLE_NO_BUILD: "1"
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          shared-key: reference
+          cache-on-failure: true
+      - name: Replay the extended cut table
+        run: cargo test --release --locked -p neo-j2k --test reference_replay -- --ignored --exact nightly_reference_cuts
+  fuzz-windows:
+    name: ${{ matrix.cpu }} on Windows (AddressSanitizer, MSVC)
+    runs-on: windows-2025
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        cpu: [x86-64, x86-64-v3]
+    env:
+      NJ2K_ORACLE_DIR: ${{ github.workspace }}/cpp/build/windows-msvc-asan
+      FUZZ_SECONDS: ${{ inputs.seconds || '600' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          persist-credentials: false
+          path: cpp
+      - name: Nightly
+        shell: pwsh
+        run: |
+          $nightly = (Get-Content nightly-toolchain -Raw).Trim()
+          rustup toolchain install $nightly --profile minimal
+      - name: cargo-fuzz
+        uses: taiki-e/install-action@fe3acb53a98b62c772db35de75ce0e4595e7ca8c # v2.90.8
+        with:
+          tool: cargo-fuzz@0.13.2
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          workspaces: fuzz
+          shared-key: fuzz-windows-${{ matrix.cpu }}
+          cache-on-failure: true
+      - name: Build the sanitized C++ oracle
+        shell: bash
+        working-directory: cpp
+        run: |
+          set -euo pipefail
+          cmake --preset windows-msvc-asan "-DNJ2K_RUST_SHIM_SOURCE=$(cygpath -m "$GITHUB_WORKSPACE")/neo-j2k-oracle/shim" \
+            -DNJ2K_BUILD_RUST_SHIM=ON -DNJ2K_BUILD_TESTS=OFF -DNJ2K_BUILD_TOOLS=OFF -DNJ2K_BUILD_BENCH=OFF \
+            -DNJ2K_BUILD_SHARED=OFF -DNJ2K_INSTALL=OFF
+          cmake --build --preset windows-msvc-asan --target nj2k_rust_shim --parallel
+      - name: Fuzz the five targets
+        shell: pwsh
+        env:
+          RUSTFLAGS: -C target-cpu=${{ matrix.cpu }}
+        run: |
+          $installer = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer'
+          $vs = & (Join-Path $installer vswhere.exe) -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+          Import-Module (Join-Path $vs 'Common7/Tools/Microsoft.VisualStudio.DevShell.dll')
+          Enter-VsDevShell -VsInstallPath $vs -SkipAutomaticLocation -DevCmdArguments '-arch=x64 -host_arch=x64'
+          $nightly = (Get-Content nightly-toolchain -Raw).Trim()
+          $targets = @(
+            @('header_decode', '', 'corpus/generated fuzz/seeds/jp2', 1048576, 10),
+            @('roundtrip', '', 'fuzz/seeds/roundtrip', 16400, 10),
+            @('differential', '--features oracle', 'corpus/generated fuzz/seeds/jp2', 131072, 10),
+            @('encode_options', '--features oracle', 'fuzz/seeds/encode', 16400, 10),
+            @('api_sequence', '--features oracle', 'fuzz/seeds/api_sequence', 18, 10)
+          )
+          foreach ($t in $targets) {
+            $name, $features, $seeds, $maxLen, $timeout = $t
+            New-Item -ItemType Directory -Force "fuzz/corpus/$name" | Out-Null
+            $features = if ($features) { $features -split ' ' } else { @() }
+            cargo "+$nightly" fuzz run --fuzz-dir fuzz @features $name "fuzz/corpus/$name" ($seeds -split ' ') fuzz/regressions -- "-max_len=$maxLen" "-max_total_time=$env:FUZZ_SECONDS" "-timeout=$timeout" -print_final_stats=1
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+      - name: Check the fuzz lockfile
+        shell: bash
+        run: git diff --exit-code -- fuzz/Cargo.lock
+      - name: Upload findings
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-findings-windows-${{ matrix.cpu }}
+          path: fuzz/artifacts/
+          if-no-files-found: ignore
