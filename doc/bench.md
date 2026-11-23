@@ -170,7 +170,7 @@ is not part of `ci.yml`: its jobs are long.
 |---|---|
 | Mutation lists | Every pattern of `tools/mutations/*.json` occurs the stated number of times in the checked-out code (no build). |
 | Tier-1 sweeps against the C++ (baseline, x86-64-v3) | The long comparisons with the C++ oracle (`nightly_`, six tests: every decision of the MQ decoder and encoder, the flush, the long code-block draws) pass at both CPU levels. |
-| Tier-1 mutations (shard 1 to 4) | Each mutation of the lists, applied to a scratch copy, makes the tests it names fail. The tests run in the `mutation` profile of `Cargo.toml` (no LTO, `opt-level = 1`, debug assertions and overflow checks on), in the baseline CPU level. The list is split in four by the mutation's number modulo four. A survivor is printed as possibly an equivalent mutant and fails the job. |
+| Tier-1 mutations (shard 1 to 4) | Each mutation of the lists, applied to a scratch copy, makes the tests it names fail. The tests run in the `mutation` profile of `Cargo.toml` (no LTO, `opt-level = 1`, debug assertions and overflow checks off, as in the release builds the tests normally run in), in the baseline CPU level. The list is split in four by the mutation's number modulo four. A survivor is printed as possibly an equivalent mutant and fails the job. |
 | Tier-1 benchmark | By hand only, see below. A confirmation on a shared runner, not a gate. |
 
 Each shard writes a table to the job's summary: the mutation, killed Yes or No, the test that killed it, and the seconds.
