@@ -81,7 +81,7 @@ const TABLE: [(&str, usize, usize); 35] = [
     ("TagNode", 8, 4),
     ("Segment", 24, 4),
     ("Chunk", 16, 8),
-    ("T1", 256, 8),
+    ("T1", 192, 64),
     ("EncComp", 40, 8),
     ("EncRes", 312, 8),
     ("EncCblk", 64, 8),

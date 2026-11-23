@@ -113,10 +113,6 @@ fn invalid_output() -> Error {
     Error::static_message(ErrorKind::Output, "A code-block does not fit its tile component\n")
 }
 
-fn invalid_segment() -> Error {
-    Error::static_message(ErrorKind::Data, "Code-block segments exceed their available bytes\n")
-}
-
 fn bits_as_i32(value: u32) -> i32 {
     i32::from_ne_bytes(value.to_ne_bytes())
 }
@@ -210,9 +206,9 @@ impl Scratch {
             vertical_causal: cblksty & VERTICAL_CAUSAL != 0,
         };
         if single_stripe {
-            decode_single_stripe(&mut passes, block, bitplane, bytes)?;
+            decode_single_stripe(&mut passes, block, bitplane, bytes);
         } else {
-            decode_passes::<false>(&mut passes, block, bitplane, bytes)?;
+            decode_passes::<false>(&mut passes, block, bitplane, bytes);
         }
         store_coefficients::<true>(
             &mut self.data[..samples],
@@ -228,8 +224,8 @@ impl Scratch {
 }
 
 #[inline(never)]
-fn decode_single_stripe(passes: &mut Passes<'_>, block: Block<'_>, bitplane: i32, bytes: &[u8]) -> Result<(), Error> {
-    decode_passes::<true>(passes, block, bitplane, bytes)
+fn decode_single_stripe(passes: &mut Passes<'_>, block: Block<'_>, bitplane: i32, bytes: &[u8]) {
+    decode_passes::<true>(passes, block, bitplane, bytes);
 }
 
 #[inline(always)]
@@ -238,7 +234,7 @@ fn decode_passes<const SINGLE_STRIPE: bool>(
     block: Block<'_>,
     mut bitplane: i32,
     mut bytes: &[u8],
-) -> Result<(), Error> {
+) {
     let Block {
         numbps,
         cblksty,
@@ -256,14 +252,20 @@ fn decode_passes<const SINGLE_STRIPE: bool>(
     // Tier 2 supplies segment boundaries for termination modes. OpenJPEG's decode path
     // performs no additional predictable-termination check.
     for segment in segments {
-        let (segment_data, remainder) = bytes
-            .split_at_checked(segment.len as usize)
-            .ok_or_else(invalid_segment)?;
+        // The one length check of a block, as in the C++: a segment longer than the bytes that are
+        // left is cut to them (Tier 2 gives segments that fit).
+        let (segment_data, remainder) = bytes.split_at(bytes.len().min(segment.len as usize));
         bytes = remainder;
         let raw = lazy && pass < 2 && bitplane <= bypass_bitplane;
         decoder.start_segment(segment_data, raw);
         for _ in 0..segment.real_num_passes {
             if bitplane < 1 {
+                break;
+            }
+            // A raw segment holds significance and refinement passes only (Tier 2 gives it at most
+            // two): a cleanup pass would run the arithmetic decoder on registers nobody set up. The
+            // passes of such a segment end here, as in the C++ (v0.1.3).
+            if raw && pass == 2 {
                 break;
             }
             let plane = u32::try_from(bitplane).expect("positive bit-plane index");
@@ -285,7 +287,6 @@ fn decode_passes<const SINGLE_STRIPE: bool>(
             }
         }
     }
-    Ok(())
 }
 
 /// Store a nonempty block in its validated destination, preserving row padding.
@@ -472,6 +473,98 @@ mod tests {
             });
             assert_eq!(hash, expected, "code-block case {case}");
         }
+    }
+
+    /// Decodes a lazy (BYPASS) block of `numbps` 12 whose segments are the given byte lengths and
+    /// pass counts over `bytes`.
+    fn decode_lazy(segments: &[(u32, u32)], bytes: &[u8]) -> Result<Vec<i32>, Error> {
+        let segments: Vec<Segment> = segments
+            .iter()
+            .map(|&(len, real_num_passes)| Segment {
+                len,
+                real_num_passes,
+                ..Segment::default()
+            })
+            .collect();
+        let block = Block {
+            width: 16,
+            height: 16,
+            numbps: 12,
+            orient: 0,
+            roishift: 0,
+            cblksty: LAZY,
+            segments: &segments,
+        };
+        let mut output = vec![0; 16 * 16];
+        let destination = Destination {
+            samples: &mut output,
+            offset: 0,
+            stride: 16,
+            reversible: true,
+            stepsize: 1.0,
+        };
+        Scratch::default().decode(block, [bytes], destination, &mut Diagnostics::default())?;
+        Ok(output)
+    }
+
+    fn lazy_bytes() -> Vec<u8> {
+        let mut seed = 0x2545_f491;
+        (0..90).map(|_| random_byte(&mut seed)).collect()
+    }
+
+    /// FNV-1a over the little-endian bytes of every sample: the hash the C++ `t1_decode_cblk` driver
+    /// printed for the same block (v0.1.3 checkout). The C++ keeps its coefficients doubled and the driver hashed
+    /// `t.data[k] / 2`; `Scratch::decode` writes that halved value for a reversible block, so the output is hashed as is.
+    fn lazy_hash(segments: &[(u32, u32)]) -> u64 {
+        decode_lazy(segments, &lazy_bytes())
+            .unwrap()
+            .into_iter()
+            .fold(1_469_598_103_934_665_603u64, |hash, sample| {
+                sample.to_le_bytes().into_iter().fold(hash, |hash, byte| {
+                    (hash ^ u64::from(byte)).wrapping_mul(1_099_511_628_211)
+                })
+            })
+    }
+
+    // C++ v0.1.3: the passes of a raw segment end at a cleanup pass, so a third pass asked of one
+    // changes nothing (a stream Tier 2 cannot produce). Ten MQ passes (the first cleanup and three
+    // bit-planes), then a raw segment. The hashes are the C++'s on the same 90 bytes. The fixture is
+    // seed-sensitive: the unguarded decode of the three-pass segment differs from the two-pass one in
+    // one sample only.
+    #[test]
+    fn a_raw_segments_passes_end_at_a_cleanup_pass() {
+        const CPP_HASH: u64 = 12_215_794_854_845_358_175;
+        assert_eq!(lazy_hash(&[(40, 10), (50, 2)]), CPP_HASH);
+        assert_eq!(lazy_hash(&[(40, 10), (50, 3)]), CPP_HASH);
+        let bytes = lazy_bytes();
+        let two = decode_lazy(&[(40, 10), (50, 2)], &bytes).unwrap();
+        assert_eq!(decode_lazy(&[(40, 10), (50, 3)], &bytes).unwrap(), two);
+        assert!(two.iter().any(|&v| v != 0));
+    }
+
+    // C++ v0.1.3: a segment longer than the bytes that are left is cut to them, not refused. The
+    // hashes are the C++'s on the same 90 bytes.
+    #[test]
+    fn an_over_long_segment_is_cut_to_the_bytes_there() {
+        const EXACT: u64 = 4_363_632_497_809_006_697;
+        const LATER_EMPTY: u64 = 11_813_596_342_627_290_802;
+        assert_eq!(lazy_hash(&[(90, 13)]), EXACT);
+        assert_eq!(lazy_hash(&[(1_000, 13)]), EXACT);
+        // the cut segment takes all 90 bytes; the next one finds none left
+        assert_eq!(lazy_hash(&[(1_000, 10), (5, 2)]), LATER_EMPTY);
+        assert_eq!(lazy_hash(&[(90, 10), (0, 2)]), LATER_EMPTY);
+    }
+
+    // A zero-length raw segment is not a no-op: the raw reader takes 1-bits from the artificial 0xFF
+    // marker, as the C++ does (hash of the C++ on the same bytes).
+    #[test]
+    fn a_zero_length_raw_segment_reads_the_marker() {
+        let bytes = lazy_bytes();
+        assert_eq!(lazy_hash(&[(40, 10), (0, 2)]), 1_981_228_125_986_374_911);
+        assert_ne!(
+            decode_lazy(&[(40, 10), (0, 2)], &bytes).unwrap(),
+            decode_lazy(&[(40, 10)], &bytes).unwrap()
+        );
     }
 
     #[test]

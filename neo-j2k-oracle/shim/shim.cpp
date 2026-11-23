@@ -229,6 +229,11 @@ uint32_t nj2k_shim_abi_version(void)
     return NJ2K_SHIM_ABI_VERSION;
 }
 
+uint32_t nj2k_shim_cpp_version(void)
+{
+    return (uint32_t(NJ2K_VERSION_MAJOR) << 16) | (uint32_t(NJ2K_VERSION_MINOR) << 8) | uint32_t(NJ2K_VERSION_PATCH);
+}
+
 uint32_t nj2k_shim_ready(void)
 {
     return g_shared.oracle && g_shared.neoj2k ? 1u : 0u;

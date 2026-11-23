@@ -23,9 +23,11 @@
 extern "C" {
 #endif
 
-#define NJ2K_SHIM_ABI_VERSION 6u
+#define NJ2K_SHIM_ABI_VERSION 7u
 
 uint32_t nj2k_shim_abi_version(void);
+/* the C++ checkout's NJ2K_VERSION_MAJOR << 16 | MINOR << 8 | PATCH (neoj2k.h) */
+uint32_t nj2k_shim_cpp_version(void);
 /* 1 when the harness's backends were made before main() (their making clears OPJ_NUM_THREADS, an
  * environment write that must not race the test threads) */
 uint32_t nj2k_shim_ready(void);
