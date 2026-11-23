@@ -1,0 +1,119 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# Where the time of a small decode goes (doc/codec-parity-audit-2026-11-23.md, D3). Builds the codec with the
+# off-by-default feature `bench-internals`, which turns on the decoder's stage timers (header, tile setup, packet
+# walk, Tier-1, wavelet, colour, finish, output), decodes the three small images many times and prints each stage's
+# share of the call in percent (neo-j2k/tests/stage_profile.rs). Linux only, at both CPU levels. A measurement of the
+# Rust decoder alone: the timers change no result and a build without the feature has no timer in it.
+# By hand: gh workflow run stage-profile.yml --ref <branch>
+name: Stage profile
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/stage-profile.yml
+      - neo-j2k/tests/stage_profile.rs
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stage-profile-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_INCREMENTAL: "0"
+  CARGO_TERM_COLOR: always
+
+jobs:
+  profile:
+    name: Stage shares (Linux, ${{ matrix.cpu }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - cpu: baseline
+            rustflags: ""
+            preset: linux-gcc-scalar
+          - cpu: x86-64-v3
+            rustflags: "-C target-cpu=x86-64-v3"
+            preset: linux-gcc
+    env:
+      NJ2K_ORACLE_NO_BUILD: "0"
+      NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+      NJ2K_ORACLE_PRESET: ${{ matrix.preset }}
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      CC: gcc-15
+      CXX: g++-15
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          ref: 00f273d502d211905adb756d2f75ef74321983d0 # neo-j2k v0.1.3 (the commit, not the tag object)
+          persist-credentials: false
+          path: cpp
+      - name: C++ toolchain (GCC 15)
+        run: |
+          set -euo pipefail
+          apt_opts='-o Acquire::Retries=3 -o Acquire::http::Timeout=30'
+          for attempt in 1 2 3; do
+            if sudo apt-get $apt_opts update -qq && sudo apt-get $apt_opts install -y -qq ninja-build g++-15; then break; fi
+            [ "$attempt" = 3 ] && exit 1
+            sleep $((attempt * 15))
+          done
+      - name: Runner CPU
+        run: |
+          set -euo pipefail
+          mkdir -p perf
+          python3 -I tools/perf_summary.py machine | tr -d '\r' | tee perf/machine.txt
+      - name: Toolchain
+        run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          shared-key: stage-profile-${{ matrix.cpu }}
+          cache-on-failure: true
+      - name: Build
+        run: cargo test --release --locked -p neo-j2k --features bench-internals --test stage_profile --no-run
+      - name: Stage shares, two repetitions
+        run: |
+          set -euo pipefail
+          for rep in 1 2; do
+            echo "repetition $rep of 2"
+            cargo test --release --locked -p neo-j2k --features bench-internals --test stage_profile -- \
+              --ignored --nocapture --test-threads=1 small_decode_stage_shares | tee "perf/rep-$rep.txt"
+          done
+      - name: Summary
+        if: always()
+        run: |
+          set -euo pipefail
+          {
+            echo "### Stage shares of small decodes, Linux, ${{ matrix.cpu }}, $(tr -d '\r' < perf/machine.txt)"
+            echo
+            echo "Percent of one call, by stage; two repetitions, each the median of 31 rounds of 200 calls. The rest line is the code between the stages and the clock reads themselves."
+            for rep in 1 2; do
+              echo
+              echo "#### Repetition $rep"
+              echo
+              echo '```'
+              grep -v '^test \|^running \|^$\|^warning' "perf/rep-$rep.txt" || true
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the raw output
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: stage-profile-${{ matrix.cpu }}-${{ github.run_attempt }}
+          path: perf/
+          if-no-files-found: ignore
