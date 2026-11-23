@@ -36,7 +36,7 @@ on:
         type: string
         default: ""
       pair_side:
-        description: The side the pair changes (decode or encode); the half of the sets its verdict judges
+        description: The side the pair changes (decode, encode or image, the whole-image encodes); the sets its verdict judges
         type: string
         default: decode
       pair_name:
