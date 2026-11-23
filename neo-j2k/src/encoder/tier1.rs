@@ -26,7 +26,7 @@ const PI_THIS: u32 = 1 << 21;
 const ALL_PI: u32 = PI_THIS | (PI_THIS << 3) | (PI_THIS << 6) | (PI_THIS << 9);
 const ALL_SIGMA: u32 = SIGMA_THIS | (SIGMA_THIS << 3) | (SIGMA_THIS << 6) | (SIGMA_THIS << 9);
 const PI_TO_SIGMA: u32 = PI_THIS.trailing_zeros() - SIGMA_THIS.trailing_zeros();
-const CONTEXT_MAGNITUDE: usize = 14;
+const CONTEXT_MAGNITUDE: u8 = 14;
 
 #[derive(Debug, Default)]
 pub(super) struct Workspace {
@@ -34,6 +34,7 @@ pub(super) struct Workspace {
     flags: Vec<u32>,
     bytes: Vec<u8>,
     passes: Vec<Pass>,
+    pairs: Vec<u8>,
 }
 
 fn reserve_buffer<T: Copy + Default>(buffer: &mut Vec<T>, len: usize) -> Result<(), Error> {
@@ -95,6 +96,22 @@ struct Passes<'a> {
     zero_context: &'static [u8; 512],
 }
 
+/// The refinement pass's magnitude contexts, doubled (a pair's bit goes in bit 0), by whether a neighbour is
+/// significant (bit 0 of the index) and whether the sample was refined before (bit 1).
+const MAGNITUDE_PAIR: [u8; 4] = [
+    CONTEXT_MAGNITUDE * 2,
+    CONTEXT_MAGNITUDE * 2 + 2,
+    CONTEXT_MAGNITUDE * 2 + 4,
+    CONTEXT_MAGNITUDE * 2 + 4,
+];
+const _: () = assert!(CONTEXT_MAGNITUDE * 2 + 4 < 128);
+
+/// The refinement pass's pairs (context, bit), one byte a sample at most.
+type PairList = [u8; MAX_SAMPLES];
+
+/// The rows of a column that a cleanup pass may code: bit 3r is row r.
+const ALL_ROWS: u32 = 0x249;
+
 impl Passes<'_> {
     fn initialize(&mut self) {
         self.flags.fill(0);
@@ -109,36 +126,42 @@ impl Passes<'_> {
         }
     }
 
+    #[inline(always)]
     fn significance_context(&self, flags: u32) -> usize {
         usize::from(self.zero_context[(flags & SIGMA_NEIGHBOURS) as usize])
     }
 
-    fn sign(&mut self, coder: &mut Run<'_>, index: usize, lane: usize, sample: u32, column_flags: &mut u32) {
+    /// Codes the sign of the sample of row `LANE` of the column at `index`, which has just become significant, and
+    /// marks it and its neighbours in the flags. The row is a constant, so that every shift is.
+    #[inline(always)]
+    fn sign<const LANE: usize>(&mut self, coder: &mut Run<'_>, index: usize, sample: u32, column_flags: &mut u32) {
         let flags = *column_flags;
-        let shift = lane * 3;
+        let shift = LANE * 3;
+        let west = self.flags[index - 1];
+        let east = self.flags[index + 1];
+        let north_shift = if LANE == 0 { 14 } else { 12 + LANE * 3 };
         let mut lookup = (flags >> shift) & 0x00aa;
-        lookup |= (self.flags[index - 1] >> (19 + shift)) & 1;
-        lookup |= (self.flags[index + 1] >> (17 + shift)) & (1 << 2);
-        let north_shift = if lane == 0 { 14 } else { 15 + (lane - 1) * 3 };
+        lookup |= (west >> (19 + shift)) & 1;
+        lookup |= (east >> (17 + shift)) & (1 << 2);
         lookup |= (flags >> north_shift) & (1 << 4);
         lookup |= (flags >> (16 + shift)) & (1 << 6);
-        let lookup = lookup as usize;
+        let lookup = (lookup & 0xff) as usize;
         let sign = sample >> 31;
         coder.symbol(
             usize::from(SIGN_CONTEXT[lookup]),
             sign ^ u32::from(SIGN_PREDICTION[lookup]),
         );
 
-        self.flags[index - 1] |= (1 << 5) << shift;
-        *column_flags |= ((sign << 19) | SIGMA_THIS) << shift;
-        self.flags[index + 1] |= (1 << 3) << shift;
-        if lane == 0 {
+        self.flags[index - 1] = west | ((1 << 5) << shift);
+        *column_flags = flags | (((sign << 19) | SIGMA_THIS) << shift);
+        self.flags[index + 1] = east | ((1 << 3) << shift);
+        if LANE == 0 {
             let above = index - self.width - 2;
             self.flags[above] |= (sign << 31) | (1 << 16);
             self.flags[above - 1] |= 1 << 17;
             self.flags[above + 1] |= 1 << 15;
         }
-        if lane == 3 {
+        if LANE == 3 {
             let below = index + self.width + 2;
             self.flags[below] |= (sign << 18) | (1 << 1);
             self.flags[below - 1] |= 1 << 2;
@@ -146,47 +169,44 @@ impl Passes<'_> {
         }
     }
 
-    /// One lane of the significance-propagation pass. The caller has bounded `lane` by the
-    /// stripe's rows.
+    /// One row of a column in the significance-propagation pass.
     #[inline(always)]
-    fn significance_lane(
+    fn significance_lane<const LANE: usize>(
         &mut self,
         coder: &mut Run<'_>,
         index: usize,
-        lane: usize,
         sample: u32,
         plane: Plane,
         column_flags: &mut u32,
     ) -> i32 {
-        let shift = lane * 3;
-        let flags = *column_flags >> shift;
+        let flags = *column_flags >> (LANE * 3);
         let mut change = 0;
         if flags & (SIGMA_THIS | PI_THIS) == 0 && flags & SIGMA_NEIGHBOURS != 0 {
             let significant = plane.bit(sample);
             coder.symbol(self.significance_context(flags), significant);
             if significant != 0 {
-                self.sign(coder, index, lane, sample, column_flags);
+                self.sign::<LANE>(coder, index, sample, column_flags);
                 change = plane.decrease(plane.significance, sample);
             }
-            *column_flags |= PI_THIS << shift;
+            *column_flags |= PI_THIS << (LANE * 3);
         }
         change
     }
 
-    /// The flags index of a stripe's first column, and the samples of a stripe column.
-    fn stripe_base(&self, row: usize) -> usize {
-        (row / 4 + 1) * (self.width + 2) + 1
+    /// The flags index of a stripe's first column.
+    fn stripe_base(&self, stripe: usize) -> usize {
+        (stripe + 1) * (self.width + 2) + 1
     }
 
     #[inline(never)]
     fn significance(&mut self, registers: &mut Encoder<'_>, plane: Plane) -> i32 {
         let mut coder = registers.lend();
         let data = self.data;
+        let (whole, partial) = data.split_at(self.height / 4 * 4 * self.width);
         let mut change = 0;
-        for row in (0..self.height).step_by(4) {
-            let rows = (self.height - row).min(4);
-            let base = self.stripe_base(row);
-            for column in 0..self.width {
+        for (stripe, samples) in whole.chunks_exact(4 * self.width).enumerate() {
+            let base = self.stripe_base(stripe);
+            for (column, lanes) in samples.as_chunks::<4>().0.iter().enumerate() {
                 let index = base + column;
                 let mut column_flags = self.flags[index];
                 // Nothing to code in a column with no flags, or whose lanes are all significant
@@ -194,9 +214,28 @@ impl Passes<'_> {
                 if column_flags == 0 || (column_flags | (column_flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
                     continue;
                 }
-                let samples = &data[row * self.width + column * rows..][..rows];
-                for (lane, &sample) in samples.iter().enumerate() {
-                    change += self.significance_lane(&mut coder, index, lane, sample, plane, &mut column_flags);
+                change += self.significance_lane::<0>(&mut coder, index, lanes[0], plane, &mut column_flags);
+                change += self.significance_lane::<1>(&mut coder, index, lanes[1], plane, &mut column_flags);
+                change += self.significance_lane::<2>(&mut coder, index, lanes[2], plane, &mut column_flags);
+                change += self.significance_lane::<3>(&mut coder, index, lanes[3], plane, &mut column_flags);
+                self.flags[index] = column_flags;
+            }
+        }
+        let rows = partial.len() / self.width;
+        if rows != 0 {
+            let base = self.stripe_base(self.height / 4);
+            for (column, lanes) in partial.chunks_exact(rows).enumerate() {
+                let index = base + column;
+                let mut column_flags = self.flags[index];
+                if column_flags == 0 || (column_flags | (column_flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
+                    continue;
+                }
+                change += self.significance_lane::<0>(&mut coder, index, lanes[0], plane, &mut column_flags);
+                if let Some(&sample) = lanes.get(1) {
+                    change += self.significance_lane::<1>(&mut coder, index, sample, plane, &mut column_flags);
+                }
+                if let Some(&sample) = lanes.get(2) {
+                    change += self.significance_lane::<2>(&mut coder, index, sample, plane, &mut column_flags);
                 }
                 self.flags[index] = column_flags;
             }
@@ -207,22 +246,20 @@ impl Passes<'_> {
     }
 
     #[inline(never)]
-    fn refine(&mut self, registers: &mut Encoder<'_>, plane: Plane) -> i32 {
+    fn refine(&mut self, registers: &mut Encoder<'_>, plane: Plane, _list: &mut PairList) -> i32 {
         let mut coder = registers.lend();
         let data = self.data;
+        let (whole, partial) = data.split_at(self.height / 4 * 4 * self.width);
         let mut change = 0;
-        for row in (0..self.height).step_by(4) {
-            let rows = (self.height - row).min(4);
-            let base = self.stripe_base(row);
-            for column in 0..self.width {
+        for (stripe, samples) in whole.chunks_exact(4 * self.width).enumerate() {
+            let base = self.stripe_base(stripe);
+            for (column, lanes) in samples.as_chunks::<4>().0.iter().enumerate() {
                 let index = base + column;
                 let column_flags = self.flags[index];
-                // Padding lanes never get SIGMA_THIS, so only real samples are eligible.
                 let mut eligible = (column_flags & !(column_flags >> PI_TO_SIGMA)) & ALL_SIGMA;
                 if eligible == 0 {
                     continue;
                 }
-                let samples = &data[row * self.width + column * rows..][..rows];
                 let mut refined = 0;
                 while eligible != 0 {
                     let shift = eligible.trailing_zeros() - SIGMA_THIS.trailing_zeros();
@@ -232,8 +269,36 @@ impl Passes<'_> {
                     } else {
                         usize::from(flags & SIGMA_NEIGHBOURS != 0)
                     };
-                    let sample = samples[(shift / 3) as usize];
-                    coder.symbol(CONTEXT_MAGNITUDE + context, plane.bit(sample));
+                    let sample = lanes[(shift / 3) as usize & 3];
+                    coder.symbol(usize::from(CONTEXT_MAGNITUDE) + context, plane.bit(sample));
+                    change += plane.decrease(plane.refinement, sample);
+                    refined |= MU_THIS << shift;
+                    eligible &= eligible - 1;
+                }
+                self.flags[index] = column_flags | refined;
+            }
+        }
+        let rows = partial.len() / self.width;
+        if rows != 0 {
+            let base = self.stripe_base(self.height / 4);
+            for (column, lanes) in partial.chunks_exact(rows).enumerate() {
+                let index = base + column;
+                let column_flags = self.flags[index];
+                let mut eligible = (column_flags & !(column_flags >> PI_TO_SIGMA)) & ALL_SIGMA;
+                if eligible == 0 {
+                    continue;
+                }
+                let mut refined = 0;
+                while eligible != 0 {
+                    let shift = eligible.trailing_zeros() - SIGMA_THIS.trailing_zeros();
+                    let flags = column_flags >> shift;
+                    let context = if flags & MU_THIS != 0 {
+                        2
+                    } else {
+                        usize::from(flags & SIGMA_NEIGHBOURS != 0)
+                    };
+                    let sample = lanes[(shift / 3) as usize];
+                    coder.symbol(usize::from(CONTEXT_MAGNITUDE) + context, plane.bit(sample));
                     change += plane.decrease(plane.refinement, sample);
                     refined |= MU_THIS << shift;
                     eligible &= eligible - 1;
@@ -246,57 +311,132 @@ impl Passes<'_> {
         change
     }
 
+    /// One row of a column of the cleanup pass, coded when the column's candidate mask `rows` has it: its
+    /// significance, and its sign when it is.
+    #[inline(always)]
+    fn cleanup_lane<const LANE: usize>(
+        &mut self,
+        coder: &mut Run<'_>,
+        index: usize,
+        sample: u32,
+        plane: Plane,
+        rows: u32,
+        column_flags: &mut u32,
+    ) -> i32 {
+        let mut change = 0;
+        if (rows >> (3 * LANE)) & 1 != 0 {
+            let flags = *column_flags >> (3 * LANE);
+            let significant = plane.bit(sample);
+            coder.symbol(self.significance_context(flags), significant);
+            if significant != 0 {
+                self.sign::<LANE>(coder, index, sample, column_flags);
+                change = plane.decrease(plane.significance, sample);
+            }
+        }
+        change
+    }
+
+    /// The first significant row of a run-mode column: its sign alone is coded.
+    #[inline(always)]
+    fn cleanup_first<const LANE: usize>(
+        &mut self,
+        coder: &mut Run<'_>,
+        index: usize,
+        lanes: &[u32; 4],
+        plane: Plane,
+        column_flags: &mut u32,
+    ) -> i32 {
+        self.sign::<LANE>(coder, index, lanes[LANE], column_flags);
+        plane.decrease(plane.significance, lanes[LANE])
+    }
+
     #[inline(never)]
     fn cleanup(&mut self, registers: &mut Encoder<'_>, plane: Plane) -> i32 {
         let mut coder = registers.lend();
         let data = self.data;
+        let (whole, partial) = data.split_at(self.height / 4 * 4 * self.width);
         let mut change = 0;
-        for row in (0..self.height).step_by(4) {
-            let rows = (self.height - row).min(4);
-            let base = self.stripe_base(row);
-            // The visited marks of this stripe's real lanes; padding lanes stay marked.
-            let real_pi = if rows == 4 {
-                ALL_PI
-            } else {
-                ALL_PI & !(u32::MAX << (21 + rows * 3))
-            };
-            for column in 0..self.width {
+        for (stripe, samples) in whole.chunks_exact(4 * self.width).enumerate() {
+            let base = self.stripe_base(stripe);
+            for (column, lanes) in samples.as_chunks::<4>().0.iter().enumerate() {
+                let index = base + column;
+                let mut column_flags = self.flags[index];
+                if (column_flags | (column_flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
+                    self.flags[index] = column_flags & !ALL_PI;
+                    continue;
+                }
+                if column_flags == 0 {
+                    // Run mode: one decision for the column unless a row is significant at this plane.
+                    let bits = u32::from(lanes[0] & plane.one != 0)
+                        | (u32::from(lanes[1] & plane.one != 0) << 1)
+                        | (u32::from(lanes[2] & plane.one != 0) << 2)
+                        | (u32::from(lanes[3] & plane.one != 0) << 3);
+                    coder.symbol(CONTEXT_AGGREGATE, u32::from(bits != 0));
+                    if bits == 0 {
+                        continue;
+                    }
+                    let first = bits.trailing_zeros();
+                    coder.symbol(CONTEXT_UNIFORM, first >> 1);
+                    coder.symbol(CONTEXT_UNIFORM, first & 1);
+                    // No row is significant or visited yet, so every row after the first is coded.
+                    match first {
+                        0 => {
+                            change += self.cleanup_first::<0>(&mut coder, index, lanes, plane, &mut column_flags);
+                            change +=
+                                self.cleanup_lane::<1>(&mut coder, index, lanes[1], plane, ALL_ROWS, &mut column_flags);
+                            change +=
+                                self.cleanup_lane::<2>(&mut coder, index, lanes[2], plane, ALL_ROWS, &mut column_flags);
+                            change +=
+                                self.cleanup_lane::<3>(&mut coder, index, lanes[3], plane, ALL_ROWS, &mut column_flags);
+                        }
+                        1 => {
+                            change += self.cleanup_first::<1>(&mut coder, index, lanes, plane, &mut column_flags);
+                            change +=
+                                self.cleanup_lane::<2>(&mut coder, index, lanes[2], plane, ALL_ROWS, &mut column_flags);
+                            change +=
+                                self.cleanup_lane::<3>(&mut coder, index, lanes[3], plane, ALL_ROWS, &mut column_flags);
+                        }
+                        2 => {
+                            change += self.cleanup_first::<2>(&mut coder, index, lanes, plane, &mut column_flags);
+                            change +=
+                                self.cleanup_lane::<3>(&mut coder, index, lanes[3], plane, ALL_ROWS, &mut column_flags);
+                        }
+                        _ => change += self.cleanup_first::<3>(&mut coder, index, lanes, plane, &mut column_flags),
+                    }
+                } else {
+                    // A row is coded when it is neither significant nor visited, a set fixed at the column's
+                    // start: coding a row changes that row's own significance mark and the neighbour marks of the
+                    // others, never another row's own marks.
+                    let rows = !((column_flags >> 4) | (column_flags >> 21)) & ALL_ROWS;
+                    change += self.cleanup_lane::<0>(&mut coder, index, lanes[0], plane, rows, &mut column_flags);
+                    change += self.cleanup_lane::<1>(&mut coder, index, lanes[1], plane, rows, &mut column_flags);
+                    change += self.cleanup_lane::<2>(&mut coder, index, lanes[2], plane, rows, &mut column_flags);
+                    change += self.cleanup_lane::<3>(&mut coder, index, lanes[3], plane, rows, &mut column_flags);
+                }
+                self.flags[index] = column_flags & !ALL_PI;
+            }
+        }
+        let rows = partial.len() / self.width;
+        if rows != 0 {
+            let base = self.stripe_base(self.height / 4);
+            // The visited marks of this stripe's real rows; the padding rows stay marked.
+            let real_pi = ALL_PI & !(u32::MAX << (21 + rows * 3));
+            for (column, lanes) in partial.chunks_exact(rows).enumerate() {
                 let index = base + column;
                 let mut column_flags = self.flags[index];
                 if (column_flags | (column_flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
                     self.flags[index] = column_flags & !real_pi;
                     continue;
                 }
-                let samples = &data[row * self.width + column * rows..][..rows];
-                let mut run = None;
-                if rows == 4 && column_flags == 0 {
-                    let first = samples.iter().position(|&sample| sample & plane.one != 0);
-                    coder.symbol(CONTEXT_AGGREGATE, u32::from(first.is_some()));
-                    let Some(first) = first else { continue };
-                    let bits = u32::try_from(first).expect("run fits in two bits");
-                    coder.symbol(CONTEXT_UNIFORM, bits >> 1);
-                    coder.symbol(CONTEXT_UNIFORM, bits & 1);
-                    run = Some(first);
+                let candidates = !((column_flags >> 4) | (column_flags >> 21)) & ALL_ROWS;
+                change += self.cleanup_lane::<0>(&mut coder, index, lanes[0], plane, candidates, &mut column_flags);
+                if let Some(&sample) = lanes.get(1) {
+                    change += self.cleanup_lane::<1>(&mut coder, index, sample, plane, candidates, &mut column_flags);
                 }
-                for (lane, &sample) in samples.iter().enumerate().skip(run.unwrap_or(0)) {
-                    let shift = lane * 3;
-                    let flags = column_flags >> shift;
-                    let significant = if run == Some(lane) {
-                        true
-                    } else if flags & (SIGMA_THIS | PI_THIS) == 0 {
-                        let bit = plane.bit(sample);
-                        coder.symbol(self.significance_context(flags), bit);
-                        bit != 0
-                    } else {
-                        false
-                    };
-                    if significant {
-                        self.sign(&mut coder, index, lane, sample, &mut column_flags);
-                        change += plane.decrease(plane.significance, sample);
-                    }
-                    column_flags &= !(PI_THIS << shift);
+                if let Some(&sample) = lanes.get(2) {
+                    change += self.cleanup_lane::<2>(&mut coder, index, sample, plane, candidates, &mut column_flags);
                 }
-                self.flags[index] = column_flags;
+                self.flags[index] = column_flags & !real_pi;
             }
         }
         let kept = coder.finish();
@@ -345,6 +485,10 @@ pub(super) fn encode(
     debug_assert!(flag_count <= MAX_FLAGS);
     reserve_buffer(&mut workspace.flags, flag_count)?;
     reserve_buffer(&mut workspace.bytes, CODE_CAPACITY)?;
+    reserve_buffer(&mut workspace.pairs, MAX_SAMPLES)?;
+    let pairs: &mut PairList = (&mut workspace.pairs[..MAX_SAMPLES])
+        .try_into()
+        .expect("a pair list is as long as the largest block");
     workspace.passes.clear();
     workspace
         .passes
@@ -377,7 +521,7 @@ pub(super) fn encode(
         for pass_index in first..3 {
             let decrease = match pass_index {
                 0 => passes.significance(&mut coder, context),
-                1 => passes.refine(&mut coder, context),
+                1 => passes.refine(&mut coder, context, pairs),
                 _ => passes.cleanup(&mut coder, context),
             };
             let mut weighted = weight * f64::from(1 << plane);
