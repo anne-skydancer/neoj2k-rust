@@ -211,6 +211,11 @@ jobs:
           export NJ2K_TEST_TMP="$RUNNER_TEMP" TEMP="$RUNNER_TEMP" TMP="$RUNNER_TEMP"
           cargo test --release --workspace --locked
           cargo test --release --manifest-path fuzz/Cargo.toml --features oracle --locked --lib
+      - name: Benchmark smoke (the timing path and the pin)
+        run: |
+          set -euo pipefail
+          cargo build --release --locked -p neo-j2k-bench
+          target/release/neo-j2k-bench.exe --pin 0 --min-mcycles 1 --units 1 --blocks 16 --dumps "$NJ2K_CPP_SOURCE/tests/vectors/t1_bench"
   oracle-linux:
     name: Oracle tests (Linux, GCC 15)
     runs-on: ubuntu-26.04
@@ -267,11 +272,14 @@ jobs:
           export NJ2K_TEST_TMP="$RUNNER_TEMP" TMPDIR="$RUNNER_TEMP"
           cargo test --release --workspace --locked
           cargo test --release --manifest-path fuzz/Cargo.toml --features oracle --locked --lib
-      - name: Benchmark smoke (the six decoder dumps and the encoder sets, outputs only)
+      - name: Benchmark smoke (the six decoder dumps and the encoder sets, outputs and then the timing path)
         run: |
           set -euo pipefail
           cargo build --release --locked -p neo-j2k-bench
           target/release/neo-j2k-bench --digest-only --blocks 16 --dumps "$NJ2K_CPP_SOURCE/tests/vectors/t1_bench"
+          target/release/neo-j2k-bench --pin 0 --min-mcycles 1 --units 1 --blocks 16 --dumps "$NJ2K_CPP_SOURCE/tests/vectors/t1_bench"
+      - name: The cheapest Tier-1 sweep (every single decision of the MQ decoder, 443 million)
+        run: cargo test --release --locked -p neo-j2k --lib -- --ignored --exact t1::mq::differential::nightly_mq_decoder_every_decision
   oracle-linux-lts:
     name: Oracle tests (Ubuntu 24.04, GCC 14)
     runs-on: ubuntu-26.04

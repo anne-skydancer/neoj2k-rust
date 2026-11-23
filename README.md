@@ -25,7 +25,7 @@ Licence: BSD-2-Clause ([License](#license)). Paths below are relative to the rep
 |---|---|---|
 | `neo-j2k/` | native J2K and JP2/JPH decoding and the one-tile JPEG 2000 encoder | release crate |
 | `neo-j2k-testkit/` | the Rust side of the C++ harness in `tests/common`: requests and outcomes, the host application's request rules, `nj2k_diff`'s digests and reference tables, the codestream scanner, the PGX reader, a test pool executor. Pure Rust, no dependency | never |
-| `neo-j2k-bench/` | the Tier-1 benchmark: TSC cycles of the decoder's and the encoder's code-block entry points, driven by `tools/bench_tier1.py` ([doc/bench.md](doc/bench.md)). It holds the workspace's `unsafe` outside the codec's `simd` module (the cycle counter, thread affinity) and no dependency but the codec and the test kit | never |
+| `neo-j2k-bench/` | the Tier-1 benchmark: TSC cycles of the decoder's and the encoder's code-block entry points, driven by `tools/bench_tier1.py` ([doc/bench.md](doc/bench.md)). It is, besides the oracle and the fuzz crate, a crate that holds `unsafe` (the cycle counter, thread affinity), and has no dependency but the codec and the test kit | never |
 | `neo-j2k-oracle/` | the C++ neo-j2k, OpenJPEG at the oracle's pin and the C++ harness, built by CMake and linked through the test-only shim (`neo-j2k-oracle/shim`), behind a safe interface | never |
 
 `archive/rust/` preserves the final embedded Rust workspace moved from the C++ repository. It is a
@@ -332,14 +332,22 @@ tile buffer, the encoder's `enc_t1_encode` and its commit, and the MQ decoder's 
   `tests/vectors/t1_bench`) of the C++ checkout, decoded by Rust and by the C++ and compared coefficient by coefficient,
   in both stores (5/3 and 9/7); the checkout is read, never copied here (`neo-j2k-testkit/src/mqng.rs` reads the
   "MQNG" files); with `NJ2K_T1_VECTORS` naming the C++'s full dump set (37,424 blocks, not committed) that is run too;
+- the C++ decoder tests' other block sets: segments longer than the bytes (`test_overlong`, lengths up to 0xFFFFFFFF),
+  a raw segment holding a cleanup pass (`test_raw_cleanup`), tiny blocks over every sign and significance pattern of a
+  column (`test_split`, 5.8 million blocks here, 3.84 million in the C++, trimmed in the normal run and complete in nightly with the count of the
+  patterns it must see), blocks stored into a tile buffer of another stride and offset, and the store alone around every
+  ROI threshold; not mirrored: the table and AGG-run tests of the C++ (`test_tables`, `test_agg_run`), which check its
+  own reformulations;
 - generated code-blocks as `tests/unit/t1_unit.cpp` and `tests/unit/enc_t1_unit.cpp` draw them: every size 1..64 x 1..64
   (partial stripes included), the edge sizes in all 64 code-block styles and 4 orientations, the long shapes (1024 x 4
   and the like), hostile bit-planes and ROI shifts, segments longer than the bytes, split chunks, both wavelets; for the
   encoder blocks of every bit-plane count 0 to 25 with INT32_MIN, compared pass by pass (rate, length, termination,
   distortion bit for bit) and byte by byte;
 - the MQ coders decision by decision: random streams (the decoder's bits and registers, the encoder's registers after
-  every decision, at short buffer capacities too) and the single decisions of the C++ unit tests, from every state at the
-  intervals around the exchange and renormalisation edges. The normal run takes the trimmed enumeration: 6.5 million
+  every decision, at short buffer capacities too), the single decisions of the C++ unit tests, from every state at the
+  intervals around the exchange and renormalisation edges, and the encoder's flush from registers around its boundary
+  (`c | 0xFFFF == c + a`). The streams are compared with the shim's restatement of the C++'s start of a coder (INITDEC is
+  local to `src/t1.cpp`; `shim_t1.cpp` says so), the code-block tests with the real one. The normal run takes the trimmed enumeration: 6.5 million
   decoder decisions (every 17th interval and the edges, as the C++ unit test's default) and 19 million encoder decisions
   (every 4th interval, and every combination at the edges), in a few seconds.
 

@@ -4,3 +4,4 @@
 /.testdata/
 
 /.vscode/
+__pycache__/

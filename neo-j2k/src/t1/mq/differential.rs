@@ -11,28 +11,13 @@
 //!   bytes from 00, 7F, 8F, 90, FE, FF). The normal suite takes the trimmed enumeration (every 17th interval and the
 //!   intervals at each state's exchange and renormalisation edges, 6.5 million decisions);
 //!   `nightly_mq_decoder_every_decision` takes every interval (443 million decisions: the C++'s count of 887 million
-//!   visits each interval twice) on every thread.
+//!   takes each interval twice with identical inputs) on every thread.
 
 use neo_j2k_oracle::tier1::{MqDecodeCase, MqDecodeResult, MqDecoderRegs, mq_decode, mq_decode_cases};
+use neo_j2k_testkit::generate::SplitMix64 as Rng;
 
 use super::{Decoder, PACKED_STATES};
 use crate::t1::tables::MQ_STATES;
-
-struct Rng(u64);
-
-impl Rng {
-    fn next(&mut self) -> u64 {
-        self.0 = self.0.wrapping_add(0x9e37_79b9_7f4a_7c15);
-        let mut z = self.0;
-        z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-        z ^ (z >> 31)
-    }
-
-    fn below(&mut self, n: u32) -> u32 {
-        u32::try_from((self.next() >> 11) % u64::from(n)).unwrap()
-    }
-}
 
 /// A context's state index (`state * 2 + MPS`) from the decoder's packed word.
 fn index_of(word: u32) -> u8 {
@@ -136,7 +121,7 @@ fn run_streams(seed: u64, count: u32) -> u64 {
             }
             contexts.push(previous);
         }
-        let (want_bits, want) = mq_decode(None, &data, &contexts);
+        let (want_bits, want) = mq_decode(&data, &contexts);
 
         // the decoder as the library runs it: the segment's bytes alone, the end implied
         let mut decoder = Decoder::new();
@@ -298,7 +283,8 @@ fn single_decisions_decode_as_the_cpp_does() {
     }
     sweep_edges(&mut sweep);
     sweep.flush();
-    assert!(sweep.decisions > 1_000_000, "{} decisions", sweep.decisions);
+    // 1,928 intervals and the top one at 94 states of 36 cases, and the edges of the 94 states
+    assert_eq!(sweep.decisions, 6_547_824);
 }
 
 /// The nightly sweep: every interval and state, c_hi around qe, every bit counter, four low words and byte

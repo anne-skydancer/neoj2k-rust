@@ -8,8 +8,8 @@
 use std::ffi::{c_char, c_void};
 
 use super::tier1::{
-    MqDecodeCase, MqDecodeResult, MqDecoderRegs, MqEncodeCase, MqEncodeResult, MqEncoderRegs, RawDecodeRequest,
-    RawEncodeRequest, RawEncodeResult, RawPass,
+    MqDecodeCase, MqDecodeResult, MqDecoderRegs, MqEncodeCase, MqEncodeResult, MqEncoderRegs, MqFlushCase,
+    RawDecodeRequest, RawEncodeRequest, RawEncodeResult, RawPass,
 };
 use super::{Limits, kernels::WaveletRect};
 
@@ -376,8 +376,18 @@ unsafe extern "C" {
         bytes: *mut u8,
         byte_cap: usize,
     ) -> u32;
+    pub(crate) fn nj2k_shim_t1_store(
+        src: *const i32,
+        w: u32,
+        h: u32,
+        roishift: u32,
+        reversible: u32,
+        stepsize: f32,
+        dst: *mut i32,
+        dst_len: usize,
+        dst_stride: u32,
+    ) -> u32;
     pub(crate) fn nj2k_shim_mq_dec_run(
-        init: *const MqDecoderRegs,
         data: *const u8,
         len: usize,
         ctx: *const u8,
@@ -385,9 +395,8 @@ unsafe extern "C" {
         bits: *mut u8,
         out: *mut MqDecoderRegs,
     ) -> u32;
-    pub(crate) fn nj2k_shim_mq_dec_cases(cases: *const MqDecodeCase, n: usize, results: *mut MqDecodeResult);
+    pub(crate) fn nj2k_shim_mq_dec_cases(cases: *const MqDecodeCase, n: usize, results: *mut MqDecodeResult) -> u32;
     pub(crate) fn nj2k_shim_mq_enc_run(
-        init: *const MqEncoderRegs,
         ctxbit: *const u8,
         n: usize,
         flush: u32,
@@ -397,5 +406,6 @@ unsafe extern "C" {
         out: *mut MqEncoderRegs,
         trace: *mut MqEncoderRegs,
     ) -> u32;
-    pub(crate) fn nj2k_shim_mq_enc_cases(cases: *const MqEncodeCase, n: usize, results: *mut MqEncodeResult);
+    pub(crate) fn nj2k_shim_mq_enc_cases(cases: *const MqEncodeCase, n: usize, results: *mut MqEncodeResult) -> u32;
+    pub(crate) fn nj2k_shim_mq_flush_cases(cases: *const MqFlushCase, n: usize, results: *mut MqEncodeResult) -> u32;
 }

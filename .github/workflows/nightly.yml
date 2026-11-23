@@ -127,6 +127,9 @@ jobs:
             "fuzz/corpus/${{ matrix.target }}" ${{ matrix.seeds }} fuzz/regressions \
             -- -runs=0 -max_len=${{ matrix.max_len }} -timeout=${{ matrix.timeout }}
       - name: Fuzz
+        env:
+          # the JPEG 2000 dictionary is of markers and boxes: the Tier-1 target's input is a block's fields and bytes
+          DICT: ${{ matrix.target == 't1' && '' || '-dict=fuzz/j2k.dict' }}
         run: |
           set -euo pipefail
           # new inputs go to the first folder: the corpus the cache keeps
@@ -134,7 +137,7 @@ jobs:
           cargo +"$NIGHTLY" fuzz run --fuzz-dir fuzz --target "$TARGET" $FEATURES "${{ matrix.target }}" \
             "fuzz/corpus/${{ matrix.target }}" ${{ matrix.seeds }} \
             -- -max_len=${{ matrix.max_len }} -max_total_time=${{ inputs.seconds || '600' }} \
-            -timeout=${{ matrix.timeout }} -dict=fuzz/j2k.dict -print_final_stats=1
+            -timeout=${{ matrix.timeout }} $DICT -print_final_stats=1
       - name: Minimise the corpus
         if: always()
         run: |
@@ -217,8 +220,13 @@ jobs:
         with:
           shared-key: tier1-sweeps-${{ matrix.cpu }}
           cache-on-failure: true
-      - name: Every single decision of the MQ decoder and encoder, and the long code-block draws
-        run: cargo test --release --locked -p neo-j2k --lib -- --ignored nightly_
+      - name: Every single decision of the MQ decoder and encoder, the flush, and the long code-block draws
+        run: |
+          set -euo pipefail
+          cargo test --release --locked -p neo-j2k --lib -- --ignored nightly_ | tee sweeps.log
+          # the sweeps are the six tests named nightly_: a rename that makes the filter match fewer must not pass
+          passed="$(sed -n 's/^test result: ok\. \([0-9]*\) passed.*/\1/p' sweeps.log)"
+          test "${passed:-0}" -ge 6 || { echo "::error::only ${passed:-0} nightly_ tests ran, six expected"; exit 1; }
   fuzz-windows:
     name: ${{ matrix.cpu }} on Windows (AddressSanitizer, MSVC)
     runs-on: windows-2025

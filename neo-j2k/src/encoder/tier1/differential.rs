@@ -10,25 +10,9 @@
 //! leading bit-planes of their own.
 
 use neo_j2k_oracle::tier1::{EncodeBlock, T1Encoder};
+use neo_j2k_testkit::generate::SplitMix64 as Rng;
 
 use super::{Block, T1Params, Workspace, encode};
-use crate::ErrorKind;
-
-struct Rng(u64);
-
-impl Rng {
-    fn next(&mut self) -> u64 {
-        self.0 = self.0.wrapping_add(0x9e37_79b9_7f4a_7c15);
-        let mut z = self.0;
-        z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-        z ^ (z >> 31)
-    }
-
-    fn below(&mut self, n: u32) -> u32 {
-        u32::try_from((self.next() >> 11) % u64::from(n)).unwrap()
-    }
-}
 
 /// The parameters of a block beside its samples.
 #[derive(Clone, Copy, Debug)]
@@ -111,11 +95,13 @@ impl Pair {
             mct: s.mct,
         };
         let got = encode(&mut self.workspace, samples, s.width, s.height, params, &mut self.block);
-        if !want.ok {
-            let error = got.expect_err("the C++ refuses the block (its output clamp)");
-            assert_eq!(error.kind(), ErrorKind::Limit, "{}", describe());
-            return;
-        }
+        // the encoder's output clamp is not reachable through a block (its buffer holds four bytes a sample and the
+        // coder writes about one and a half at most, as the C++ unit test notes; the clamp is tested in the MQ tests)
+        assert!(
+            want.ok,
+            "{}: the C++ refuses a block through its output clamp",
+            describe()
+        );
         got.unwrap_or_else(|e| panic!("{}: Rust refuses a block the C++ codes: {e}", describe()));
         let block = &self.block;
         assert_eq!(block.numbps, want.numbps, "{}: bit-plane count", describe());
@@ -137,6 +123,10 @@ impl Pair {
             block.data.len()
         );
         assert_eq!(block.data[..last], want.bytes[..], "{}: bytes", describe());
+        if block.data.len() == last + 1 {
+            // the byte the last pass's rate gave up is the 0xFF a pass may not end with
+            assert_eq!(block.data[last], 0xff, "{}: the byte past the last rate", describe());
+        }
     }
 }
 
@@ -148,7 +138,7 @@ fn fill_block(rng: &mut Rng, w: usize, h: usize) -> Vec<i32> {
     let mut out = Vec::with_capacity(w * h);
     for y in 0..h {
         for x in 0..w {
-            let random = |rng: &mut Rng| i64::try_from(rng.next() % (u64::try_from(mag).unwrap() + 1)).unwrap();
+            let random = |rng: &mut Rng| i64::try_from(rng.next_u64() % (u64::try_from(mag).unwrap() + 1)).unwrap();
             let signed = |rng: &mut Rng, v: i64| if rng.below(2) == 1 { -v } else { v };
             let v: i64 = match kind {
                 0 => 0,
@@ -195,12 +185,12 @@ fn plane_block(rng: &mut Rng, w: usize, h: usize, planes: u32, force_extremes: b
     let top_at = rng.below(u32::try_from(n).unwrap()) as usize;
     let mut v: Vec<i32> = (0..n)
         .map(|i| {
-            let mut m = rng.next() % below;
+            let mut m = rng.next_u64() % below;
             if dense {
-                m &= rng.next();
+                m &= rng.next_u64();
             }
             if i == top_at && planes != 0 {
-                m = lo + rng.next() % (hi - lo);
+                m = lo + rng.next_u64() % (hi - lo);
             }
             let m = i64::try_from(m).unwrap();
             i32::try_from(if rng.below(2) == 1 { -m } else { m }.clamp(i64::from(i32::MIN), i64::from(i32::MAX)))
@@ -224,7 +214,7 @@ fn own_plane_block(rng: &mut Rng, w: usize, h: usize, planes: u32) -> Vec<i32> {
                 return 0;
             }
             let p = rng.below(planes + 6);
-            let low = rng.next() & ((1u64 << p) - 1);
+            let low = rng.next_u64() & ((1u64 << p) - 1);
             let m = i64::try_from((1u64 << p) | low).unwrap();
             i32::try_from(if rng.below(2) == 1 { -m } else { m }).unwrap()
         })

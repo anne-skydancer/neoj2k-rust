@@ -12,12 +12,12 @@ to Tier-1 is faster; it says nothing of whole-image speed (the README's performa
 | Piece | Where | What |
 |---|---|---|
 | Entry points | `neo-j2k/src/bench.rs`, `neo-j2k/src/encoder/bench.rs`, behind the feature `bench-internals` | `DecodeWorkspace::decode` and `EncodeWorkspace::encode`: thin calls of what the decoder and the encoder run, with the buffers kept by the caller. Off by default, hidden from the documentation, not API. The crate's `unsafe` stays in `src/simd/`. |
-| Measuring program | `neo-j2k-bench/` (an unpublished workspace crate, `publish = false`) | One run is one round of one build: it pins itself, times every set and prints one `RESULT` line each. Reads the TSC (`_rdtsc`) and sets the thread's affinity, so it holds the only `unsafe` outside the codec's `simd` module; it has no dependency but the codec and the test kit, and never the C++ oracle. |
+| Measuring program | `neo-j2k-bench/` (an unpublished workspace crate, `publish = false`) | One run is one round of one build: it pins itself, times every set and prints one `RESULT` line each. Reads the TSC (`_rdtsc`) and sets the thread's affinity, so it is, besides the oracle and the fuzz crate, a crate that holds `unsafe`; it has no dependency but the codec and the test kit, and never the C++ oracle. |
 | Driver | `tools/bench_tier1.py` | Builds the base, the head and a copy of the base, runs the three alternately, prints the table. |
 
 `tools/check_rust_native.py` checks that the crate does not depend on the benchmark crate, that every workspace crate
 but `neo-j2k` is `publish = false`, and that `bench-internals` is not a default feature. `cargo deny` covers the
-benchmark's (empty) dependency graph with the rest of the workspace.
+benchmark with the rest of the workspace: it has no third-party dependency.
 
 ## The sets
 
@@ -42,8 +42,8 @@ python -I tools/bench_tier1.py --base-exe base.exe --head-exe head.exe  # execut
 |---|---|---|
 | `--base-ref` | `origin/main` | The baseline. It must contain the benchmark crate (the driver copies the head's `neo-j2k-bench/src` into the base's tree, so that only the codec differs). |
 | `--head-ref` | the working tree | Build another ref as the head. |
-| `--rounds` | 21 | Rounds of the three builds, after one warm-up round. |
-| `--pin` | 2 | The logical CPU (Windows: the first processor group). |
+| `--rounds` | 24 | Rounds of the three builds, after one warm-up round; a multiple of six, so that each of the six orders the builds run in is taken equally often. |
+| `--pin` | the last logical CPU | The logical CPU (Windows: of the first processor group). The program says in its first line whether it is pinned; a build that is not stops the run, unless `--allow-unpinned`, which runs on and writes UNPINNED in the environment line. |
 | `--cpu` | `baseline` | `x86-64-v3` builds all three with `-C target-cpu=x86-64-v3`. |
 | `--cpp-source` | `NJ2K_CPP_SOURCE` | The C++ neo-j2k checkout, for the six dumps. Any v0.1.3 checkout will do; the pinned commit is in the README. |
 | `--min-mcycles`, `--units` | 30, 3 | A timed unit repeats the pass until it takes at least this many Mcycles; the median of this many units is a round's figure. |
@@ -51,7 +51,7 @@ python -I tools/bench_tier1.py --base-exe base.exe --head-exe head.exe  # execut
 | `--workdir`, `--keep` | a temporary folder, removed | The builds (git worktrees and target folders). |
 
 `python -I tools/bench_tier1.py --selftest` checks the table's arithmetic and gate without building anything (CI runs it).
-The program alone: `neo-j2k-bench --pin 2 --min-mcycles 30 --units 3 --dumps DIR` prints the `RESULT` lines of one
+The program alone: `neo-j2k-bench --pin 7 --min-mcycles 30 --units 3 --dumps DIR` prints the `RESULT` lines of one
 round; `--digest-only` prints the output hashes without timing (CI's smoke run).
 
 ## The table
@@ -61,8 +61,10 @@ One table, every figure a percent change against the base (minus is faster), and
 | Column | Meaning |
 |---|---|
 | Base (Mcycles) | The base's cycles of one pass, the median of the rounds |
-| Head vs base | The head's cycles against the base's in the same round, the median over the rounds |
+| Head vs base | The percent change of the head's cycles against the base's in the same round, the median over the rounds (rounded to two decimals; the gate reads the rounded figure) |
+| Head, rounds min to max | The smallest and the largest of the rounds' changes: how far one round strays |
 | Control vs base | The same for a byte-for-byte copy of the base's executable: the noise of the method |
+| Control, rounds min to max | The same range for the control |
 | Output identical | The three builds' output hashes are equal |
 | Gate | Yes when the head is at least 3.0 % faster, the control is within +-1.0 %, and the outputs are identical |
 
@@ -70,15 +72,20 @@ The builds run alternately in one process-per-round loop, in all six orders in t
 a stretch of the machine's drift; the comparison is within a round. The control is the same executable, run in the
 same loop: a control outside +-1.0 % says the machine was too noisy to read the head's figure, whatever it is.
 
+The control is a byte copy of the base, so it sees the run-to-run noise of the machine and nothing else. The head is a
+different binary: moving code changes its layout and alignment, which can move a figure by a few percent without any
+change in what the code does. This is why the gate is 3.0 % and a result near it is measured again (another pin, another
+day) before it is believed; no separate build of the base from another path is needed as a second control.
+
 ## Caveats
 
 - TSC cycles are ticks of a constant-rate counter, not core cycles: a change of clock speed during a run moves both
   builds in a round alike, but a run on a machine that parks cores or changes frequency in steps is noisy. Pin to a CPU
   that is not busy, close other programs, and read the control first.
-- The pass is long (30 Mcycles or more a unit) but not isolated from the operating system: 21 rounds and the median
+- The pass is long (30 Mcycles or more a unit) but not isolated from the operating system: 24 rounds and the median
   take most of that out, not all. A short smoke run (`--rounds 3 --min-mcycles 2`) proves the program works and
   proves nothing about speed.
-- The decoder sets time the store as well as `t1_decode_cblk`; a change that only touches the store moves them.
+- The decoder sets time the store as well as `t1_decode_cblk`, and the encoder sets the copy of the samples in and of the passes and bytes out as well as `enc_t1_encode`; a change that only touches those moves them.
 - The encoder sets are 64 x 64 blocks of two textures; a change that helps another kind of block (a sparse one, a
   small one) may not show.
 - Absolute cycles depend on the CPU and on the build (`baseline` against `x86-64-v3`): compare builds of one run, not

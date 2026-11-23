@@ -15,25 +15,12 @@
 //!   a million decisions); `nightly_mq_encoder_every_decision` takes every interval and all 60, 4.4 billion, on every
 //!   thread.
 
-use neo_j2k_oracle::tier1::{MqEncodeCase, MqEncodeResult, MqEncoderRegs, mq_encode, mq_encode_cases};
+use neo_j2k_oracle::tier1::{
+    MqEncodeCase, MqEncodeResult, MqEncoderRegs, MqFlushCase, mq_encode, mq_encode_cases, mq_flush_cases,
+};
+use neo_j2k_testkit::generate::SplitMix64 as Rng;
 
 use super::{CONTEXT_AGGREGATE, CONTEXT_UNIFORM, Encoder};
-
-struct Rng(u64);
-
-impl Rng {
-    fn next(&mut self) -> u64 {
-        self.0 = self.0.wrapping_add(0x9e37_79b9_7f4a_7c15);
-        let mut z = self.0;
-        z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-        z ^ (z >> 31)
-    }
-
-    fn below(&mut self, n: u32) -> u32 {
-        u32::try_from((self.next() >> 11) % u64::from(n)).unwrap()
-    }
-}
 
 fn registers(encoder: &Encoder<'_>) -> MqEncoderRegs {
     MqEncoderRegs {
@@ -77,7 +64,7 @@ fn run_stream(seed: u32, n: u32, limit: usize) -> usize {
 
     // the C++: the fake byte at 0, the coder's last byte at `limit`, two bytes of slack
     let mut cpp_buf = vec![0u8; limit + 2];
-    let (want, trace) = mq_encode(None, &decisions, true, &mut cpp_buf, limit);
+    let (want, trace) = mq_encode(&decisions, true, &mut cpp_buf, limit);
 
     let mut bytes = vec![0u8; limit + 1];
     let mut encoder = Encoder::new(&mut bytes);
@@ -136,7 +123,7 @@ fn streams_encode_as_the_cpp_does() {
 #[test]
 fn a_fresh_encoder_starts_where_the_cpp_does() {
     let mut buf = vec![0u8; 16];
-    let (fresh, _) = mq_encode(None, &[], false, &mut buf, 8);
+    let (fresh, _) = mq_encode(&[], false, &mut buf, 8);
     let mut bytes = vec![0u8; 9];
     let encoder = Encoder::new(&mut bytes);
     assert_eq!(registers(&encoder), fresh);
@@ -308,6 +295,138 @@ fn single_decisions_encode_as_the_cpp_does() {
         "{} edge decisions",
         s.decisions - before
     );
+}
+
+/// The flush of Rust from the case's registers, in eight bytes of the previous byte as the C++'s.
+fn rust_flush(case: &MqFlushCase) -> MqEncodeResult {
+    let length = 3 + case.limit_off as usize;
+    let prev = u8::try_from(case.prev).unwrap();
+    let mut bytes = vec![prev; length];
+    let mut encoder = Encoder::new(&mut bytes);
+    encoder.bytes[0] = prev;
+    encoder.position = 2;
+    encoder.a = case.a;
+    encoder.c = case.c;
+    encoder.bits = case.ct;
+    encoder.contexts = [0; 19];
+    encoder.overflow = false;
+    encoder.flush();
+    let (a, c, bits, position, overflow) = (
+        encoder.a,
+        encoder.c,
+        encoder.bits,
+        u32::try_from(encoder.position).unwrap(),
+        u32::from(encoder.overflow),
+    );
+    let mut eight = [prev; 8];
+    eight[..length].copy_from_slice(&bytes);
+    MqEncodeResult {
+        a,
+        c,
+        ct: bits,
+        state: 0,
+        bp: position,
+        overflow,
+        bytes: eight,
+    }
+}
+
+/// The flush's cases for the code register's low words `lows`: the flush sets the low word to ones and takes 0x8000
+/// off it unless `c | 0xFFFF < c + a`, so the boundary is `a = 0xFFFF - low` (for a low word of 0x7FFF or under): each
+/// low word with the intervals around that boundary and the ends of the range, four high parts (none, the carry bit,
+/// under it, mixed), every bit counter, the three previous bytes and three limits.
+fn flush_cases(lows: impl Iterator<Item = u32>, out: &mut Vec<MqFlushCase>) {
+    for low in lows {
+        let boundary = 0xffff - low;
+        let mut intervals = vec![0x8000, 0x8001, 0xfffe, 0xffff];
+        intervals.extend((boundary.saturating_sub(2)..=boundary + 2).filter(|a| (0x8000..=0xffff).contains(a)));
+        intervals.sort_unstable();
+        intervals.dedup();
+        for high in [0, 0x0800_0000, 0x07ff_0000, 0x0123_0000] {
+            for &a in &intervals {
+                for ct in 1..=12 {
+                    for prev in [0x00, 0xfe, 0xff] {
+                        for limit_off in [0, 2, 5] {
+                            out.push(MqFlushCase {
+                                a,
+                                c: high | low,
+                                ct,
+                                prev,
+                                limit_off,
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn compare_flushes(cases: &[MqFlushCase], results: &mut Vec<MqEncodeResult>) {
+    mq_flush_cases(cases, results);
+    for (case, want) in cases.iter().zip(results.iter()) {
+        assert_eq!(
+            rust_flush(case),
+            *want,
+            "a flush differs: a={:04x} c={:08x} ct={} prev={:02x} limit offset {}",
+            case.a,
+            case.c,
+            case.ct,
+            case.prev,
+            case.limit_off
+        );
+    }
+}
+
+#[test]
+fn flushes_encode_as_the_cpp_does_including_the_boundary() {
+    // the low words around 0 and 0x7FFF, a spread, and every one of 64 around the boundary's end
+    let lows = (0..=40)
+        .chain((0..0x8000).step_by(97))
+        .chain(0x7fc0..=0x7fff)
+        .chain([0x8000, 0xfffe, 0xffff]);
+    let mut cases = Vec::new();
+    let mut results = Vec::new();
+    let mut total = 0;
+    for low in lows {
+        flush_cases(std::iter::once(low), &mut cases);
+        if cases.len() > 1 << 16 {
+            total += cases.len();
+            compare_flushes(&cases, &mut results);
+            cases.clear();
+        }
+    }
+    total += cases.len();
+    compare_flushes(&cases, &mut results);
+    assert!(total > 1_000_000, "{total} flushes");
+}
+
+/// The nightly flush sweep: every low word of the code register, split over every thread there is.
+#[test]
+#[ignore = "nightly: every low word of the MQ encoder's flush against the C++"]
+fn nightly_mq_flush_every_low_word() {
+    let threads = std::thread::available_parallelism().map_or(4, |n| u32::try_from(n.get()).unwrap_or(1));
+    std::thread::scope(|scope| {
+        let handles: Vec<_> = (0..threads)
+            .map(|t| {
+                scope.spawn(move || {
+                    let mut cases = Vec::new();
+                    let mut results = Vec::new();
+                    for low in (t..0x1_0000).step_by(threads as usize) {
+                        flush_cases(std::iter::once(low), &mut cases);
+                        if cases.len() > 1 << 16 {
+                            compare_flushes(&cases, &mut results);
+                            cases.clear();
+                        }
+                    }
+                    compare_flushes(&cases, &mut results);
+                })
+            })
+            .collect();
+        for h in handles {
+            h.join().expect("a flush thread");
+        }
+    });
 }
 
 /// The nightly sweep: every combination, 4.4 billion decisions, split over every thread there is.

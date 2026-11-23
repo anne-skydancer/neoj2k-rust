@@ -10,7 +10,8 @@
 //! neo-j2k-bench [--pin CPU] [--dumps DIR] [--min-mcycles N] [--units N] [--blocks N] [--digest-only]
 //! ```
 //!
-//! Every set prints one line,
+//! The header line says whether the thread is pinned (`pinned=yes cpu=N priority=...`, or `pinned=no reason=...`: a pin
+//! that fails is reported, never assumed). Every set prints one line,
 //! `RESULT set=<name> blocks=<n> inner=<passes in a unit> per_pass=<clock units> digest=<hash of the output>`,
 //! after a header line. `--dumps` is the folder of the six decoder dumps (default: `tests/vectors/t1_bench` of
 //! `NJ2K_CPP_SOURCE`); `--digest-only` prints the digests without timing anything.
@@ -32,9 +33,12 @@ struct Options {
 }
 
 fn parse(args: &[String]) -> Result<Options, String> {
-    let default_pin = std::thread::available_parallelism().map_or(0, |n| if n.get() >= 4 { 2 } else { 0 });
+    // the last logical CPU (of the first processor group on Windows), which exists on any machine
+    let last = std::thread::available_parallelism()
+        .map_or(0, |n| n.get() - 1)
+        .min(usize::BITS as usize - 1);
     let mut options = Options {
-        pin: Some(default_pin),
+        pin: Some(last),
         dumps: None,
         min_mcycles: 30.0,
         units: 3,
@@ -92,17 +96,18 @@ fn run(options: &Options) -> Result<(), String> {
     )?;
     let mut all = sets::decode_sets(&dumps)?;
     all.extend(sets::encode_sets(options.blocks));
-    if let Some(cpu) = options.pin
-        && !options.digest_only
-        && let Err(why) = pin::pin_to_cpu(cpu)
-    {
-        eprintln!("neo-j2k-bench: not pinned: {why}");
-    }
+    let pinned = match options.pin {
+        _ if options.digest_only => "pinned=no reason=digest-only".to_owned(),
+        None => "pinned=no reason=not-requested".to_owned(),
+        Some(cpu) => match pin::pin_to_cpu(cpu) {
+            Ok(priority) => format!("pinned=yes cpu={cpu} priority={}", priority.replace(' ', "-")),
+            Err(why) => format!("pinned=no reason={}", why.replace(' ', "-")),
+        },
+    };
     println!(
-        "neo-j2k-bench {}: clock {}, pin {}, units {}, min {} Mcycles, build {}",
+        "neo-j2k-bench {}: clock {}, {pinned}, units {}, min {} Mcycles, build {}",
         neo_j2k::version(),
         clock::UNIT,
-        options.pin.map_or_else(|| "none".to_owned(), |c| c.to_string()),
         options.units,
         options.min_mcycles,
         if cfg!(target_feature = "avx2") {

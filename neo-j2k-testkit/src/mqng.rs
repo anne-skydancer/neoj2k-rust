@@ -127,22 +127,33 @@ pub fn cpp_source() -> Option<PathBuf> {
     dir.is_dir().then_some(dir)
 }
 
-/// The C++ checkout for a test that reads the vectors: [`cpp_source`], or, when that is not set, `None` after
-/// a note on stderr so the test can return, unless `CI` is set (a CI job that forgot `NJ2K_CPP_SOURCE` fails).
+/// The C++ checkout for a test that reads the vectors: [`cpp_source`]. When `NJ2K_CPP_SOURCE` is not set, `None` after
+/// a note on stderr so the test can return, unless `CI` is set (a CI job that forgot it fails).
 ///
 /// # Panics
-/// When `CI` is set and `NJ2K_CPP_SOURCE` is not a folder.
+/// When `NJ2K_CPP_SOURCE` is set but names no folder (a wrong path must not skip the tests), or when `CI` is set and
+/// it is not set.
 #[must_use]
 pub fn require_cpp_source() -> Option<PathBuf> {
-    let source = cpp_source();
-    if source.is_none() {
-        assert!(
-            std::env::var_os("CI").is_none(),
-            "NJ2K_CPP_SOURCE must name the C++ checkout (the Tier-1 vectors are read from it)"
-        );
-        eprintln!("skipped: set NJ2K_CPP_SOURCE to the C++ neo-j2k v0.1.3 checkout to read its Tier-1 vectors");
+    match std::env::var_os("NJ2K_CPP_SOURCE") {
+        Some(dir) => {
+            let dir = PathBuf::from(dir);
+            assert!(
+                dir.is_dir(),
+                "NJ2K_CPP_SOURCE is set but {} is not a folder",
+                dir.display()
+            );
+            Some(dir)
+        }
+        None => {
+            assert!(
+                std::env::var_os("CI").is_none(),
+                "NJ2K_CPP_SOURCE must name the C++ checkout (the Tier-1 vectors are read from it)"
+            );
+            eprintln!("skipped: set NJ2K_CPP_SOURCE to the C++ neo-j2k v0.1.3 checkout to read its Tier-1 vectors");
+            None
+        }
     }
-    source
 }
 
 /// The committed decoder vectors of the C++ checkout (`tests/vectors/t1`, 3,927 blocks), by file name.

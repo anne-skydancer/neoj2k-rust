@@ -4,26 +4,24 @@
 //! The measured sets: the six decoder dumps of the C++ repository (`tests/vectors/t1_bench`, what
 //! `bench/nj2k_t1_dec.cpp` times) and the two synthetic 64 x 64 upload-texture block sets of
 //! `bench/nj2k_enc_t1_ratio.cpp` ("lossy" and "lossless"), regenerated here the way that bench makes them.
+//!
+//! What a pass times is not the C++ benches': the decoder sets time `DecodeWorkspace::decode`, which stores the
+//! coefficients into the tile buffer as well as decoding them (the C++ bench times `t1_decode_cblk` alone), and the
+//! encoder sets time `EncodeWorkspace::encode`, which copies the samples in and the passes and bytes out as well as
+//! coding the block (the C++ bench times `enc_t1_encode`, copies the samples outside the timed part and commits the
+//! passes outside it). Compare builds of this benchmark with one another, not with those figures.
 
 use std::hint::black_box;
 use std::path::Path;
 
 use neo_j2k::bench::{DecodeBlock, DecodeWorkspace, EncodeParams, EncodeWorkspace};
+use neo_j2k_testkit::fnv::Fnv64;
 use neo_j2k_testkit::mqng;
 
 use crate::clock;
 
-const FNV_BASIS: u64 = 1_469_598_103_934_665_603;
-const FNV_PRIME: u64 = 1_099_511_628_211;
-
 /// The 9/7 step the decoder dumps are stored with (the dumps do not say it; the work is the same for any value).
 const STEP: f32 = 1.0;
-
-fn mix(hash: &mut u64, bytes: &[u8]) {
-    for &b in bytes {
-        *hash = (*hash ^ u64::from(b)).wrapping_mul(FNV_PRIME);
-    }
-}
 
 /// One synthetic encoder block.
 pub(crate) struct UploadBlock {
@@ -114,7 +112,7 @@ impl Set {
     /// # Errors
     /// A block that Tier-1 refuses: the sets are made of blocks it accepts.
     pub(crate) fn digest(&mut self) -> Result<u64, String> {
-        let mut hash = FNV_BASIS;
+        let mut hash = Fnv64::new();
         match self {
             Self::Decode {
                 reversible,
@@ -128,7 +126,7 @@ impl Set {
                         return Err(format!("decoder block {i} is refused"));
                     }
                     for &v in &out[..block.samples()] {
-                        mix(&mut hash, &v.to_le_bytes());
+                        hash.bytes(&v.to_le_bytes());
                     }
                 }
             }
@@ -143,23 +141,20 @@ impl Set {
                         return Err(format!("encoder block {i} is refused"));
                     }
                     let encoded = workspace.block();
-                    mix(&mut hash, &encoded.numbps.to_le_bytes());
+                    hash.bytes(&encoded.numbps.to_le_bytes());
                     let passes: Vec<_> = encoded.passes().collect();
-                    mix(
-                        &mut hash,
-                        &u32::try_from(passes.len()).unwrap_or(u32::MAX).to_le_bytes(),
-                    );
+                    hash.u32(u32::try_from(passes.len()).unwrap_or(u32::MAX));
                     for p in &passes {
-                        mix(&mut hash, &p.rate.to_le_bytes());
-                        mix(&mut hash, &p.len.to_le_bytes());
-                        mix(&mut hash, &[u8::from(p.terminated)]);
-                        mix(&mut hash, &p.distortion_bits.to_le_bytes());
+                        hash.bytes(&p.rate.to_le_bytes());
+                        hash.bytes(&p.len.to_le_bytes());
+                        hash.bytes(&[u8::from(p.terminated)]);
+                        hash.bytes(&p.distortion_bits.to_le_bytes());
                     }
-                    mix(&mut hash, encoded.data);
+                    hash.bytes(encoded.data);
                 }
             }
         }
-        Ok(hash)
+        Ok(hash.value())
     }
 }
 

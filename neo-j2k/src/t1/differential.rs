@@ -3,35 +3,29 @@
 
 //! The decoder's Tier-1 against the C++ block by block (`t1_decode_cblk` and the store, through the
 //! oracle's shim): the C++ repository's committed vectors and bench dumps (read from `NJ2K_CPP_SOURCE`), and
-//! generated code-blocks of every size, orientation and style, as `tests/unit/t1_unit.cpp` draws them.
-//! The generated run in the normal suite is trimmed; `nightly_tier1_decode_sweep` is the long one.
+//! generated code-blocks of every size, orientation and style, as `tests/unit/t1_unit.cpp` draws them, with its
+//! other block tests: segments longer than the bytes (`test_overlong`), a raw segment holding a cleanup pass
+//! (`test_raw_cleanup`), and tiny blocks over every sign and significance pattern of a column (`test_split`), and
+//! the store alone. The destination is a tile buffer with a stride and an offset, and the samples between its
+//! rows must stay as they were. The generated runs in the normal suite are trimmed; the `nightly_*` tests are the
+//! long ones.
+//!
+//! Not mirrored: the C++ tests of the MQ tables (`test_tables`: Rust's table is checked against the C++ decisions
+//! instead) and of the AGG run (`test_agg_run`: the run is the C++'s reformulation, which Rust does not have).
 
-use neo_j2k_oracle::tier1::{DecodeBlock, T1Decoder};
+use neo_j2k_oracle::tier1::{self, DecodeBlock, FILL, T1Decoder};
+use neo_j2k_testkit::generate::{LONG_SHAPES, SplitMix64 as Rng, split_chunks};
 use neo_j2k_testkit::mqng::{self, VectorBlock};
 
-use super::{Block, Destination, Scratch};
+use super::{Block, Destination, Scratch, store_coefficients};
 use crate::error::Diagnostics;
 use crate::tile::Segment;
 
 const TERMALL: u32 = 0x04;
 const LAZY: u32 = 0x01;
-
-/// SplitMix64, the generator of the C++ unit tests.
-struct Rng(u64);
-
-impl Rng {
-    fn next(&mut self) -> u64 {
-        self.0 = self.0.wrapping_add(0x9e37_79b9_7f4a_7c15);
-        let mut z = self.0;
-        z = (z ^ (z >> 30)).wrapping_mul(0xbf58_476d_1ce4_e5b9);
-        z = (z ^ (z >> 27)).wrapping_mul(0x94d0_49bb_1331_11eb);
-        z ^ (z >> 31)
-    }
-
-    fn below(&mut self, n: u32) -> u32 {
-        u32::try_from((self.next() >> 11) % u64::from(n)).unwrap()
-    }
-}
+const RESET: u32 = 0x02;
+const VSC: u32 = 0x08;
+const SEGSYM: u32 = 0x20;
 
 /// A code-block as Tier-1 receives it, with the store that follows.
 #[derive(Clone, Debug)]
@@ -49,13 +43,33 @@ struct Spec {
     chunks: Vec<u32>,
     reversible: bool,
     step: f32,
+    /// The tile buffer's row stride and the block's offset in it.
+    stride: u32,
+    offset: u32,
 }
 
 impl Spec {
+    fn new(w: u32, h: u32) -> Self {
+        Self {
+            w,
+            h,
+            numbps: 0,
+            orient: 0,
+            roishift: 0,
+            cblksty: 0,
+            len: Vec::new(),
+            passes: Vec::new(),
+            bytes: Vec::new(),
+            chunks: Vec::new(),
+            reversible: true,
+            step: 1.3,
+            stride: w,
+            offset: 0,
+        }
+    }
+
     fn from_vector(block: &VectorBlock, reversible: bool) -> Self {
         Self {
-            w: block.width,
-            h: block.height,
             numbps: block.numbps,
             orient: block.orient,
             roishift: block.roishift,
@@ -63,27 +77,20 @@ impl Spec {
             len: block.segments.iter().map(|s| s.0).collect(),
             passes: block.segments.iter().map(|s| s.1).collect(),
             bytes: block.bytes.clone(),
-            chunks: split(block.bytes.len(), 1),
+            chunks: split_chunks(block.bytes.len(), 1),
             reversible,
-            step: 1.3,
+            ..Self::new(block.width, block.height)
         }
     }
-}
 
-/// `parts` chunk lengths of `n` bytes, as the C++ test splits them; none for no bytes.
-fn split(n: usize, parts: u32) -> Vec<u32> {
-    if n == 0 {
-        return Vec::new();
+    fn buffer_len(&self) -> usize {
+        self.offset as usize + (self.h as usize - 1) * self.stride as usize + self.w as usize + tier1::TAIL
     }
-    let parts = parts.max(1) as usize;
-    let mut out = Vec::new();
-    let mut at = 0;
-    for i in 0..parts {
-        let to = if i + 1 == parts { n } else { at + (n - at) / (parts - i) };
-        out.push(u32::try_from(to - at).unwrap());
-        at = to;
+
+    /// Whether Tier-1 must refuse the block: its bit-planes plus ROI shift, as a signed number, reach 31.
+    fn refused(&self) -> bool {
+        i32::from_ne_bytes(self.numbps.wrapping_add(self.roishift).to_ne_bytes()) >= 31
     }
-    out
 }
 
 /// The most passes segment `i` of a block of this style can have (`opj_t2_init_seg`).
@@ -103,16 +110,20 @@ fn seg_maxpasses(style: u32, i: usize) -> u32 {
     }
 }
 
+fn byte(rng: &mut Rng, n: u32) -> u8 {
+    u8::try_from(rng.below(n)).expect("a byte")
+}
+
 fn fill_bytes(v: &mut [u8], rng: &mut Rng, kind: u32) {
     for (i, b) in v.iter_mut().enumerate() {
-        let r = u8::try_from(rng.below(256)).unwrap();
+        let r = byte(rng, 256);
         *b = match kind {
             0 => r,
             1 => 0xff,
             2 => 0,
             3 => {
                 if i % 2 == 1 {
-                    0x90 + u8::try_from(rng.below(0x70)).unwrap()
+                    0x90 + byte(rng, 0x70)
                 } else {
                     0xff
                 }
@@ -121,15 +132,15 @@ fn fill_bytes(v: &mut [u8], rng: &mut Rng, kind: u32) {
                 if rng.below(8) == 0 {
                     0xff
                 } else {
-                    u8::try_from(rng.below(0x90)).unwrap()
+                    byte(rng, 0x90)
                 }
             }
-            5 => u8::try_from((i * 7 + (i >> 5)) & 0xff).unwrap(),
+            5 => u8::try_from((i * 7 + (i >> 5)) & 0xff).expect("a byte"),
             _ => {
                 if rng.below(2) == 1 {
                     0xff
                 } else {
-                    0x8f - u8::try_from(rng.below(3)).unwrap()
+                    0x8f - byte(rng, 3)
                 }
             }
         };
@@ -192,21 +203,27 @@ fn make_spec(rng: &mut Rng, w: u32, h: u32, style: u32, hostile: bool, overlong:
     fill_bytes(&mut bytes, rng, kind);
     let parts = 1 + if rng.below(5) == 0 { rng.below(4) } else { 0 };
     let reversible = rng.below(2) == 0;
-    let step = 0.25 + f32::from(u16::try_from(rng.below(200)).unwrap()) / 64.0;
+    let step = 0.25 + f32::from(u16::try_from(rng.below(200)).expect("small")) / 64.0;
     Spec {
-        w,
-        h,
         numbps,
         orient,
         roishift,
         cblksty: style,
         len,
         passes,
-        chunks: split(bytes.len(), parts),
+        chunks: split_chunks(bytes.len(), parts),
         bytes,
         reversible,
         step,
+        ..Spec::new(w, h)
     }
+}
+
+/// The block stored into a tile buffer of another stride, at another offset (one in five blocks of the draws).
+fn strided(rng: &mut Rng, mut spec: Spec) -> Spec {
+    spec.stride = spec.w + rng.below(6);
+    spec.offset = rng.below(5);
+    spec
 }
 
 fn rust_decode(scratch: &mut Scratch, spec: &Spec) -> Option<Vec<i32>> {
@@ -240,11 +257,11 @@ fn rust_decode(scratch: &mut Scratch, spec: &Spec) -> Option<Vec<i32>> {
         cblksty: spec.cblksty,
         segments: &segments,
     };
-    let mut out = vec![0x5a5a_5a5a; (spec.w * spec.h) as usize];
+    let mut out = vec![FILL; spec.buffer_len()];
     let destination = Destination {
         samples: &mut out,
-        offset: 0,
-        stride: spec.w as usize,
+        offset: spec.offset as usize,
+        stride: spec.stride as usize,
         reversible: spec.reversible,
         stepsize: spec.step,
     };
@@ -268,6 +285,8 @@ fn cpp_decode(cpp: &mut T1Decoder, spec: &Spec) -> Option<Vec<i32>> {
         chunks: &spec.chunks,
         reversible: spec.reversible,
         step_size: spec.step,
+        stride: spec.stride,
+        offset: spec.offset,
     })
 }
 
@@ -289,15 +308,16 @@ impl Pair {
         }
     }
 
-    /// Panics at the first difference, saying which block.
-    fn check(&mut self, spec: &Spec, what: &str) {
+    /// Panics at the first difference, saying which block; the C++'s tile buffer otherwise (none for a refused block,
+    /// which both must refuse, and only for the bit-planes plus ROI shift rule).
+    fn check(&mut self, spec: &Spec, what: &str) -> Option<Vec<i32>> {
         let want = cpp_decode(&mut self.cpp, spec);
         let got = rust_decode(&mut self.rust, spec);
         self.blocks += 1;
         self.refused += u64::from(want.is_none());
         let describe = || {
             format!(
-                "{what}: {} x {} orient {} numbps {} roi {} style {:02x} {}, {} segments, {} bytes",
+                "{what}: {} x {} orient {} numbps {} roi {} style {:02x} {}, {} segments, {} bytes, stride {} offset {}",
                 spec.w,
                 spec.h,
                 spec.orient,
@@ -306,31 +326,35 @@ impl Pair {
                 spec.cblksty,
                 if spec.reversible { "5/3" } else { "9/7" },
                 spec.len.len(),
-                spec.bytes.len()
+                spec.bytes.len(),
+                spec.stride,
+                spec.offset
             )
         };
-        match (want, got) {
-            (None, None) => {}
-            (Some(want), Some(got)) => {
-                if let Some(i) = want.iter().zip(&got).position(|(a, b)| a != b) {
-                    let at = u32::try_from(i).unwrap();
-                    panic!(
-                        "{}: first coefficient {i} (x {} y {}) is {} in the C++ and {} in Rust",
-                        describe(),
-                        at % spec.w,
-                        at / spec.w,
-                        want[i],
-                        got[i]
-                    );
-                }
-            }
-            (want, got) => panic!(
-                "{}: the C++ {} the block and Rust {} it",
+        assert_eq!(
+            want.is_none(),
+            spec.refused(),
+            "{}: the C++ refuses exactly the blocks of 31 bit-planes",
+            describe()
+        );
+        assert_eq!(
+            got.is_none(),
+            spec.refused(),
+            "{}: Rust refuses exactly the blocks of 31 bit-planes",
+            describe()
+        );
+        if let (Some(want), Some(got)) = (&want, &got)
+            && let Some(i) = want.iter().zip(got).position(|(a, b)| a != b)
+        {
+            let row = (i as u64).saturating_sub(u64::from(spec.offset)) / u64::from(spec.stride);
+            panic!(
+                "{}: first sample {i} (row {row}) is {} in the C++ and {} in Rust",
                 describe(),
-                if want.is_some() { "decodes" } else { "refuses" },
-                if got.is_some() { "decodes" } else { "refuses" }
-            ),
+                want[i],
+                got[i]
+            );
         }
+        want
     }
 }
 
@@ -366,7 +390,7 @@ fn committed_vectors_decode_as_the_cpp_does() {
     assert_eq!(pair.blocks, 2 * 3_927);
     assert!(
         styles.iter().filter(|&&n| n != 0).count() >= 7,
-        "styles 00 01 04 05 12 28 3f at least"
+        "fewer than seven code-block styles in the vectors (the C++ README names 00, 01, 04, 05, 12, 28 and 3f)"
     );
 }
 
@@ -392,6 +416,9 @@ fn bench_dumps_decode_as_the_cpp_does() {
 #[test]
 fn the_full_dump_set_decodes_as_the_cpp_does_when_named() {
     let Some(dir) = std::env::var_os("NJ2K_T1_VECTORS") else {
+        eprintln!(
+            "skipped: NJ2K_T1_VECTORS does not name the C++ study's full dump set (37,424 blocks, not committed)"
+        );
         return;
     };
     let mut files: Vec<_> = std::fs::read_dir(dir)
@@ -410,28 +437,11 @@ fn the_full_dump_set_decodes_as_the_cpp_does_when_named() {
 }
 
 const EDGE: [u32; 8] = [1, 4, 5, 8, 17, 33, 63, 64];
-const LONG_SHAPES: [(u32, u32); 16] = [
-    (1024, 4),
-    (4, 1024),
-    (512, 8),
-    (8, 512),
-    (256, 16),
-    (16, 256),
-    (128, 32),
-    (32, 128),
-    (1024, 3),
-    (2, 1024),
-    (1024, 1),
-    (1, 1024),
-    (1024, 2),
-    (64, 64),
-    (4, 64),
-    (64, 4),
-];
 
 /// The generated blocks of the C++ unit test, the trimmed form: every size 1..64 x 1..64 (a style by rotation, the
 /// heights that are no multiple of four among them), the edge sizes in every style and orientation, the long shapes,
-/// and full-size blocks. `rounds` repeats the draw with the generator moved on.
+/// and full-size blocks; one in five stored with another stride and offset. `rounds` repeats the draw with the generator
+/// moved on.
 fn run_generated(pair: &mut Pair, seed: u64, rounds: u32) {
     let mut rng = Rng(seed);
     for round in 0..rounds {
@@ -439,6 +449,11 @@ fn run_generated(pair: &mut Pair, seed: u64, rounds: u32) {
             for w in 1..=64u32 {
                 let style = (w * 5 + h * 3 + rng.below(64)) % 64;
                 let spec = make_spec(&mut rng, w, h, style, (w + h) % 5 == 0, (w * h + round) % 11 == 0);
+                let spec = if (w + h) % 5 == 1 {
+                    strided(&mut rng, spec)
+                } else {
+                    spec
+                };
                 pair.check(&spec, "generated");
             }
         }
@@ -457,11 +472,13 @@ fn run_generated(pair: &mut Pair, seed: u64, rounds: u32) {
             let (w, h) = LONG_SHAPES[i % 16];
             let style = rng.below(64);
             let spec = make_spec(&mut rng, w, h, style, (i / 16) % 3 == 0, i % 7 == 0);
+            let spec = if i % 5 == 0 { strided(&mut rng, spec) } else { spec };
             pair.check(&spec, "generated (long shapes)");
         }
         for i in 0..300 {
             let style = rng.below(64);
             let spec = make_spec(&mut rng, 64, 64, style, i % 3 == 0, i % 13 == 0);
+            let spec = if i % 5 == 0 { strided(&mut rng, spec) } else { spec };
             pair.check(&spec, "generated (64 x 64)");
         }
     }
@@ -474,6 +491,251 @@ fn generated_blocks_decode_as_the_cpp_does() {
     // 4,096 sizes + 64 styles x 4 orientations x 64 edge pairs + 384 long shapes + 300 full-size blocks
     assert_eq!(pair.blocks, 4_096 + 16_384 + 384 + 300);
     assert!(pair.refused > 0, "some blocks reach 31 bit-planes with the ROI shift");
+}
+
+/// Segments longer than the bytes that are there (Tier 2 gives none): both decoders take the bytes present, each
+/// segment cut to what is left after the ones before it (`test_overlong`; lengths near 0xFFFFFFFF must not wrap a sum).
+#[test]
+fn overlong_segments_are_cut_as_the_cpp_cuts_them() {
+    let mut pair = Pair::new();
+    let mut rng = Rng(4242);
+    for i in 0..1_500u32 {
+        let shapes = [(64, 64), (rng.below(64) + 1, rng.below(64) + 1), (1024, 4), (4, 1024)];
+        let (w, h) = shapes[(i % 4) as usize];
+        let style = rng.below(64);
+        let mut spec = make_spec(&mut rng, w, h, style, i % 2 == 0, false);
+        let bytes = u32::try_from(spec.bytes.len()).expect("small");
+        for l in &mut spec.len {
+            *l = match rng.below(10) {
+                0 => *l + 1 + rng.below(40),
+                1 => 0xffff_fff0 + rng.below(16),
+                2 => bytes + rng.below(3),
+                _ => *l,
+            };
+        }
+        pair.check(&spec, "overlong segments");
+    }
+}
+
+/// A segment BYPASS types raw holds significance and refinement passes only (Tier 2 gives at most two); hand-built
+/// ones with a third, a cleanup pass, end at the cleanup pass in both decoders (`test_raw_cleanup`; the C++ ported
+/// that in the stage the Rust crate follows).
+#[test]
+fn a_raw_segment_with_a_cleanup_pass_ends_there_as_in_the_cpp() {
+    let mut pair = Pair::new();
+    let mut rng = Rng(99);
+    let mut raw_segments = 0;
+    for _ in 0..600 {
+        let (w, h) = (1 + rng.below(64), 1 + rng.below(64));
+        let mut spec = Spec::new(w, h);
+        spec.cblksty = LAZY
+            | if rng.below(2) == 1 { RESET } else { 0 }
+            | if rng.below(2) == 1 { VSC } else { 0 }
+            | if rng.below(2) == 1 { SEGSYM } else { 0 };
+        spec.orient = rng.below(4);
+        spec.numbps = 5 + rng.below(10);
+        let nsegs = 2 + rng.below(7);
+        let mut total = 0;
+        for k in 0..nsegs {
+            let len = rng.below(w * h / 3 + 24);
+            let raw = k % 2 == 1;
+            spec.len.push(len);
+            spec.passes.push(if k == 0 {
+                10
+            } else if raw {
+                3
+            } else {
+                1
+            });
+            raw_segments += u32::from(raw);
+            total += len;
+        }
+        spec.bytes = vec![0; total as usize];
+        let kind = rng.below(7);
+        fill_bytes(&mut spec.bytes, &mut rng, kind);
+        spec.chunks = split_chunks(spec.bytes.len(), 1);
+        pair.check(&spec, "raw segment with a cleanup pass");
+    }
+    assert!(raw_segments > 1_000);
+}
+
+/// The significance and the sign of a newly significant sample (decoder step D2 of the C++): tiny blocks over every
+/// zero, positive and negative pattern of a column's four rows (`test_split`). Each block is one segment of random
+/// bytes, every pass of its bit-planes; the patterns the C++ decode leaves in the columns of the blocks one and
+/// three wide, four rows high, are counted. Returns them: `[orientation][column kind][pattern]`.
+fn run_split(orient: u32, per_combo: u32, seed: u64) -> [[bool; 81]; 4] {
+    const SHAPES: [(u32, u32); 12] = [
+        (1, 4),
+        (2, 4),
+        (3, 4),
+        (1, 8),
+        (3, 8),
+        (2, 5),
+        (3, 6),
+        (2, 7),
+        (1, 3),
+        (3, 1),
+        (3, 2),
+        (5, 12),
+    ];
+    let mut pair = Pair::new();
+    let mut rng = Rng(seed);
+    let mut seen = [[false; 81]; 4];
+    for (w, h) in SHAPES {
+        for style in [0, VSC] {
+            // the blocks whose columns are counted get more draws: a rare pattern of a block one wide must be seen
+            let draws = if h == 4 && (w == 1 || w == 3) {
+                per_combo * 4
+            } else {
+                per_combo
+            };
+            for i in 0..draws {
+                let mut spec = Spec::new(w, h);
+                spec.cblksty = style;
+                spec.orient = orient;
+                // the 9/7 store keeps a sample's sign and whether it is zero in the float's bits (the 5/3's halving
+                // can take a one-step coefficient to zero)
+                spec.reversible = false;
+                spec.step = 2.0;
+                spec.numbps = 1 + rng.below(5);
+                let len = 1 + rng.below(w * h * 3 / 2 + 6);
+                spec.len.push(len);
+                spec.passes.push(1 + 3 * (spec.numbps - 1));
+                spec.bytes = vec![0; len as usize];
+                fill_bytes(&mut spec.bytes, &mut rng, if i % 7 == 6 { 4 } else { 0 });
+                spec.chunks = split_chunks(spec.bytes.len(), 1);
+                let out = pair
+                    .check(&spec, "split")
+                    .expect("a block of at most five bit-planes is not refused");
+                if h == 4 && (w == 1 || w == 3) {
+                    for x in 0..w {
+                        let kind = if w == 1 { 0 } else { 1 + x as usize };
+                        let mut pattern = 0;
+                        for row in (0..4usize).rev() {
+                            let v = out[row * w as usize + x as usize];
+                            pattern = pattern * 3 + usize::from(v != 0) + usize::from(v < 0);
+                        }
+                        seen[kind][pattern] = true;
+                    }
+                }
+            }
+        }
+    }
+    seen
+}
+
+#[test]
+fn tiny_blocks_decode_as_the_cpp_does_in_every_orientation() {
+    for orient in 0..4 {
+        run_split(orient, 250, 20_261_124 + u64::from(orient));
+    }
+}
+
+/// The full `test_split` (3.84 million blocks, 5.8 million with the extra draws of the counted shapes), one thread an orientation, and the count of the patterns it has to see.
+#[test]
+#[ignore = "nightly: the C++ test_split, extended: 5.8 million tiny blocks"]
+fn nightly_tier1_decode_split() {
+    let seen: Vec<[[bool; 81]; 4]> = std::thread::scope(|scope| {
+        let handles: Vec<_> = (0..4u32)
+            .map(|orient| scope.spawn(move || run_split(orient, 40_000, 20_261_124 + u64::from(orient))))
+            .collect();
+        handles.into_iter().map(|h| h.join().expect("a split thread")).collect()
+    });
+    let mut missing = 0;
+    for (orient, per_orient) in seen.iter().enumerate() {
+        for (kind, patterns) in per_orient.iter().enumerate() {
+            for (pattern, &seen) in patterns.iter().enumerate() {
+                if !seen {
+                    eprintln!("never decoded: orientation {orient}, column kind {kind}, pattern {pattern}");
+                    missing += 1;
+                }
+            }
+        }
+    }
+    assert_eq!(
+        missing, 0,
+        "{missing} of the 4 x 4 x 81 (orientation, column kind, pattern) cases were never decoded"
+    );
+}
+
+/// The store alone: coefficients around every ROI threshold, the extremes and noise, in stores of other strides, in
+/// both wavelets, Rust's scalar and (where built) its vector path against the C++'s.
+#[test]
+fn stores_match_the_cpp_including_the_roi_threshold() {
+    let mut rng = Rng(77);
+    let mut cases = 0;
+    for roishift in [0u32, 1, 2, 5, 8, 15, 29, 30, 31, 32, 40] {
+        for &width in &[1u32, 7, 8, 9, 16, 17, 33] {
+            for height in [1u32, 2, 4] {
+                let n = (width * height) as usize;
+                let mut specials: Vec<i32> = vec![0, 1, -1, 7, i32::MIN, i32::MIN + 1, i32::MAX, i32::MAX - 1];
+                if (1..31).contains(&roishift) {
+                    let t = 1i32 << roishift;
+                    for v in [
+                        t - 1,
+                        t,
+                        t + 1,
+                        t.saturating_mul(2) - 1,
+                        t.saturating_mul(2),
+                        t.saturating_mul(3),
+                    ] {
+                        specials.extend([v, -v]);
+                    }
+                }
+                let coefficients: Vec<i32> = (0..n)
+                    .map(|i| {
+                        if rng.below(3) == 0 {
+                            i32::try_from(rng.below(1 << 20)).expect("small") - (1 << 19)
+                        } else {
+                            specials[(i + rng.below(8) as usize) % specials.len()]
+                        }
+                    })
+                    .collect();
+                for reversible in [true, false] {
+                    for step in [0.0f32, 0.3, 1.0, 7.5] {
+                        for stride in [width, width + 3] {
+                            let want = tier1::store(&coefficients, (width, height), roishift, reversible, step, stride);
+                            for vector in [false, true] {
+                                let mut got = vec![FILL; want.len()];
+                                let end = (height as usize - 1) * stride as usize + width as usize;
+                                let mut input = coefficients.clone();
+                                let (w, s) = (width as usize, stride as usize);
+                                if vector {
+                                    store_coefficients::<true>(
+                                        &mut input,
+                                        &mut got[..end],
+                                        w,
+                                        s,
+                                        roishift,
+                                        reversible,
+                                        step,
+                                    );
+                                } else {
+                                    store_coefficients::<false>(
+                                        &mut input,
+                                        &mut got[..end],
+                                        w,
+                                        s,
+                                        roishift,
+                                        reversible,
+                                        step,
+                                    );
+                                }
+                                assert_eq!(
+                                    got,
+                                    want,
+                                    "store {width} x {height} stride {stride} roi {roishift} {} step {step} vector {vector}",
+                                    if reversible { "5/3" } else { "9/7" }
+                                );
+                                cases += 1;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    assert!(cases > 7_000);
 }
 
 /// The nightly sweep: the same draw on many seeds, in every thread there is.
@@ -494,5 +756,5 @@ fn nightly_tier1_decode_sweep() {
             .collect();
         handles.into_iter().map(|h| h.join().expect("a sweep thread")).sum()
     });
-    eprintln!("{total} generated code-blocks decoded as the C++ does ({threads} threads)");
+    eprintln!("{total} generated code-blocks decoded as the cpp does ({threads} threads)");
 }

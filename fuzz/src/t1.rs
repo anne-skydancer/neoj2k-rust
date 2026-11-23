@@ -23,45 +23,11 @@ use std::cell::RefCell;
 
 use neo_j2k::bench::{DecodeBlock, DecodeWorkspace};
 use neo_j2k_oracle::tier1::{DecodeBlock as CppBlock, T1Decoder};
-
-const LONG: [(u32, u32); 16] = [
-    (1024, 4),
-    (4, 1024),
-    (512, 8),
-    (8, 512),
-    (256, 16),
-    (16, 256),
-    (128, 32),
-    (32, 128),
-    (1024, 3),
-    (2, 1024),
-    (1024, 1),
-    (1, 1024),
-    (1024, 2),
-    (64, 64),
-    (4, 64),
-    (64, 4),
-];
+use neo_j2k_testkit::generate::{LONG_SHAPES, split_chunks};
 
 thread_local! {
     // both kept from input to input, as a worker keeps its scratch
     static SCRATCH: RefCell<Option<(T1Decoder, DecodeWorkspace)>> = const { RefCell::new(None) };
-}
-
-fn chunk_lengths(n: usize, parts: u32) -> Vec<u32> {
-    if n == 0 {
-        return Vec::new();
-    }
-    let parts = parts as usize;
-    let mut at = 0;
-    (0..parts)
-        .map(|i| {
-            let to = if i + 1 == parts { n } else { at + (n - at) / (parts - i) };
-            let len = u32::try_from(to - at).expect("a chunk fits u32");
-            at = to;
-            len
-        })
-        .collect()
 }
 
 pub fn t1(data: &[u8]) {
@@ -69,7 +35,7 @@ pub fn t1(data: &[u8]) {
         return;
     }
     let (width, height) = if data[0] & 0x80 != 0 {
-        LONG[usize::from(data[0] & 15)]
+        LONG_SHAPES[usize::from(data[0] & 15)]
     } else {
         (1 + u32::from(data[0]) % 64, 1 + u32::from(data[1]) % 64)
     };
@@ -108,7 +74,7 @@ pub fn t1(data: &[u8]) {
             (u32::from(seg_bytes[2 * i]), passes)
         })
         .collect();
-    let chunks = chunk_lengths(bytes.len(), parts);
+    let chunks = split_chunks(bytes.len(), parts);
     let rust_block = DecodeBlock::new(
         (width, height),
         (numbps, orient, roishift, style),
@@ -133,9 +99,18 @@ pub fn t1(data: &[u8]) {
                 chunks: &chunks,
                 reversible,
                 step_size,
+                stride: width,
+                offset: 0,
             });
-            let mut got = vec![0x5a5a_5a5a_i32; (width * height) as usize];
+            let mut got = vec![neo_j2k_oracle::tier1::FILL; (width * height) as usize + neo_j2k_oracle::tier1::TAIL];
             let ok = rust.decode(&rust_block, reversible, step_size, &mut got);
+            // a refusal is the bit-planes plus ROI shift rule and nothing else
+            let refused = i32::from_ne_bytes(numbps.wrapping_add(roishift).to_ne_bytes()) >= 31;
+            assert_eq!(
+                want.is_none(),
+                refused,
+                "t1: the C++'s refusal is not the bit-plane rule ({width} x {height})"
+            );
             match want {
                 None => assert!(
                     !ok,

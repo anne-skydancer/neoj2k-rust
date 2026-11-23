@@ -80,6 +80,7 @@ dependencies = [
  "libfuzzer-sys",
  "neo-j2k",
  "neo-j2k-oracle",
+ "neo-j2k-testkit",
 ]
 
 [[package]]

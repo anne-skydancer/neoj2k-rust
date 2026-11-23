@@ -2,6 +2,11 @@
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 
 //! The clock: time stamp counter cycles on x86-64 (the C++ benches' clock), nanoseconds elsewhere.
+//!
+//! `lfence` before and after the counter read keeps the read from moving across the timed region. On Intel it
+//! serialises instruction execution; on AMD it does so only where the operating system has set the dispatch-serialising
+//! mode (Linux does on Zen; Windows is not known to), so an AMD read can overlap a few instructions of the region. A timed
+//! unit is at least 30 Mcycles, so that is far below the noise.
 
 /// The unit of [`start`] and [`stop`].
 #[cfg(target_arch = "x86_64")]
