@@ -1,0 +1,348 @@
+[
+ {
+  "name": "E2 mask without the visited bits",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "let rows = !((column_flags >> 4) | (column_flags >> 21)) & ALL_ROWS;",
+  "new": "let rows = !(column_flags >> 4) & ALL_ROWS;",
+  "tests": [
+   "encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E2 mask without the significance bits",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "let rows = !((column_flags >> 4) | (column_flags >> 21)) & ALL_ROWS;",
+  "new": "let rows = !(column_flags >> 21) & ALL_ROWS;",
+  "tests": [
+   "encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E2 rows mask 0x49",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "const ALL_ROWS: u32 = 0x249;",
+  "new": "const ALL_ROWS: u32 = 0x49;",
+  "tests": [
+   "encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E2 rows mask 0x241",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "const ALL_ROWS: u32 = 0x249;",
+  "new": "const ALL_ROWS: u32 = 0x241;",
+  "tests": [
+   "encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E2 significance shift 5 instead of 4",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "let rows = !((column_flags >> 4) | (column_flags >> 21)) & ALL_ROWS;",
+  "new": "let rows = !((column_flags >> 5) | (column_flags >> 21)) & ALL_ROWS;",
+  "tests": [
+   "encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E2 visited shift 20 instead of 21",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "let rows = !((column_flags >> 4) | (column_flags >> 21)) & ALL_ROWS;",
+  "new": "let rows = !((column_flags >> 4) | (column_flags >> 20)) & ALL_ROWS;",
+  "tests": [
+   "encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E2 no visited-bit clear at a column's end (whole stripe)",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "                self.flags[index] = column_flags & !ALL_PI;\n            }\n        }\n        let rows = partial.len()",
+  "new": "                self.flags[index] = column_flags;\n            }\n        }\n        let rows = partial.len()",
+  "tests": [
+   "encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E2 partial stripe: mask without the visited bits",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "let candidates = !((column_flags >> 4) | (column_flags >> 21)) & ALL_ROWS;",
+  "new": "let candidates = !(column_flags >> 4) & ALL_ROWS;",
+  "tests": [
+   "encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E2 partial stripe: no visited-bit clear",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "self.flags[index] = column_flags & !real_pi;\n            }\n        }\n        let kept",
+  "new": "self.flags[index] = column_flags;\n            }\n        }\n        let kept",
+  "tests": [
+   "encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E2 run mode: the first row's lane (sign of the wrong row)",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "let first = bits.trailing_zeros();",
+  "new": "let first = bits.trailing_zeros().min(2);",
+  "tests": [
+   "encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 pair 0 (no neighbour, not refined)",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "    CONTEXT_MAGNITUDE * 2,\n    CONTEXT_MAGNITUDE * 2 + 2,",
+  "new": "    CONTEXT_MAGNITUDE * 2 + 2,\n    CONTEXT_MAGNITUDE * 2 + 2,",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 pair 1 (neighbour)",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "    CONTEXT_MAGNITUDE * 2 + 2,\n    CONTEXT_MAGNITUDE * 2 + 4,\n    CONTEXT_MAGNITUDE * 2 + 4,\n];",
+  "new": "    CONTEXT_MAGNITUDE * 2,\n    CONTEXT_MAGNITUDE * 2 + 4,\n    CONTEXT_MAGNITUDE * 2 + 4,\n];",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 pair 2 (mu, no neighbour)",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "    CONTEXT_MAGNITUDE * 2 + 4,\n    CONTEXT_MAGNITUDE * 2 + 4,\n];",
+  "new": "    CONTEXT_MAGNITUDE * 2 + 2,\n    CONTEXT_MAGNITUDE * 2 + 4,\n];",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 pair 3 (mu, neighbour)",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "    CONTEXT_MAGNITUDE * 2 + 4,\n    CONTEXT_MAGNITUDE * 2 + 4,\n];",
+  "new": "    CONTEXT_MAGNITUDE * 2 + 4,\n    CONTEXT_MAGNITUDE * 2 + 2,\n];",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 mu shift 18",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "((row >> 19) & 2)",
+  "new": "((row >> 18) & 2)",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 mask without the visited bits",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "let eligible = flags & !(flags >> PI_TO_SIGMA) & ALL_SIGMA;",
+  "new": "let eligible = flags & ALL_SIGMA;",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 2
+ },
+ {
+  "name": "E3 visited shift 18",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "let eligible = flags & !(flags >> PI_TO_SIGMA) & ALL_SIGMA;",
+  "new": "let eligible = flags & !(flags >> 18) & ALL_SIGMA;",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 2
+ },
+ {
+  "name": "E3 row left out of the mask (whole stripe)",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "let eligible = flags & !(flags >> PI_TO_SIGMA) & ALL_SIGMA;\n                if eligible == 0 {\n                    continue;\n                }\n                Self::refine_row::<0>(list, &mut length, flags, eligible, lanes[0], plane, &mut change);\n                Self::refine_row::<1>",
+  "new": "let eligible = flags & !(flags >> PI_TO_SIGMA) & ALL_SIGMA & !(SIGMA_THIS << 9);\n                if eligible == 0 {\n                    continue;\n                }\n                Self::refine_row::<0>(list, &mut length, flags, eligible, lanes[0], plane, &mut change);\n                Self::refine_row::<1>",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 row left out of the mask (partial stripe)",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "let eligible = flags & !(flags >> PI_TO_SIGMA) & ALL_SIGMA;\n                if eligible == 0 {\n                    continue;\n                }\n                Self::refine_row::<0>(list, &mut length, flags, eligible, lanes[0], plane, &mut change);\n                if let",
+  "new": "let eligible = flags & !(flags >> PI_TO_SIGMA) & ALL_SIGMA & !(SIGMA_THIS << 3);\n                if eligible == 0 {\n                    continue;\n                }\n                Self::refine_row::<0>(list, &mut length, flags, eligible, lanes[0], plane, &mut change);\n                if let",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 mu not set (whole and partial)",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "self.flags[index] = flags | (eligible << 16);",
+  "new": "self.flags[index] = flags;",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 2
+ },
+ {
+  "name": "E3 length advanced for every row",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "*length += usize::from(refined);",
+  "new": "*length += 1;",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 distortion tables swapped",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "*change += plane.decrease(plane.refinement, sample) & -i32::from(refined);",
+  "new": "*change += plane.decrease(plane.significance, sample) & -i32::from(refined);",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 distortion not masked",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "*change += plane.decrease(plane.refinement, sample) & -i32::from(refined);",
+  "new": "*change += plane.decrease(plane.refinement, sample);",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 bit read at the wrong plane",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "u8::from(plane.bit(sample) != 0);",
+  "new": "u8::from(plane.bit(sample >> 1) != 0);",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 last row of the partial stripe dropped",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "if let Some(&sample) = lanes.get(2) {\n                    Self::refine_row::<2>",
+  "new": "if let Some(&sample) = lanes.get(3) {\n                    Self::refine_row::<2>",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 whole-stripe row 3 sample from row 2",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "Self::refine_row::<3>(list, &mut length, flags, eligible, lanes[3],",
+  "new": "Self::refine_row::<3>(list, &mut length, flags, eligible, lanes[2],",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 pairs coded one short",
+  "file": "neo-j2k/src/encoder/tier1.rs",
+  "old": "coder.pairs(&list[..length]);",
+  "new": "coder.pairs(&list[..length.saturating_sub(1)]);",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "E3 pair bit in the wrong bit",
+  "file": "neo-j2k/src/encoder/tier1/mq.rs",
+  "old": "self.symbol(usize::from(pair >> 1), u32::from(pair & 1));",
+  "new": "self.symbol(usize::from(pair >> 1), u32::from(pair & 1) ^ 1);",
+  "tests": [
+   "encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "MQ exchange test inverted",
+  "file": "neo-j2k/src/encoder/tier1/mq.rs",
+  "old": "let exchange = (a < qeval) != lps;",
+  "new": "let exchange = (a < qeval) == lps;",
+  "tests": [
+   "encoder::tier1::mq::differential::single_decisions_encode_as_the_cpp_does",
+   "encoder::tier1::mq::differential::streams_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "MQ renormalisation of an LPS only",
+  "file": "neo-j2k/src/encoder/tier1/mq.rs",
+  "old": "let renormalize = lps | (a < 0x8000);",
+  "new": "let renormalize = lps;",
+  "tests": [
+   "encoder::tier1::mq::differential::single_decisions_encode_as_the_cpp_does",
+   "encoder::tier1::mq::differential::streams_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "MQ next states swapped",
+  "file": "neo-j2k/src/encoder/tier1/mq.rs",
+  "old": "select_unpredictable(lps, entry.next_lps, entry.next_mps)",
+  "new": "select_unpredictable(lps, entry.next_mps, entry.next_lps)",
+  "tests": [
+   "encoder::tier1::mq::differential::single_decisions_encode_as_the_cpp_does",
+   "encoder::tier1::mq::differential::streams_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "MQ code register add swapped",
+  "file": "neo-j2k/src/encoder/tier1/mq.rs",
+  "old": "select_unpredictable(exchange, 0, qeval)",
+  "new": "select_unpredictable(exchange, qeval, 0)",
+  "tests": [
+   "encoder::tier1::mq::differential::single_decisions_encode_as_the_cpp_does",
+   "encoder::tier1::mq::differential::streams_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "MQ state always advances",
+  "file": "neo-j2k/src/encoder/tier1/mq.rs",
+  "old": "select_unpredictable(renormalize, next, state)",
+  "new": "next",
+  "tests": [
+   "encoder::tier1::mq::differential::single_decisions_encode_as_the_cpp_does",
+   "encoder::tier1::mq::differential::streams_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ },
+ {
+  "name": "MQ shift one too large",
+  "file": "neo-j2k/src/encoder/tier1/mq.rs",
+  "old": "let shift = a.leading_zeros() - 16;",
+  "new": "let shift = a.leading_zeros() - 15;",
+  "tests": [
+   "encoder::tier1::mq::differential::single_decisions_encode_as_the_cpp_does",
+   "encoder::tier1::mq::differential::streams_encode_as_the_cpp_does"
+  ],
+  "count": 1
+ }
+]
