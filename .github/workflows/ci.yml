@@ -282,6 +282,10 @@ jobs:
       HOME: /root
       RUSTUP_HOME: /opt/rustup
       CARGO_HOME: /opt/cargo
+      # the runner's own docker CLI (the host side of every step's `docker exec`) inherits this job env, so HOME=/root
+      # made it read /root/.docker/config.json as the runner user: "Error loading config file ... permission denied" on
+      # every step. A config directory with no config.json in it keeps it quiet.
+      DOCKER_CONFIG: /tmp
     steps:
       - name: Toolchain
         run: |
