@@ -104,15 +104,20 @@ fn check_decision(index: usize, start: Model, tail: &[u8]) {
         current: decoder.source.current,
         consumed: tail.len() - decoder.source.data.len(),
     };
-    let context = format!("state {index}, from {start:?}, bytes {tail:02x?}");
-    assert_eq!(bit, want_bit, "bit: {context}");
-    assert_eq!(decoder.contexts[0], PACKED_STATES[want_next], "next state: {context}");
-    assert_eq!(got, want, "registers: {context}");
+    // the assertion macros format their message only on a failure
+    assert_eq!(bit, want_bit, "bit: state {index}, from {start:?}, bytes {tail:02x?}");
+    assert_eq!(
+        decoder.contexts[0], PACKED_STATES[want_next],
+        "next state: state {index}, from {start:?}, bytes {tail:02x?}"
+    );
+    assert_eq!(got, want, "registers: state {index}, from {start:?}, bytes {tail:02x?}");
 }
 
 #[test]
 fn the_select_decision_equals_the_standards_branches() {
-    let step = if cfg!(miri) { 4099 } else { 211 };
+    // Miri interprets every decision, so it checks the edge intervals, a coarse spread and three bit counts
+    let step = if cfg!(miri) { 0x2000 } else { 211 };
+    let bit_step = if cfg!(miri) { 4 } else { 1 };
     let mut checked = 0u32;
     for (index, &(qe, ..)) in MQ_STATES.iter().enumerate() {
         // the intervals: the ends, around the exchange (qe and 2 qe) and the renormalisation (0x8000 + qe) edges, and a spread
@@ -121,7 +126,7 @@ fn the_select_decision_equals_the_standards_branches() {
         intervals.extend((0x8000..=0xffffu32).step_by(step));
         for a in intervals {
             for chi in [0, qe.saturating_sub(1), qe, qe + 1, a - qe, a, 0xffff] {
-                for bits in 0..=8 {
+                for bits in (0..=8).step_by(bit_step) {
                     let q = a.wrapping_mul(31) ^ (u32::try_from(index).unwrap() * 7) ^ (bits * 13);
                     let bytes = [0, 1, 2, 3].map(|k| BYTES[((q >> (3 * k)) % 6) as usize]);
                     let clo = if q & 1 == 0 {
