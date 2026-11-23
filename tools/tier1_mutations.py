@@ -189,6 +189,7 @@ def main():
 
         # the tests without any mutation: they must pass, or a failure under a mutation proves nothing
         seen = set()
+        unmutated_failures = []
         for m in mutations:
             for test in m["tests"]:
                 key = (m.get("package", "neo-j2k"), m.get("target", "--lib"), test)
@@ -197,9 +198,16 @@ def main():
                 seen.add(key)
                 code, out = cargo_test(tree, m, test, env, args.profile)
                 if code != 0 or not passed_tests(out):
+                    # keep going: report every failing test in one run, not one a run
+                    unmutated_failures.append(test)
                     print("tier1_mutations: the unmutated tests of %r do not pass (profile %s):" % (test, args.profile))
                     print("\n".join(out.splitlines()[-40:]))
-                    return 2
+
+
+        if unmutated_failures:
+            print("tier1_mutations: %d of %d named tests fail without any mutation (profile %s): %s"
+                  % (len(unmutated_failures), len(seen), args.profile, ", ".join(unmutated_failures)))
+            return 2
 
         for m in mutations:
             path = os.path.join(tree, m["file"])
