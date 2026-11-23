@@ -5,8 +5,8 @@
 //! feature `bench-internals`, which turns on the decoder's stage timers; run by `.github/workflows/stage-profile.yml`.
 //!
 //! The three small images are decoded many times at a reduce factor, and each call's wall time is split into the
-//! stages the decoder passes through. The stage timers only add time on the calling thread, and these decodes run
-//! on it alone (no executor), so the stages plus the unattributed rest add up to the call.
+//! stages the decoder passes through. The stage totals are process-wide, and these decodes run one at a time on the
+//! calling thread (no executor), so the stages plus the unattributed rest add up to the call.
 
 #![cfg(all(feature = "bench-internals", not(miri)))]
 

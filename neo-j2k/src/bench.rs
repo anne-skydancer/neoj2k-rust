@@ -13,12 +13,12 @@ use crate::tile::Segment;
 pub use crate::encoder::bench::{EncodeParams, EncodeWorkspace, EncodedBlock, EncodedPass};
 pub use crate::stage::Stage;
 
-/// Clears the calling thread's stage totals.
+/// Clears the stage totals.
 pub fn stage_reset() {
     crate::stage::reset();
 }
 
-/// The calling thread's stage totals since the last reset, one entry per [`Stage::ALL`], in that order.
+/// The stage totals since the last reset, one entry per [`Stage::ALL`], in that order.
 #[must_use]
 pub fn stage_totals() -> [core::time::Duration; Stage::ALL.len()] {
     crate::stage::totals()

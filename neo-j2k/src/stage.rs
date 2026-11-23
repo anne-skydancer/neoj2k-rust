@@ -5,9 +5,9 @@
 //!
 //! `timed!(Stage::X, expression)` evaluates the expression. Without the off-by-default feature `bench-internals`
 //! the macro expands to the expression alone: no timer, no state, no code. With the feature it also adds the
-//! wall-clock time the expression took to the calling thread's total for that stage, so a benchmark can read where
-//! one decode's time went (`crate::bench::stage_reset`, `crate::bench::stage_totals`). Timers are per thread, so only
-//! work on the calling thread is counted: a decode that hands work to an executor counts the calling thread's share.
+//! wall-clock time the expression took to the process-wide total for that stage, so a benchmark can read where
+//! one decode's time went (`crate::bench::stage_reset`, `crate::bench::stage_totals`). Totals are summed over threads, so
+//! a benchmark reads them with one decode running at a time; time on executor threads adds to them too.
 //! The stages never nest, so the totals add up to less than the call; the rest is the code between them.
 
 /// The stages of one decode call, in the order the code runs them.
@@ -87,29 +87,26 @@ impl Stage {
 #[cfg(feature = "bench-internals")]
 mod clock {
     use super::Stage;
-    use std::cell::Cell;
+    use std::sync::atomic::{AtomicU64, Ordering};
     use std::time::{Duration, Instant};
 
-    thread_local! {
-        static TOTALS: [Cell<Duration>; Stage::ALL.len()] = const { [const { Cell::new(Duration::ZERO) }; Stage::ALL.len()] };
-    }
+    // Nanoseconds per stage, summed over every thread that decodes in the process. A benchmark that reads them
+    // runs one decode at a time (the codec itself holds no thread-local or mutable static state).
+    static TOTALS: [AtomicU64; Stage::ALL.len()] = [const { AtomicU64::new(0) }; Stage::ALL.len()];
 
     pub(crate) fn add(stage: Stage, start: Instant) {
-        let spent = start.elapsed();
-        let _ = TOTALS.try_with(|totals| {
-            let cell = &totals[stage as usize];
-            cell.set(cell.get() + spent);
-        });
+        let spent = u64::try_from(start.elapsed().as_nanos()).unwrap_or(u64::MAX);
+        TOTALS[stage as usize].fetch_add(spent, Ordering::Relaxed);
     }
 
     pub(crate) fn reset() {
-        let _ = TOTALS.try_with(|totals| totals.iter().for_each(|cell| cell.set(Duration::ZERO)));
+        for total in &TOTALS {
+            total.store(0, Ordering::Relaxed);
+        }
     }
 
     pub(crate) fn totals() -> [Duration; Stage::ALL.len()] {
-        TOTALS
-            .try_with(|totals| std::array::from_fn(|index| totals[index].get()))
-            .unwrap_or([Duration::ZERO; Stage::ALL.len()])
+        std::array::from_fn(|index| Duration::from_nanos(TOTALS[index].load(Ordering::Relaxed)))
     }
 }
 
