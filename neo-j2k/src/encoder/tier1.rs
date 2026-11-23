@@ -10,7 +10,7 @@ mod mq;
 use super::{Block, Pass, T1Params, memory_error, wavelet};
 use crate::t1::tables::{SIGN_CONTEXT, SIGN_PREDICTION, ZERO_CONTEXT};
 use crate::{Error, ErrorKind};
-use mq::{CONTEXT_AGGREGATE, CONTEXT_UNIFORM, Encoder};
+use mq::{CONTEXT_AGGREGATE, CONTEXT_UNIFORM, Encoder, Run};
 
 const FRACTIONAL_BITS: u32 = 6;
 const MAX_SIDE: usize = 64;
@@ -113,7 +113,7 @@ impl Passes<'_> {
         usize::from(self.zero_context[(flags & SIGMA_NEIGHBOURS) as usize])
     }
 
-    fn sign(&mut self, coder: &mut Encoder<'_>, index: usize, lane: usize, sample: u32, column_flags: &mut u32) {
+    fn sign(&mut self, coder: &mut Run<'_>, index: usize, lane: usize, sample: u32, column_flags: &mut u32) {
         let flags = *column_flags;
         let shift = lane * 3;
         let mut lookup = (flags >> shift) & 0x00aa;
@@ -151,7 +151,7 @@ impl Passes<'_> {
     #[inline(always)]
     fn significance_lane(
         &mut self,
-        coder: &mut Encoder<'_>,
+        coder: &mut Run<'_>,
         index: usize,
         lane: usize,
         sample: u32,
@@ -178,7 +178,9 @@ impl Passes<'_> {
         (row / 4 + 1) * (self.width + 2) + 1
     }
 
-    fn significance(&mut self, coder: &mut Encoder<'_>, plane: Plane) -> i32 {
+    #[inline(never)]
+    fn significance(&mut self, registers: &mut Encoder<'_>, plane: Plane) -> i32 {
+        let mut coder = registers.lend();
         let data = self.data;
         let mut change = 0;
         for row in (0..self.height).step_by(4) {
@@ -194,15 +196,19 @@ impl Passes<'_> {
                 }
                 let samples = &data[row * self.width + column * rows..][..rows];
                 for (lane, &sample) in samples.iter().enumerate() {
-                    change += self.significance_lane(coder, index, lane, sample, plane, &mut column_flags);
+                    change += self.significance_lane(&mut coder, index, lane, sample, plane, &mut column_flags);
                 }
                 self.flags[index] = column_flags;
             }
         }
+        let kept = coder.finish();
+        registers.restore(kept);
         change
     }
 
-    fn refine(&mut self, coder: &mut Encoder<'_>, plane: Plane) -> i32 {
+    #[inline(never)]
+    fn refine(&mut self, registers: &mut Encoder<'_>, plane: Plane) -> i32 {
+        let mut coder = registers.lend();
         let data = self.data;
         let mut change = 0;
         for row in (0..self.height).step_by(4) {
@@ -235,10 +241,14 @@ impl Passes<'_> {
                 self.flags[index] = column_flags | refined;
             }
         }
+        let kept = coder.finish();
+        registers.restore(kept);
         change
     }
 
-    fn cleanup(&mut self, coder: &mut Encoder<'_>, plane: Plane) -> i32 {
+    #[inline(never)]
+    fn cleanup(&mut self, registers: &mut Encoder<'_>, plane: Plane) -> i32 {
+        let mut coder = registers.lend();
         let data = self.data;
         let mut change = 0;
         for row in (0..self.height).step_by(4) {
@@ -281,7 +291,7 @@ impl Passes<'_> {
                         false
                     };
                     if significant {
-                        self.sign(coder, index, lane, sample, &mut column_flags);
+                        self.sign(&mut coder, index, lane, sample, &mut column_flags);
                         change += plane.decrease(plane.significance, sample);
                     }
                     column_flags &= !(PI_THIS << shift);
@@ -289,6 +299,8 @@ impl Passes<'_> {
                 self.flags[index] = column_flags;
             }
         }
+        let kept = coder.finish();
+        registers.restore(kept);
         change
     }
 }
