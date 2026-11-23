@@ -21,7 +21,6 @@ const CODE_CAPACITY: usize = 1 + 74 + 3 * (MAX_PASSES - 2) + MAX_SAMPLES * 4;
 
 const SIGMA_THIS: u32 = 1 << 4;
 const SIGMA_NEIGHBOURS: u32 = 0x1ef;
-const MU_THIS: u32 = 1 << 20;
 const PI_THIS: u32 = 1 << 21;
 const ALL_PI: u32 = PI_THIS | (PI_THIS << 3) | (PI_THIS << 6) | (PI_THIS << 9);
 const ALL_SIGMA: u32 = SIGMA_THIS | (SIGMA_THIS << 3) | (SIGMA_THIS << 6) | (SIGMA_THIS << 9);
@@ -245,37 +244,51 @@ impl Passes<'_> {
         change
     }
 
+    /// One row of a column in the refinement pass: its pair is stored whatever the row (the next pair overwrites
+    /// it when the row is not refined), and the list grows by one when the column's `eligible` mask has the row.
+    #[inline(always)]
+    fn refine_row<const LANE: usize>(
+        list: &mut PairList,
+        length: &mut usize,
+        flags: u32,
+        eligible: u32,
+        sample: u32,
+        plane: Plane,
+        change: &mut i32,
+    ) {
+        let refined = (eligible >> (4 + 3 * LANE)) & 1 != 0;
+        let row = flags >> (3 * LANE);
+        let context = u32::from(row & SIGMA_NEIGHBOURS != 0) | ((row >> 19) & 2);
+        list[*length & (MAX_SAMPLES - 1)] = MAGNITUDE_PAIR[(context & 3) as usize] | u8::from(plane.bit(sample) != 0);
+        *length += usize::from(refined);
+        *change += plane.decrease(plane.refinement, sample) & -i32::from(refined);
+    }
+
+    /// The refinement pass changes no significance or visited mark, so the samples it codes, their order and their
+    /// contexts are fixed by the flags at its start: one scan lists the pairs of every stripe, and one loop codes
+    /// the list.
     #[inline(never)]
-    fn refine(&mut self, registers: &mut Encoder<'_>, plane: Plane, _list: &mut PairList) -> i32 {
+    fn refine(&mut self, registers: &mut Encoder<'_>, plane: Plane, list: &mut PairList) -> i32 {
         let mut coder = registers.lend();
         let data = self.data;
         let (whole, partial) = data.split_at(self.height / 4 * 4 * self.width);
+        let mut length = 0;
         let mut change = 0;
         for (stripe, samples) in whole.chunks_exact(4 * self.width).enumerate() {
             let base = self.stripe_base(stripe);
             for (column, lanes) in samples.as_chunks::<4>().0.iter().enumerate() {
                 let index = base + column;
-                let column_flags = self.flags[index];
-                let mut eligible = (column_flags & !(column_flags >> PI_TO_SIGMA)) & ALL_SIGMA;
+                let flags = self.flags[index];
+                // Padding lanes never get SIGMA_THIS, so only real samples are eligible.
+                let eligible = flags & !(flags >> PI_TO_SIGMA) & ALL_SIGMA;
                 if eligible == 0 {
                     continue;
                 }
-                let mut refined = 0;
-                while eligible != 0 {
-                    let shift = eligible.trailing_zeros() - SIGMA_THIS.trailing_zeros();
-                    let flags = column_flags >> shift;
-                    let context = if flags & MU_THIS != 0 {
-                        2
-                    } else {
-                        usize::from(flags & SIGMA_NEIGHBOURS != 0)
-                    };
-                    let sample = lanes[(shift / 3) as usize & 3];
-                    coder.symbol(usize::from(CONTEXT_MAGNITUDE) + context, plane.bit(sample));
-                    change += plane.decrease(plane.refinement, sample);
-                    refined |= MU_THIS << shift;
-                    eligible &= eligible - 1;
-                }
-                self.flags[index] = column_flags | refined;
+                Self::refine_row::<0>(list, &mut length, flags, eligible, lanes[0], plane, &mut change);
+                Self::refine_row::<1>(list, &mut length, flags, eligible, lanes[1], plane, &mut change);
+                Self::refine_row::<2>(list, &mut length, flags, eligible, lanes[2], plane, &mut change);
+                Self::refine_row::<3>(list, &mut length, flags, eligible, lanes[3], plane, &mut change);
+                self.flags[index] = flags | (eligible << 16);
             }
         }
         let rows = partial.len() / self.width;
@@ -283,29 +296,22 @@ impl Passes<'_> {
             let base = self.stripe_base(self.height / 4);
             for (column, lanes) in partial.chunks_exact(rows).enumerate() {
                 let index = base + column;
-                let column_flags = self.flags[index];
-                let mut eligible = (column_flags & !(column_flags >> PI_TO_SIGMA)) & ALL_SIGMA;
+                let flags = self.flags[index];
+                let eligible = flags & !(flags >> PI_TO_SIGMA) & ALL_SIGMA;
                 if eligible == 0 {
                     continue;
                 }
-                let mut refined = 0;
-                while eligible != 0 {
-                    let shift = eligible.trailing_zeros() - SIGMA_THIS.trailing_zeros();
-                    let flags = column_flags >> shift;
-                    let context = if flags & MU_THIS != 0 {
-                        2
-                    } else {
-                        usize::from(flags & SIGMA_NEIGHBOURS != 0)
-                    };
-                    let sample = lanes[(shift / 3) as usize];
-                    coder.symbol(usize::from(CONTEXT_MAGNITUDE) + context, plane.bit(sample));
-                    change += plane.decrease(plane.refinement, sample);
-                    refined |= MU_THIS << shift;
-                    eligible &= eligible - 1;
+                Self::refine_row::<0>(list, &mut length, flags, eligible, lanes[0], plane, &mut change);
+                if let Some(&sample) = lanes.get(1) {
+                    Self::refine_row::<1>(list, &mut length, flags, eligible, sample, plane, &mut change);
                 }
-                self.flags[index] = column_flags | refined;
+                if let Some(&sample) = lanes.get(2) {
+                    Self::refine_row::<2>(list, &mut length, flags, eligible, sample, plane, &mut change);
+                }
+                self.flags[index] = flags | (eligible << 16);
             }
         }
+        coder.pairs(&list[..length]);
         let kept = coder.finish();
         registers.restore(kept);
         change

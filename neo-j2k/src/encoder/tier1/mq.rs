@@ -252,6 +252,14 @@ impl Run<'_> {
         }
     }
 
+    /// Codes a list of pairs, each a context in its high seven bits and the bit in its low one.
+    #[inline(always)]
+    pub(super) fn pairs(&mut self, list: &[u8]) {
+        for &pair in list {
+            self.symbol(usize::from(pair >> 1), u32::from(pair & 1));
+        }
+    }
+
     pub(super) fn flush(&mut self) {
         let top = self.c.wrapping_add(self.a);
         self.c |= 0xffff;
