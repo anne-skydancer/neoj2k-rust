@@ -2,10 +2,14 @@
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 // OpenJPEG's MQ and raw readers, ported through src/t1.cpp. See the notice in t1.rs.
 
+use core::hint::select_unpredictable;
+
 use super::tables::MQ_STATES;
 
 #[cfg(all(test, not(miri)))]
 mod differential;
+#[cfg(test)]
+mod tests;
 
 pub(super) const CONTEXT_AGGREGATE: usize = 17;
 pub(super) const CONTEXT_UNIFORM: usize = 18;
@@ -13,6 +17,8 @@ const MPS_BIT: u32 = 16;
 const NEXT_MPS_SHIFT: u32 = 17;
 const NEXT_LPS_SHIFT: u32 = 24;
 const STATE_COUNT: usize = 128;
+// A context index is masked to this many slots (the 19 contexts and padding), so that no access is out of bounds.
+const CONTEXT_SLOTS: usize = 32;
 
 // Cache the active state in each context. A symbol that leaves its context unchanged
 // can use Qe and MPS immediately, with no separate state-table lookup.
@@ -30,23 +36,69 @@ static PACKED_STATES: [u32; STATE_COUNT] = {
     table
 };
 
-const INITIAL_CONTEXTS: [u32; 19] = {
-    let mut contexts = [PACKED_STATES[0]; 19];
+const INITIAL_CONTEXTS: [u32; CONTEXT_SLOTS] = {
+    let mut contexts = [PACKED_STATES[0]; CONTEXT_SLOTS];
     contexts[0] = PACKED_STATES[8];
     contexts[CONTEXT_AGGREGATE] = PACKED_STATES[6];
     contexts[CONTEXT_UNIFORM] = PACKED_STATES[92];
     contexts
 };
 
-/// One code-block's arithmetic registers and contexts, reused across its codeword segments.
-#[derive(Debug)]
+/// The registers a renormalisation that needs a byte works on, passed by value so that the decoder's own fields stay in
+/// registers (no address escapes) on the path that never needs one.
+#[derive(Clone, Copy)]
+struct Registers<'a> {
+    data: &'a [u8],
+    current: u32,
+    a: u32,
+    c: u32,
+    bits: u32,
+}
+
+impl Registers<'_> {
+    fn byte_in(&mut self) {
+        let (next, rest) = Decoder::next_byte(self.data);
+        let stuffed = self.current == 0xff;
+        let contribution = if stuffed && next > 0x8f {
+            self.bits = 8;
+            0xff00
+        } else {
+            self.data = rest;
+            self.current = next;
+            self.bits = 8 - u32::from(stuffed);
+            next << (16 - self.bits)
+        };
+        self.c = self.c.wrapping_add(contribution);
+    }
+}
+
+/// RENORMD when the code register has fewer bits than the interval needs shifts (a byte comes in: 0.07 to 0.11 of a
+/// decision): the shifts taken as many at a time as the register has bits, a byte read whenever none is left.
+#[cold]
+#[inline(never)]
+fn renormalize_with_bytes(mut r: Registers<'_>, total: u32) -> Registers<'_> {
+    let mut shifts = total;
+    while shifts > r.bits {
+        r.c <<= r.bits;
+        shifts -= r.bits;
+        r.byte_in();
+    }
+    r.a <<= total;
+    r.c <<= shifts;
+    r.bits -= shifts;
+    r
+}
+
+/// One code-block's arithmetic registers and contexts, reused across its codeword segments. A pass copies it into a
+/// local for its length, so that the registers live in machine registers, and copies it back.
+#[derive(Clone, Copy, Debug)]
 pub(super) struct Decoder<'a> {
     data: &'a [u8],
     current: u32,
     a: u32,
     c: u32,
     bits: u32,
-    contexts: [u32; 19],
+    contexts: [u32; CONTEXT_SLOTS],
 }
 
 impl<'a> Decoder<'a> {
@@ -87,63 +139,91 @@ impl<'a> Decoder<'a> {
     }
 
     fn byte_in(&mut self) {
-        let (next, rest) = Self::next_byte(self.data);
-        let stuffed = self.current == 0xff;
-        let contribution = if stuffed && next > 0x8f {
-            self.bits = 8;
-            0xff00
-        } else {
-            self.data = rest;
-            self.current = next;
-            self.bits = 8 - u32::from(stuffed);
-            next << (16 - self.bits)
+        let mut r = Registers {
+            data: self.data,
+            current: self.current,
+            a: self.a,
+            c: self.c,
+            bits: self.bits,
         };
-        self.c = self.c.wrapping_add(contribution);
+        r.byte_in();
+        (self.data, self.current, self.c, self.bits) = (r.data, r.current, r.c, r.bits);
     }
 
-    #[inline]
-    fn renormalize(&mut self) {
-        let total = self.a.leading_zeros() - 16;
-        let mut shifts = total;
-        while shifts > self.bits {
-            self.c <<= self.bits;
-            shifts -= self.bits;
-            self.byte_in();
-        }
-        self.a <<= total;
-        self.c <<= shifts;
-        self.bits -= shifts;
-    }
-
-    #[inline]
+    /// The decision of ISO 15444-1 C.3.2 with its renormalisation, as the C++'s `opj_mqc_decode_macro`: the branches
+    /// the decoded bit does not steer are selects, the renormalisation is always run (no shift when bit 15 of the
+    /// interval is set) and only a byte coming in branches.
+    ///
+    /// `lps` says the code register is in the LPS sub-interval; `flip` that the symbol is the less probable one (an
+    /// LPS-interval hit the conditional exchange leaves an MPS, or an MPS-interval hit it makes an LPS). The state
+    /// changes, to the next-LPS state on a flip and else to the next-MPS state, when the interval is the LPS one or has
+    /// lost bit 15.
+    #[inline(always)]
     pub(super) fn symbol(&mut self, context: usize) -> u32 {
-        let current = self.contexts[context];
-        let qeval = current & 0xffff;
-        let mps = (current >> MPS_BIT) & 1;
-        let next_mps = current >> NEXT_MPS_SHIFT;
-        let next_lps = current >> NEXT_LPS_SHIFT;
-        self.a -= qeval;
-        let (bit, state) = if self.c >> 16 < qeval {
-            let less = self.a < qeval;
-            self.a = qeval;
-            if less { (mps, next_mps) } else { (mps ^ 1, next_lps) }
+        let slot = context & (CONTEXT_SLOTS - 1);
+        let word = self.contexts[slot];
+        let qeval = word & 0xffff;
+        let a = self.a - qeval;
+        let lps = self.c >> 16 < qeval;
+        let flip = lps ^ (a < qeval);
+        let bit = ((word >> MPS_BIT) & 1) ^ u32::from(flip);
+        // Selects the compiler is told are unpredictable (it otherwise turns them back into branches).
+        let next_shift = select_unpredictable(flip, NEXT_LPS_SHIFT, NEXT_MPS_SHIFT);
+        let next = PACKED_STATES[((word >> next_shift) as usize) & (STATE_COUNT - 1)];
+        let changes = lps | (a < 0x8000);
+        self.contexts[slot] = select_unpredictable(changes, next, word);
+        self.c -= select_unpredictable(lps, 0, qeval << 16);
+        let a = select_unpredictable(lps, qeval, a);
+        // the renormalisation: the shifts at once when the code register has the bits
+        let total = a.leading_zeros() - 16;
+        if total <= self.bits {
+            self.a = a << total;
+            self.c <<= total;
+            self.bits -= total;
         } else {
-            self.c -= qeval << 16;
-            if self.a & 0x8000 != 0 {
-                return mps;
-            }
-            if self.a < qeval {
-                (mps ^ 1, next_lps)
-            } else {
-                (mps, next_mps)
-            }
-        };
-        self.contexts[context] = PACKED_STATES[state as usize & (STATE_COUNT - 1)];
-        self.renormalize();
+            let r = renormalize_with_bytes(
+                Registers {
+                    data: self.data,
+                    current: self.current,
+                    a,
+                    c: self.c,
+                    bits: self.bits,
+                },
+                total,
+            );
+            (self.data, self.current, self.a, self.c, self.bits) = (r.data, r.current, r.a, r.c, r.bits);
+        }
         bit
     }
 
-    #[inline]
+    /// The columns of the cleanup pass's run of empty-stripe columns that the AGG context decodes as 0 without a
+    /// renormalisation, taken at once: the C++'s `opj_mqc_agg_run_macro`. `flags` is the flag words from the current
+    /// column to the end of its row. A column of an empty stripe asks the AGG context first; when its MPS is 0 and
+    /// the interval and the code register have room for it (a decision that is an MPS and keeps bit 15 of `a`:
+    /// `a - qe >= 0x8000` and `c >> 16 >= qe`), it decodes 0 and the pass goes on to the next column. Step j of such a
+    /// run needs `j * qe <= a - 0x8000` and `j * qe <= c >> 16`: the run lasts while `n * qe <= room`. The `n` columns
+    /// (0: no run, the caller decides as usual) take `a -= n * qe` and `c -= (n * qe) << 16` at once: no state
+    /// change, no byte.
+    #[inline(always)]
+    pub(super) fn aggregate_run(&mut self, flags: &[u32]) -> usize {
+        let word = self.contexts[CONTEXT_AGGREGATE & (CONTEXT_SLOTS - 1)];
+        let qeval = word & 0xffff;
+        let room = (self.a - 0x8000).min(self.c >> 16);
+        if (word >> MPS_BIT) & 1 != 0 || qeval > room {
+            return 0;
+        }
+        let mut used = qeval;
+        let mut n = 1;
+        while n < flags.len() && flags[n] == 0 && used + qeval <= room {
+            used += qeval;
+            n += 1;
+        }
+        self.a -= used;
+        self.c -= used << 16;
+        n
+    }
+
+    #[inline(always)]
     pub(super) fn raw(&mut self) -> u32 {
         if self.bits == 0 {
             let (next, rest) = Self::next_byte(self.data);

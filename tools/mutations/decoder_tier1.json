@@ -1,0 +1,263 @@
+[
+ {
+  "name": "MQ select decision: the exchange left out (flip = lps)",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "let flip = lps ^ (a < qeval);",
+  "new": "let flip = lps;",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ select decision: the exchange compares <= qe",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "let flip = lps ^ (a < qeval);",
+  "new": "let flip = lps ^ (a <= qeval);",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ select decision: the LPS interval at c_hi <= qe",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "let lps = self.c >> 16 < qeval;",
+  "new": "let lps = self.c >> 16 <= qeval;",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ select decision: the state changes on an LPS only",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "let changes = lps | (a < 0x8000);",
+  "new": "let changes = lps;",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ select decision: the state changes when bit 15 is lost, not at a < 0x8000 - 1",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "let changes = lps | (a < 0x8000);",
+  "new": "let changes = lps | (a < 0x4000);",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ select decision: the next-state shift swapped",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "select_unpredictable(flip, NEXT_LPS_SHIFT, NEXT_MPS_SHIFT)",
+  "new": "select_unpredictable(flip, NEXT_MPS_SHIFT, NEXT_LPS_SHIFT)",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ select decision: the code register lowered on an LPS too",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "select_unpredictable(lps, 0, qeval << 16)",
+  "new": "qeval << 16",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ select decision: the interval left alone on an LPS-interval hit",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "let a = select_unpredictable(lps, qeval, a);",
+  "new": "let a = a;",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ select decision: the shifts at once taken with a bit too few left",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "if total <= self.bits {",
+  "new": "if total <= self.bits + 1 {",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "AGG run: the room's interval part left out",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "let room = (self.a - 0x8000).min(self.c >> 16);",
+  "new": "let room = self.c >> 16;",
+  "tests": [
+   "t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"
+  ]
+ },
+ {
+  "name": "AGG run: the room's code part left out",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "let room = (self.a - 0x8000).min(self.c >> 16);",
+  "new": "let room = self.a - 0x8000;",
+  "tests": [
+   "t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"
+  ]
+ },
+ {
+  "name": "AGG run: the first column asks for more room than qe",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "|| qeval > room {",
+  "new": "|| qeval >= room {",
+  "tests": [
+   "t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"
+  ]
+ },
+ {
+  "name": "AGG run: a step beyond the room",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "used + qeval <= room {",
+  "new": "used + qeval <= room + 1 {",
+  "tests": [
+   "t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"
+  ]
+ },
+ {
+  "name": "AGG run: a MPS of 1 allowed",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "if (word >> MPS_BIT) & 1 != 0 ||",
+  "new": "if (word >> MPS_BIT) & 2 != 0 ||",
+  "tests": [
+   "t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"
+  ]
+ },
+ {
+  "name": "AGG run: the flag word of the next column ignored",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "while n < flags.len() && flags[n] == 0 &&",
+  "new": "while n < flags.len() &&",
+  "tests": [
+   "t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"
+  ]
+ },
+ {
+  "name": "AGG run: the code register lowered by n * qe, not shifted to its high half",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "self.c -= used << 16;",
+  "new": "self.c -= used;",
+  "tests": [
+   "t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"
+  ]
+ },
+ {
+  "name": "AGG run: the interval not lowered",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "self.a -= used;\n        self.c -= used << 16;\n        n",
+  "new": "self.c -= used << 16;\n        n",
+  "tests": [
+   "t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"
+  ]
+ },
+ {
+  "name": "AGG run in the cleanup pass: taken in a partial stripe",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "if rows == 4 && column == 0 {\n                    // A run",
+  "new": "if column == 0 {\n                    // A run",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation"
+  ]
+ },
+ {
+  "name": "AGG run in the cleanup pass: one column too many skipped",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "next = col + run;",
+  "new": "next = col + run + 1;",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "AGG run in the cleanup pass: one column too few skipped",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "next = col + run;",
+  "new": "next = col + run - 1;",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "sigma/chi: the sign context reads the flags without chi (cleanup)",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "let sign = self.sign(decoder, index, lane, *column | *chi);",
+  "new": "let sign = self.sign(decoder, index, lane, *column);",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "sigma/chi: the sign context reads the flags without chi (significance)",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "self.sign(decoder, index, lane, column | chi)",
+  "new": "self.sign(decoder, index, lane, column)",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "sigma/chi: the closing store drops chi (significance)",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "self.flags[index] = column | chi;",
+  "new": "self.flags[index] = column;",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "sigma/chi: the closing store drops chi (cleanup)",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "self.flags[index] = (column | chi) & !ALL_PI;",
+  "new": "self.flags[index] = column & !ALL_PI;",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "sigma/chi: the sign placed one row down (significance)",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "chi |= (sign << CHI_THIS_BIT) << shift;",
+  "new": "chi |= (sign << CHI_THIS_BIT) << (shift + 3);",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "sigma/chi: the sign placed one row down (cleanup)",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "*chi |= (sign << CHI_THIS_BIT) << (lane * 3);",
+  "new": "*chi |= (sign << CHI_THIS_BIT) << (lane * 3 + 3);",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "sigma/chi: the significance bit left out of the column (cleanup)",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "*column |= SIGMA_THIS << (lane * 3);",
+  "new": "*column |= 0;",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ]
+ }
+]
