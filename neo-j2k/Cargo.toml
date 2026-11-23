@@ -31,6 +31,9 @@ encode = []
 simd = []
 # the OpenSim decoder limit profile, as the C++'s NJ2K_PROFILE_OPENSIM (stage R1)
 opensim = []
+# Off by default and not part of the API: the two Tier-1 entry points (decode a code-block, encode a code-block) the
+# unpublished benchmark crate neo-j2k-bench times (module `bench`, hidden from the documentation)
+bench-internals = ["encode"]
 
 [dependencies]
 

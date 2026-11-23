@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# The Tier-1 benchmark of the Rust twin (doc/bench.md): TSC cycles of the decoder's and the encoder's code-block entry
+# points, one logical CPU, driven by tools/bench_tier1.py over a base build, a head build and a copy of the base.
+# Not part of the codec: the only crate of the workspace that reads the time stamp counter and sets thread affinity,
+# so it is, besides the oracle and the fuzz crate, a crate that holds `unsafe`. Depends on the codec (feature bench-internals)
+# and the test kit's dump reader, never on the C++ oracle. Never published, and the codec never depends on it
+# (tools/check_rust_native.py checks both).
+[package]
+name = "neo-j2k-bench"
+description = "TSC-cycle benchmark of the Rust twin's Tier-1 (benchmark tool, never published)"
+publish = false
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "neo-j2k-bench"
+path = "src/main.rs"
+
+[dependencies]
+neo-j2k = { path = "../neo-j2k", features = ["bench-internals"] }
+neo-j2k-testkit.workspace = true
+
+[lints]
+workspace = true

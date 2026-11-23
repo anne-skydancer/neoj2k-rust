@@ -4,6 +4,9 @@
 
 use crate::t1::tables::MQ_STATES;
 
+#[cfg(all(test, not(miri)))]
+mod differential;
+
 #[derive(Clone, Copy)]
 struct State {
     qeval: u16,

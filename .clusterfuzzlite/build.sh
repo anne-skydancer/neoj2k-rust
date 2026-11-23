@@ -4,7 +4,7 @@
 #
 # ClusterFuzzLite build of the targets that need no C++: header_decode and roundtrip (the others
 # have required-features = ["oracle"], so a plain build skips them). The targets that compare with
-# the C++ oracle (differential, encode_options, api_sequence) run in the nightly workflow, which
+# the C++ oracle (differential, encode_options, api_sequence, t1) run in the nightly workflow, which
 # has the C++ checkout. The sanitizer arrives in SANITIZER: AddressSanitizer for fuzzing, none for
 # coverage (the image sets the coverage RUSTFLAGS). The build is optimised, with debug assertions,
 # so an arithmetic overflow panics. Seeds: the generated corpus and the JP2 seeds for header_decode,

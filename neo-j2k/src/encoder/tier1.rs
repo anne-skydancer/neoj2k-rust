@@ -2,6 +2,8 @@
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 // OpenJPEG's encoder passes, transcribed from src/enc_t1.cpp. See LICENSE.OpenJPEG.
 
+#[cfg(all(test, not(miri)))]
+mod differential;
 mod distortion;
 mod mq;
 

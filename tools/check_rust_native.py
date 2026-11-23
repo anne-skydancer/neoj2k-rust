@@ -5,12 +5,15 @@
 
 1. its normal and build dependency graph (dev-dependencies left out) holds no crate that builds or
    binds C or C++: none has a build script or a `links` key, none is a -sys crate or a C/C++ build
-   or binding helper (cc, cmake, bindgen, cxx, ...); and the C++ oracle crate (neo-j2k-oracle) is
-   not in it. The crate has no runtime dependency today, so the graph is the crate alone;
+   or binding helper (cc, cmake, bindgen, cxx, ...); and none of the workspace's other crates (the C++
+   oracle neo-j2k-oracle, the test kit, the benchmark neo-j2k-bench) is in it. The crate has no
+   runtime dependency today, so the graph is the crate alone;
 2. the crate itself has no build script and no `links` key;
 3. the package `cargo package` would publish holds Rust sources, its manifests, readme and licence
    files only: no C or C++ source or header, no build script, no binary;
-4. the crate's sources hold no FFI (extern "C" or any other ABI, #[link], #[no_mangle],
+4. every other crate of the workspace is `publish = false`, and the crate's feature `bench-internals`
+   (the benchmark's entry points) is not among its default features;
+5. the crate's sources hold no FFI (extern "C" or any other ABI, #[link], #[no_mangle],
    #[export_name]), no `unsafe` outside src/simd/, no `static mut` and no `thread_local!`.
 
 usage: check_rust_native.py [--workspace DIR] [--selftest]
@@ -24,6 +27,9 @@ import sys
 
 CRATE = "neo-j2k"
 ORACLE = "neo-j2k-oracle"
+# the workspace's other crates: test and benchmark tools, never published, never a dependency of the crate
+TOOLS = {ORACLE, "neo-j2k-testkit", "neo-j2k-bench"}
+BENCH_FEATURE = "bench-internals"
 C_HELPERS = {"cc", "cmake", "bindgen", "cxx", "cxx-build", "cxxbridge-macro", "pkg-config", "vcpkg", "autocfg-c",
              "libc", "windows-sys", "winapi", "nasm-rs", "cc-version"}
 C_SUFFIXES = (".c", ".cc", ".cpp", ".cxx", ".h", ".hh", ".hpp", ".hxx", ".inl", ".s", ".asm", ".m", ".mm",
@@ -70,8 +76,8 @@ def graph_problems(meta):
         p = packages[pid]
         name = p["name"]
         where = "%s %s" % (name, p["version"])
-        if name == ORACLE:
-            problems.append("the C++ oracle crate is in %s's normal or build graph" % CRATE)
+        if name in TOOLS:
+            problems.append("%s (a test or benchmark crate) is in %s's normal or build graph" % (name, CRATE))
         if name in C_HELPERS or name.endswith("-sys"):
             problems.append("%s builds or binds C or C++" % where)
         if p.get("links"):
@@ -79,6 +85,28 @@ def graph_problems(meta):
         if any("custom-build" in t["kind"] for t in p["targets"]):
             problems.append("%s has a build script" % where)
     return problems, len(seen)
+
+
+def workspace_problems(meta):
+    """Every workspace crate but the published one is `publish = false`; the benchmark feature is off by default."""
+    problems = []
+    members = set(meta["workspace_members"])
+    for p in meta["packages"]:
+        if p["id"] in members and p["name"] != CRATE and p.get("publish") != []:
+            problems.append("%s is a workspace crate that is not publish = false" % p["name"])
+    crate = [p for p in meta["packages"] if p["name"] == CRATE]
+    if crate:
+        features = crate[0].get("features", {})
+        todo, seen = ["default"], set()
+        while todo:
+            f = todo.pop()
+            if f in seen or f.startswith("dep:"):
+                continue
+            seen.add(f)
+            todo += features.get(f, [])
+        if BENCH_FEATURE in seen:
+            problems.append("%s's feature %s is on by default" % (CRATE, BENCH_FEATURE))
+    return problems
 
 
 def package_problems(files):
@@ -126,6 +154,19 @@ def selftest():
     assert any("cc 1.0.0" in p for p in got), got
     assert any("zstd-sys" in p and "links" in p for p in got), got
     assert not any("oracle" in p for p in got), got  # a dev-dependency only
+    tools = {"packages": [
+        {"id": "a", "name": CRATE, "features": {"default": ["std", "bench-internals"], "std": [], "bench-internals": ["encode"],
+                                                "encode": []}},
+        {"id": "b", "name": "neo-j2k-bench", "publish": None},
+        {"id": "c", "name": ORACLE, "publish": []},
+        {"id": "d", "name": "neo-j2k-testkit", "publish": []},
+        {"id": "e", "name": "libfuzzer-sys", "publish": None},
+    ], "workspace_members": ["a", "b", "c", "d"]}
+    got = workspace_problems(tools)
+    assert len(got) == 2 and any("neo-j2k-bench" in p for p in got) and any("on by default" in p for p in got), got
+    tools["packages"][0]["features"]["default"] = ["std", "encode"]
+    tools["packages"][1]["publish"] = []
+    assert workspace_problems(tools) == []
     assert package_problems(["Cargo.toml", "src/lib.rs", "src/a/b.rs", "Cargo.toml.orig"]) == []
     assert package_problems(["src/x.cpp"]) and package_problems(["build.rs"]) and package_problems(["lib/x.h"])
     assert source_problems('unsafe extern "C" { fn f(); }', "src/a.rs")
@@ -150,6 +191,7 @@ def main():
         return selftest()
     meta = json.loads(cargo(a.workspace, "metadata", "--format-version", "1", "--all-features", "--locked"))
     problems, size = graph_problems(meta)
+    problems += workspace_problems(meta)
     crate = next(p for p in meta["packages"] if p["name"] == CRATE)
     crate_dir = os.path.dirname(crate["manifest_path"])
     if crate.get("links") or any("custom-build" in t["kind"] for t in crate["targets"]):

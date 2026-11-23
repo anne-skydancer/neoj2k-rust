@@ -14,6 +14,7 @@
 //!   for the test kit's differential tests;
 //! - [`kernels`]: the library's scalar row kernels and inverse wavelet transform;
 //! - [`Codec`]: a memory codec of neo-j2k with header facts, decoded dimensions, arena numbers and parallel thresholds.
+//! - [`tier1`]: the C++ Tier-1: a code-block decoded or encoded, and single MQ decisions of the decoder and the encoder.
 //! - [`encode_u8`]: the C++ encoder's codestream from eight-bit samples and explicit encoder settings.
 //!
 //! Every call first checks the shim's ABI version ([`init`]). The C++ never throws across the
@@ -31,6 +32,7 @@ use neo_j2k_testkit::request::{Backend, Component, Mode, Outcome, Request};
 
 mod ffi;
 mod pool;
+pub mod tier1;
 
 pub use pool::BenchmarkPool;
 

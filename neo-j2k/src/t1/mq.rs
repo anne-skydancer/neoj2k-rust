@@ -4,6 +4,9 @@
 
 use super::tables::MQ_STATES;
 
+#[cfg(all(test, not(miri)))]
+mod differential;
+
 pub(super) const CONTEXT_AGGREGATE: usize = 17;
 pub(super) const CONTEXT_UNIFORM: usize = 18;
 const MPS_BIT: u32 = 16;

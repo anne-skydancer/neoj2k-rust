@@ -11,7 +11,11 @@ use neo_j2k_oracle::{Codec, Format as OracleFormat, Header, Limits as OracleLimi
 #[cfg(feature = "oracle")]
 mod encode_options;
 #[cfg(feature = "oracle")]
+mod t1;
+#[cfg(feature = "oracle")]
 pub use encode_options::encode_options;
+#[cfg(feature = "oracle")]
+pub use t1::t1;
 
 const LIMITS: Limits = Limits {
     max_tiles: 256,
@@ -586,7 +590,7 @@ mod replay {
         assert!(!regressions.is_empty());
         for (name, _) in regressions {
             assert!(
-                ["header-", "decode-", "roundtrip-", "encode-"]
+                ["header-", "decode-", "roundtrip-", "encode-", "t1-"]
                     .iter()
                     .any(|p| name.starts_with(p)),
                 "{name}: not named <target>-<finding>.bin"
@@ -610,6 +614,44 @@ mod replay {
         }
     }
 
+    /// The seeds mutated and cut at random (a fixed generator), through the Tier-1 target: a few thousand inputs a
+    /// run in place of a fuzzer, with the shapes, styles and byte streams the seeds do not reach.
+    #[cfg(feature = "oracle")]
+    #[test]
+    fn t1_mutated_seeds_agree_with_the_oracle() {
+        let seeds = inputs("seeds/t1");
+        let mut state = 0x2545_f491_4f6c_dd1d_u64;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            state
+        };
+        for round in 0..4_000u32 {
+            let (_, seed) = &seeds[round as usize % seeds.len()];
+            let mut data = seed.clone();
+            for _ in 0..=next() % 6 {
+                match next() % 4 {
+                    0 if !data.is_empty() => {
+                        let at = next() as usize % data.len();
+                        data[at] = next().to_le_bytes()[0];
+                    }
+                    1 if data.len() > 6 => {
+                        let at = 6 + next() as usize % (data.len() - 6);
+                        data.truncate(at);
+                    }
+                    2 => data.extend((0..next() % 40).map(|_| next().to_le_bytes()[0])),
+                    _ if data.len() > 6 => {
+                        let at = next() as usize % 6;
+                        data[at] ^= 1 << (next() % 8);
+                    }
+                    _ => {}
+                }
+            }
+            super::t1(&data);
+        }
+    }
+
     #[cfg(feature = "oracle")]
     #[test]
     fn regressions_and_seeds_replay_against_the_oracle() {
@@ -628,6 +670,12 @@ mod replay {
         for (name, data) in inputs("seeds/api_sequence") {
             eprintln!("api_sequence {name}");
             super::api_sequence(&data);
+        }
+        for dir in ["regressions", "seeds/t1"] {
+            for (name, data) in inputs(dir) {
+                eprintln!("t1 {dir}/{name}");
+                super::t1(&data);
+            }
         }
     }
 }
