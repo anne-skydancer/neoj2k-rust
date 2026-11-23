@@ -513,7 +513,8 @@ mod tests {
     }
 
     /// FNV-1a over the little-endian bytes of every sample: the hash the C++ `t1_decode_cblk` driver
-    /// printed for the same block (v0.1.3 checkout, `t.data[k] / 2` per sample, as here).
+    /// printed for the same block (v0.1.3 checkout). The C++ keeps its coefficients doubled and the driver hashed
+    /// `t.data[k] / 2`; `Scratch::decode` writes that halved value for a reversible block, so the output is hashed as is.
     fn lazy_hash(segments: &[(u32, u32)]) -> u64 {
         decode_lazy(segments, &lazy_bytes())
             .unwrap()
