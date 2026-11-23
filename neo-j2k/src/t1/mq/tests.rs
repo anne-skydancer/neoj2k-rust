@@ -99,10 +99,13 @@ fn check_decision(index: usize, start: Model, tail: &[u8]) {
         current: decoder.current,
         consumed: tail.len() - decoder.data.len(),
     };
-    let context = format!("state {index}, from {start:?}, bytes {tail:02x?}");
-    assert_eq!(bit, want_bit, "bit: {context}");
-    assert_eq!(decoder.contexts[0], PACKED_STATES[want_next], "next state: {context}");
-    assert_eq!(got, want, "registers: {context}");
+    // the assertion macros format their message only on a failure
+    assert_eq!(bit, want_bit, "bit: state {index}, from {start:?}, bytes {tail:02x?}");
+    assert_eq!(
+        decoder.contexts[0], PACKED_STATES[want_next],
+        "next state: state {index}, from {start:?}, bytes {tail:02x?}"
+    );
+    assert_eq!(got, want, "registers: state {index}, from {start:?}, bytes {tail:02x?}");
 }
 
 #[test]
