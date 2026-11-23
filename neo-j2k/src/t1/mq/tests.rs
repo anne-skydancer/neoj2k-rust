@@ -182,8 +182,8 @@ fn a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time() {
                         let before = one_by_one;
                         let bit = one_by_one.symbol(CONTEXT_AGGREGATE);
                         let plain = bit == 0
-                            && one_by_one.registers.a == before.registers.a - qe
-                            && one_by_one.registers.c == before.registers.c - (qe << 16)
+                            && one_by_one.registers.a == before.registers.a.wrapping_sub(qe)
+                            && one_by_one.registers.c == before.registers.c.wrapping_sub(qe << 16)
                             && one_by_one.registers.bits == before.registers.bits
                             && one_by_one.source.data.len() == before.source.data.len()
                             && one_by_one.contexts == before.contexts;
