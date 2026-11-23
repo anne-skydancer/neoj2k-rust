@@ -56,6 +56,15 @@ pub fn init() {
     });
 }
 
+/// The C++ checkout's release, `(major, minor, patch)` from its `NJ2K_VERSION_*` (`neoj2k.h`).
+#[must_use]
+pub fn cpp_version() -> (u32, u32, u32) {
+    init();
+    // SAFETY: no arguments; the shim's functions are callable at any time.
+    let v = unsafe { ffi::nj2k_shim_cpp_version() };
+    (v >> 16, (v >> 8) & 0xff, v & 0xff)
+}
+
 /// One row of the C++ size table.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LayoutEntry {

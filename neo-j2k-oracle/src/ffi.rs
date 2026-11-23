@@ -42,7 +42,7 @@ pub(crate) struct Pool {
     _private: [u8; 0],
 }
 
-pub(crate) const ABI_VERSION: u32 = 6;
+pub(crate) const ABI_VERSION: u32 = 7;
 
 /// `nj2k_shim_codestream_t`, opaque.
 #[repr(C)]
@@ -180,6 +180,7 @@ pub(crate) const CODEC_JP2: u32 = 2;
 
 unsafe extern "C" {
     pub(crate) fn nj2k_shim_abi_version() -> u32;
+    pub(crate) fn nj2k_shim_cpp_version() -> u32;
     pub(crate) fn nj2k_shim_ready() -> u32;
     pub(crate) fn nj2k_shim_console_reports();
     pub(crate) fn nj2k_shim_layout_table(out: *mut *const Layout) -> usize;
