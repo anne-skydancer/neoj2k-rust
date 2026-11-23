@@ -160,3 +160,30 @@ Tier-1 kernel, Mcycles a pass (TSC, median of 24 rounds for Rust and of 3 runs f
 
 What the baseline says: against C++ 0.1.3 the Rust twin is about level or faster on large baseline-CPU decodes (the C++ scalar wavelet is slow), slower on `x86-64-v3` 1,024² decodes (+4.5 % to +19.4 %) and on the small RGBA decodes, and 30 % to 73 % slower on every small encode in both builds. The Tier-1 kernel is the cause of most of the encode gap (Tier-1 is 86 % to 95 % of an encode). The port of the C++ steps is staged to close it, each stage gated at 3.0 % faster than before; the README's Rust-against-C++ tables are re-measured after it.
 
+## Verifying a Tier-1 change in CI
+
+`.github/workflows/tier1-verify.yml` runs on a pull request that touches the Tier-1 files (`neo-j2k/src/t1*`,
+`neo-j2k/src/encoder/tier1*`), the oracle crate, the runner, the mutation lists, `Cargo.toml` or the workflow itself. It
+is not part of `ci.yml`: its jobs are long.
+
+| Job | What it proves |
+|---|---|
+| Mutation lists | Every pattern of `tools/mutations/*.json` occurs the stated number of times in the checked-out code (no build). |
+| Tier-1 sweeps against the C++ (baseline, x86-64-v3) | The long comparisons with the C++ oracle (`nightly_`, six tests: every decision of the MQ decoder and encoder, the flush, the long code-block draws) pass at both CPU levels. |
+| Tier-1 mutations (shard 1 to 4) | Each mutation of the lists, applied to a scratch copy, makes the tests it names fail. The tests run in the `mutation` profile of `Cargo.toml` (no LTO, `opt-level = 1`, debug assertions and overflow checks on), in the baseline CPU level. The list is split in four by the mutation's number modulo four. A survivor is printed as possibly an equivalent mutant and fails the job. |
+| Tier-1 benchmark | By hand only, see below. A confirmation on a shared runner, not a gate. |
+
+Each shard writes a table to the job's summary: the mutation, killed Yes or No, the test that killed it, and the seconds.
+
+To run it by hand on a branch (once the workflow file is on `main`), and with the benchmark against `origin/main`
+(12 rounds, the control included, pinned to the runner's last CPU):
+
+```
+gh workflow run tier1-verify.yml --ref my-branch
+gh workflow run tier1-verify.yml --ref my-branch -f bench=true
+```
+
+To add a mutation list, write `tools/mutations/NAME.json` in the format of `tools/mutations/README.md`, run
+`python tools/tier1_mutations.py --list` (it builds nothing) and commit the list in the pull request of the code it
+tests, never ahead of it. The same script runs the mutations locally (`--only TEXT` for one), and builds a lot: it
+is meant for CI.
