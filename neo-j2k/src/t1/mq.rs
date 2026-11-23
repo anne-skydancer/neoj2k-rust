@@ -8,6 +8,8 @@ use super::tables::MQ_STATES;
 
 #[cfg(all(test, not(miri)))]
 mod differential;
+#[cfg(test)]
+mod tests;
 
 pub(super) const CONTEXT_AGGREGATE: usize = 17;
 pub(super) const CONTEXT_UNIFORM: usize = 18;
@@ -192,6 +194,33 @@ impl<'a> Decoder<'a> {
             (self.data, self.current, self.a, self.c, self.bits) = (r.data, r.current, r.a, r.c, r.bits);
         }
         bit
+    }
+
+    /// The columns of the cleanup pass's run of empty-stripe columns that the AGG context decodes as 0 without a
+    /// renormalisation, taken at once: the C++'s `opj_mqc_agg_run_macro`. `flags` is the flag words from the current
+    /// column to the end of its row. A column of an empty stripe asks the AGG context first; when its MPS is 0 and
+    /// the interval and the code register have room for it (a decision that is an MPS and keeps bit 15 of `a`:
+    /// `a - qe >= 0x8000` and `c >> 16 >= qe`), it decodes 0 and the pass goes on to the next column. Step j of such a
+    /// run needs `j * qe <= a - 0x8000` and `j * qe <= c >> 16`: the run lasts while `n * qe <= room`. The `n` columns
+    /// (0: no run, the caller decides as usual) take `a -= n * qe` and `c -= (n * qe) << 16` at once: no state
+    /// change, no byte.
+    #[inline(always)]
+    pub(super) fn aggregate_run(&mut self, flags: &[u32]) -> usize {
+        let word = self.contexts[CONTEXT_AGGREGATE & (CONTEXT_SLOTS - 1)];
+        let qeval = word & 0xffff;
+        let room = (self.a - 0x8000).min(self.c >> 16);
+        if (word >> MPS_BIT) & 1 != 0 || qeval > room {
+            return 0;
+        }
+        let mut used = qeval;
+        let mut n = 1;
+        while n < flags.len() && flags[n] == 0 && used + qeval <= room {
+            used += qeval;
+            n += 1;
+        }
+        self.a -= used;
+        self.c -= used << 16;
+        n
     }
 
     #[inline(always)]

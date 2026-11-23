@@ -207,12 +207,23 @@ impl Passes<'_> {
             };
             let data_start = row * self.width;
             let flag_start = if SINGLE_STRIPE { 1 } else { (row / 4 + 1) * stride + 1 };
-            for col in 0..self.width {
+            let mut next = 0;
+            while next < self.width {
+                let col = next;
+                next += 1;
                 let index = flag_start + col;
                 let mut column = self.flags[index];
                 if (column | (column >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
                     self.flags[index] = column & !ALL_PI;
                     continue;
+                }
+                if rows == 4 && column == 0 {
+                    // A run of empty columns whose AGG decisions are 0 without renormalisation is taken at once.
+                    let run = decoder.aggregate_run(&self.flags[index..flag_start + self.width]);
+                    if run != 0 {
+                        next = col + run;
+                        continue;
+                    }
                 }
                 let mut mark = |decoder: &mut Decoder<'_>, column: &mut u32, lane: usize| {
                     let sign = self.sign(decoder, index, lane, *column);
