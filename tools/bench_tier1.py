@@ -76,6 +76,29 @@ def summarize(samples, base="base", head="head", control="control"):
     return rows
 
 
+def pct(value):
+    """A signed percent with one decimal; a change that rounds to zero has no minus sign."""
+    value = 0.0 if abs(value) < 0.05 else value
+    return "%+.1f %%" % value
+
+
+def cpu_name():
+    """The processor's name where the system gives it, else Python's."""
+    try:
+        if os.name == "nt":
+            out = subprocess.run(["powershell", "-NoProfile", "-Command",
+                                  "(Get-CimInstance Win32_Processor | Select-Object -First 1).Name"],
+                                 capture_output=True, text=True, timeout=20).stdout.strip()
+        else:
+            with open("/proc/cpuinfo", encoding="utf-8") as f:
+                out = next((l.split(":", 1)[1].strip() for l in f if l.startswith("model name")), "")
+        if out:
+            return out
+    except (OSError, subprocess.SubprocessError):
+        pass
+    return platform.processor() or platform.machine()
+
+
 def yes_no(flag):
     return "Yes" if flag else "No"
 
@@ -85,8 +108,8 @@ def table(rows):
     head = ["Set", "Base (Mcycles)", "Head vs base", "Control vs base", "Output identical", "Gate"]
     lines = ["| " + " | ".join(head) + " |", "|---|---:|---:|---:|:---:|:---:|"]
     for r in rows:
-        lines.append("| %s | %.2f | %+.1f %% | %+.1f %% | %s | %s |" % (
-            r["set"], r["base_mcycles"], r["head"], r["control"], yes_no(r["identical"]), yes_no(r["gate"])))
+        lines.append("| %s | %.2f | %s | %s | %s | %s |" % (
+            r["set"], r["base_mcycles"], pct(r["head"]), pct(r["control"]), yes_no(r["identical"]), yes_no(r["gate"])))
     passed = sum(1 for r in rows if r["gate"])
     lines.append("")
     lines.append("Gate (head at least %.1f %% faster, control within +-%.1f %%, outputs identical): %s (%d of %d sets)."
@@ -149,7 +172,7 @@ def measure_rounds(exes, rounds, args, dumps):
 
 
 def environment(args, refs):
-    cpu = platform.processor() or platform.machine()
+    cpu = cpu_name()
     return ["neo-j2k Tier-1 benchmark: base %s, head %s, control = copy of the base" % refs,
             "CPU %s; pinned to logical CPU %s; %s build; %d rounds of the three builds, interleaved" % (
                 cpu, args.pin, args.cpu, args.rounds),
@@ -250,6 +273,7 @@ def selftest():
     noisy["head"][2] = {"decode/a": (2000, "aa" * 8)}
     assert summarize(noisy)[0]["gate"]
     out = table(summarize(samples(950, 1005)))
+    assert pct(-0.01) == "+0.0 %" and pct(-3.04) == "-3.0 %" and pct(0.5) == "+0.5 %"
     assert "-5.0 %" in out and "+0.5 %" in out and "| Yes |" in out and "Gate" in out and "ratio" not in out.lower()
     print("bench_tier1: selftest passed")
     return 0
