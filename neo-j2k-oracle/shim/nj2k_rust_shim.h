@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-#define NJ2K_SHIM_ABI_VERSION 7u
+#define NJ2K_SHIM_ABI_VERSION 8u
 
 uint32_t nj2k_shim_abi_version(void);
 /* the C++ checkout's NJ2K_VERSION_MAJOR << 16 | MINOR << 8 | PATCH (neoj2k.h) */
@@ -220,6 +220,102 @@ uint32_t nj2k_shim_set_parallel_thresholds(nj2k_codec_t *codec, uint64_t tile_sa
 int32_t nj2k_shim_codec_dimensions_for(nj2k_codec_t *codec, const uint8_t *data, size_t size,
                                       const uint32_t *indices, uint32_t count, uint32_t *numcomps,
                                       nj2k_shim_header_t **out);
+
+/* ---- Tier-1 (shim_t1.cpp): code-blocks and single MQ decisions ------------------------------- */
+/* The decoder's code-block (src/t1.cpp: t1_decode_cblk, then t1_store as the tile buffer takes it). One
+ * handle keeps the decoder's scratch from block to block, as a worker does; use it from one thread. */
+typedef struct nj2k_shim_t1 nj2k_shim_t1_t;
+nj2k_shim_t1_t *nj2k_shim_t1_new(void);
+void nj2k_shim_t1_free(nj2k_shim_t1_t *t1);
+typedef struct nj2k_shim_t1_decode_request {
+    uint32_t w, h, numbps, orient, roishift, cblksty;
+    const uint32_t *seg_len;    /* nsegs codeword segments: their bytes... */
+    const uint32_t *seg_passes; /* ...and their passes with data */
+    size_t nsegs;
+    const uint8_t *bytes;       /* the chunks' bytes, gathered */
+    const uint32_t *chunk_len;  /* the lengths the bytes arrive in (their sum is the byte count); none: no data */
+    size_t nchunks;
+    uint32_t reversible;        /* the store: 5/3 halves the coefficients, 9/7 multiplies them by 0.5 * stepsize */
+    float stepsize;
+} nj2k_shim_t1_decode_request_t;
+/* 1 when decoded: out holds w * h samples, stride w, as t1_store writes them into a tile buffer. 0 when the C++
+ * refuses the code-block (bit-planes plus ROI shift at or above 31) or the harness failed; out is untouched then. */
+uint32_t nj2k_shim_t1_decode(nj2k_shim_t1_t *t1, const nj2k_shim_t1_decode_request_t *request, int32_t *out,
+                             size_t out_len);
+
+/* The encoder's code-block (src/enc_t1.cpp: enc_t1_encode, then enc_t1_commit). */
+typedef struct nj2k_shim_enc_t1 nj2k_shim_enc_t1_t;
+nj2k_shim_enc_t1_t *nj2k_shim_enc_t1_new(void);
+void nj2k_shim_enc_t1_free(nj2k_shim_enc_t1_t *t1);
+typedef struct nj2k_shim_enc_t1_request {
+    uint32_t w, h;            /* at most 64 each */
+    const int32_t *samples;   /* w * h signed fixed-point samples (6 fractional bits), in the order enc_t1_data takes */
+    uint32_t orient, compno, level, reversible;
+    uint32_t mct;             /* 1: the colour transform's norms for compno (3 components), 0: none */
+    double stepsize;
+} nj2k_shim_enc_t1_request_t;
+typedef struct nj2k_shim_enc_pass {
+    uint32_t rate, len, term;
+    double distortion;
+} nj2k_shim_enc_pass_t;
+typedef struct nj2k_shim_enc_t1_result {
+    uint32_t ok;          /* 0: enc_t1_encode refused the block (the output clamp) */
+    uint32_t numbps;      /* the code-block's, wrapped as the C++ has it */
+    uint32_t totalpasses; /* the passes written to passes (at most pass_cap) */
+    uint32_t byte_len;    /* the bytes written to bytes */
+} nj2k_shim_enc_t1_result_t;
+/* Returns 1 when the block was coded and the passes and bytes fit pass_cap and byte_cap, else 0. */
+uint32_t nj2k_shim_enc_t1_encode(nj2k_shim_enc_t1_t *t1, const nj2k_shim_enc_t1_request_t *request,
+                                 nj2k_shim_enc_t1_result_t *result, nj2k_shim_enc_pass_t *passes, size_t pass_cap,
+                                 uint8_t *bytes, size_t byte_cap);
+
+/* The MQ decoder's decision (src/t1_mq.h opj_mqc_decode_macro) on registers and a byte string. The contexts are
+ * given and returned as state indices (0 to 93, state * 2 + MPS: the order of OpenJPEG's table). */
+typedef struct nj2k_shim_mq_dec_regs {
+    uint32_t a, c, ct;
+    uint32_t bp;          /* the read position, a byte offset in the data */
+    uint8_t state[19];
+} nj2k_shim_mq_dec_regs_t;
+/* n decisions, decision i on context ctx[i], the bits to bits[i]. init is the registers to start from, or NULL to
+ * start as a segment does (ISO 15444-1 C.3.5 INITDEC on data, at the standard's initial states). The shim puts the
+ * 0xFF 0xFF of the decoder's sentinel after the data's len bytes. Returns 0 when the harness failed. */
+uint32_t nj2k_shim_mq_dec_run(const nj2k_shim_mq_dec_regs_t *init, const uint8_t *data, size_t len, const uint8_t *ctx,
+                              size_t n, uint8_t *bits, nj2k_shim_mq_dec_regs_t *out);
+/* one decision each, on context 0, in a batch: the bytes are b[0..3] and the sentinel, the read position starts at 0 */
+typedef struct nj2k_shim_mq_dec_case {
+    uint32_t a, c, ct, state;
+    uint8_t b[4];
+} nj2k_shim_mq_dec_case_t;
+typedef struct nj2k_shim_mq_dec_result {
+    uint32_t bit, a, c, ct, bp, state; /* the context's state index after the decision */
+} nj2k_shim_mq_dec_result_t;
+void nj2k_shim_mq_dec_cases(const nj2k_shim_mq_dec_case_t *cases, size_t n, nj2k_shim_mq_dec_result_t *results);
+
+/* The MQ encoder (src/enc_mq.h MqEnc). */
+typedef struct nj2k_shim_mq_enc_regs {
+    uint32_t a, c, ct;
+    uint32_t bp;        /* the write position, a byte offset in buf (the fake first byte is at 0) */
+    uint32_t overflow;
+    uint8_t state[19];
+} nj2k_shim_mq_enc_regs_t;
+/* n decisions, decision i = ctx[i] * 2 + bit[i] in ctxbit[i], then the flush when flush is set. The coder writes buf
+ * (cap bytes, buf[0] is the fake byte and must be 0 for a fresh start); no byte past buf[limit] is written (limit <
+ * cap). init is the registers to start from, or NULL for a fresh coder (init_enc on buf + 1 with the standard's initial
+ * states); out gets the registers at the end, trace (n entries, or NULL) the registers after each decision. Returns 0 when
+ * the harness failed or limit >= cap. */
+uint32_t nj2k_shim_mq_enc_run(const nj2k_shim_mq_enc_regs_t *init, const uint8_t *ctxbit, size_t n, uint32_t flush,
+                              uint8_t *buf, size_t cap, size_t limit, nj2k_shim_mq_enc_regs_t *out,
+                              nj2k_shim_mq_enc_regs_t *trace);
+/* one decision each, on context 0, in a batch (tests/unit/enc_t1_unit.cpp's single decisions): the buffer is eight
+ * bytes of prev, the write position 2, the limit at 2 + limit_off */
+typedef struct nj2k_shim_mq_enc_case {
+    uint32_t a, c, ct, state, bit, prev, limit_off;
+} nj2k_shim_mq_enc_case_t;
+typedef struct nj2k_shim_mq_enc_result {
+    uint32_t a, c, ct, state, bp, overflow; /* state: the context's index after the decision */
+    uint8_t bytes[8];
+} nj2k_shim_mq_enc_result_t;
+void nj2k_shim_mq_enc_cases(const nj2k_shim_mq_enc_case_t *cases, size_t n, nj2k_shim_mq_enc_result_t *results);
 
 #ifdef __cplusplus
 }

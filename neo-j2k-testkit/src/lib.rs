@@ -10,6 +10,7 @@
 //! - [`fnv`], [`digest`], [`reference`](mod@reference): `nj2k_diff`'s identity hashes, cut digests and reference
 //!   tables;
 //! - [`scan`]: the codestream scanner (`j2k_scan`), with a text summary both languages write;
+//! - [`mqng`]: the C++ repository's Tier-1 code-block dumps ("MQNG" files), read from a checkout of it;
 //! - [`pgx`]: the PGX reader of the conformance images;
 //! - [`pool`]: a test executor, `std::thread::scope` based, whose caller runs jobs too;
 //! - [`files`]: inputs, the repository's folders and the tests' temporary folder.
@@ -21,6 +22,7 @@
 pub mod digest;
 pub mod files;
 pub mod fnv;
+pub mod mqng;
 pub mod pgx;
 pub mod pool;
 pub mod reference;

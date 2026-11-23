@@ -11,7 +11,11 @@ use neo_j2k_oracle::{Codec, Format as OracleFormat, Header, Limits as OracleLimi
 #[cfg(feature = "oracle")]
 mod encode_options;
 #[cfg(feature = "oracle")]
+mod t1;
+#[cfg(feature = "oracle")]
 pub use encode_options::encode_options;
+#[cfg(feature = "oracle")]
+pub use t1::t1;
 
 const LIMITS: Limits = Limits {
     max_tiles: 256,
@@ -586,7 +590,7 @@ mod replay {
         assert!(!regressions.is_empty());
         for (name, _) in regressions {
             assert!(
-                ["header-", "decode-", "roundtrip-", "encode-"]
+                ["header-", "decode-", "roundtrip-", "encode-", "t1-"]
                     .iter()
                     .any(|p| name.starts_with(p)),
                 "{name}: not named <target>-<finding>.bin"
@@ -628,6 +632,12 @@ mod replay {
         for (name, data) in inputs("seeds/api_sequence") {
             eprintln!("api_sequence {name}");
             super::api_sequence(&data);
+        }
+        for dir in ["regressions", "seeds/t1"] {
+            for (name, data) in inputs(dir) {
+                eprintln!("t1 {dir}/{name}");
+                super::t1(&data);
+            }
         }
     }
 }

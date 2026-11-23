@@ -17,7 +17,8 @@ license = "BSD-2-Clause"
 cargo-fuzz = true
 
 [features]
-oracle = ["dep:neo-j2k-oracle"]
+# the C++ oracle, and the Tier-1 entry points of the codec that the `t1` target compares with it
+oracle = ["dep:neo-j2k-oracle", "neo-j2k/bench-internals"]
 
 [dependencies]
 libfuzzer-sys = "0.4"
@@ -57,6 +58,14 @@ bench = false
 [[bin]]
 name = "api_sequence"
 path = "fuzz_targets/api_sequence.rs"
+required-features = ["oracle"]
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "t1"
+path = "fuzz_targets/t1.rs"
 required-features = ["oracle"]
 test = false
 doc = false

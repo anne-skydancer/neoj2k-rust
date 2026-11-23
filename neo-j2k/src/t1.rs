@@ -44,6 +44,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#[cfg(all(test, not(miri)))]
+mod differential;
 mod mq;
 mod passes;
 pub(crate) mod tables;

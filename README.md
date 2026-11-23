@@ -25,6 +25,7 @@ Licence: BSD-2-Clause ([License](#license)). Paths below are relative to the rep
 |---|---|---|
 | `neo-j2k/` | native J2K and JP2/JPH decoding and the one-tile JPEG 2000 encoder | release crate |
 | `neo-j2k-testkit/` | the Rust side of the C++ harness in `tests/common`: requests and outcomes, the host application's request rules, `nj2k_diff`'s digests and reference tables, the codestream scanner, the PGX reader, a test pool executor. Pure Rust, no dependency | never |
+| `neo-j2k-bench/` | the Tier-1 benchmark: TSC cycles of the decoder's and the encoder's code-block entry points, driven by `tools/bench_tier1.py` ([doc/bench.md](doc/bench.md)). It holds the workspace's `unsafe` outside the codec's `simd` module (the cycle counter, thread affinity) and no dependency but the codec and the test kit | never |
 | `neo-j2k-oracle/` | the C++ neo-j2k, OpenJPEG at the oracle's pin and the C++ harness, built by CMake and linked through the test-only shim (`neo-j2k-oracle/shim`), behind a safe interface | never |
 
 `archive/rust/` preserves the final embedded Rust workspace moved from the C++ repository. It is a
@@ -177,6 +178,7 @@ cargo build --release -p neo-j2k --no-default-features --features std
 | `encode` | yes | the native JPEG 2000 encoder, including borrowed-executor parallelism |
 | `simd` | yes | x86-64 instruction intrinsics, including the AVX2 kernels on AVX2 builds |
 | `opensim` | yes | the OpenSim limit profile, as the C++'s `NJ2K_PROFILE_OPENSIM` |
+| `bench-internals` | no | not API: the two Tier-1 entry points (decode a code-block, encode a code-block) that `neo-j2k-bench` times, hidden from the documentation; implies `encode` ([doc/bench.md](doc/bench.md)) |
 
 The workspace's release profile (`lto = "fat"`, `codegen-units = 1`, `panic = "unwind"`) applies to
 its tests, tools and benches; a program that depends on the crate uses its own profile.
@@ -317,6 +319,41 @@ Set `NJ2K_DAMAGED_FILES` to replay additional local inputs with the same options
 ```sh
 cargo test --release --locked -p neo-j2k --test decode_options -- --nocapture
 ```
+
+#### Tier-1 against the C++
+
+The C++ Tier-1 is the oracle block by block and decision by decision, through the shim's Tier-1 entries
+(`neo-j2k-oracle/shim/shim_t1.cpp`, `neo-j2k-oracle/src/tier1.rs`): the decoder's `t1_decode_cblk` and the store into a
+tile buffer, the encoder's `enc_t1_encode` and its commit, and the MQ decoder's decision (`t1_mq.h`) and the MQ encoder
+(`enc_mq.h`) driven on registers and byte strings the test sets. The tests are unit tests of the crate
+(`cargo test --release -p neo-j2k --lib`) and need `NJ2K_CPP_SOURCE`, which also supplies the vectors:
+
+- every committed decoder vector (3,927 code-blocks, `tests/vectors/t1`) and the six bench dumps (2,034 blocks,
+  `tests/vectors/t1_bench`) of the C++ checkout, decoded by Rust and by the C++ and compared coefficient by coefficient,
+  in both stores (5/3 and 9/7); the checkout is read, never copied here (`neo-j2k-testkit/src/mqng.rs` reads the
+  "MQNG" files); with `NJ2K_T1_VECTORS` naming the C++'s full dump set (37,424 blocks, not committed) that is run too;
+- generated code-blocks as `tests/unit/t1_unit.cpp` and `tests/unit/enc_t1_unit.cpp` draw them: every size 1..64 x 1..64
+  (partial stripes included), the edge sizes in all 64 code-block styles and 4 orientations, the long shapes (1024 x 4
+  and the like), hostile bit-planes and ROI shifts, segments longer than the bytes, split chunks, both wavelets; for the
+  encoder blocks of every bit-plane count 0 to 25 with INT32_MIN, compared pass by pass (rate, length, termination,
+  distortion bit for bit) and byte by byte;
+- the MQ coders decision by decision: random streams (the decoder's bits and registers, the encoder's registers after
+  every decision, at short buffer capacities too) and the single decisions of the C++ unit tests, from every state at the
+  intervals around the exchange and renormalisation edges. The normal run takes the trimmed enumeration: 6.5 million
+  decoder decisions (every 17th interval and the edges, as the C++ unit test's default) and 19 million encoder decisions
+  (every 4th interval, and every combination at the edges), in a few seconds.
+
+The long runs are `#[ignore]`d tests named `nightly_*`, run by `nightly.yml` (job `tier1-sweeps`, at both CPU levels) or by hand:
+
+```
+NJ2K_CPP_SOURCE=/path/to/neo-j2k cargo test --release --locked -p neo-j2k --lib -- --ignored nightly_
+```
+
+They take every interval of the MQ decoder's single decisions (443 million; the C++'s count of 887 million visits each
+interval twice) and every combination of the MQ encoder's (4.4 billion), on every thread, and many more generated
+blocks. The fuzz target `t1` compares the decoder's Tier-1 with the C++ on inputs of any bytes
+([fuzz/README.md](fuzz/README.md)). Not compared: the encoder's coefficient preprocessing alone over all 2^32 inputs
+(the C++'s `enc_preprocess` is not in the shim; the extremes go through the encoder's blocks).
 
 #### Oracle and harness checks
 

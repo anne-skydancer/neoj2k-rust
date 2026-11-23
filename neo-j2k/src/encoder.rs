@@ -11,6 +11,8 @@ use crate::executor::Jobs;
 use crate::stream::{EncodePart, StreamWriter};
 use crate::{Diagnostic, Error, ErrorKind, Executor};
 
+#[cfg(feature = "bench-internals")]
+pub(crate) mod bench;
 #[cfg(all(test, not(miri)))]
 mod differential;
 mod tier1;

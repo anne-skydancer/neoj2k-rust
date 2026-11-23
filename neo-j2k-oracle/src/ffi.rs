@@ -7,6 +7,10 @@
 
 use std::ffi::{c_char, c_void};
 
+use super::tier1::{
+    MqDecodeCase, MqDecodeResult, MqDecoderRegs, MqEncodeCase, MqEncodeResult, MqEncoderRegs, RawDecodeRequest,
+    RawEncodeRequest, RawEncodeResult, RawPass,
+};
 use super::{Limits, kernels::WaveletRect};
 
 /// `nj2k_codec_t`, opaque.
@@ -36,13 +40,25 @@ pub(crate) struct Header {
     _private: [u8; 0],
 }
 
+/// `nj2k_shim_t1_t`, opaque.
+#[repr(C)]
+pub(crate) struct T1 {
+    _private: [u8; 0],
+}
+
+/// `nj2k_shim_enc_t1_t`, opaque.
+#[repr(C)]
+pub(crate) struct EncT1 {
+    _private: [u8; 0],
+}
+
 /// `nj2k_shim_pool_t`, opaque.
 #[repr(C)]
 pub(crate) struct Pool {
     _private: [u8; 0],
 }
 
-pub(crate) const ABI_VERSION: u32 = 7;
+pub(crate) const ABI_VERSION: u32 = 8;
 
 /// `nj2k_shim_codestream_t`, opaque.
 #[repr(C)]
@@ -340,4 +356,46 @@ unsafe extern "C" {
         numcomps: *mut u32,
         out: *mut *mut Header,
     ) -> i32;
+
+    pub(crate) fn nj2k_shim_t1_new() -> *mut T1;
+    pub(crate) fn nj2k_shim_t1_free(t1: *mut T1);
+    pub(crate) fn nj2k_shim_t1_decode(
+        t1: *mut T1,
+        request: *const RawDecodeRequest,
+        out: *mut i32,
+        out_len: usize,
+    ) -> u32;
+    pub(crate) fn nj2k_shim_enc_t1_new() -> *mut EncT1;
+    pub(crate) fn nj2k_shim_enc_t1_free(t1: *mut EncT1);
+    pub(crate) fn nj2k_shim_enc_t1_encode(
+        t1: *mut EncT1,
+        request: *const RawEncodeRequest,
+        result: *mut RawEncodeResult,
+        passes: *mut RawPass,
+        pass_cap: usize,
+        bytes: *mut u8,
+        byte_cap: usize,
+    ) -> u32;
+    pub(crate) fn nj2k_shim_mq_dec_run(
+        init: *const MqDecoderRegs,
+        data: *const u8,
+        len: usize,
+        ctx: *const u8,
+        n: usize,
+        bits: *mut u8,
+        out: *mut MqDecoderRegs,
+    ) -> u32;
+    pub(crate) fn nj2k_shim_mq_dec_cases(cases: *const MqDecodeCase, n: usize, results: *mut MqDecodeResult);
+    pub(crate) fn nj2k_shim_mq_enc_run(
+        init: *const MqEncoderRegs,
+        ctxbit: *const u8,
+        n: usize,
+        flush: u32,
+        buf: *mut u8,
+        cap: usize,
+        limit: usize,
+        out: *mut MqEncoderRegs,
+        trace: *mut MqEncoderRegs,
+    ) -> u32;
+    pub(crate) fn nj2k_shim_mq_enc_cases(cases: *const MqEncodeCase, n: usize, results: *mut MqEncodeResult);
 }

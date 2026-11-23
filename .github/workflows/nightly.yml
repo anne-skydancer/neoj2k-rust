@@ -3,8 +3,11 @@
 #
 # Nightly, on Linux: ten minutes of libFuzzer (cargo-fuzz, the nightly pinned in nightly-toolchain)
 # per fuzz target with AddressSanitizer, one job each. The two targets that need no C++ run on the
-# stock runner; the three that compare with the C++ oracle (differential, encode_options,
-# api_sequence) check out the C++ repository and build the oracle with GCC 15, as oracle.yml does.
+# stock runner; the four that compare with the C++ oracle (differential, encode_options,
+# api_sequence, t1) check out the C++ repository and build the oracle with GCC 15, as oracle.yml does.
+# The tier1-sweeps job runs the long Tier-1 comparisons with the C++ (every single decision of the MQ
+# decoder and encoder, 443 million and 4.4 billion, and the long generated code-block draws), which
+# the normal test run trims to seconds.
 # The fuzzers start from the corpus the earlier nights grew, kept in the Actions cache (minimised to
 # the inputs that add coverage), and from the checked-in seeds; findings are uploaded as an artifact.
 # ClusterFuzzLite (cflite-*.yml) fuzzes the first two targets on pull requests and in batch too.
@@ -59,6 +62,11 @@ jobs:
             seeds: fuzz/seeds/api_sequence
             max_len: 18
             timeout: 10
+          - target: t1
+            oracle: true
+            seeds: fuzz/seeds/t1
+            max_len: 8192
+            timeout: 5
     env:
       FEATURES: ${{ matrix.oracle && '--features oracle' || '' }}
       # the prebuilt cargo-fuzz is a musl binary, whose default target would be musl, where
@@ -168,6 +176,49 @@ jobs:
           cache-on-failure: true
       - name: Replay the extended cut table
         run: cargo test --release --locked -p neo-j2k --test reference_replay -- --ignored --exact nightly_reference_cuts
+  tier1-sweeps:
+    name: Tier-1 sweeps against the C++ (${{ matrix.cpu }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        cpu: [baseline, x86-64-v3]
+        include:
+          - cpu: baseline
+            rustflags: ""
+          - cpu: x86-64-v3
+            rustflags: -C target-cpu=x86-64-v3
+    env:
+      NJ2K_ORACLE_NO_BUILD: "0"
+      NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      CC: gcc-15
+      CXX: g++-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          ref: 00f273d502d211905adb756d2f75ef74321983d0 # neo-j2k v0.1.3
+          persist-credentials: false
+          path: cpp
+      - name: C++ toolchain
+        run: |
+          set -euo pipefail
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ninja-build g++-15
+      - name: Toolchain
+        run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          shared-key: tier1-sweeps-${{ matrix.cpu }}
+          cache-on-failure: true
+      - name: Every single decision of the MQ decoder and encoder, and the long code-block draws
+        run: cargo test --release --locked -p neo-j2k --lib -- --ignored nightly_
   fuzz-windows:
     name: ${{ matrix.cpu }} on Windows (AddressSanitizer, MSVC)
     runs-on: windows-2025
@@ -213,7 +264,7 @@ jobs:
             -DNJ2K_BUILD_RUST_SHIM=ON -DNJ2K_BUILD_TESTS=OFF -DNJ2K_BUILD_TOOLS=OFF -DNJ2K_BUILD_BENCH=OFF \
             -DNJ2K_BUILD_SHARED=OFF -DNJ2K_INSTALL=OFF
           cmake --build --preset windows-msvc-asan --target nj2k_rust_shim --parallel
-      - name: Fuzz the five targets
+      - name: Fuzz the six targets
         shell: pwsh
         env:
           RUSTFLAGS: -C target-cpu=${{ matrix.cpu }}
@@ -228,7 +279,8 @@ jobs:
             @('roundtrip', '', 'fuzz/seeds/roundtrip', 16400, 10),
             @('differential', '--features oracle', 'corpus/generated fuzz/seeds/jp2', 131072, 10),
             @('encode_options', '--features oracle', 'fuzz/seeds/encode', 16400, 10),
-            @('api_sequence', '--features oracle', 'fuzz/seeds/api_sequence', 18, 10)
+            @('api_sequence', '--features oracle', 'fuzz/seeds/api_sequence', 18, 10),
+            @('t1', '--features oracle', 'fuzz/seeds/t1', 8192, 10)
           )
           foreach ($t in $targets) {
             $name, $features, $seeds, $maxLen, $timeout = $t

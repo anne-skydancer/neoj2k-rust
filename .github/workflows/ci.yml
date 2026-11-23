@@ -111,6 +111,8 @@ jobs:
         run: cargo doc --workspace --all-features --no-deps --document-private-items --locked
       - name: Native Rust policy
         run: python -I tools/check_rust_native.py
+      - name: Benchmark driver self-test
+        run: python -I tools/bench_tier1.py --selftest
       - name: Package
         run: cargo package -p neo-j2k --locked
       - name: Fuzz harness, seeds and regression inputs
@@ -146,6 +148,8 @@ jobs:
             fuzz
       - name: Pure-Rust test kit
         run: cargo test --release -p neo-j2k-testkit --locked
+      - name: Benchmark crate
+        run: cargo test --release -p neo-j2k-bench --locked
       - name: Native reference replay
         run: cargo test --release -p neo-j2k --test reference_replay --locked -- --test-threads=1
       - name: Fuzz harness, seeds and regression inputs
@@ -263,6 +267,11 @@ jobs:
           export NJ2K_TEST_TMP="$RUNNER_TEMP" TMPDIR="$RUNNER_TEMP"
           cargo test --release --workspace --locked
           cargo test --release --manifest-path fuzz/Cargo.toml --features oracle --locked --lib
+      - name: Benchmark smoke (the six decoder dumps and the encoder sets, outputs only)
+        run: |
+          set -euo pipefail
+          cargo build --release --locked -p neo-j2k-bench
+          target/release/neo-j2k-bench --digest-only --blocks 16 --dumps "$NJ2K_CPP_SOURCE/tests/vectors/t1_bench"
   oracle-linux-lts:
     name: Oracle tests (Ubuntu 24.04, GCC 14)
     runs-on: ubuntu-26.04
