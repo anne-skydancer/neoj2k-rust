@@ -13,6 +13,7 @@ const ALL_PI: u32 = PI_THIS | (PI_THIS << 3) | (PI_THIS << 6) | (PI_THIS << 9);
 const ALL_SIGMA: u32 = SIGMA_THIS | (SIGMA_THIS << 3) | (SIGMA_THIS << 6) | (SIGMA_THIS << 9);
 const PI_TO_SIGMA: u32 = PI_THIS.trailing_zeros() - SIGMA_THIS.trailing_zeros();
 const CONTEXT_MAGNITUDE: usize = 14;
+const CHI_THIS_BIT: u32 = 19;
 
 #[derive(Debug)]
 pub(super) struct Passes<'a> {
@@ -66,8 +67,12 @@ impl Passes<'_> {
         decoder.symbol(usize::from(SIGN_CONTEXT[lu])) ^ u32::from(SIGN_PREDICTION[lu])
     }
 
-    // Update the neighbouring columns and return the bits for the current column.
-    fn mark_significant<const SINGLE_STRIPE: bool>(&mut self, index: usize, row: usize, sign: u32) -> u32 {
+    // Update the neighbouring columns. The caller records the sample in its own column: the significance bit at once, the
+    // sign (chi) bit in a local it merges into the column's flag word when the column is done, so that the next row's
+    // zero-coding context does not wait on the sign decision. Nothing reads a column's own sign bits before that store
+    // except `sign`, which is given the merged word.
+    #[inline(always)]
+    fn mark_significant<const SINGLE_STRIPE: bool>(&mut self, index: usize, row: usize, sign: u32) {
         let shift = row * 3;
         self.flags[index - 1] |= (1 << 5) << shift;
         self.flags[index + 1] |= (1 << 3) << shift;
@@ -83,7 +88,6 @@ impl Passes<'_> {
             self.flags[below - 1] |= 1 << 2;
             self.flags[below + 1] |= 1;
         }
-        ((sign << 19) | SIGMA_THIS) << shift
     }
 
     pub(super) fn significance<const RAW: bool, const SINGLE_STRIPE: bool>(
@@ -110,6 +114,7 @@ impl Passes<'_> {
             for col in 0..self.width {
                 let index = flag_start + col;
                 let mut column = self.flags[index];
+                let mut chi = 0;
                 if column == 0 || (column | (column >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
                     continue;
                 }
@@ -128,15 +133,17 @@ impl Passes<'_> {
                         let sign = if RAW {
                             decoder.raw()
                         } else {
-                            self.sign(decoder, index, lane, column)
+                            self.sign(decoder, index, lane, column | chi)
                         };
                         self.data[data_start + col + lane * self.width] =
                             if sign != 0 { -magnitude } else { magnitude };
-                        column |= self.mark_significant::<SINGLE_STRIPE>(index, lane, sign);
+                        self.mark_significant::<SINGLE_STRIPE>(index, lane, sign);
+                        column |= SIGMA_THIS << shift;
+                        chi |= (sign << CHI_THIS_BIT) << shift;
                     }
                     column |= PI_THIS << shift;
                 }
-                self.flags[index] = column;
+                self.flags[index] = column | chi;
             }
         }
         *state = local;
@@ -225,10 +232,13 @@ impl Passes<'_> {
                         continue;
                     }
                 }
-                let mut mark = |decoder: &mut Decoder<'_>, column: &mut u32, lane: usize| {
-                    let sign = self.sign(decoder, index, lane, *column);
+                let mut chi = 0;
+                let mut mark = |decoder: &mut Decoder<'_>, column: &mut u32, chi: &mut u32, lane: usize| {
+                    let sign = self.sign(decoder, index, lane, *column | *chi);
                     self.data[data_start + col + lane * self.width] = if sign != 0 { -magnitude } else { magnitude };
-                    *column |= self.mark_significant::<SINGLE_STRIPE>(index, lane, sign);
+                    self.mark_significant::<SINGLE_STRIPE>(index, lane, sign);
+                    *column |= SIGMA_THIS << (lane * 3);
+                    *chi |= (sign << CHI_THIS_BIT) << (lane * 3);
                 };
                 let start = if rows == 4 && column == 0 {
                     if decoder.symbol(CONTEXT_AGGREGATE) == 0 {
@@ -237,7 +247,7 @@ impl Passes<'_> {
                     let first = decoder.symbol(CONTEXT_UNIFORM) as usize;
                     let second = decoder.symbol(CONTEXT_UNIFORM) as usize;
                     let lane = (first << 1) | second;
-                    mark(decoder, &mut column, lane);
+                    mark(decoder, &mut column, &mut chi, lane);
                     lane + 1
                 } else {
                     0
@@ -247,10 +257,10 @@ impl Passes<'_> {
                     if flags & (SIGMA_THIS | PI_THIS) == 0
                         && decoder.symbol(Self::significance_context(zero_context, flags)) != 0
                     {
-                        mark(decoder, &mut column, lane);
+                        mark(decoder, &mut column, &mut chi, lane);
                     }
                 }
-                self.flags[index] = column & !ALL_PI;
+                self.flags[index] = (column | chi) & !ALL_PI;
             }
         }
         if segment_symbol {
