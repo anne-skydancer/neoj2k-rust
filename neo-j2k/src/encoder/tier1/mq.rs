@@ -173,6 +173,7 @@ impl<'a> Encoder<'a> {
         self.overflow
     }
 
+    #[cfg(all(test, not(miri)))]
     pub(super) fn symbol(&mut self, context: usize, bit: u32) {
         let mut run = self.lend();
         run.symbol(context, bit);
