@@ -8,6 +8,11 @@
 use super::{CONTEXT_AGGREGATE, Decoder, PACKED_STATES};
 use crate::t1::tables::MQ_STATES;
 
+/// The flag words of a row as the cells the passes read them through.
+fn cells(words: &[u32]) -> Vec<core::cell::Cell<u32>> {
+    words.iter().map(|&w| core::cell::Cell::new(w)).collect()
+}
+
 /// The registers and the bytes of one decision.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 struct Model {
@@ -167,7 +172,7 @@ fn a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time() {
                         decoder
                     };
                     let mut at_once = make();
-                    let run = at_once.aggregate_run(&flags[..columns]);
+                    let run = at_once.aggregate_run(&cells(&flags[..columns]));
 
                     // one decision at a time: the longest prefix of decisions that are an MPS of 0 with no renormalisation,
                     // no change of state and no byte
@@ -225,7 +230,7 @@ fn a_run_stops_at_the_first_column_that_is_not_empty() {
     decoder.registers.bits = 8;
     decoder.contexts[CONTEXT_AGGREGATE] = PACKED_STATES[index];
     let flags = [0, 0, 0, 4, 0, 0];
-    assert_eq!(decoder.aggregate_run(&flags), 3);
+    assert_eq!(decoder.aggregate_run(&cells(&flags)), 3);
     assert_eq!(
         (decoder.registers.a, decoder.registers.c),
         (0xffff - 3, 0xffff_0000 - (3 << 16))
@@ -235,7 +240,7 @@ fn a_run_stops_at_the_first_column_that_is_not_empty() {
     decoder.registers.a = 0xffff;
     decoder.registers.c = 0xffff_0000;
     decoder.contexts[CONTEXT_AGGREGATE] = PACKED_STATES[index];
-    assert_eq!(decoder.aggregate_run(&[0]), 1);
+    assert_eq!(decoder.aggregate_run(&cells(&[0])), 1);
 }
 
 #[test]
@@ -246,19 +251,19 @@ fn no_run_when_the_mps_is_one_or_the_room_is_short() {
     let mut decoder = Decoder::new();
     decoder.registers.a = 0xffff;
     decoder.registers.c = (qe - 1) << 16;
-    assert_eq!(decoder.aggregate_run(&[0, 0]), 0);
+    assert_eq!(decoder.aggregate_run(&cells(&[0, 0])), 0);
     decoder.registers.c = qe << 16;
     decoder.registers.a = 0x8000 + qe - 1;
-    assert_eq!(decoder.aggregate_run(&[0, 0]), 0);
+    assert_eq!(decoder.aggregate_run(&cells(&[0, 0])), 0);
     // the same registers with the room exactly qe: one column, two with room for two
     decoder.registers.a = 0x8000 + qe;
-    assert_eq!(decoder.aggregate_run(&[0, 0]), 1);
+    assert_eq!(decoder.aggregate_run(&cells(&[0, 0])), 1);
     decoder.registers.a = 0x8000 + 2 * qe;
     decoder.registers.c = (2 * qe) << 16;
-    assert_eq!(decoder.aggregate_run(&[0, 0]), 2);
+    assert_eq!(decoder.aggregate_run(&cells(&[0, 0])), 2);
     // an MPS of 1 (index 7)
     decoder.contexts[CONTEXT_AGGREGATE] = PACKED_STATES[7];
     decoder.registers.a = 0xffff;
     decoder.registers.c = 0xffff_0000;
-    assert_eq!(decoder.aggregate_run(&[0, 0]), 0);
+    assert_eq!(decoder.aggregate_run(&cells(&[0, 0])), 0);
 }

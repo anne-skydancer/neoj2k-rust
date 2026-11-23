@@ -137,7 +137,7 @@
  {
   "name": "AGG run: the flag word of the next column ignored",
   "file": "neo-j2k/src/t1/mq.rs",
-  "old": "while n < flags.len() && flags[n] == 0 &&",
+  "old": "while n < flags.len() && flags[n].get() == 0 &&",
   "new": "while n < flags.len() &&",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
@@ -163,10 +163,10 @@
   ]
  },
  {
-  "name": "AGG run in the cleanup pass: taken in a partial stripe",
+  "name": "cleanup pass: a stripe of three lanes taken for a full one",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "if FULL && column.flags == 0 {\n                // A run",
-  "new": "if column.flags == 0 {\n                // A run",
+  "old": "if rows == 4 {\n                Self::cleanup_full",
+  "new": "if rows >= 3 {\n                Self::cleanup_full",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation"
   ]
@@ -214,22 +214,24 @@
  {
   "name": "sigma/chi: the closing store drops chi (significance)",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "stripe.here[col + 1] = column.flags | column.chi;",
-  "new": "stripe.here[col + 1] = column.flags;",
+  "old": "stripe.here.mid[col].set(column.flags | column.chi);",
+  "new": "stripe.here.mid[col].set(column.flags);",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
    "t1::differential::committed_vectors_decode_as_the_cpp_does"
-  ]
+  ],
+  "count": 2
  },
  {
   "name": "sigma/chi: the closing store drops chi (cleanup)",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "stripe.here[col + 1] = (column.flags | column.chi) & !ALL_PI;",
-  "new": "stripe.here[col + 1] = column.flags & !ALL_PI;",
+  "old": "stripe.here.mid[col].set((column.flags | column.chi) & !ALL_PI);",
+  "new": "stripe.here.mid[col].set(column.flags & !ALL_PI);",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
    "t1::differential::committed_vectors_decode_as_the_cpp_does"
-  ]
+  ],
+  "count": 2
  },
  {
   "name": "sigma/chi: the sign placed one row down",

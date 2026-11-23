@@ -2,6 +2,7 @@
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 // OpenJPEG's MQ and raw readers, ported through src/t1.cpp. See the notice in t1.rs.
 
+use core::cell::Cell;
 use core::hint::select_unpredictable;
 
 use super::tables::MQ_STATES;
@@ -184,7 +185,7 @@ impl<'a> Decoder<'a> {
     }
 
     #[cfg(test)]
-    fn aggregate_run(&mut self, flags: &[u32]) -> usize {
+    fn aggregate_run(&mut self, flags: &[Cell<u32>]) -> usize {
         let mut mq = self.enter();
         let run = mq.aggregate_run(flags);
         mq.leave();
@@ -256,7 +257,7 @@ impl Mq<'_, '_> {
     /// (0: no run, the caller decides as usual) take `a -= n * qe` and `c -= (n * qe) << 16` at once: no state
     /// change, no byte.
     #[inline(always)]
-    pub(super) fn aggregate_run(&mut self, flags: &[u32]) -> usize {
+    pub(super) fn aggregate_run(&mut self, flags: &[Cell<u32>]) -> usize {
         let word = self.contexts[CONTEXT_AGGREGATE & (CONTEXT_SLOTS - 1)];
         let qeval = word & 0xffff;
         let room = (self.a - 0x8000).min(self.c >> 16);
@@ -265,7 +266,7 @@ impl Mq<'_, '_> {
         }
         let mut used = qeval;
         let mut n = 1;
-        while n < flags.len() && flags[n] == 0 && used + qeval <= room {
+        while n < flags.len() && flags[n].get() == 0 && used + qeval <= room {
             used += qeval;
             n += 1;
         }
