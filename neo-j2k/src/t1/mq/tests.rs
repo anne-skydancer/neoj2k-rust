@@ -177,8 +177,8 @@ fn a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time() {
                         let before = one_by_one;
                         let bit = one_by_one.symbol(CONTEXT_AGGREGATE);
                         let plain = bit == 0
-                            && one_by_one.a == before.a - qe
-                            && one_by_one.c == before.c - (qe << 16)
+                            && one_by_one.a == before.a.wrapping_sub(qe)
+                            && one_by_one.c == before.c.wrapping_sub(qe << 16)
                             && one_by_one.bits == before.bits
                             && one_by_one.data.len() == before.data.len()
                             && one_by_one.contexts == before.contexts;
