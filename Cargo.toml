@@ -42,3 +42,13 @@ codegen-units = 1
 panic = "unwind"
 debug = "line-tables-only"
 
+# The mutation check of the Tier-1 tests (tools/tier1_mutations.py): the tests check logic, not speed, so it builds
+# fast, with the checks on. A profile of the workspace root is not part of the published crate.
+[profile.mutation]
+inherits = "release"
+lto = false
+codegen-units = 16
+opt-level = 1
+debug-assertions = true
+overflow-checks = true
+incremental = true
