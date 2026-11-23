@@ -113,6 +113,8 @@ jobs:
         run: python -I tools/check_rust_native.py
       - name: Benchmark driver self-test
         run: python -I tools/bench_tier1.py --selftest
+      - name: Performance summary self-test
+        run: python -I tools/perf_summary.py selftest
       - name: Package
         run: cargo package -p neo-j2k --locked
       - name: Fuzz harness, seeds and regression inputs
