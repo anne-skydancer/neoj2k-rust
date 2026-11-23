@@ -126,11 +126,11 @@
   ]
  },
  {
-  "name": "AGG run: a MPS of 1 allowed",
+  "name": "AGG run: the MPS of the context not checked",
   "file": "neo-j2k/src/t1/mq.rs",
   "old": "if (word >> MPS_BIT) & 1 != 0 ||",
-  "new": "if (word >> MPS_BIT) & 2 != 0 ||",
-  "tests": ["t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation", "t1::differential::committed_vectors_decode_as_the_cpp_does"]
+  "new": "if false ||",
+  "tests": ["t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"]
  },
  {
   "name": "AGG run: the flag word of the next column ignored",
