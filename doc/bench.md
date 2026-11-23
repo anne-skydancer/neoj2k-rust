@@ -199,18 +199,21 @@ gh workflow run perf.yml --ref main -f rounds=24
 gh workflow run perf.yml --ref main -f quick=true
 ```
 
-`rounds` is the number of rounds of each gate-pairs job (default 24, a multiple of six); `quick` runs 3 rounds, one pair
-and one repetition. Two dispatches on one ref do not overlap: the second waits.
+`rounds` is the number of rounds of each gate-pairs job (default 24; digits only, a multiple of six from 6 to 120, so
+that each of the six orders the builds run in is taken equally often); `quick` runs 3 rounds with short units
+(`--min-mcycles 2 --units 1`), one pair and one repetition. Every dispatch has its own concurrency group, so a queued
+dispatch is never cancelled by a later one; only a pull request's smoke run replaces the one before it.
 
 A hosted runner is shared and its CPU differs from job to job, so every comparison happens inside one job, on one
 machine, and numbers are valid only inside that job. Never compare a figure of one job with one of another. Each job's
-summary starts with its heading (the pair or suite, the operating system, the CPU level, the runner's CPU model, the
-number of logical CPUs); the raw output of every job is uploaded as an artifact.
+summary starts with its heading (the pair or suite, the operating system, the CPU level, the runner's CPU model, its
+number of logical CPUs and the runner image); the raw output of every job is uploaded as an artifact (named with the run
+attempt). The artifacts keep the tests' own ratio columns; the summary is the reading to use.
 
 | Job | What it measures | Table |
 |---|---|---|
-| `PAIR name (OS, CPU level)` | The Tier-1 benchmark of this page (`tools/bench_tier1.py`) for one pair of commits: the base, the head and a byte copy of the base, interleaved in one job. Only the benchmark crate is built; no C++ is built (the six decoder dumps are read from a C++ checkout). | The table of this page: percent change of the head and of the control against the base, the gate Yes/No |
-| `Rust versus C++ (OS, CPU level)` | The whole codec: `large_image_executor_latency`, `small_image_median_latency` and `small_encoder_median_latency` of `neo-j2k/tests/small_image_gates.rs`, which time Rust and the C++ oracle in one process; three repetitions in the job | One table: Rust and C++ times (ms for the large decodes, us for the rest), the percent change of Rust against C++ (minus is faster), the spread of the repetitions, Rust faster Yes/No, and the last line "Rows where Rust is at least as fast as C++: N of M" |
+| `PAIR name (OS, CPU level)` | The Tier-1 benchmark of this page (`tools/bench_tier1.py`) for one pair of commits: the base, the head and a byte copy of the base, interleaved in one job. Only the benchmark crate is built; no C++ is built (the six decoder dumps are read from a C++ checkout). | The step gate of the side the pair changes, then the driver's table: percent change of the head and of the control against the base |
+| `Rust versus C++ (OS, CPU level)` | The whole codec: `large_image_executor_latency`, `small_image_median_latency` and `small_encoder_median_latency` of `neo-j2k/tests/small_image_gates.rs`, which time Rust and the C++ oracle in one process; three repetitions in the job | One table, decodes then encodes: Rust and C++ times (ms for the large decodes, us for the rest), the percent change of Rust against C++ (minus is faster), the spread of the repetitions, Rust faster (Yes, No or Within noise), and the counts under it |
 
 A pair is a base commit and a head commit of this repository, both on `main`, whose difference is one step of the
 port. The four pairs are `stage3-decoder` (f07feb7 to 33768eb, the decoder's Tier-1 steps), `stage4-encoder` (33768eb
@@ -219,15 +222,28 @@ pairs) and `sigma-chi-only` (213ff55 to 0466458, the sign kept out of the signif
 on Linux and on Windows, at the baseline CPU level and at `x86-64-v3`. The job resolves the refs with `git rev-parse` on
 a full clone and fails with a message when one does not exist.
 
-How to read a pair's table: the gate rule is the one above (head at least 3.0 % faster, control within +-1.0 %, outputs
-identical). Read the control row first: if it is outside +-1.0 % the runner was too noisy and the head's figure says
-nothing. The benchmark pins its thread to one CPU; the workflow passes `--allow-unpinned`, because a hosted runner may
-refuse the affinity call, and the environment line of the table says whether the pin held (`pinned, CPU n`) or not
-(`UNPINNED`). A gate of No does not fail the job: the job measures, the reader decides.
+How to read a pair's result: the driver's headline gate counts all eight sets, so no step could pass it (a decoder step
+cannot make the encode sets faster, nor the reverse). The summary therefore leads with the step gate, which judges only
+the sets of the side the step changes (`decode/*` for `stage3-decoder` and `sigma-chi-only`, `encode/*` for
+`stage4-encoder` and `e3-only`) by the driver's own rule: head at least 3.0 % faster, control within +-1.0 %, outputs
+identical. The other half is evidence of layout and noise only. The line "Control outside +-1.0 % in k of 8 sets" counts the
+rows where the byte copy of the base strayed: the runner was too noisy for those rows, and the head's figure says
+nothing there. The benchmark pins its thread to one CPU and refuses to run when it cannot; only a runner with one CPU
+runs unpinned (the table's environment line says `pinned, CPU n` or `UNPINNED`, and the job warns). A failed benchmark
+leaves the job red with a message instead of an empty table; a gate of No does not fail the job: the job measures, the
+reader decides.
 
-How to read the Rust-versus-C++ table: the C++ side is the oracle built with the repository's usual flags, GCC 15 on
-Linux and MSVC on Windows, which is the compiler the C++ numbers of the baseline above were measured with. On Linux the
-baseline cell uses the oracle's scalar preset (`linux-gcc-scalar`, the C++ library built for the baseline x86-64) and the
-`x86-64-v3` cell the default one (AVX2); Windows has no scalar preset, so both Windows cells use the default AVX2
-oracle. The widths 4 and 8 of the large decodes run more threads than a hosted runner has CPUs (the heading gives the
-count).
+How to read the Rust-versus-C++ table: the C++ side is the oracle built with the repository's usual flags: GCC 15 on
+Linux, MSVC on Windows. MSVC is the compiler the C++ numbers of the baseline above were measured with; GCC 15 is not.
+The Change column is the median of the repetitions' own changes, not the percent of the two median columns, and the
+spread is the lowest and the highest of them. Rust faster is Yes when the median change is below zero and the spread does
+not straddle zero, No when it is above zero and does not straddle it, and Within noise when the spread straddles zero or
+the median is under 1.0 %. The counts under the table read "Rust faster in A rows, within noise in B, slower in C, of M"
+and "at least as fast (faster + within noise): N of M". Rows whose width (which includes the caller) exceeds the runner's
+logical CPUs, the widths 8 on a 4-CPU hosted runner, are marked oversubscribed and left out of the counts. The oracle's
+SIMD level is in every heading. On Linux the baseline cell uses the oracle's scalar preset (`linux-gcc-scalar`, the C++
+library built for the baseline x86-64) and is like for like, as is the `x86-64-v3` cell with the default AVX2 oracle.
+Windows has no scalar preset, so its baseline cell times a baseline-CPU Rust build against an AVX2 oracle: it is not like
+for like, and its summary says so in place of the counts. The table is shown only when every repetition is complete (the
+three tests passed, 8 large-decode, 9 small-decode and 6 small-encode rows); otherwise the summary says the result is
+incomplete and the job is red.
