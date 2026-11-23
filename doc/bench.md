@@ -187,3 +187,47 @@ To add a mutation list, write `tools/mutations/NAME.json` in the format of `tool
 `python tools/tier1_mutations.py --list` (it builds nothing) and commit the list in the pull request of the code it
 tests, never ahead of it. The same script runs the mutations locally (`--only TEXT` for one), and builds a lot: it
 is meant for CI.
+
+## Measuring in CI
+
+`.github/workflows/perf.yml` moves the timing to CI. It runs by hand, and once on a pull request that touches the
+workflow or its two tools (`tools/bench_tier1.py`, `tools/perf_summary.py`), in quick mode: a smoke test whose figures
+prove the workflow works and nothing about speed.
+
+```
+gh workflow run perf.yml --ref main -f rounds=24
+gh workflow run perf.yml --ref main -f quick=true
+```
+
+`rounds` is the number of rounds of each gate-pairs job (default 24, a multiple of six); `quick` runs 3 rounds, one pair
+and one repetition. Two dispatches on one ref do not overlap: the second waits.
+
+A hosted runner is shared and its CPU differs from job to job, so every comparison happens inside one job, on one
+machine, and numbers are valid only inside that job. Never compare a figure of one job with one of another. Each job's
+summary starts with its heading (the pair or suite, the operating system, the CPU level, the runner's CPU model, the
+number of logical CPUs); the raw output of every job is uploaded as an artifact.
+
+| Job | What it measures | Table |
+|---|---|---|
+| `PAIR name (OS, CPU level)` | The Tier-1 benchmark of this page (`tools/bench_tier1.py`) for one pair of commits: the base, the head and a byte copy of the base, interleaved in one job. Only the benchmark crate is built; no C++ is built (the six decoder dumps are read from a C++ checkout). | The table of this page: percent change of the head and of the control against the base, the gate Yes/No |
+| `Rust versus C++ (OS, CPU level)` | The whole codec: `large_image_executor_latency`, `small_image_median_latency` and `small_encoder_median_latency` of `neo-j2k/tests/small_image_gates.rs`, which time Rust and the C++ oracle in one process; three repetitions in the job | One table: Rust and C++ times (ms for the large decodes, us for the rest), the percent change of Rust against C++ (minus is faster), the spread of the repetitions, Rust faster Yes/No, and the last line "Rows where Rust is at least as fast as C++: N of M" |
+
+A pair is a base commit and a head commit of this repository, both on `main`, whose difference is one step of the
+port. The four pairs are `stage3-decoder` (f07feb7 to 33768eb, the decoder's Tier-1 steps), `stage4-encoder` (33768eb
+to 9052823, the encoder's), `e3-only` (the parent of 06f1b39 to 06f1b39, the refinement pass as a list of (context, bit)
+pairs) and `sigma-chi-only` (213ff55 to 0466458, the sign kept out of the significance flag word until read). Each runs
+on Linux and on Windows, at the baseline CPU level and at `x86-64-v3`. The job resolves the refs with `git rev-parse` on
+a full clone and fails with a message when one does not exist.
+
+How to read a pair's table: the gate rule is the one above (head at least 3.0 % faster, control within +-1.0 %, outputs
+identical). Read the control row first: if it is outside +-1.0 % the runner was too noisy and the head's figure says
+nothing. The benchmark pins its thread to one CPU; the workflow passes `--allow-unpinned`, because a hosted runner may
+refuse the affinity call, and the environment line of the table says whether the pin held (`pinned, CPU n`) or not
+(`UNPINNED`). A gate of No does not fail the job: the job measures, the reader decides.
+
+How to read the Rust-versus-C++ table: the C++ side is the oracle built with the repository's usual flags, GCC 15 on
+Linux and MSVC on Windows, which is the compiler the C++ numbers of the baseline above were measured with. On Linux the
+baseline cell uses the oracle's scalar preset (`linux-gcc-scalar`, the C++ library built for the baseline x86-64) and the
+`x86-64-v3` cell the default one (AVX2); Windows has no scalar preset, so both Windows cells use the default AVX2
+oracle. The widths 4 and 8 of the large decodes run more threads than a hosted runner has CPUs (the heading gives the
+count).
