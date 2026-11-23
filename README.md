@@ -449,6 +449,8 @@ The complete C++/OpenJPEG tables are in the
 
 Direct paired measurements; the baseline is neo-j2k C++.
 
+**These rows were measured against earlier neo-j2k C++ code, before the C++ 0.1.3 encoder and decoder redesign, and do not describe 0.1.3.** Against C++ 0.1.3 (2026-11-23) the Rust twin decodes large images about level or faster on the baseline CPU level, is slower on `x86-64-v3` 1,024² decodes (+4.5 % to +19.4 %), and is 30 % to 73 % slower on small encodes; the numbers are in `doc/bench.md`, "Baseline against neo-j2k C++ 0.1.3". The port of the missing Tier-1 steps is under way and these tables are re-measured after it.
+
 | Operation | Suite | Threads | neo-j2k C++ | neo-j2k Rust | Change vs C++ |
 |---|---|---:|---:|---:|---:|
 | Decode 1,024² RGB 9/7 | direct I32 AVX2 suite | 1 | 4.780 ms | 4.725 ms | -1.1 % |

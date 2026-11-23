@@ -93,3 +93,70 @@ day) before it is believed; no separate build of the base from another path is n
   runs on two machines.
 - Linux needs nothing beyond glibc for the pinning. Other systems run unpinned (the program says so) and the
   clock is nanoseconds.
+
+## Baseline against neo-j2k C++ 0.1.3 (2026-11-23)
+
+The whole codec and the Tier-1 kernel of this repository at 0.1.3 (`main` at 336b766) against neo-j2k C++ v0.1.3 (commit 00f273d), before the Tier-1 steps of the C++ 0.1.3 that this port does not have yet (the decoder's select decision, its run absorption and the sign/significance split; the encoder's cleanup mask and refinement pair list). The Rust tables of the README ("Native Rust versus neo-j2k C++") were measured against earlier C++ code, before that redesign, and do not describe 0.1.3.
+
+Machine and method: Ryzen 9 9950X3D, Windows 11, rustc 1.100.0, MSVC 19.51 (the C++ oracle, `RelWithDebInfo`, built `NJ2K_SIMD=SCALAR` for the baseline CPU level and `AVX2` for `x86-64-v3`), release builds with fat LTO and one code-generation unit, pinned to logical CPU 7, three repetitions of each suite (the medians below; the spread is the lowest and highest of the three). Before each of the 80 timed runs the other-process load over 2 s was at most 10 % (9 waits of 30 s in all; highest reading 9.1 %). Change is Rust's time against C++'s, minus is faster than C++.
+
+Decode, large images (`large_image_executor_latency`, the direct I32 suite, milliseconds):
+
+| CPU level | Image | Workers | Rust | C++ | Change | Spread | Rust faster |
+|---|---|---:|---:|---:|---:|---|---|
+| baseline | 1,024² RGB 9/7 | 1 | 7.491 | 7.858 | -5.1 % | -6.0 to -2.8 % | Yes |
+| baseline | 1,024² RGB 9/7 | 8 | 1.637 | 1.714 | -4.6 % | -5.0 to -3.1 % | Yes |
+| baseline | 4,096² gray 9/7 | 1 | 22.908 | 26.627 | -14.1 % | -15.2 to -13.1 % | Yes |
+| baseline | 4,096² gray 9/7 | 8 | 4.909 | 4.959 | -13.4 % | -14.7 to -1.0 % | Yes |
+| x86-64-v3 | 1,024² RGB 9/7 | 1 | 5.079 | 4.252 | +19.4 % | +18.9 to +21.3 % | No |
+| x86-64-v3 | 1,024² RGB 9/7 | 8 | 1.354 | 1.316 | +4.5 % | +2.7 to +4.8 % | No |
+| x86-64-v3 | 4,096² gray 9/7 | 1 | 11.596 | 11.652 | -0.8 % | -1.1 to +0.8 % | Yes |
+| x86-64-v3 | 4,096² gray 9/7 | 8 | 3.586 | 3.565 | +3.0 % | -5.7 to +4.7 % | No |
+
+(The 2- and 4-worker rows lie between these: at baseline -3.9 % to -14.5 % (Rust faster), at `x86-64-v3` -4.1 % to +13.1 %.)
+
+Decode, small images, caller-owned (`small_image_median_latency`, microseconds):
+
+| CPU level | Image | Rust | C++ | Change | Rust faster |
+|---|---|---:|---:|---:|---|
+| baseline | 32² RGBA 5/3, whole | 345.32 | 284.95 | +21.2 % | No |
+| baseline | 64² RGB 9/7, whole | 74.47 | 90.83 | -16.9 % | Yes |
+| baseline | 128² RGBA 9/7, whole | 233.86 | 233.13 | +0.5 % | No |
+| x86-64-v3 | 32² RGBA 5/3, whole | 324.14 | 271.66 | +17.0 % | No |
+| x86-64-v3 | 64² RGB 9/7, whole | 60.31 | 60.48 | -2.5 % | Yes |
+| x86-64-v3 | 128² RGBA 9/7, whole | 176.64 | 144.99 | +21.8 % | No |
+
+Encode, small images, one thread (`small_encoder_median_latency`, microseconds; both sides include the copy of the input and of the output):
+
+| CPU level | Image | Mode | Rust | C++ | Change | Rust faster |
+|---|---|---|---:|---:|---:|---|
+| baseline | 32² RGB | 5/3 lossless | 265.09 | 174.08 | +52.3 % | No |
+| baseline | 32² RGB | 9/7 lossy | 289.07 | 168.44 | +72.4 % | No |
+| baseline | 64² RGB | 5/3 lossless | 932.71 | 693.08 | +34.7 % | No |
+| baseline | 64² RGB | 9/7 lossy | 1,080.98 | 742.16 | +46.9 % | No |
+| baseline | 128² RGB | 5/3 lossless | 3,424.09 | 2,575.18 | +33.5 % | No |
+| baseline | 128² RGB | 9/7 lossy | 4,082.68 | 2,814.22 | +44.8 % | No |
+| x86-64-v3 | 32² RGB | 5/3 lossless | 251.99 | 155.01 | +59.8 % | No |
+| x86-64-v3 | 32² RGB | 9/7 lossy | 291.29 | 168.67 | +73.0 % | No |
+| x86-64-v3 | 64² RGB | 5/3 lossless | 948.47 | 721.66 | +31.4 % | No |
+| x86-64-v3 | 64² RGB | 9/7 lossy | 1,112.07 | 757.84 | +43.8 % | No |
+| x86-64-v3 | 128² RGB | 5/3 lossless | 3,499.29 | 2,689.69 | +30.1 % | No |
+| x86-64-v3 | 128² RGB | 9/7 lossy | 4,136.54 | 2,905.48 | +44.0 % | No |
+
+There is no eight-thread encode row: `large_encoder_executor_latency` has no C++ side.
+
+Tier-1 kernel, Mcycles a pass (TSC, median of 24 rounds for Rust and of 3 runs for C++). The two do not time the same thing: the Rust decoder sets include the store into the tile buffer, the Rust encoder sets include the copy of the samples in and of the passes and bytes out, while the C++ benches time `t1_decode_cblk` and `enc_t1_encode` alone. So these are not a percent change; they show the size of the gap, which is larger than those copies:
+
+| CPU level | Set | Rust | C++ |
+|---|---|---:|---:|
+| baseline | decode 1,024² lossy | 171.7 | 121.8 |
+| baseline | decode 1,024² lossless | 958.1 | 621.7 |
+| baseline | encode, lossy blocks | 277.4 | 182.1 |
+| baseline | encode, lossless blocks | 394.4 | 244.6 |
+| x86-64-v3 | decode 1,024² lossy | 171.6 | 120.5 |
+| x86-64-v3 | decode 1,024² lossless | 940.7 | 612.3 |
+| x86-64-v3 | encode, lossy blocks | 272.1 | 181.4 |
+| x86-64-v3 | encode, lossless blocks | 386.0 | 242.9 |
+
+What the baseline says: against C++ 0.1.3 the Rust twin is about level or faster on large baseline-CPU decodes (the C++ scalar wavelet is slow), slower on `x86-64-v3` 1,024² decodes (+4.5 % to +19.4 %) and on the small RGBA decodes, and 30 % to 73 % slower on every small encode in both builds. The Tier-1 kernel is the cause of most of the encode gap (Tier-1 is 86 % to 95 % of an encode). The port of the C++ steps is staged to close it, each stage gated at 3.0 % faster than before; the README's Rust-against-C++ tables are re-measured after it.
+
