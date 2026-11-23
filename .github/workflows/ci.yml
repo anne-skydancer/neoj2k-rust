@@ -43,12 +43,32 @@ jobs:
           tool: cargo-deny@0.20.2
       - name: Licences, advisories, sources and bans
         run: cargo deny --locked check
+  # Miri runs its tests one at a time, so one slow test starves everything after it: each suite has its own job and
+  # its own 45 minutes, and `--report-time` prints the time of every test so a budget can be chosen from the log.
   miri:
-    name: Miri
+    name: Miri (${{ matrix.suite }})
     runs-on: ubuntu-latest
     timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - suite: unit tests
+            rustflags: ""
+            args: -p neo-j2k-testkit -p neo-j2k --lib
+            filter: ""
+          - suite: decoder requests
+            rustflags: ""
+            args: -p neo-j2k --test miri_decode
+            filter: ""
+          - suite: AVX2 kernels
+            rustflags: -C target-feature=+avx2
+            args: -p neo-j2k --lib
+            filter: avx2_ interleaved_targets_match_plane_writes_at_every_channel_count
     env:
       NJ2K_ORACLE_NO_BUILD: "1"
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      CARGO_TARGET_DIR: target-miri${{ matrix.rustflags != '' && '-avx2' || '' }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -62,19 +82,18 @@ jobs:
       - name: Build cache
         uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
         with:
-          shared-key: miri
+          shared-key: miri-${{ matrix.suite }}
           cache-on-failure: true
       - name: Miri setup
         run: cargo +"$NIGHTLY" miri setup
-      - name: Unit tests
-        run: cargo +"$NIGHTLY" miri test -p neo-j2k-testkit -p neo-j2k --lib --locked
-      - name: Decoder requests
-        run: cargo +"$NIGHTLY" miri test -p neo-j2k --test miri_decode --locked
-      - name: AVX2 kernels
+      - name: Tests (${{ matrix.suite }})
         env:
-          RUSTFLAGS: -C target-feature=+avx2
-          CARGO_TARGET_DIR: target-miri-avx2
-        run: cargo +"$NIGHTLY" miri test -p neo-j2k --lib --locked -- avx2_ interleaved_targets_match_plane_writes_at_every_channel_count
+          MIRI_ARGS: ${{ matrix.args }}
+          MIRI_FILTER: ${{ matrix.filter }}
+        run: |
+          set -euo pipefail
+          # shellcheck disable=SC2086
+          cargo +"$NIGHTLY" miri test $MIRI_ARGS --locked -- $MIRI_FILTER -Zunstable-options --report-time
   quality:
     name: Quality and package
     runs-on: ubuntu-latest
