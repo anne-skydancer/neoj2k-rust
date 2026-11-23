@@ -1,0 +1,14 @@
+
+running 1 test
+Both sides create an encoder per call. The C++ shim copies input and encoded output.
+Request                                            Rust µs    C++ µs Rust/C++
+encode 32x32 RGB / lossless 5/3                     155.71    152.21    1.023
+encode 32x32 RGB / lossy 9/7                        166.47    167.16    0.996
+encode 64x64 RGB / lossless 5/3                     659.88    673.39    0.980
+encode 64x64 RGB / lossy 9/7                        712.41    718.61    0.991
+encode 128x128 RGB / lossless 5/3                  2470.07   2523.20    0.979
+encode 128x128 RGB / lossy 9/7                     2667.32   2739.73    0.974
+test small_encoder_median_latency ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 5 filtered out; finished in 4.69s
+

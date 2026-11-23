@@ -1,0 +1,16 @@
+[package]
+name = "codec-parity-typed-probe"
+version = "0.0.0"
+edition = "2024"
+[features]
+default = ["encode"]
+encode = []
+[dependencies]
+neo-j2k = { path = "C:/Users/annes/source/repos/neoj2k-rust/neo-j2k" }
+neo-j2k-oracle = { path = "C:/Users/annes/source/repos/neoj2k-rust/neo-j2k-oracle" }
+neo-j2k-testkit = { path = "C:/Users/annes/source/repos/neoj2k-rust/neo-j2k-testkit" }
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+debug = "line-tables-only"
