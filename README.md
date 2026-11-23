@@ -250,7 +250,10 @@ this order:
 v0.1.3 (commit `00f273d502d211905adb756d2f75ef74321983d0`). CI checks out exactly that commit, so a later
 C++ `main` never reddens it. The test `cpp_release` fails when the checkout (or the build folder of
 `NJ2K_ORACLE_DIR`) reports another version than the crate's, and the size table test fails when the C++
-arena types differ. Moving to a newer C++ release is a deliberate change: bump the version, the `ref:`
+arena types differ. The pinned SHA is the commit, not the annotated tag object (`git rev-parse v0.1.3^{commit}`). The version
+test compares only major.minor.patch, so a local `NJ2K_CPP_SOURCE` pointing at C++ `main` can pass it and
+still redden the size table test; only CI's `ref:` pins the exact commit.
+Moving to a newer C++ release is a deliberate change: bump the version, the `ref:`
 of the checkouts in `.github/workflows/` and this note together.
 
 The C++ is always built in `RelWithDebInfo` (`NJ2K_ORACLE_CONFIG`), with the dynamic C runtime

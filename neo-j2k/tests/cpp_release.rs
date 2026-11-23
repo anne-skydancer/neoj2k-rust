@@ -5,6 +5,8 @@
 //! crate's own version (`NJ2K_VERSION_*` of its `neoj2k.h`, through the shim). A checkout of another
 //! release fails here first, before any differential test can mislead.
 
+#![cfg(not(miri))]
+
 #[test]
 fn the_cpp_checkout_is_the_crates_release() {
     let (major, minor, patch) = neo_j2k_oracle::cpp_version();
