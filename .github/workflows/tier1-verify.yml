@@ -31,6 +31,10 @@ on:
         description: Also run the Tier-1 benchmark against origin/main (a confirmation, not a gate)
         type: boolean
         default: false
+      asm_ref:
+        description: Only the asm job, of this ref or commit (to read the assembly of another state of the code)
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -45,6 +49,7 @@ env:
 jobs:
   mutation-lists:
     name: Mutation lists
+    if: inputs.asm_ref == ''
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -55,6 +60,7 @@ jobs:
         run: python3 -I tools/tier1_mutations.py --list
   sweeps:
     name: Tier-1 sweeps against the C++ (${{ matrix.cpu }})
+    if: inputs.asm_ref == ''
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     strategy:
@@ -121,6 +127,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
+          ref: ${{ inputs.asm_ref }}
           persist-credentials: false
       - name: Toolchain
         run: rustup show
@@ -128,12 +135,14 @@ jobs:
         run: |
           set -euo pipefail
           # no LTO for this unit (a library unit has nothing to link with), so that --emit asm writes the crate's own code
-          cargo rustc --release --locked -p neo-j2k --lib --config 'profile.release.lto="off"'             -- --emit asm -C debuginfo=0 -C llvm-args=-x86-asm-syntax=intel
+          cargo rustc --release --locked -p neo-j2k --lib --config 'profile.release.lto="off"' \
+            -- --emit asm -C debuginfo=0 -C llvm-args=-x86-asm-syntax=intel
           mkdir -p asm
-          files="$(ls target/release/deps/neo_j2k-*.s)"
-          echo "$files"
-          test "$(echo "$files" | wc -l)" -eq 1
-          cp $files "asm/neo_j2k-${{ matrix.cpu }}.s"
+          find target/release -name '*.s' -size +0 -printf '%s %p\n'
+          # the crate's own unit is the largest one (the others are build scripts, if any)
+          file="$(find target/release -name '*.s' -size +0 -printf '%s %p\n' | sort -rn | head -n 1 | cut -d' ' -f2-)"
+          test -n "$file"
+          cp "$file" "asm/neo_j2k-${{ matrix.cpu }}.s"
           wc -l asm/*.s
       - name: Upload the assembly
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -143,6 +152,7 @@ jobs:
           if-no-files-found: error
   mutations:
     name: Tier-1 mutations (shard ${{ matrix.shard }})
+    if: inputs.asm_ref == ''
     runs-on: ubuntu-26.04
     timeout-minutes: 120
     strategy:
@@ -182,7 +192,7 @@ jobs:
           python3 -I tools/tier1_mutations.py --shard ${{ matrix.shard }}/4
   bench-confirm:
     name: Tier-1 benchmark (confirmation, not a gate)
-    if: github.event_name == 'workflow_dispatch' && inputs.bench
+    if: github.event_name == 'workflow_dispatch' && inputs.bench && inputs.asm_ref == ''
     runs-on: ubuntu-26.04
     timeout-minutes: 90
     continue-on-error: true
