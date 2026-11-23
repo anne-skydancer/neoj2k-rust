@@ -334,10 +334,10 @@ tile buffer, the encoder's `enc_t1_encode` and its commit, and the MQ decoder's 
   "MQNG" files); with `NJ2K_T1_VECTORS` naming the C++'s full dump set (37,424 blocks, not committed) that is run too;
 - the C++ decoder tests' other block sets: segments longer than the bytes (`test_overlong`, lengths up to 0xFFFFFFFF),
   a raw segment holding a cleanup pass (`test_raw_cleanup`), tiny blocks over every sign and significance pattern of a
-  column (`test_split`, 5.8 million blocks here, 3.84 million in the C++, trimmed in the normal run and complete in nightly with the count of the
-  patterns it must see), blocks stored into a tile buffer of another stride and offset, and the store alone around every
-  ROI threshold; not mirrored: the table and AGG-run tests of the C++ (`test_tables`, `test_agg_run`), which check its
-  own reformulations;
+  column (`test_split`, 5.8 million blocks here, 3.84 million in the C++, trimmed in the normal run and complete in
+  nightly with the count of the patterns it must see), blocks stored into a tile buffer of another stride and offset,
+  and the store alone around every ROI threshold; not mirrored: the table and AGG-run tests of the C++ (`test_tables`,
+  `test_agg_run`), which check its own reformulations;
 - generated code-blocks as `tests/unit/t1_unit.cpp` and `tests/unit/enc_t1_unit.cpp` draw them: every size 1..64 x 1..64
   (partial stripes included), the edge sizes in all 64 code-block styles and 4 orientations, the long shapes (1024 x 4
   and the like), hostile bit-planes and ROI shifts, segments longer than the bytes, split chunks, both wavelets; for the
@@ -347,11 +347,12 @@ tile buffer, the encoder's `enc_t1_encode` and its commit, and the MQ decoder's 
   every decision, at short buffer capacities too), the single decisions of the C++ unit tests, from every state at the
   intervals around the exchange and renormalisation edges, and the encoder's flush from registers around its boundary
   (`c | 0xFFFF == c + a`). The streams are compared with the shim's restatement of the C++'s start of a coder (INITDEC is
-  local to `src/t1.cpp`; `shim_t1.cpp` says so), the code-block tests with the real one. The normal run takes the trimmed enumeration: 6.5 million
-  decoder decisions (every 17th interval and the edges, as the C++ unit test's default) and 19 million encoder decisions
-  (every 4th interval, and every combination at the edges), in a few seconds.
+  local to `src/t1.cpp`; `shim_t1.cpp` says so), the code-block tests with the real one. The normal run takes the
+  trimmed enumeration: 6.5 million decoder decisions (every 17th interval and the edges, as the C++ unit test's default)
+  and 19 million encoder decisions (every 4th interval, and every combination at the edges), in a few seconds.
 
-The long runs are `#[ignore]`d tests named `nightly_*`, run by `nightly.yml` (job `tier1-sweeps`, at both CPU levels) or by hand:
+The long runs are `#[ignore]`d tests named `nightly_*`, run by `nightly.yml` (job `tier1-sweeps`, at both CPU levels)
+or by hand:
 
 ```
 NJ2K_CPP_SOURCE=/path/to/neo-j2k cargo test --release --locked -p neo-j2k --lib -- --ignored nightly_

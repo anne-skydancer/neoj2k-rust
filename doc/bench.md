@@ -85,7 +85,8 @@ day) before it is believed; no separate build of the base from another path is n
 - The pass is long (30 Mcycles or more a unit) but not isolated from the operating system: 24 rounds and the median
   take most of that out, not all. A short smoke run (`--rounds 3 --min-mcycles 2`) proves the program works and
   proves nothing about speed.
-- The decoder sets time the store as well as `t1_decode_cblk`, and the encoder sets the copy of the samples in and of the passes and bytes out as well as `enc_t1_encode`; a change that only touches those moves them.
+- The decoder sets time the store as well as `t1_decode_cblk`, and the encoder sets the copy of the samples in and of the
+  passes and bytes out as well as `enc_t1_encode`; a change that only touches those moves them.
 - The encoder sets are 64 x 64 blocks of two textures; a change that helps another kind of block (a sparse one, a
   small one) may not show.
 - Absolute cycles depend on the CPU and on the build (`baseline` against `x86-64-v3`): compare builds of one run, not
