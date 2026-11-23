@@ -2,6 +2,7 @@
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 // OpenJPEG's MQ and raw readers, ported through src/t1.cpp. See the notice in t1.rs.
 
+use core::cell::Cell;
 use core::hint::select_unpredictable;
 
 use super::tables::MQ_STATES;
@@ -44,44 +45,57 @@ const INITIAL_CONTEXTS: [u32; CONTEXT_SLOTS] = {
     contexts
 };
 
-/// The registers a renormalisation that needs a byte works on, passed by value so that the decoder's own fields stay in
-/// registers (no address escapes) on the path that never needs one.
-#[derive(Clone, Copy)]
-struct Registers<'a> {
+/// The byte source of a codeword segment: the bytes not read yet and the last one read. Only the byte-in path, which
+/// a decision reaches 0.07 to 0.11 of the time, and the raw reader touch it.
+#[derive(Clone, Copy, Debug)]
+struct Source<'a> {
     data: &'a [u8],
     current: u32,
+}
+
+impl Source<'_> {
+    /// BYTEIN of ISO 15444-1 C.3.4: the next byte into the code register `c` (a 0xff before a byte above 0x8f is a
+    /// marker and gives 0xff00 with no byte taken). Returns the code register and the count of bits it now holds.
+    fn byte_in(&mut self, c: u32) -> (u32, u32) {
+        let (next, rest) = next_byte(self.data);
+        let stuffed = self.current == 0xff;
+        if stuffed && next > 0x8f {
+            (c.wrapping_add(0xff00), 8)
+        } else {
+            self.data = rest;
+            self.current = next;
+            let bits = 8 - u32::from(stuffed);
+            (c.wrapping_add(next << (16 - bits)), bits)
+        }
+    }
+}
+
+fn next_byte(data: &[u8]) -> (u32, &[u8]) {
+    // The two artificial 0xff bytes form a marker. The existing byte-in logic stops on it.
+    data.split_first()
+        .map_or((0xff, data), |(&byte, rest)| (u32::from(byte), rest))
+}
+
+/// The three registers of the decision: the interval `a`, the code register `c` and the count `bits` of bits `c` can
+/// still shift before a byte is needed. They are the only state that changes at every decision.
+#[derive(Clone, Copy, Debug)]
+struct Registers {
     a: u32,
     c: u32,
     bits: u32,
 }
 
-impl Registers<'_> {
-    fn byte_in(&mut self) {
-        let (next, rest) = Decoder::next_byte(self.data);
-        let stuffed = self.current == 0xff;
-        let contribution = if stuffed && next > 0x8f {
-            self.bits = 8;
-            0xff00
-        } else {
-            self.data = rest;
-            self.current = next;
-            self.bits = 8 - u32::from(stuffed);
-            next << (16 - self.bits)
-        };
-        self.c = self.c.wrapping_add(contribution);
-    }
-}
-
 /// RENORMD when the code register has fewer bits than the interval needs shifts (a byte comes in: 0.07 to 0.11 of a
-/// decision): the shifts taken as many at a time as the register has bits, a byte read whenever none is left.
+/// decision): the shifts taken as many at a time as the register has bits, a byte read whenever none is left. The
+/// registers go in and out by value, so that the decision's own copies stay in machine registers (no address escapes).
 #[cold]
 #[inline(never)]
-fn renormalize_with_bytes(mut r: Registers<'_>, total: u32) -> Registers<'_> {
+fn renormalize_with_bytes(mut r: Registers, source: &mut Source<'_>, total: u32) -> Registers {
     let mut shifts = total;
     while shifts > r.bits {
         r.c <<= r.bits;
         shifts -= r.bits;
-        r.byte_in();
+        (r.c, r.bits) = source.byte_in(r.c);
     }
     r.a <<= total;
     r.c <<= shifts;
@@ -89,26 +103,37 @@ fn renormalize_with_bytes(mut r: Registers<'_>, total: u32) -> Registers<'_> {
     r
 }
 
-/// One code-block's arithmetic registers and contexts, reused across its codeword segments. A pass copies it into a
-/// local for its length, so that the registers live in machine registers, and copies it back.
+/// One code-block's arithmetic state, reused across its codeword segments: the registers, the byte source and the
+/// contexts, in three fields that a pass takes apart (`enter`), so that the registers are plain locals of the pass.
 #[derive(Clone, Copy, Debug)]
 pub(super) struct Decoder<'a> {
-    data: &'a [u8],
-    current: u32,
+    source: Source<'a>,
+    registers: Registers,
+    contexts: [u32; CONTEXT_SLOTS],
+}
+
+/// A pass's view of the decoder: the registers as locals (held in machine registers for the whole pass: they are
+/// never indexed or addressed, and the context array is a separate object they do not share a block with), and the
+/// byte source and the contexts by reference. `leave` writes the registers back.
+#[derive(Debug)]
+pub(super) struct Mq<'d, 'a> {
     a: u32,
     c: u32,
     bits: u32,
-    contexts: [u32; CONTEXT_SLOTS],
+    source: &'d mut Source<'a>,
+    contexts: &'d mut [u32; CONTEXT_SLOTS],
+    home: &'d mut Registers,
 }
 
 impl<'a> Decoder<'a> {
     pub(super) fn new() -> Self {
         Self {
-            data: &[],
-            current: 0,
-            a: 0x8000,
-            c: 0,
-            bits: 0,
+            source: Source { data: &[], current: 0 },
+            registers: Registers {
+                a: 0x8000,
+                c: 0,
+                bits: 0,
+            },
             contexts: INITIAL_CONTEXTS,
         }
     }
@@ -118,36 +143,64 @@ impl<'a> Decoder<'a> {
     }
 
     pub(super) fn start_segment(&mut self, data: &'a [u8], raw: bool) {
-        self.data = data;
+        self.source.data = data;
+        let r = &mut self.registers;
         if raw {
-            self.c = 0;
-            self.bits = 0;
+            r.c = 0;
+            r.bits = 0;
         } else {
-            (self.current, self.data) = Self::next_byte(data);
-            self.c = self.current << 16;
-            self.byte_in();
-            self.c <<= 7;
-            self.bits -= 7;
-            self.a = 0x8000;
+            (self.source.current, self.source.data) = next_byte(data);
+            r.c = self.source.current << 16;
+            (r.c, r.bits) = self.source.byte_in(r.c);
+            r.c <<= 7;
+            r.bits -= 7;
+            r.a = 0x8000;
         }
     }
 
-    fn next_byte(data: &[u8]) -> (u32, &[u8]) {
-        // The two artificial 0xff bytes form a marker. The existing byte-in logic stops on it.
-        data.split_first()
-            .map_or((0xff, data), |(&byte, rest)| (u32::from(byte), rest))
+    /// Takes the registers into locals for a pass; the pass ends with `Mq::leave`.
+    #[inline(always)]
+    pub(super) fn enter(&mut self) -> Mq<'_, 'a> {
+        let Self {
+            source,
+            registers,
+            contexts,
+        } = self;
+        Mq {
+            a: registers.a,
+            c: registers.c,
+            bits: registers.bits,
+            source,
+            contexts,
+            home: registers,
+        }
     }
 
-    fn byte_in(&mut self) {
-        let mut r = Registers {
-            data: self.data,
-            current: self.current,
+    #[cfg(test)]
+    fn symbol(&mut self, context: usize) -> u32 {
+        let mut mq = self.enter();
+        let bit = mq.symbol(context);
+        mq.leave();
+        bit
+    }
+
+    #[cfg(test)]
+    fn aggregate_run(&mut self, flags: &[Cell<u32>]) -> usize {
+        let mut mq = self.enter();
+        let run = mq.aggregate_run(flags);
+        mq.leave();
+        run
+    }
+}
+
+impl Mq<'_, '_> {
+    #[inline(always)]
+    pub(super) fn leave(self) {
+        *self.home = Registers {
             a: self.a,
             c: self.c,
             bits: self.bits,
         };
-        r.byte_in();
-        (self.data, self.current, self.c, self.bits) = (r.data, r.current, r.c, r.bits);
     }
 
     /// The decision of ISO 15444-1 C.3.2 with its renormalisation, as the C++'s `opj_mqc_decode_macro`: the branches
@@ -183,15 +236,14 @@ impl<'a> Decoder<'a> {
         } else {
             let r = renormalize_with_bytes(
                 Registers {
-                    data: self.data,
-                    current: self.current,
                     a,
                     c: self.c,
                     bits: self.bits,
                 },
+                self.source,
                 total,
             );
-            (self.data, self.current, self.a, self.c, self.bits) = (r.data, r.current, r.a, r.c, r.bits);
+            (self.a, self.c, self.bits) = (r.a, r.c, r.bits);
         }
         bit
     }
@@ -205,7 +257,7 @@ impl<'a> Decoder<'a> {
     /// (0: no run, the caller decides as usual) take `a -= n * qe` and `c -= (n * qe) << 16` at once: no state
     /// change, no byte.
     #[inline(always)]
-    pub(super) fn aggregate_run(&mut self, flags: &[u32]) -> usize {
+    pub(super) fn aggregate_run(&mut self, flags: &[Cell<u32>]) -> usize {
         let word = self.contexts[CONTEXT_AGGREGATE & (CONTEXT_SLOTS - 1)];
         let qeval = word & 0xffff;
         let room = (self.a - 0x8000).min(self.c >> 16);
@@ -214,7 +266,7 @@ impl<'a> Decoder<'a> {
         }
         let mut used = qeval;
         let mut n = 1;
-        while n < flags.len() && flags[n] == 0 && used + qeval <= room {
+        while n < flags.len() && flags[n].get() == 0 && used + qeval <= room {
             used += qeval;
             n += 1;
         }
@@ -226,13 +278,13 @@ impl<'a> Decoder<'a> {
     #[inline(always)]
     pub(super) fn raw(&mut self) -> u32 {
         if self.bits == 0 {
-            let (next, rest) = Self::next_byte(self.data);
+            let (next, rest) = next_byte(self.source.data);
             if self.c == 0xff && next > 0x8f {
                 self.bits = 8;
             } else {
                 self.bits = if self.c == 0xff { 7 } else { 8 };
                 self.c = next;
-                self.data = rest;
+                self.source.data = rest;
             }
         }
         self.bits -= 1;

@@ -130,14 +130,19 @@
   "file": "neo-j2k/src/t1/mq.rs",
   "old": "if (word >> MPS_BIT) & 1 != 0 ||",
   "new": "if false ||",
-  "tests": ["t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"]
+  "tests": [
+   "t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time"
+  ]
  },
  {
   "name": "AGG run: the flag word of the next column ignored",
   "file": "neo-j2k/src/t1/mq.rs",
-  "old": "while n < flags.len() && flags[n] == 0 &&",
+  "old": "while n < flags.len() && flags[n].get() == 0 &&",
   "new": "while n < flags.len() &&",
-  "tests": ["t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation", "t1::differential::committed_vectors_decode_as_the_cpp_does"]
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ]
  },
  {
   "name": "AGG run: the code register lowered by n * qe, not shifted to its high half",
@@ -158,10 +163,10 @@
   ]
  },
  {
-  "name": "AGG run in the cleanup pass: taken in a partial stripe",
+  "name": "cleanup pass: a stripe of three lanes taken for a full one",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "if rows == 4 && column == 0 {\n                    // A run",
-  "new": "if column == 0 {\n                    // A run",
+  "old": "if rows == 4 {\n                Self::cleanup_full",
+  "new": "if rows >= 3 {\n                Self::cleanup_full",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation"
   ]
@@ -187,10 +192,10 @@
   ]
  },
  {
-  "name": "sigma/chi: the sign context reads the flags without chi (cleanup)",
+  "name": "sigma/chi: the sign context reads the flags without chi (cleanup, and the sign after the AGG run)",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "let sign = self.sign(decoder, index, lane, *column | *chi);",
-  "new": "let sign = self.sign(decoder, index, lane, *column);",
+  "old": "let sign = Self::sign(mq, stripe, col, lane, column.flags | column.chi);",
+  "new": "let sign = Self::sign(mq, stripe, col, lane, column.flags);",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
    "t1::differential::committed_vectors_decode_as_the_cpp_does"
@@ -199,8 +204,8 @@
  {
   "name": "sigma/chi: the sign context reads the flags without chi (significance)",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "self.sign(decoder, index, lane, column | chi)",
-  "new": "self.sign(decoder, index, lane, column)",
+  "old": "Self::sign(mq, stripe, col, lane, column.flags | column.chi)\n            };",
+  "new": "Self::sign(mq, stripe, col, lane, column.flags)\n            };",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
    "t1::differential::committed_vectors_decode_as_the_cpp_does"
@@ -209,48 +214,40 @@
  {
   "name": "sigma/chi: the closing store drops chi (significance)",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "self.flags[index] = column | chi;",
-  "new": "self.flags[index] = column;",
+  "old": "stripe.here.mid[col].set(column.flags | column.chi);",
+  "new": "stripe.here.mid[col].set(column.flags);",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
    "t1::differential::committed_vectors_decode_as_the_cpp_does"
-  ]
+  ],
+  "count": 2
  },
  {
   "name": "sigma/chi: the closing store drops chi (cleanup)",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "self.flags[index] = (column | chi) & !ALL_PI;",
-  "new": "self.flags[index] = column & !ALL_PI;",
+  "old": "stripe.here.mid[col].set((column.flags | column.chi) & !ALL_PI);",
+  "new": "stripe.here.mid[col].set(column.flags & !ALL_PI);",
+  "tests": [
+   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
+   "t1::differential::committed_vectors_decode_as_the_cpp_does"
+  ],
+  "count": 2
+ },
+ {
+  "name": "sigma/chi: the sign placed one row down",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "column.chi |= (sign << CHI_THIS_BIT) << shift;",
+  "new": "column.chi |= (sign << CHI_THIS_BIT) << (shift + 3);",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
    "t1::differential::committed_vectors_decode_as_the_cpp_does"
   ]
  },
  {
-  "name": "sigma/chi: the sign placed one row down (significance)",
+  "name": "sigma/chi: the significance bit left out of the column",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "chi |= (sign << CHI_THIS_BIT) << shift;",
-  "new": "chi |= (sign << CHI_THIS_BIT) << (shift + 3);",
-  "tests": [
-   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
-   "t1::differential::committed_vectors_decode_as_the_cpp_does"
-  ]
- },
- {
-  "name": "sigma/chi: the sign placed one row down (cleanup)",
-  "file": "neo-j2k/src/t1/passes.rs",
-  "old": "*chi |= (sign << CHI_THIS_BIT) << (lane * 3);",
-  "new": "*chi |= (sign << CHI_THIS_BIT) << (lane * 3 + 3);",
-  "tests": [
-   "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
-   "t1::differential::committed_vectors_decode_as_the_cpp_does"
-  ]
- },
- {
-  "name": "sigma/chi: the significance bit left out of the column (cleanup)",
-  "file": "neo-j2k/src/t1/passes.rs",
-  "old": "*column |= SIGMA_THIS << (lane * 3);",
-  "new": "*column |= 0;",
+  "old": "column.flags |= SIGMA_THIS << shift;",
+  "new": "column.flags |= 0;",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
    "t1::differential::committed_vectors_decode_as_the_cpp_does"

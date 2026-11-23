@@ -197,21 +197,15 @@ impl Scratch {
         };
         reserve_fixed(&mut self.data, MAX_SAMPLES)?;
         reserve_fixed(&mut self.flags, MAX_FLAGS)?;
-        let single_stripe = height <= 4;
-        let used_flags = if single_stripe { width + 2 } else { flag_count };
         let mut passes = Passes {
             data: &mut self.data[..samples],
-            flags: &mut self.flags[..used_flags],
+            flags: &mut self.flags[..flag_count],
             width,
             height,
             orient: orient as usize,
             vertical_causal: cblksty & VERTICAL_CAUSAL != 0,
         };
-        if single_stripe {
-            decode_single_stripe(&mut passes, block, bitplane, bytes);
-        } else {
-            decode_passes::<false>(&mut passes, block, bitplane, bytes);
-        }
+        decode_passes(&mut passes, block, bitplane, bytes);
         store_coefficients::<true>(
             &mut self.data[..samples],
             &mut output[offset..last_end],
@@ -225,25 +219,14 @@ impl Scratch {
     }
 }
 
-#[inline(never)]
-fn decode_single_stripe(passes: &mut Passes<'_>, block: Block<'_>, bitplane: i32, bytes: &[u8]) {
-    decode_passes::<true>(passes, block, bitplane, bytes);
-}
-
-#[inline(always)]
-fn decode_passes<const SINGLE_STRIPE: bool>(
-    passes: &mut Passes<'_>,
-    block: Block<'_>,
-    mut bitplane: i32,
-    mut bytes: &[u8],
-) {
+fn decode_passes(passes: &mut Passes<'_>, block: Block<'_>, mut bitplane: i32, mut bytes: &[u8]) {
     let Block {
         numbps,
         cblksty,
         segments,
         ..
     } = block;
-    passes.initialize::<SINGLE_STRIPE>();
+    passes.initialize();
 
     let mut decoder = Decoder::new();
     let mut pass = 2;
@@ -272,11 +255,11 @@ fn decode_passes<const SINGLE_STRIPE: bool>(
             }
             let plane = u32::try_from(bitplane).expect("positive bit-plane index");
             match pass {
-                0 if raw => passes.significance::<true, SINGLE_STRIPE>(&mut decoder, plane),
-                0 => passes.significance::<false, SINGLE_STRIPE>(&mut decoder, plane),
-                1 if raw => passes.refinement::<true, SINGLE_STRIPE>(&mut decoder, plane),
-                1 => passes.refinement::<false, SINGLE_STRIPE>(&mut decoder, plane),
-                2 => passes.cleanup::<SINGLE_STRIPE>(&mut decoder, plane, segment_symbol),
+                0 if raw => passes.significance::<true>(&mut decoder, plane),
+                0 => passes.significance::<false>(&mut decoder, plane),
+                1 if raw => passes.refinement::<true>(&mut decoder, plane),
+                1 => passes.refinement::<false>(&mut decoder, plane),
+                2 => passes.cleanup(&mut decoder, plane, segment_symbol),
                 _ => unreachable!("a code-block cycles through three coding passes"),
             }
             if reset && !raw {

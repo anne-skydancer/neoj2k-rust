@@ -34,9 +34,9 @@ fn registers(decoder: &Decoder<'_>, bp: u32) -> MqDecoderRegs {
         *s = index_of(word);
     }
     MqDecoderRegs {
-        a: decoder.a,
-        c: decoder.c,
-        ct: decoder.bits,
+        a: decoder.registers.a,
+        c: decoder.registers.c,
+        ct: decoder.registers.bits,
         bp,
         state,
     }
@@ -47,19 +47,19 @@ fn registers(decoder: &Decoder<'_>, bp: u32) -> MqDecoderRegs {
 fn rust_case(case: &MqDecodeCase) -> MqDecodeResult {
     let tail = [case.bytes[1], case.bytes[2], case.bytes[3], 0xff, 0xff];
     let mut decoder = Decoder::new();
-    decoder.data = &tail;
-    decoder.current = u32::from(case.bytes[0]);
-    decoder.a = case.a;
-    decoder.c = case.c;
-    decoder.bits = case.ct;
+    decoder.source.data = &tail;
+    decoder.source.current = u32::from(case.bytes[0]);
+    decoder.registers.a = case.a;
+    decoder.registers.c = case.c;
+    decoder.registers.bits = case.ct;
     decoder.contexts[0] = PACKED_STATES[case.state as usize];
     let bit = decoder.symbol(0);
     MqDecodeResult {
         bit,
-        a: decoder.a,
-        c: decoder.c,
-        ct: decoder.bits,
-        bp: u32::try_from(tail.len() - decoder.data.len()).unwrap(),
+        a: decoder.registers.a,
+        c: decoder.registers.c,
+        ct: decoder.registers.bits,
+        bp: u32::try_from(tail.len() - decoder.source.data.len()).unwrap(),
         state: u32::from(index_of(decoder.contexts[0])),
     }
 }
@@ -149,7 +149,7 @@ fn run_streams(seed: u64, count: u32) -> u64 {
         for &c in &contexts {
             decoder.symbol(usize::from(c));
         }
-        let consumed = u32::try_from(with_marker.len() - 1 - decoder.data.len()).unwrap();
+        let consumed = u32::try_from(with_marker.len() - 1 - decoder.source.data.len()).unwrap();
         assert_eq!(consumed, want.bp, "stream {stream} (seed {seed:#x}): read position");
         decisions += n as u64;
     }

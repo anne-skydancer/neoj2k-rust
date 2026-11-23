@@ -76,6 +76,21 @@ def plan(env):
             raise SystemExit("perf_summary: rounds must be a multiple of 6 from 6 to 120 (each of the six orders "
                              "the builds run in is taken equally often), not %d" % rounds)
     pairs = [p for p in PAIRS if p[0] == QUICK_PAIR] if quick else PAIRS
+    # a dispatch may name one pair of its own (any two refs): the gate then runs that pair only, and the Rust-versus-C++
+    # jobs only when asked for
+    base = (env.get("PAIR_BASE_IN") or "").strip()
+    head = (env.get("PAIR_HEAD_IN") or "").strip()
+    if bool(base) != bool(head):
+        raise SystemExit("perf_summary: pair_base and pair_head go together")
+    custom = bool(base)
+    if custom:
+        side = (env.get("PAIR_SIDE_IN") or "").strip() or "decode"
+        if side not in ("decode", "encode"):
+            raise SystemExit("perf_summary: pair_side is decode or encode, not %r" % side)
+        name = (env.get("PAIR_NAME_IN") or "").strip() or "adhoc-" + side
+        if not re.fullmatch(r"[A-Za-z0-9._-]+", name):
+            raise SystemExit("perf_summary: pair_name may hold letters, digits, '.', '_' and '-' only, not %r" % name)
+        pairs = [(name, base, head, side)]
     gate = [{"name": name, "base": base, "head": head, "side": side, "os": os_name, "cpu": cpu,
              "py": "python" if os_name.startswith("windows") else "python3"}
             for name, base, head, side in pairs for os_name in GATE_OS for cpu in CPU_LEVELS]
@@ -95,9 +110,12 @@ def plan(env):
             cells.append({"os": os_name, "cpu": cpu, "rustflags": RUSTFLAGS[cpu], "preset": preset,
                           "compiler": compiler, "oracle": oracle, "like": like,
                           "py": "python" if not linux else "python3"})
+    if custom and (env.get("VS_CPP_IN") or "").strip().lower() != "true":
+        cells = []
     return {"quick": "true" if quick else "false", "rounds": str(rounds), "reps": "1" if quick else "3",
             "bench_args": QUICK_BENCH_ARGS if quick else "",
-            "gate": json.dumps({"include": gate}), "cells": json.dumps({"include": cells})}
+            "gate": json.dumps({"include": gate}), "cells": json.dumps({"include": cells}),
+            "cells_count": str(len(cells))}
 
 
 def cpu_name():
@@ -495,6 +513,20 @@ def selftest():
         ("ubuntu-26.04", "baseline", "scalar", "yes"), ("ubuntu-26.04", "x86-64-v3", "AVX2", "yes"),
         ("windows-2025", "baseline", "AVX2", "no"), ("windows-2025", "x86-64-v3", "AVX2", "yes")]
     assert plan({"EVENT_NAME": "workflow_dispatch", "QUICK_IN": "true", "ROUNDS_IN": "24"})["rounds"] == "3"
+    # a pair of the dispatch's own: that pair only, no Rust-versus-C++ cell unless asked for
+    own = {"EVENT_NAME": "workflow_dispatch", "ROUNDS_IN": "12", "PAIR_BASE_IN": "aaa", "PAIR_HEAD_IN": "bbb",
+           "PAIR_SIDE_IN": "decode", "PAIR_NAME_IN": "mine"}
+    gate = json.loads(plan(own)["gate"])["include"]
+    assert len(gate) == 4 and {(g["name"], g["base"], g["head"], g["side"]) for g in gate} == {("mine", "aaa", "bbb", "decode")}
+    assert plan(own)["cells_count"] == "0" and plan(dict(own, VS_CPP_IN="true"))["cells_count"] == "4"
+    assert full["cells_count"] == "4"
+    for bad in ({"PAIR_HEAD_IN": ""}, {"PAIR_SIDE_IN": "both"}, {"PAIR_NAME_IN": "a b"}):
+        try:
+            plan(dict(own, **bad))
+        except SystemExit:
+            pass
+        else:
+            raise AssertionError("a bad pair was accepted: %r" % bad)
     assert plan({"EVENT_NAME": "workflow_dispatch", "QUICK_IN": "", "ROUNDS_IN": "12"})["rounds"] == "12"
     for bad in ("x", "0", "5", "7", "126", "", "-6", "٣٦", "6.0", "1e1"):
         if bad == "":
