@@ -7,6 +7,8 @@
 #   mutation-lists  every pattern of tools/mutations/*.json still occurs the stated number of times
 #   sweeps          the long Tier-1 comparisons with the C++ (nightly.yml's tier1-sweeps), both CPU levels
 #   mutations       each mutation of the lists, applied to a scratch copy, must make a named test fail
+#   asm             the compiler's output for the crate in the release profile, both CPU levels, as artifacts (no oracle,
+#                   no tests): to read the hot loops (stores of the MQ registers, cmov or branch, bounds-check panics)
 #   bench-confirm   by hand only: the Tier-1 benchmark, base against head, a confirmation and not a gate
 # A list of mutations ships with the code it tests, so with no list the mutation jobs pass at once.
 name: Tier-1 verification
@@ -100,6 +102,45 @@ jobs:
           # the sweeps are the six tests named nightly_: a rename that makes the filter match fewer must not pass
           passed="$(sed -n 's/^test result: ok\. \([0-9]*\) passed.*/\1/p' sweeps.log)"
           test "${passed:-0}" -ge 6 || { echo "::error::only ${passed:-0} nightly_ tests ran, six expected"; exit 1; }
+  asm:
+    name: Assembly of the crate (${{ matrix.cpu }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        cpu: [baseline, x86-64-v3]
+        include:
+          - cpu: baseline
+            rustflags: ""
+          - cpu: x86-64-v3
+            rustflags: -C target-cpu=x86-64-v3
+    env:
+      CARGO_INCREMENTAL: "0"
+      RUSTFLAGS: ${{ matrix.rustflags }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Toolchain
+        run: rustup show
+      - name: The library in the release profile, assembly out (the oracle is a dev-dependency and is not built)
+        run: |
+          set -euo pipefail
+          # no LTO for this unit (a library unit has nothing to link with), so that --emit asm writes the crate's own code
+          cargo rustc --release --locked -p neo-j2k --lib --config 'profile.release.lto="off"'             -- --emit asm -C debuginfo=0 -C llvm-args=-x86-asm-syntax=intel
+          mkdir -p asm
+          files="$(ls target/release/deps/neo_j2k-*.s)"
+          echo "$files"
+          test "$(echo "$files" | wc -l)" -eq 1
+          cp $files "asm/neo_j2k-${{ matrix.cpu }}.s"
+          wc -l asm/*.s
+      - name: Upload the assembly
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: asm-${{ matrix.cpu }}-${{ github.run_attempt }}
+          path: asm/
+          if-no-files-found: error
   mutations:
     name: Tier-1 mutations (shard ${{ matrix.shard }})
     runs-on: ubuntu-26.04

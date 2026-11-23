@@ -10,6 +10,8 @@
 #   rust-vs-cpp   per OS and CPU level: the whole-codec suites that time Rust and the C++ oracle in one process,
 #                 three repetitions, one table (tools/perf_summary.py)
 # By hand: gh workflow run perf.yml --ref main -f rounds=24
+# Any one pair: gh workflow run perf.yml --ref BRANCH -f pair_base=SHA -f pair_head=SHA -f pair_side=decode
+#   [-f pair_name=NAME] [-f vs_cpp=true]  (only that pair, and the Rust-versus-C++ jobs only with vs_cpp)
 # A pull request that touches this workflow or its two tools runs it once in quick mode (3 rounds, one pair, one
 # repetition), as a smoke test: those numbers prove the workflow works and nothing about speed.
 name: Performance
@@ -23,6 +25,26 @@ on:
         default: "24"
       quick:
         description: Quick mode (3 rounds, one pair, one repetition); a smoke test, not a measurement
+        type: boolean
+        default: false
+      pair_base:
+        description: "One pair of your own, the base (a ref or commit; with pair_head): only that pair runs"
+        type: string
+        default: ""
+      pair_head:
+        description: One pair of your own, the head (a ref or commit; with pair_base)
+        type: string
+        default: ""
+      pair_side:
+        description: The side the pair changes (decode or encode); only names the pair
+        type: string
+        default: decode
+      pair_name:
+        description: The pair's name (default adhoc-decode or adhoc-encode)
+        type: string
+        default: ""
+      vs_cpp:
+        description: With a pair of your own, also run the Rust-versus-C++ jobs (they are off otherwise)
         type: boolean
         default: false
   pull_request:
@@ -55,6 +77,7 @@ jobs:
       bench_args: ${{ steps.plan.outputs.bench_args }}
       gate: ${{ steps.plan.outputs.gate }}
       cells: ${{ steps.plan.outputs.cells }}
+      cells_count: ${{ steps.plan.outputs.cells_count }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -67,6 +90,11 @@ jobs:
           EVENT_NAME: ${{ github.event_name }}
           QUICK_IN: ${{ inputs.quick }}
           ROUNDS_IN: ${{ inputs.rounds }}
+          PAIR_BASE_IN: ${{ inputs.pair_base }}
+          PAIR_HEAD_IN: ${{ inputs.pair_head }}
+          PAIR_SIDE_IN: ${{ inputs.pair_side }}
+          PAIR_NAME_IN: ${{ inputs.pair_name }}
+          VS_CPP_IN: ${{ inputs.vs_cpp }}
         run: python3 -I tools/perf_summary.py plan
   gate-pairs:
     name: PAIR ${{ matrix.name }} (${{ matrix.os }}, ${{ matrix.cpu }})
@@ -158,6 +186,7 @@ jobs:
   rust-vs-cpp:
     name: Rust versus C++ (${{ matrix.os }}, ${{ matrix.cpu }})
     needs: plan
+    if: needs.plan.outputs.cells_count != '0'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     strategy:
