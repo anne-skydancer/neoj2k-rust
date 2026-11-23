@@ -1,0 +1,182 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# The verification of a change to Tier-1 (the MQ coder, the decoder's and the encoder's code-block
+# passes), on a pull request that touches it and by hand (doc/bench.md, "Verifying a Tier-1 change in
+# CI"). Nothing here replaces ci.yml; the jobs are the ones too long for every push:
+#   mutation-lists  every pattern of tools/mutations/*.json still occurs the stated number of times
+#   sweeps          the long Tier-1 comparisons with the C++ (nightly.yml's tier1-sweeps), both CPU levels
+#   mutations       each mutation of the lists, applied to a scratch copy, must make a named test fail
+#   bench-confirm   by hand only: the Tier-1 benchmark, base against head, a confirmation and not a gate
+# A list of mutations ships with the code it tests, so with no list the mutation jobs pass at once.
+name: Tier-1 verification
+
+on:
+  pull_request:
+    paths:
+      - neo-j2k/src/t1.rs
+      - neo-j2k/src/t1/**
+      - neo-j2k/src/encoder/tier1.rs
+      - neo-j2k/src/encoder/tier1/**
+      - neo-j2k-oracle/**
+      - tools/tier1_mutations.py
+      - tools/mutations/**
+      - Cargo.toml
+      - .github/workflows/tier1-verify.yml
+  workflow_dispatch:
+    inputs:
+      bench:
+        description: Also run the Tier-1 benchmark against origin/main (a confirmation, not a gate)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tier1-verify-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  mutation-lists:
+    name: Mutation lists
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Every pattern of every list occurs the stated number of times
+        run: python3 -I tools/tier1_mutations.py --list
+  sweeps:
+    name: Tier-1 sweeps against the C++ (${{ matrix.cpu }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        cpu: [baseline, x86-64-v3]
+        include:
+          - cpu: baseline
+            rustflags: ""
+          - cpu: x86-64-v3
+            rustflags: -C target-cpu=x86-64-v3
+    env:
+      CARGO_INCREMENTAL: "0"
+      NJ2K_ORACLE_NO_BUILD: "0"
+      NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      CC: gcc-15
+      CXX: g++-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          ref: 00f273d502d211905adb756d2f75ef74321983d0 # neo-j2k v0.1.3
+          persist-credentials: false
+          path: cpp
+      - name: C++ toolchain
+        run: |
+          set -euo pipefail
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ninja-build g++-15
+      - name: Toolchain
+        run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          shared-key: verify-sweeps-${{ matrix.cpu }}
+          cache-on-failure: true
+      - name: Every single decision of the MQ decoder and encoder, the flush, and the long code-block draws
+        run: |
+          set -euo pipefail
+          cargo test --release --locked -p neo-j2k --lib -- --ignored nightly_ | tee sweeps.log
+          # the sweeps are the six tests named nightly_: a rename that makes the filter match fewer must not pass
+          passed="$(sed -n 's/^test result: ok\. \([0-9]*\) passed.*/\1/p' sweeps.log)"
+          test "${passed:-0}" -ge 6 || { echo "::error::only ${passed:-0} nightly_ tests ran, six expected"; exit 1; }
+  mutations:
+    name: Tier-1 mutations (shard ${{ matrix.shard }})
+    runs-on: ubuntu-26.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    env:
+      NJ2K_ORACLE_NO_BUILD: "0"
+      NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+      CC: gcc-15
+      CXX: g++-15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          ref: 00f273d502d211905adb756d2f75ef74321983d0 # neo-j2k v0.1.3
+          persist-credentials: false
+          path: cpp
+      - name: C++ toolchain
+        run: |
+          set -euo pipefail
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ninja-build g++-15
+      - name: Toolchain
+        run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          shared-key: verify-mutations
+          cache-on-failure: true
+      - name: Each mutation must make a named test fail (baseline CPU level)
+        run: |
+          set -euo pipefail
+          python3 -I tools/tier1_mutations.py --shard ${{ matrix.shard }}/4
+  bench-confirm:
+    name: Tier-1 benchmark (confirmation, not a gate)
+    if: github.event_name == 'workflow_dispatch' && inputs.bench
+    runs-on: ubuntu-26.04
+    timeout-minutes: 90
+    continue-on-error: true
+    env:
+      NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          ref: 00f273d502d211905adb756d2f75ef74321983d0 # neo-j2k v0.1.3
+          persist-credentials: false
+          path: cpp
+      - name: Toolchain
+        run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          shared-key: verify-bench
+          cache-on-failure: true
+      - name: Base against head, the control, 12 rounds
+        run: |
+          set -euo pipefail
+          # the program pins to the last logical CPU; with one CPU only it runs unpinned
+          pin=""
+          if [ "$(nproc)" -lt 2 ]; then pin="--allow-unpinned"; fi
+          # shellcheck disable=SC2086
+          python3 -I tools/bench_tier1.py --base-ref origin/main --rounds 12 $pin | tee bench.txt
+          {
+            echo "### Tier-1 benchmark: confirmation, not a gate (shared runner)"
+            echo
+            echo '```'
+            cat bench.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
