@@ -53,6 +53,7 @@ impl Passes<'_> {
         usize::from(zero_context[(flags & SIGMA_NEIGHBOURS) as usize])
     }
 
+    #[inline(always)]
     fn sign(&self, decoder: &mut Decoder<'_>, index: usize, row: usize, flags: u32) -> u32 {
         let shift = row * 3;
         let mut lu = (flags >> shift) & 0x00aa;
@@ -87,9 +88,12 @@ impl Passes<'_> {
 
     pub(super) fn significance<const RAW: bool, const SINGLE_STRIPE: bool>(
         &mut self,
-        decoder: &mut Decoder<'_>,
+        state: &mut Decoder<'_>,
         bitplane: u32,
     ) {
+        // The MQ registers live in locals for the length of the pass.
+        let mut local = *state;
+        let decoder = &mut local;
         let one = 1i32 << bitplane;
         let magnitude = one | (one >> 1);
         let stride = self.width + 2;
@@ -135,13 +139,16 @@ impl Passes<'_> {
                 self.flags[index] = column;
             }
         }
+        *state = local;
     }
 
     pub(super) fn refinement<const RAW: bool, const SINGLE_STRIPE: bool>(
         &mut self,
-        decoder: &mut Decoder<'_>,
+        state: &mut Decoder<'_>,
         bitplane: u32,
     ) {
+        let mut local = *state;
+        let decoder = &mut local;
         let half = (1i32 << bitplane) >> 1;
         let stride = self.width + 2;
         let height = if SINGLE_STRIPE { 4 } else { self.height };
@@ -176,14 +183,17 @@ impl Passes<'_> {
                 self.flags[index] = column | refined;
             }
         }
+        *state = local;
     }
 
     pub(super) fn cleanup<const SINGLE_STRIPE: bool>(
         &mut self,
-        decoder: &mut Decoder<'_>,
+        state: &mut Decoder<'_>,
         bitplane: u32,
         segment_symbol: bool,
     ) {
+        let mut local = *state;
+        let decoder = &mut local;
         let one = 1i32 << bitplane;
         let magnitude = one | (one >> 1);
         let stride = self.width + 2;
@@ -238,5 +248,6 @@ impl Passes<'_> {
                 decoder.symbol(CONTEXT_UNIFORM);
             }
         }
+        *state = local;
     }
 }
