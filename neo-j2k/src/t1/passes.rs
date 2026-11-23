@@ -96,17 +96,26 @@ impl Passes<'_> {
     }
 
     /// The rows of stripe `index`, of `rows` lanes (4 but for the last stripe of a block, and the height of a single
-    /// stripe).
+    /// stripe). With `EXACT` (a stripe of four lanes) every sample row is exactly `width` long, which the compiler
+    /// then knows: a lane's sample at `col < width` needs no check. Else a row is as long as the samples that are left.
     #[inline(always)]
-    fn stripe<const SINGLE_STRIPE: bool>(&mut self, index: usize, rows: usize) -> Stripe<'_> {
+    fn stripe<const SINGLE_STRIPE: bool, const EXACT: bool>(&mut self, index: usize, rows: usize) -> Stripe<'_> {
         let width = self.width;
         assert!(width <= MAX_WIDTH);
         let stride = width + 2;
-        let samples = &mut self.data[index * 4 * width..];
-        let (d0, rest) = samples.split_at_mut(width.min(samples.len()));
-        let (d1, rest) = rest.split_at_mut(width.min(rest.len()));
-        let (d2, rest) = rest.split_at_mut(width.min(rest.len()));
-        let (d3, _) = rest.split_at_mut(width.min(rest.len()));
+        let [d0, d1, d2, d3] = if EXACT {
+            let (d0, rest) = self.data[index * 4 * width..][..4 * width].split_at_mut(width);
+            let (d1, rest) = rest.split_at_mut(width);
+            let (d2, d3) = rest.split_at_mut(width);
+            [d0, d1, d2, &mut d3[..width]]
+        } else {
+            let samples = &mut self.data[index * 4 * width..];
+            let (d0, rest) = samples.split_at_mut(width.min(samples.len()));
+            let (d1, rest) = rest.split_at_mut(width.min(rest.len()));
+            let (d2, rest) = rest.split_at_mut(width.min(rest.len()));
+            let (d3, _) = rest.split_at_mut(width.min(rest.len()));
+            [d0, d1, d2, d3]
+        };
         let vertical_causal = self.vertical_causal;
         if SINGLE_STRIPE {
             // One stripe needs only its own row: no neighbour can write across a stripe.
@@ -245,6 +254,46 @@ impl Passes<'_> {
         }
     }
 
+    /// The columns of one stripe, in the significance pass. A stripe of four lanes (`FULL`) takes its lanes unrolled:
+    /// every lane is a constant there, so the shifts are immediates and the tests of the first and the last lane
+    /// (the neighbours above and below) are gone. Any other stripe loops over its lanes.
+    #[inline(always)]
+    fn significance_columns<const RAW: bool, const SINGLE_STRIPE: bool, const FULL: bool>(
+        mq: &mut Mq<'_, '_>,
+        stripe: &mut Stripe<'_>,
+        zero_context: &[u8; 512],
+        magnitude: i32,
+    ) {
+        for col in 0..stripe.width {
+            let mut column = Column {
+                flags: stripe.here[col + 1],
+                chi: 0,
+            };
+            if column.flags == 0 || (column.flags | (column.flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
+                continue;
+            }
+            if FULL {
+                Self::significance_step::<RAW, SINGLE_STRIPE>(mq, stripe, zero_context, magnitude, col, &mut column, 0);
+                Self::significance_step::<RAW, SINGLE_STRIPE>(mq, stripe, zero_context, magnitude, col, &mut column, 1);
+                Self::significance_step::<RAW, SINGLE_STRIPE>(mq, stripe, zero_context, magnitude, col, &mut column, 2);
+                Self::significance_step::<RAW, SINGLE_STRIPE>(mq, stripe, zero_context, magnitude, col, &mut column, 3);
+            } else {
+                for lane in 0..stripe.rows {
+                    Self::significance_step::<RAW, SINGLE_STRIPE>(
+                        mq,
+                        stripe,
+                        zero_context,
+                        magnitude,
+                        col,
+                        &mut column,
+                        lane,
+                    );
+                }
+            }
+            stripe.here[col + 1] = column.flags | column.chi;
+        }
+    }
+
     pub(super) fn significance<const RAW: bool, const SINGLE_STRIPE: bool>(
         &mut self,
         state: &mut Decoder<'_>,
@@ -262,27 +311,12 @@ impl Passes<'_> {
             } else {
                 (height - index * 4).min(4)
             };
-            let mut stripe = self.stripe::<SINGLE_STRIPE>(index, rows);
-            for col in 0..stripe.width {
-                let mut column = Column {
-                    flags: stripe.here[col + 1],
-                    chi: 0,
-                };
-                if column.flags == 0 || (column.flags | (column.flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
-                    continue;
-                }
-                for lane in 0..stripe.rows {
-                    Self::significance_step::<RAW, SINGLE_STRIPE>(
-                        &mut mq,
-                        &mut stripe,
-                        zero_context,
-                        magnitude,
-                        col,
-                        &mut column,
-                        lane,
-                    );
-                }
-                stripe.here[col + 1] = column.flags | column.chi;
+            if rows == 4 {
+                let mut stripe = self.stripe::<SINGLE_STRIPE, true>(index, rows);
+                Self::significance_columns::<RAW, SINGLE_STRIPE, true>(&mut mq, &mut stripe, zero_context, magnitude);
+            } else {
+                let mut stripe = self.stripe::<SINGLE_STRIPE, false>(index, rows);
+                Self::significance_columns::<RAW, SINGLE_STRIPE, false>(&mut mq, &mut stripe, zero_context, magnitude);
             }
         }
         mq.leave();
@@ -302,7 +336,7 @@ impl Passes<'_> {
             } else {
                 (height - index * 4).min(4)
             };
-            let mut stripe = self.stripe::<SINGLE_STRIPE>(index, rows);
+            let mut stripe = self.stripe::<SINGLE_STRIPE, false>(index, rows);
             for col in 0..stripe.width {
                 let column = stripe.here[col + 1];
                 // Only real samples can receive SIGMA_THIS. Any padding in the last stripe is skipped.
@@ -333,6 +367,68 @@ impl Passes<'_> {
         mq.leave();
     }
 
+    /// The columns of one stripe, in the cleanup pass; a stripe of four lanes (`FULL`) unrolled as in
+    /// `significance_columns`, and only such a stripe takes the run of empty columns and the AGG decision. The AGG
+    /// decision may have settled the lanes up to `start - 1` of its column.
+    #[inline(always)]
+    fn cleanup_columns<const SINGLE_STRIPE: bool, const FULL: bool>(
+        mq: &mut Mq<'_, '_>,
+        stripe: &mut Stripe<'_>,
+        zero_context: &[u8; 512],
+        magnitude: i32,
+    ) {
+        let width = stripe.width;
+        let mut next = 0;
+        while next < width {
+            let col = next;
+            next += 1;
+            let mut column = Column {
+                flags: stripe.here[col + 1],
+                chi: 0,
+            };
+            if (column.flags | (column.flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
+                stripe.here[col + 1] = column.flags & !ALL_PI;
+                continue;
+            }
+            let mut start = 0;
+            if FULL && column.flags == 0 {
+                // A run of empty columns whose AGG decisions are 0 without renormalisation is taken at once.
+                let run = mq.aggregate_run(&stripe.here[col + 1..width + 1]);
+                if run != 0 {
+                    next = col + run;
+                    continue;
+                }
+                if mq.symbol(CONTEXT_AGGREGATE) == 0 {
+                    continue;
+                }
+                let first = mq.symbol(CONTEXT_UNIFORM) as usize;
+                let second = mq.symbol(CONTEXT_UNIFORM) as usize;
+                let lane = (first << 1) | second;
+                Self::mark_sample::<SINGLE_STRIPE>(mq, stripe, col, &mut column, magnitude, lane);
+                start = lane + 1;
+            }
+            if FULL {
+                if start == 0 {
+                    Self::cleanup_step::<SINGLE_STRIPE>(mq, stripe, zero_context, magnitude, col, &mut column, 0);
+                }
+                if start <= 1 {
+                    Self::cleanup_step::<SINGLE_STRIPE>(mq, stripe, zero_context, magnitude, col, &mut column, 1);
+                }
+                if start <= 2 {
+                    Self::cleanup_step::<SINGLE_STRIPE>(mq, stripe, zero_context, magnitude, col, &mut column, 2);
+                }
+                if start <= 3 {
+                    Self::cleanup_step::<SINGLE_STRIPE>(mq, stripe, zero_context, magnitude, col, &mut column, 3);
+                }
+            } else {
+                for lane in start..stripe.rows {
+                    Self::cleanup_step::<SINGLE_STRIPE>(mq, stripe, zero_context, magnitude, col, &mut column, lane);
+                }
+            }
+            stripe.here[col + 1] = (column.flags | column.chi) & !ALL_PI;
+        }
+    }
+
     pub(super) fn cleanup<const SINGLE_STRIPE: bool>(
         &mut self,
         state: &mut Decoder<'_>,
@@ -350,52 +446,12 @@ impl Passes<'_> {
             } else {
                 (height - index * 4).min(4)
             };
-            let mut stripe = self.stripe::<SINGLE_STRIPE>(index, rows);
-            let width = stripe.width;
-            let mut next = 0;
-            while next < width {
-                let col = next;
-                next += 1;
-                let mut column = Column {
-                    flags: stripe.here[col + 1],
-                    chi: 0,
-                };
-                if (column.flags | (column.flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
-                    stripe.here[col + 1] = column.flags & !ALL_PI;
-                    continue;
-                }
-                if rows == 4 && column.flags == 0 {
-                    // A run of empty columns whose AGG decisions are 0 without renormalisation is taken at once.
-                    let run = mq.aggregate_run(&stripe.here[col + 1..width + 1]);
-                    if run != 0 {
-                        next = col + run;
-                        continue;
-                    }
-                }
-                let start = if rows == 4 && column.flags == 0 {
-                    if mq.symbol(CONTEXT_AGGREGATE) == 0 {
-                        continue;
-                    }
-                    let first = mq.symbol(CONTEXT_UNIFORM) as usize;
-                    let second = mq.symbol(CONTEXT_UNIFORM) as usize;
-                    let lane = (first << 1) | second;
-                    Self::mark_sample::<SINGLE_STRIPE>(&mut mq, &mut stripe, col, &mut column, magnitude, lane);
-                    lane + 1
-                } else {
-                    0
-                };
-                for lane in start..rows {
-                    Self::cleanup_step::<SINGLE_STRIPE>(
-                        &mut mq,
-                        &mut stripe,
-                        zero_context,
-                        magnitude,
-                        col,
-                        &mut column,
-                        lane,
-                    );
-                }
-                stripe.here[col + 1] = (column.flags | column.chi) & !ALL_PI;
+            if rows == 4 {
+                let mut stripe = self.stripe::<SINGLE_STRIPE, true>(index, rows);
+                Self::cleanup_columns::<SINGLE_STRIPE, true>(&mut mq, &mut stripe, zero_context, magnitude);
+            } else {
+                let mut stripe = self.stripe::<SINGLE_STRIPE, false>(index, rows);
+                Self::cleanup_columns::<SINGLE_STRIPE, false>(&mut mq, &mut stripe, zero_context, magnitude);
             }
         }
         if segment_symbol {

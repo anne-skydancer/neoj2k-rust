@@ -165,8 +165,8 @@
  {
   "name": "AGG run in the cleanup pass: taken in a partial stripe",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "if rows == 4 && column.flags == 0 {\n                    // A run",
-  "new": "if column.flags == 0 {\n                    // A run",
+  "old": "if FULL && column.flags == 0 {\n                // A run",
+  "new": "if column.flags == 0 {\n                // A run",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation"
   ]
