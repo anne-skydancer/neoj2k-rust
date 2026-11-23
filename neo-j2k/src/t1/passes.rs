@@ -90,6 +90,24 @@ impl Passes<'_> {
         }
     }
 
+    /// Decode the sign of the sample at `lane` of the column, store it, and record it in the column: the neighbours at
+    /// once, the column's own significance bit in `column` and its sign in `chi`.
+    #[inline(always)]
+    fn mark_sample<const SINGLE_STRIPE: bool>(
+        &mut self,
+        decoder: &mut Decoder<'_>,
+        column: &mut u32,
+        chi: &mut u32,
+        (index, data_base, magnitude): (usize, usize, i32),
+        lane: usize,
+    ) {
+        let sign = self.sign(decoder, index, lane, *column | *chi);
+        self.data[data_base + lane * self.width] = if sign != 0 { -magnitude } else { magnitude };
+        self.mark_significant::<SINGLE_STRIPE>(index, lane, sign);
+        *column |= SIGMA_THIS << (lane * 3);
+        *chi |= (sign << CHI_THIS_BIT) << (lane * 3);
+    }
+
     pub(super) fn significance<const RAW: bool, const SINGLE_STRIPE: bool>(
         &mut self,
         state: &mut Decoder<'_>,
@@ -233,13 +251,6 @@ impl Passes<'_> {
                     }
                 }
                 let mut chi = 0;
-                let mut mark = |decoder: &mut Decoder<'_>, column: &mut u32, chi: &mut u32, lane: usize| {
-                    let sign = self.sign(decoder, index, lane, *column | *chi);
-                    self.data[data_start + col + lane * self.width] = if sign != 0 { -magnitude } else { magnitude };
-                    self.mark_significant::<SINGLE_STRIPE>(index, lane, sign);
-                    *column |= SIGMA_THIS << (lane * 3);
-                    *chi |= (sign << CHI_THIS_BIT) << (lane * 3);
-                };
                 let start = if rows == 4 && column == 0 {
                     if decoder.symbol(CONTEXT_AGGREGATE) == 0 {
                         continue;
@@ -247,7 +258,13 @@ impl Passes<'_> {
                     let first = decoder.symbol(CONTEXT_UNIFORM) as usize;
                     let second = decoder.symbol(CONTEXT_UNIFORM) as usize;
                     let lane = (first << 1) | second;
-                    mark(decoder, &mut column, &mut chi, lane);
+                    self.mark_sample::<SINGLE_STRIPE>(
+                        decoder,
+                        &mut column,
+                        &mut chi,
+                        (index, data_start + col, magnitude),
+                        lane,
+                    );
                     lane + 1
                 } else {
                     0
@@ -257,7 +274,13 @@ impl Passes<'_> {
                     if flags & (SIGMA_THIS | PI_THIS) == 0
                         && decoder.symbol(Self::significance_context(zero_context, flags)) != 0
                     {
-                        mark(decoder, &mut column, &mut chi, lane);
+                        self.mark_sample::<SINGLE_STRIPE>(
+                            decoder,
+                            &mut column,
+                            &mut chi,
+                            (index, data_start + col, magnitude),
+                            lane,
+                        );
                     }
                 }
                 self.flags[index] = (column | chi) & !ALL_PI;
