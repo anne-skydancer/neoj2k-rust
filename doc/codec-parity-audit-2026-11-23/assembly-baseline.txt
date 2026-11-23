@@ -1,0 +1,57 @@
+_RINvMNtNtCsiZSYKlzvTZc_7neo_j2k2t16passesNtB3_6Passes10refinementKb0_KB12_EB7_:
+assembly lines 3599 4028
+static instruction lines 242 stack-reference lines 76
+calls {'memcpy': 2, '_RNvNtNtCsiZSYKlzvTZc_7neo_j2k2t12mq22renormalize_with_bytes': 1, '_RNvNtCs4mxzSKgHcRc_4core9panicking18panic_bounds_check': 2}
+_RINvMNtNtCsiZSYKlzvTZc_7neo_j2k2t16passesNtB3_6Passes12significanceKb0_KB14_EB7_:
+assembly lines 4383 5362
+static instruction lines 641 stack-reference lines 283
+calls {'memcpy': 2, '_RNvNtNtCsiZSYKlzvTZc_7neo_j2k2t12mq22renormalize_with_bytes': 2, '_RNvNtCs4mxzSKgHcRc_4core9panicking18panic_bounds_check': 11}
+prologue:
+pushq	%r15
+pushq	%r14
+pushq	%r13
+pushq	%r12
+pushq	%rsi
+pushq	%rdi
+pushq	%rbp
+pushq	%rbx
+subq	$552, %rsp
+movl	%r8d, %esi
+movq	%rdx, %r14
+movq	%rcx, %rbx
+leaq	160(%rsp), %rcx
+movl	$160, %r8d
+callq	memcpy
+movl	$1, %eax
+movl	%esi, %ecx
+shll	%cl, %eax
+movq	48(%rbx), %rcx
+cmpq	$3, %rcx
+ja	.LBB10_9
+movq	40(%rbx), %r8
+testq	%r8, %r8
+je	.LBB10_12
+_RINvMNtNtCsiZSYKlzvTZc_7neo_j2k2t16passesNtB3_6Passes7cleanupKb0_EB7_:
+assembly lines 6002 8205
+static instruction lines 1236 stack-reference lines 367
+calls {'memcpy': 2, '_RNvNtNtCsiZSYKlzvTZc_7neo_j2k2t12mq22renormalize_with_bytes': 10, '_RNvNtNtCs4mxzSKgHcRc_4core5slice5index16slice_index_fail': 1, '_RNvNtCs4mxzSKgHcRc_4core9panicking18panic_bounds_check': 20}
+_RNvMs_NtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier1NtB4_6Passes12significance:
+assembly lines 117125 120412
+static instruction lines 1911 stack-reference lines 635
+calls {'_RNvNtNtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier12mq16shift_with_bytes': 14, '_RNvNtCs4mxzSKgHcRc_4core9panicking9panic_fmt': 2, '_RNvNtCs4mxzSKgHcRc_4core9panicking18panic_bounds_check': 17, '_RNvNtNtCs4mxzSKgHcRc_4core9panicking11panic_const23panic_const_div_by_zero': 1}
+_RNvMs_NtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier1NtB4_6Passes6refine:
+assembly lines 120420 121581
+static instruction lines 647 stack-reference lines 156
+calls {'_RNvNtNtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier12mq16shift_with_bytes': 1, '_RNvNtNtCs4mxzSKgHcRc_4core5slice5index16slice_index_fail': 1, '_RNvNtCs4mxzSKgHcRc_4core9panicking9panic_fmt': 2, '_RNvNtCs4mxzSKgHcRc_4core9panicking18panic_bounds_check': 3, '_RNvNtNtCs4mxzSKgHcRc_4core9panicking11panic_const23panic_const_div_by_zero': 1}
+_RNvMs_NtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier1NtB4_6Passes7cleanup:
+assembly lines 121589 128078
+static instruction lines 3702 stack-reference lines 1225
+calls {'_RNvNtNtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier12mq16shift_with_bytes': 33, '_RNvNtCs4mxzSKgHcRc_4core9panicking9panic_fmt': 2, '_RNvNtCs4mxzSKgHcRc_4core9panicking18panic_bounds_check': 18, '_RNvNtNtCs4mxzSKgHcRc_4core9panicking11panic_const23panic_const_div_by_zero': 1}
+_RNvNtCsiZSYKlzvTZc_7neo_j2k7encoder14gather_samples:
+assembly lines 149573 149918
+static instruction lines 177 stack-reference lines 36
+calls {'rintf': 1, '_RNvNtCs4mxzSKgHcRc_4core6option13expect_failed': 1, '_RNvNtCs4mxzSKgHcRc_4core9panicking18panic_bounds_check': 1}
+round/conversion instructions:
+divss	%xmm6, %xmm0
+callq	rintf
+cvttss2si	%xmm0, %eax
