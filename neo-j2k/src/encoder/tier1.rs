@@ -60,15 +60,18 @@ fn distortion_table(refinement: bool, plane: u32) -> &'static [i16; 128] {
 }
 
 /// What the three passes need of a bit-plane: the magnitude bit, the distortion table and the shift.
+///
+/// `DIST` is whether the passes measure the distortion they remove; without it `decrease` is zero and the table loads
+/// and sums vanish from the passes.
 #[derive(Clone, Copy)]
-struct Plane {
+struct Plane<const DIST: bool> {
     one: u32,
     shift: u32,
     significance: &'static [i16; 128],
     refinement: &'static [i16; 128],
 }
 
-impl Plane {
+impl<const DIST: bool> Plane<DIST> {
     fn new(shift: u32) -> Self {
         Self {
             one: 1 << (shift + FRACTIONAL_BITS),
@@ -83,11 +86,15 @@ impl Plane {
     }
 
     fn decrease(self, table: &[i16; 128], sample: u32) -> i32 {
-        i32::from(table[((magnitude(sample) >> self.shift) & 0x7f) as usize])
+        if DIST {
+            i32::from(table[((magnitude(sample) >> self.shift) & 0x7f) as usize])
+        } else {
+            0
+        }
     }
 }
 
-struct Passes<'a> {
+struct Passes<'a, const DIST: bool> {
     data: &'a [u32],
     flags: &'a mut [u32],
     width: usize,
@@ -111,7 +118,7 @@ type PairList = [u8; MAX_SAMPLES];
 /// The rows of a column that a cleanup pass may code: bit 3r is row r.
 const ALL_ROWS: u32 = 0x249;
 
-impl Passes<'_> {
+impl<const DIST: bool> Passes<'_, DIST> {
     fn initialize(&mut self) {
         self.flags.fill(0);
         let stride = self.width + 2;
@@ -175,7 +182,7 @@ impl Passes<'_> {
         coder: &mut Run<'_>,
         index: usize,
         sample: u32,
-        plane: Plane,
+        plane: Plane<DIST>,
         column_flags: &mut u32,
     ) -> i32 {
         let flags = *column_flags >> (LANE * 3);
@@ -198,7 +205,7 @@ impl Passes<'_> {
     }
 
     #[inline(never)]
-    fn significance(&mut self, registers: &mut Encoder<'_>, plane: Plane) -> i32 {
+    fn significance(&mut self, registers: &mut Encoder<'_>, plane: Plane<DIST>) -> i32 {
         let mut coder = registers.lend();
         let data = self.data;
         let (whole, partial) = data.split_at(self.height / 4 * 4 * self.width);
@@ -253,7 +260,7 @@ impl Passes<'_> {
         flags: u32,
         eligible: u32,
         sample: u32,
-        plane: Plane,
+        plane: Plane<DIST>,
         change: &mut i32,
     ) {
         let refined = (eligible >> (4 + 3 * LANE)) & 1 != 0;
@@ -268,7 +275,7 @@ impl Passes<'_> {
     /// contexts are fixed by the flags at its start: one scan lists the pairs of every stripe, and one loop codes
     /// the list.
     #[inline(never)]
-    fn refine(&mut self, registers: &mut Encoder<'_>, plane: Plane, list: &mut PairList) -> i32 {
+    fn refine(&mut self, registers: &mut Encoder<'_>, plane: Plane<DIST>, list: &mut PairList) -> i32 {
         let mut coder = registers.lend();
         let data = self.data;
         let (whole, partial) = data.split_at(self.height / 4 * 4 * self.width);
@@ -325,7 +332,7 @@ impl Passes<'_> {
         coder: &mut Run<'_>,
         index: usize,
         sample: u32,
-        plane: Plane,
+        plane: Plane<DIST>,
         rows: u32,
         column_flags: &mut u32,
     ) -> i32 {
@@ -349,7 +356,7 @@ impl Passes<'_> {
         coder: &mut Run<'_>,
         index: usize,
         lanes: &[u32; 4],
-        plane: Plane,
+        plane: Plane<DIST>,
         column_flags: &mut u32,
     ) -> i32 {
         self.sign::<LANE>(coder, index, lanes[LANE], column_flags);
@@ -357,7 +364,7 @@ impl Passes<'_> {
     }
 
     #[inline(never)]
-    fn cleanup(&mut self, registers: &mut Encoder<'_>, plane: Plane) -> i32 {
+    fn cleanup(&mut self, registers: &mut Encoder<'_>, plane: Plane<DIST>) -> i32 {
         let mut coder = registers.lend();
         let data = self.data;
         let (whole, partial) = data.split_at(self.height / 4 * 4 * self.width);
@@ -451,8 +458,34 @@ impl Passes<'_> {
     }
 }
 
-/// Encode a viewer-profile code-block. The signed fixed-point input is in stripe-column order.
+/// Encode a viewer-profile code-block. The signed fixed-point input is in stripe-column order. Every pass carries
+/// its weighted distortion decrease (the bench and oracle contract).
 pub(super) fn encode(
+    workspace: &mut Workspace,
+    samples_i32: &[i32],
+    width: usize,
+    height: usize,
+    params: T1Params,
+    output: &mut Block,
+) -> Result<(), Error> {
+    encode_with::<true>(workspace, samples_i32, width, height, params, output)
+}
+
+/// Encode a code-block of a request that keeps every pass: the passes' symbols, rates, lengths and terminations are
+/// those of [`encode`], but no distortion is measured and every pass's `distortion_dec` is zero. Only the packet
+/// writer reads it, and it reads none when each layer takes all the passes.
+pub(super) fn encode_all_passes(
+    workspace: &mut Workspace,
+    samples_i32: &[i32],
+    width: usize,
+    height: usize,
+    params: T1Params,
+    output: &mut Block,
+) -> Result<(), Error> {
+    encode_with::<false>(workspace, samples_i32, width, height, params, output)
+}
+
+fn encode_with<const DIST: bool>(
     workspace: &mut Workspace,
     samples_i32: &[i32],
     width: usize,
@@ -501,7 +534,7 @@ pub(super) fn encode(
         .try_reserve_exact(MAX_PASSES)
         .map_err(|_| memory_error())?;
     let mut coder = Encoder::new(&mut workspace.bytes);
-    let mut passes = Passes {
+    let mut passes = Passes::<DIST> {
         data,
         flags: &mut workspace.flags[..flag_count],
         width,
@@ -517,12 +550,16 @@ pub(super) fn encode(
             _ => 2.0,
         };
     }
-    let weight = wavelet::colour_norm(params.component, params.reversible, params.mct)
-        * wavelet::norm(params.level, params.orientation, params.reversible)
-        * step_size;
+    let weight = if DIST {
+        wavelet::colour_norm(params.component, params.reversible, params.mct)
+            * wavelet::norm(params.level, params.orientation, params.reversible)
+            * step_size
+    } else {
+        0.0
+    };
     let mut total_distortion = 0.0;
     for plane in (0..numbps).rev() {
-        let context = Plane::new(plane);
+        let context = Plane::<DIST>::new(plane);
         let first = if plane == numbps - 1 { 2 } else { 0 };
         for pass_index in first..3 {
             let decrease = match pass_index {
@@ -530,9 +567,11 @@ pub(super) fn encode(
                 1 => passes.refine(&mut coder, context, pairs),
                 _ => passes.cleanup(&mut coder, context),
             };
-            let mut weighted = weight * f64::from(1 << plane);
-            weighted *= weighted * f64::from(decrease) / 8192.0;
-            total_distortion += weighted;
+            if DIST {
+                let mut weighted = weight * f64::from(1 << plane);
+                weighted *= weighted * f64::from(decrease) / 8192.0;
+                total_distortion += weighted;
+            }
             let terminated = pass_index == 2 && plane == 0;
             let rate = if terminated {
                 coder.flush();
@@ -624,6 +663,44 @@ mod tests {
                 add(u64::from(pass.terminated));
             }
             assert_eq!(hash, expected, "encoder code-block case {case}");
+        }
+    }
+
+    #[test]
+    fn all_passes_encoding_differs_from_the_full_one_only_in_the_distortion() {
+        let mut workspace = Workspace::default();
+        let (mut full, mut lean) = (Block::default(), Block::default());
+        for case in 0..12u32 {
+            let (width, height) = [(64, 64), (64, 7), (13, 64), (1, 1), (5, 6), (64, 63)][case as usize % 6];
+            let mut random = 0x1f2e_3d4c ^ case.wrapping_mul(0x9e37_79b9);
+            let samples: Vec<i32> = (0..width * height)
+                .map(|_| {
+                    random ^= random << 13;
+                    random ^= random >> 17;
+                    random ^= random << 5;
+                    (i32::try_from(random % (1 << (6 + case % 9))).unwrap() - (1 << (5 + case % 9))) * 64
+                })
+                .collect();
+            let params = T1Params {
+                orientation: u8::try_from(case % 4).unwrap(),
+                level: (case % 6) as usize,
+                component: (case % 3) as usize,
+                reversible: case % 2 == 0,
+                step_size: 0.25 * ((case % 7) + 1) as f32,
+                mct: case % 5 == 0,
+            };
+            encode(&mut workspace, &samples, width, height, params, &mut full).unwrap();
+            encode_all_passes(&mut workspace, &samples, width, height, params, &mut lean).unwrap();
+            assert_eq!(full.numbps, lean.numbps, "case {case}");
+            assert_eq!(full.data, lean.data, "case {case}");
+            assert_eq!(full.passes.len(), lean.passes.len(), "case {case}");
+            for (full, lean) in full.passes.iter().zip(&lean.passes) {
+                assert_eq!(
+                    (full.rate, full.len, full.terminated),
+                    (lean.rate, lean.len, lean.terminated)
+                );
+                assert_eq!(lean.distortion_dec.to_bits(), 0.0f64.to_bits());
+            }
         }
     }
 

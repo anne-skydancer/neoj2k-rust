@@ -275,9 +275,14 @@ impl Encoder {
                 .encode_blocks_parallel(&settings, jobs, &mut self.tier1_workers)?;
         } else {
             let code_blocks = &mut self.tier1;
+            let encode = if settings.all_passes {
+                tier1::encode_all_passes
+            } else {
+                tier1::encode
+            };
             self.buffers
                 .encode_blocks(&settings, |samples, width, height, params, block| {
-                    tier1::encode(code_blocks, samples, width, height, params, block)
+                    encode(code_blocks, samples, width, height, params, block)
                 })?;
         }
         let packets = &mut self.tier2;
@@ -401,6 +406,11 @@ impl EncodingBuffers {
             resize_with(&mut worker.zigzag, BLOCK_SIDE * BLOCK_SIDE, || 0)?;
         }
 
+        let encode = if settings.all_passes {
+            tier1::encode_all_passes
+        } else {
+            tier1::encode
+        };
         let samples = &self.samples;
         let blocks = &mut self.blocks;
         let block_jobs = &self.block_jobs;
@@ -423,7 +433,7 @@ impl EncodingBuffers {
                     descriptor.params,
                     zigzag,
                 );
-                worker.error = tier1::encode(
+                worker.error = encode(
                     &mut worker.tier1,
                     zigzag,
                     descriptor.width,
@@ -565,6 +575,8 @@ struct Settings<'p> {
     mct: bool,
     steps: [wavelet::Step; MAX_BANDS],
     rates: [f32; MAX_LAYERS],
+    /// Every layer's effective rate is zero, so every pass is kept and no distortion is read.
+    all_passes: bool,
     comment: &'p [u8],
     tile_capacity: usize,
 }
@@ -658,6 +670,7 @@ impl<'p> Settings<'p> {
             mct: params.mct,
             steps: [wavelet::Step::default(); MAX_BANDS],
             rates,
+            all_passes: false,
             comment,
             tile_capacity: tile_capacity(samples, components),
         };
@@ -666,6 +679,7 @@ impl<'p> Settings<'p> {
         validate_extra_options(&params.extra_options)?;
         image.validate_samples(&settings)?;
         settings.update_rates(samples);
+        settings.all_passes = tier2::takes_all_passes(&settings.rates[..settings.layers]);
         for (index, step) in settings.steps[..3 * resolutions - 2].iter_mut().enumerate() {
             let resolution = if index == 0 { 0 } else { (index - 1) / 3 + 1 };
             let level = resolutions - 1 - resolution;

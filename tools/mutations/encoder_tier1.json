@@ -344,5 +344,15 @@
    "encoder::tier1::mq::differential::streams_encode_as_the_cpp_does"
   ],
   "count": 1
+ },
+ {
+  "name": "T2 a nonzero rate counts as all-zero",
+  "file": "neo-j2k/src/encoder/tier2.rs",
+  "old": "rates.iter().all(|&rate| rate == 0.0)",
+  "new": "rates.iter().all(|&rate| rate <= 0.0)",
+  "tests": [
+   "encoder::tier2::tests::only_all_zero_rates_take_all_passes"
+  ],
+  "count": 1
  }
 ]

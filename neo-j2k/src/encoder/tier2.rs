@@ -177,6 +177,13 @@ fn rate_limit(rate: f32, dest_len: usize) -> usize {
     (rate.ceil() as usize).min(dest_len)
 }
 
+/// True when every layer's effective rate is exactly zero: each layer then takes all the remaining passes, and no
+/// slope or distortion is read. A positive, negative, NaN or infinite rate (a byte cap shows up as a positive one)
+/// keeps the allocator's normal path.
+pub(super) fn takes_all_passes(rates: &[f32]) -> bool {
+    rates.iter().all(|&rate| rate == 0.0)
+}
+
 fn allocate_rates(workspace: &mut Workspace, layout: &TileLayout, blocks: &[Block], rates: &[f32], dest: &mut [u8]) {
     let (min, max) = min_max_slope(blocks);
     for (layer, &rate) in rates.iter().enumerate() {
@@ -417,6 +424,20 @@ mod tests {
                 .message()
                 .contains("only 1 bytes remaining in output buffer. 2 needed.")
         );
+    }
+
+    #[test]
+    fn only_all_zero_rates_take_all_passes() {
+        assert!(takes_all_passes(&[0.0, 0.0, -0.0]));
+        for rates in [
+            [0.0, 2.1],
+            [2.1, 0.0],
+            [f32::NAN, 0.0],
+            [0.0, f32::INFINITY],
+            [-1.0, 0.0],
+        ] {
+            assert!(!takes_all_passes(&rates), "{rates:?}");
+        }
     }
 
     #[test]
