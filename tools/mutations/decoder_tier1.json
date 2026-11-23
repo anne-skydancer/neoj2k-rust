@@ -189,8 +189,8 @@
  {
   "name": "sigma/chi: the sign context reads the flags without chi (cleanup)",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "let sign = self.sign(decoder, index, lane, *column | *chi);",
-  "new": "let sign = self.sign(decoder, index, lane, *column);",
+  "old": "let sign = self.sign(mq, index, lane, *column | *chi);",
+  "new": "let sign = self.sign(mq, index, lane, *column);",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
    "t1::differential::committed_vectors_decode_as_the_cpp_does"
@@ -199,8 +199,8 @@
  {
   "name": "sigma/chi: the sign context reads the flags without chi (significance)",
   "file": "neo-j2k/src/t1/passes.rs",
-  "old": "self.sign(decoder, index, lane, column | chi)",
-  "new": "self.sign(decoder, index, lane, column)",
+  "old": "self.sign(&mut mq, index, lane, column | chi)",
+  "new": "self.sign(&mut mq, index, lane, column)",
   "tests": [
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
    "t1::differential::committed_vectors_decode_as_the_cpp_does"

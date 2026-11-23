@@ -79,11 +79,11 @@ const BYTES: [u8; 6] = [0x00, 0x7f, 0x8f, 0x90, 0xfe, 0xff];
 /// A decoder from the registers, followed by `tail` and then the marker.
 fn decoder_from<'a>(tail: &'a [u8], index: usize, r: Model) -> Decoder<'a> {
     let mut decoder = Decoder::new();
-    decoder.data = &tail[r.consumed..];
-    decoder.current = r.current;
-    decoder.a = r.a;
-    decoder.c = r.c;
-    decoder.bits = r.bits;
+    decoder.source.data = &tail[r.consumed..];
+    decoder.source.current = r.current;
+    decoder.registers.a = r.a;
+    decoder.registers.c = r.c;
+    decoder.registers.bits = r.bits;
     decoder.contexts[0] = PACKED_STATES[index];
     decoder
 }
@@ -93,11 +93,11 @@ fn check_decision(index: usize, start: Model, tail: &[u8]) {
     let mut decoder = decoder_from(tail, index, start);
     let bit = decoder.symbol(0);
     let got = Model {
-        a: decoder.a,
-        c: decoder.c,
-        bits: decoder.bits,
-        current: decoder.current,
-        consumed: tail.len() - decoder.data.len(),
+        a: decoder.registers.a,
+        c: decoder.registers.c,
+        bits: decoder.registers.bits,
+        current: decoder.source.current,
+        consumed: tail.len() - decoder.source.data.len(),
     };
     let context = format!("state {index}, from {start:?}, bytes {tail:02x?}");
     assert_eq!(bit, want_bit, "bit: {context}");
@@ -158,11 +158,11 @@ fn a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time() {
                     flags.push(1);
                     let make = || {
                         let mut decoder = Decoder::new();
-                        decoder.a = a;
-                        decoder.c = (chi << 16) | (a.wrapping_mul(2_654_435_761) & 0xffff);
-                        decoder.bits = 5;
-                        decoder.current = 0x12;
-                        decoder.data = &[0x34, 0x56, 0xff, 0xff];
+                        decoder.registers.a = a;
+                        decoder.registers.c = (chi << 16) | (a.wrapping_mul(2_654_435_761) & 0xffff);
+                        decoder.registers.bits = 5;
+                        decoder.source.current = 0x12;
+                        decoder.source.data = &[0x34, 0x56, 0xff, 0xff];
                         decoder.contexts[CONTEXT_AGGREGATE] = PACKED_STATES[index];
                         decoder
                     };
@@ -177,10 +177,10 @@ fn a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time() {
                         let before = one_by_one;
                         let bit = one_by_one.symbol(CONTEXT_AGGREGATE);
                         let plain = bit == 0
-                            && one_by_one.a == before.a - qe
-                            && one_by_one.c == before.c - (qe << 16)
-                            && one_by_one.bits == before.bits
-                            && one_by_one.data.len() == before.data.len()
+                            && one_by_one.registers.a == before.registers.a - qe
+                            && one_by_one.registers.c == before.registers.c - (qe << 16)
+                            && one_by_one.registers.bits == before.registers.bits
+                            && one_by_one.source.data.len() == before.source.data.len()
                             && one_by_one.contexts == before.contexts;
                         if !plain {
                             one_by_one = before;
@@ -190,8 +190,18 @@ fn a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time() {
                     }
                     assert_eq!(run, done, "state {index}, a {a:#x}, c_hi {chi:#x}, {columns} columns");
                     assert_eq!(
-                        (at_once.a, at_once.c, at_once.bits, at_once.contexts),
-                        (one_by_one.a, one_by_one.c, one_by_one.bits, one_by_one.contexts),
+                        (
+                            at_once.registers.a,
+                            at_once.registers.c,
+                            at_once.registers.bits,
+                            at_once.contexts
+                        ),
+                        (
+                            one_by_one.registers.a,
+                            one_by_one.registers.c,
+                            one_by_one.registers.bits,
+                            one_by_one.contexts
+                        ),
                         "registers: state {index}, a {a:#x}, c_hi {chi:#x}, {columns} columns"
                     );
                     longest = longest.max(run);
@@ -210,17 +220,20 @@ fn a_run_stops_at_the_first_column_that_is_not_empty() {
     let index = 90;
     assert_eq!(MQ_STATES[index], (1, 0, 90, 86));
     let mut decoder = Decoder::new();
-    decoder.a = 0xffff;
-    decoder.c = 0xffff_0000;
-    decoder.bits = 8;
+    decoder.registers.a = 0xffff;
+    decoder.registers.c = 0xffff_0000;
+    decoder.registers.bits = 8;
     decoder.contexts[CONTEXT_AGGREGATE] = PACKED_STATES[index];
     let flags = [0, 0, 0, 4, 0, 0];
     assert_eq!(decoder.aggregate_run(&flags), 3);
-    assert_eq!((decoder.a, decoder.c), (0xffff - 3, 0xffff_0000 - (3 << 16)));
+    assert_eq!(
+        (decoder.registers.a, decoder.registers.c),
+        (0xffff - 3, 0xffff_0000 - (3 << 16))
+    );
     // a run of the last column of a row
     let mut decoder = Decoder::new();
-    decoder.a = 0xffff;
-    decoder.c = 0xffff_0000;
+    decoder.registers.a = 0xffff;
+    decoder.registers.c = 0xffff_0000;
     decoder.contexts[CONTEXT_AGGREGATE] = PACKED_STATES[index];
     assert_eq!(decoder.aggregate_run(&[0]), 1);
 }
@@ -231,21 +244,21 @@ fn no_run_when_the_mps_is_one_or_the_room_is_short() {
     let qe = MQ_STATES[6].0;
     assert_eq!(MQ_STATES[6].1, 0);
     let mut decoder = Decoder::new();
-    decoder.a = 0xffff;
-    decoder.c = (qe - 1) << 16;
+    decoder.registers.a = 0xffff;
+    decoder.registers.c = (qe - 1) << 16;
     assert_eq!(decoder.aggregate_run(&[0, 0]), 0);
-    decoder.c = qe << 16;
-    decoder.a = 0x8000 + qe - 1;
+    decoder.registers.c = qe << 16;
+    decoder.registers.a = 0x8000 + qe - 1;
     assert_eq!(decoder.aggregate_run(&[0, 0]), 0);
     // the same registers with the room exactly qe: one column, two with room for two
-    decoder.a = 0x8000 + qe;
+    decoder.registers.a = 0x8000 + qe;
     assert_eq!(decoder.aggregate_run(&[0, 0]), 1);
-    decoder.a = 0x8000 + 2 * qe;
-    decoder.c = (2 * qe) << 16;
+    decoder.registers.a = 0x8000 + 2 * qe;
+    decoder.registers.c = (2 * qe) << 16;
     assert_eq!(decoder.aggregate_run(&[0, 0]), 2);
     // an MPS of 1 (index 7)
     decoder.contexts[CONTEXT_AGGREGATE] = PACKED_STATES[7];
-    decoder.a = 0xffff;
-    decoder.c = 0xffff_0000;
+    decoder.registers.a = 0xffff;
+    decoder.registers.c = 0xffff_0000;
     assert_eq!(decoder.aggregate_run(&[0, 0]), 0);
 }

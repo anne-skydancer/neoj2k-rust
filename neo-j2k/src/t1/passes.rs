@@ -2,7 +2,7 @@
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 // OpenJPEG's coding passes, ported through src/t1.cpp. See the notice in t1.rs.
 
-use super::mq::{CONTEXT_AGGREGATE, CONTEXT_UNIFORM, Decoder};
+use super::mq::{CONTEXT_AGGREGATE, CONTEXT_UNIFORM, Decoder, Mq};
 use super::tables::{SIGN_CONTEXT, SIGN_PREDICTION, ZERO_CONTEXT};
 
 const SIGMA_THIS: u32 = 1 << 4;
@@ -55,7 +55,7 @@ impl Passes<'_> {
     }
 
     #[inline(always)]
-    fn sign(&self, decoder: &mut Decoder<'_>, index: usize, row: usize, flags: u32) -> u32 {
+    fn sign(&self, mq: &mut Mq<'_, '_>, index: usize, row: usize, flags: u32) -> u32 {
         let shift = row * 3;
         let mut lu = (flags >> shift) & 0x00aa;
         lu |= (self.flags[index - 1] >> (19 + shift)) & 1;
@@ -64,7 +64,7 @@ impl Passes<'_> {
         lu |= (flags >> north_shift) & (1 << 4);
         lu |= (flags >> (16 + shift)) & (1 << 6);
         let lu = lu as usize;
-        decoder.symbol(usize::from(SIGN_CONTEXT[lu])) ^ u32::from(SIGN_PREDICTION[lu])
+        mq.symbol(usize::from(SIGN_CONTEXT[lu])) ^ u32::from(SIGN_PREDICTION[lu])
     }
 
     // Update the neighbouring columns. The caller records the sample in its own column: the significance bit at once, the
@@ -95,13 +95,13 @@ impl Passes<'_> {
     #[inline(always)]
     fn mark_sample<const SINGLE_STRIPE: bool>(
         &mut self,
-        decoder: &mut Decoder<'_>,
+        mq: &mut Mq<'_, '_>,
         column: &mut u32,
         chi: &mut u32,
         (index, data_base, magnitude): (usize, usize, i32),
         lane: usize,
     ) {
-        let sign = self.sign(decoder, index, lane, *column | *chi);
+        let sign = self.sign(mq, index, lane, *column | *chi);
         self.data[data_base + lane * self.width] = if sign != 0 { -magnitude } else { magnitude };
         self.mark_significant::<SINGLE_STRIPE>(index, lane, sign);
         *column |= SIGMA_THIS << (lane * 3);
@@ -114,8 +114,7 @@ impl Passes<'_> {
         bitplane: u32,
     ) {
         // The MQ registers live in locals for the length of the pass.
-        let mut local = *state;
-        let decoder = &mut local;
+        let mut mq = state.enter();
         let one = 1i32 << bitplane;
         let magnitude = one | (one >> 1);
         let stride = self.width + 2;
@@ -143,15 +142,15 @@ impl Passes<'_> {
                         continue;
                     }
                     let significant = if RAW {
-                        decoder.raw()
+                        mq.raw()
                     } else {
-                        decoder.symbol(Self::significance_context(zero_context, flags))
+                        mq.symbol(Self::significance_context(zero_context, flags))
                     };
                     if significant != 0 {
                         let sign = if RAW {
-                            decoder.raw()
+                            mq.raw()
                         } else {
-                            self.sign(decoder, index, lane, column | chi)
+                            self.sign(&mut mq, index, lane, column | chi)
                         };
                         self.data[data_start + col + lane * self.width] =
                             if sign != 0 { -magnitude } else { magnitude };
@@ -164,7 +163,7 @@ impl Passes<'_> {
                 self.flags[index] = column | chi;
             }
         }
-        *state = local;
+        mq.leave();
     }
 
     pub(super) fn refinement<const RAW: bool, const SINGLE_STRIPE: bool>(
@@ -172,8 +171,7 @@ impl Passes<'_> {
         state: &mut Decoder<'_>,
         bitplane: u32,
     ) {
-        let mut local = *state;
-        let decoder = &mut local;
+        let mut mq = state.enter();
         let half = (1i32 << bitplane) >> 1;
         let stride = self.width + 2;
         let height = if SINGLE_STRIPE { 4 } else { self.height };
@@ -191,14 +189,14 @@ impl Passes<'_> {
                     let lane = (shift / 3) as usize;
                     let flags = column >> shift;
                     let decision = if RAW {
-                        decoder.raw()
+                        mq.raw()
                     } else {
                         let context = if flags & MU_THIS != 0 {
                             2
                         } else {
                             usize::from(flags & SIGMA_NEIGHBOURS != 0)
                         };
-                        decoder.symbol(CONTEXT_MAGNITUDE + context)
+                        mq.symbol(CONTEXT_MAGNITUDE + context)
                     };
                     let value = &mut self.data[data_start + col + lane * self.width];
                     *value += if decision != u32::from(*value < 0) { half } else { -half };
@@ -208,7 +206,7 @@ impl Passes<'_> {
                 self.flags[index] = column | refined;
             }
         }
-        *state = local;
+        mq.leave();
     }
 
     pub(super) fn cleanup<const SINGLE_STRIPE: bool>(
@@ -217,8 +215,7 @@ impl Passes<'_> {
         bitplane: u32,
         segment_symbol: bool,
     ) {
-        let mut local = *state;
-        let decoder = &mut local;
+        let mut mq = state.enter();
         let one = 1i32 << bitplane;
         let magnitude = one | (one >> 1);
         let stride = self.width + 2;
@@ -244,7 +241,7 @@ impl Passes<'_> {
                 }
                 if rows == 4 && column == 0 {
                     // A run of empty columns whose AGG decisions are 0 without renormalisation is taken at once.
-                    let run = decoder.aggregate_run(&self.flags[index..flag_start + self.width]);
+                    let run = mq.aggregate_run(&self.flags[index..flag_start + self.width]);
                     if run != 0 {
                         next = col + run;
                         continue;
@@ -252,14 +249,14 @@ impl Passes<'_> {
                 }
                 let mut chi = 0;
                 let start = if rows == 4 && column == 0 {
-                    if decoder.symbol(CONTEXT_AGGREGATE) == 0 {
+                    if mq.symbol(CONTEXT_AGGREGATE) == 0 {
                         continue;
                     }
-                    let first = decoder.symbol(CONTEXT_UNIFORM) as usize;
-                    let second = decoder.symbol(CONTEXT_UNIFORM) as usize;
+                    let first = mq.symbol(CONTEXT_UNIFORM) as usize;
+                    let second = mq.symbol(CONTEXT_UNIFORM) as usize;
                     let lane = (first << 1) | second;
                     self.mark_sample::<SINGLE_STRIPE>(
-                        decoder,
+                        &mut mq,
                         &mut column,
                         &mut chi,
                         (index, data_start + col, magnitude),
@@ -272,10 +269,10 @@ impl Passes<'_> {
                 for lane in start..rows {
                     let flags = column >> (lane * 3);
                     if flags & (SIGMA_THIS | PI_THIS) == 0
-                        && decoder.symbol(Self::significance_context(zero_context, flags)) != 0
+                        && mq.symbol(Self::significance_context(zero_context, flags)) != 0
                     {
                         self.mark_sample::<SINGLE_STRIPE>(
-                            decoder,
+                            &mut mq,
                             &mut column,
                             &mut chi,
                             (index, data_start + col, magnitude),
@@ -289,9 +286,9 @@ impl Passes<'_> {
         if segment_symbol {
             // The C++ decoder consumes but does not check the four-bit segmentation symbol.
             for _ in 0..4 {
-                decoder.symbol(CONTEXT_UNIFORM);
+                mq.symbol(CONTEXT_UNIFORM);
             }
         }
-        *state = local;
+        mq.leave();
     }
 }
