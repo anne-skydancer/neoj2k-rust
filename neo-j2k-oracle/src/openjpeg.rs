@@ -125,15 +125,28 @@ impl Drop for Bytes {
     }
 }
 
+/// The number of bytes the shim reads: `height` rows of `width * components` bytes, a row stride apart (the last
+/// row has no padding after it). `None` when a size does not fit in `usize`, the stride is shorter than a row, or
+/// there is no row: the arithmetic is checked, so a huge stride cannot wrap to a small count.
+fn bytes_read(row_stride: usize, width: u32, height: u32, components: u32) -> Option<usize> {
+    let row = usize::try_from(width)
+        .ok()?
+        .checked_mul(usize::try_from(components).ok()?)?;
+    if row_stride < row || height == 0 {
+        return None;
+    }
+    usize::try_from(height - 1)
+        .ok()?
+        .checked_mul(row_stride)?
+        .checked_add(row)
+}
+
 fn encode(request: &EncodeRequest<'_>) -> Result<Bytes, Status> {
     init();
     let mut out = std::ptr::null_mut();
-    // the shim reads `height` rows of `width * components` bytes, a row stride apart
-    let row = request.width as usize * request.components as usize;
+    let needed = bytes_read(request.row_stride, request.width, request.height, request.components);
     assert!(
-        request.row_stride >= row
-            && request.height >= 1
-            && request.pixels.len() >= (request.height as usize - 1) * request.row_stride + row,
+        needed.is_some_and(|needed| request.pixels.len() >= needed),
         "the pixels hold the image"
     );
     // SAFETY: the pixels hold every byte the shim reads (checked above); out is a writable local; the
@@ -165,4 +178,28 @@ pub fn encode_u8(request: &EncodeRequest<'_>) -> Result<Vec<u8>, Status> {
 /// One encode for timing: the codestream's length, with no copy of it out of OpenJPEG's buffer.
 pub fn encode_u8_len(request: &EncodeRequest<'_>) -> Result<usize, Status> {
     encode(request).map(|bytes| bytes.as_slice().len())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::bytes_read;
+
+    #[test]
+    fn the_bytes_read_are_the_rows_without_the_last_padding() {
+        assert_eq!(bytes_read(10, 3, 4, 3), Some(3 * 10 + 9));
+        assert_eq!(bytes_read(9, 3, 1, 3), Some(9));
+    }
+
+    #[test]
+    fn a_stride_shorter_than_a_row_or_no_rows_is_refused() {
+        assert_eq!(bytes_read(8, 3, 4, 3), None);
+        assert_eq!(bytes_read(9, 3, 0, 3), None);
+    }
+
+    #[test]
+    fn a_huge_stride_cannot_wrap_to_a_small_count() {
+        // twice the stride wraps to zero on a 64-bit target: the count must be refused, not 1
+        assert_eq!(bytes_read(1usize << 63, 1, 3, 1), None);
+        assert_eq!(bytes_read(usize::MAX, 1, 2, 1), None);
+    }
 }
