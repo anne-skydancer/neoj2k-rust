@@ -53,8 +53,10 @@ QUICK_BENCH_ARGS = "--min-mcycles 2 --units 1"
 MIN_GAIN = 3.0  # percent faster, the driver's gate (tools/bench_tier1.py)
 CONTROL_BAND = 1.0  # percent
 # the pair side `small` (whole small decodes): no fixed floor of gain; the rows the step is meant to help must be
-# faster than the noise the control showed, every other row must not be slower than it (pair_verdict, small_verdict)
-SMALL_TARGET_ROWS = ("small/sl_32_rgba_53_reduce2",)
+# faster than the noise the control showed, every other row must not be slower than it (pair_verdict, small_verdict).
+# The rows are the three reduced (reduce 2) requests: a step that touches the Tier-1 arithmetic helps all of them, and
+# one that gains on the 32 x 32 row alone must not pass as a fix of the 64 x 64 and 128 x 128 rows
+SMALL_TARGET_ROWS = ("small/sl_32_rgba_53_reduce2", "small/sl_64_rgb_97_reduce2", "small/sl_128_rgba_97_reduce2")
 NOISE_BAND = 1.0  # percent: a change below this is within noise whatever the spread
 # the rows of one complete repetition of the three suites: the large decodes (2 images x widths 1, 2, 4, 8), the small
 # decodes (3 images x 3 requests) and the small encodes (3 sizes x 2 modes)
@@ -547,7 +549,8 @@ def small_verdict(rows, mine):
     """The step gate of the whole small decodes. There is no fixed gain to reach. Per row: the outputs must be identical
     and the control within +-CONTROL_BAND; a row the step is meant to help (SMALL_TARGET_ROWS) must be faster than the
     row's noise band (its head change below minus the band), every other row must not be
-    slower than it (its head change not above the band). Returns the summary lines: the verdict, then one table."""
+    slower than it (its head change not above the band). Returns the summary lines: the verdict, a line per target row
+    saying whether it improved (a partial result is stated as partial), then one table."""
     lines = []
     passed = 0
     for r in mine:
@@ -562,10 +565,22 @@ def small_verdict(rows, mine):
             r["set"], r["head"], r["control"], band, "faster than noise" if target else "no slower than noise",
             "Yes" if r["identical"] else "No", "Yes" if quiet else "No", "Yes" if better else "No",
             "Yes" if ok else "No"))
+    targets = [(r["set"], r["head"] < -noise_band(r) and abs(r["control"]) <= CONTROL_BAND) for r in mine
+               if r["set"] in SMALL_TARGET_ROWS]
+    improved = sum(1 for _, up in targets if up)
+    missing = [name for name in SMALL_TARGET_ROWS if name not in {r["set"] for r in mine}]
+    per_row = ["Target rows (the reduced requests): %d of %d improved beyond their noise band%s" % (
+        improved, len(SMALL_TARGET_ROWS), "" if improved == len(SMALL_TARGET_ROWS) else
+        " (a PARTIAL result: not a fix of the rows marked 'not improved')")]
+    per_row += ["- %s: %s" % (name, "improved" if up else "not improved (flat, slower, or its control out of band)")
+                for name, up in targets]
+    per_row += ["- %s: missing from the table (the gate fails)" % name for name in missing]
     head = [
         "Step gate (small decode sets): %s (%d of %d rows; no fixed gain: the row the step helps faster than its noise "
         "band, every other row no slower than it, control within +-%.1f %%, outputs identical)" % (
-            "Yes" if passed == len(mine) else "No", passed, len(mine), CONTROL_BAND),
+            "Yes" if passed == len(mine) and not missing else "No", passed, len(mine), CONTROL_BAND),
+        "",
+    ] + per_row + [
         "",
         "The noise band of a row is the control's tolerance (%.1f %%), or its control's median change when that is larger. Percent "
         "changes against the base in the same round, minus is faster." % CONTROL_BAND,
@@ -748,15 +763,38 @@ def selftest():
     assert img[0].startswith("Step gate (image sets): Yes (1 of 1 sets"), img[0]
     small = ("| small/sl_32_rgba_53_reduce2 | 0.05 | -6.50 % | -8.00 to -5.00 | -0.10 % | -0.60 to +0.40 | Yes | No |\n"
              "| small/sl_32_rgba_53_whole | 0.05 | +0.30 % | -1.00 to +1.00 | +0.10 % | -0.60 to +0.40 | Yes | No |\n"
-             "| small/sl_128_rgba_97_reduce2 | 0.20 | +0.50 % | -1.00 to +1.00 | -0.20 % | -0.60 to +0.40 | Yes | No |\n")
+             "| small/sl_64_rgb_97_reduce2 | 0.06 | -4.00 % | -5.00 to -3.00 | +0.20 % | -0.60 to +0.40 | Yes | No |\n"
+             "| small/sl_128_rgba_97_reduce2 | 0.20 | -3.00 % | -4.00 to -2.00 | -0.20 % | -0.60 to +0.40 | Yes | No |\n")
+    gate = "Step gate (small decode sets): "
     sm = pair_verdict(PAIR_GOLDEN + small, "small")
-    assert sm[0].startswith("Step gate (small decode sets): Yes (3 of 3 rows"), sm[0]
-    slow = pair_verdict(PAIR_GOLDEN + small.replace("+0.50 %", "+1.20 %"), "small")  # 128 reduce 2 slower than its band
-    assert slow[0].startswith("Step gate (small decode sets): No (2 of 3 rows"), slow[0]
-    flat = pair_verdict(PAIR_GOLDEN + small.replace("-6.50 %", "-0.50 %"), "small")  # the target not above its noise
-    assert flat[0].startswith("Step gate (small decode sets): No (2 of 3 rows"), flat[0]
+    assert sm[0].startswith(gate + "Yes (4 of 4 rows"), sm[0]
+    assert sm[2] == "Target rows (the reduced requests): 3 of 3 improved beyond their noise band", sm[2]
+    assert all(l.endswith(": improved") for l in sm[3:6]), sm[3:6]
+    # the 32 x 32 row alone improving, the 64 x 64 and 128 x 128 rows flat (inside their noise): not counted as improved
+    for flat_row, other in (("sl_64_rgb_97_reduce2", "sl_128_rgba_97_reduce2"), ("sl_128_rgba_97_reduce2", "sl_64_rgb_97_reduce2")):
+        lines = small.splitlines(True)
+        text = "".join(l.replace("-4.00 %", "-0.50 %").replace("-3.00 %", "-0.50 %") if "small/" + flat_row in l else l
+                       for l in lines)
+        partial = pair_verdict(PAIR_GOLDEN + text, "small")
+        assert partial[0].startswith(gate + "No (3 of 4 rows"), partial[0]
+        assert "2 of 3 improved" in partial[2] and "PARTIAL" in partial[2], partial[2]
+        assert any(l.startswith("- small/%s: not improved" % flat_row) for l in partial[3:6]), partial[3:6]
+        assert "- small/%s: improved" % other in partial[3:6], partial[3:6]
+    both = small.replace("-4.00 %", "+0.00 %").replace("-3.00 %", "-1.00 %")  # both larger rows at or inside the band
+    only32 = pair_verdict(PAIR_GOLDEN + both, "small")
+    assert only32[0].startswith(gate + "No (2 of 4 rows") and "1 of 3 improved" in only32[2], only32[:3]
+    # a target that improved but whose control strayed is not counted as improved (inconclusive: a rerun, not a wider band)
+    noisy = pair_verdict(PAIR_GOLDEN + small.replace("+0.20 % | -0.60 to +0.40", "+1.50 % | -0.60 to +2.00"), "small")
+    assert noisy[0].startswith(gate + "No (3 of 4 rows") and "2 of 3 improved" in noisy[2], noisy[:3]
+    # a missing target row fails the gate whatever the others did
+    absent = pair_verdict(PAIR_GOLDEN + "".join(l for l in small.splitlines(True) if "sl_64_" not in l), "small")
+    assert absent[0].startswith(gate + "No (") and "missing from the table" in "\n".join(absent), absent[:6]
+    slow = pair_verdict(PAIR_GOLDEN + small.replace("-3.00 %", "+1.20 %"), "small")  # 128 reduce 2 slower than its band
+    assert slow[0].startswith(gate + "No (3 of 4 rows"), slow[0]
+    flat = pair_verdict(PAIR_GOLDEN + small.replace("-6.50 %", "-0.50 %"), "small")  # the 32 target not above its noise
+    assert flat[0].startswith(gate + "No (3 of 4 rows"), flat[0]
     changed = pair_verdict(PAIR_GOLDEN + small.replace("+0.30 % | -1.00 to +1.00 | +0.10 % | -0.60 to +0.40 | Yes", "+0.30 % | -1.00 to +1.00 | +0.10 % | -0.60 to +0.40 | No"), "small")
-    assert changed[0].startswith("Step gate (small decode sets): No (2 of 3 rows"), changed[0]
+    assert changed[0].startswith(gate + "No (3 of 4 rows"), changed[0]
     try:
         pair_verdict("no table", "decode")
     except SystemExit:
