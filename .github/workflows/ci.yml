@@ -43,8 +43,9 @@ jobs:
           tool: cargo-deny@0.20.2
       - name: Licences, advisories, sources and bans
         run: cargo deny --locked check
-  # Miri runs its tests one at a time, so one slow test starves everything after it: each suite has its own job and
-  # its own 45 minutes, and `--report-time` prints the time of every test so a budget can be chosen from the log.
+  # Miri runs tests serially. Keep the expensive unit-test modules in separate jobs: the combined unit suite alone
+  # took 35 minutes before the short-block tests were added. The unfiltered remainder skips exactly these modules,
+  # so new tests still run by default. Keep --report-time to make future bottlenecks visible.
   miri:
     name: Miri (${{ matrix.suite }})
     runs-on: ubuntu-latest
@@ -56,7 +57,23 @@ jobs:
           - suite: unit tests
             rustflags: ""
             args: -p neo-j2k-testkit -p neo-j2k --lib
-            filter: ""
+            filter: "--skip encoder::tier1:: --skip t1::mq:: --skip t1::tests:: --skip t2::tests::"
+          - suite: encoder Tier-1
+            rustflags: ""
+            args: -p neo-j2k --lib
+            filter: "encoder::tier1::"
+          - suite: decoder MQ
+            rustflags: ""
+            args: -p neo-j2k --lib
+            filter: "t1::mq::"
+          - suite: decoder Tier-1
+            rustflags: ""
+            args: -p neo-j2k --lib
+            filter: "t1::tests::"
+          - suite: packet headers
+            rustflags: ""
+            args: -p neo-j2k --lib
+            filter: "t2::tests::"
           - suite: decoder requests
             rustflags: ""
             args: -p neo-j2k --test miri_decode
