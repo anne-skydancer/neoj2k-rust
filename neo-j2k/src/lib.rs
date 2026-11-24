@@ -15,6 +15,8 @@
 #[cfg(not(feature = "std"))]
 compile_error!("neo-j2k needs the std feature in this version");
 
+#[macro_use]
+mod stage;
 #[cfg(feature = "bench-internals")]
 #[doc(hidden)]
 pub mod bench;

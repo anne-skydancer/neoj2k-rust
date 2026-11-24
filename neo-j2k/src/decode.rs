@@ -329,6 +329,7 @@ impl Workspace {
         mut output: Option<&mut TypedOutput<'_, '_>>,
         diagnostics: &mut Diagnostics,
     ) -> Result<(), Error> {
+        let begin = stage_start!();
         let main = input.header;
         // Account for the previous decode's retained working memory before charging this one.
         self.budget.reset(input.retain, input.limits.max_memory);
@@ -349,7 +350,11 @@ impl Workspace {
         );
         let mut ppm = (!main.ppm_data.is_empty()).then_some(main.ppm_data.as_slice());
         let mut decoded = 0;
-        while let Some(index) = walk.next_tile(&mut self.budget, &mut self.tile_ledger, diagnostics)? {
+        stage_stop!(crate::stage::Stage::Begin, begin);
+        while let Some(index) = timed!(
+            crate::stage::Stage::TileScan,
+            walk.next_tile(&mut self.budget, &mut self.tile_ledger, diagnostics)
+        )? {
             let mark = self.budget.mark();
             let work = TileDecode {
                 header: main,
@@ -548,7 +553,10 @@ impl Components<'_, '_> {
                     .direct
                     .as_deref_mut()
                     .and_then(|planes| planes[index].as_deref_mut());
-                let mut plane = Reconstruction::prepare(component, samples)?;
+                let mut plane = timed!(
+                    crate::stage::Stage::PlanePrep,
+                    Reconstruction::prepare(component, samples)
+                )?;
                 inverse_component(&mut plane, resolution, data, scratch, diagnostics)?;
             }
         }
@@ -754,6 +762,7 @@ impl TileOutput<'_> {
         output: Option<&mut TypedOutput<'_, '_>>,
         diagnostics: &mut Diagnostics,
     ) -> Result<(), Error> {
+        let setup = stage_start!();
         let main = input.header;
         let index = input.index;
         self.budget.array(CType::TileComponentParams, main.comps.len())?;
@@ -797,6 +806,7 @@ impl TileOutput<'_> {
             ppm,
             ppt,
         };
+        stage_stop!(crate::stage::Stage::TileSetup, setup);
         let whole = single_tile_image(main);
         let mut direct = if let Some(output) = output.filter(|_| whole) {
             let planes = DirectPlanes::new(output.targets, self.slot, &self.tile.comps, self.image)?;
@@ -816,71 +826,77 @@ impl TileOutput<'_> {
             })
             .and_then(Jobs::new);
         let mut fused_mct = None;
-        let decoded = t2::read_packets(self.tier2, self.tile, packet_input, self.budget, diagnostics)
-            .and_then(|decoded| {
-                if direct.is_some() {
-                    // The destination replaces both usual locations for this tile's sample storage.
-                    for (component, slot) in self.tile.comps.iter_mut().zip(self.slot) {
-                        if let Some(slot) = *slot {
-                            component.samples = Vec::new();
-                            self.image[slot].samples = Vec::new();
-                        }
-                    }
-                } else if whole {
-                    for (component, slot) in self.tile.comps.iter_mut().zip(self.slot) {
-                        if let Some(slot) = *slot
-                            && self.image[slot].samples.capacity() > component.samples.capacity()
-                        {
-                            // The tile is the image. Keep one allocation per component across requests.
-                            core::mem::swap(&mut component.samples, &mut self.image[slot].samples);
-                        }
+        let decoded = timed!(
+            crate::stage::Stage::Packets,
+            t2::read_packets(self.tier2, self.tile, packet_input, self.budget, diagnostics)
+        )
+        .and_then(|decoded| {
+            if direct.is_some() {
+                // The destination replaces both usual locations for this tile's sample storage.
+                for (component, slot) in self.tile.comps.iter_mut().zip(self.slot) {
+                    if let Some(slot) = *slot {
+                        component.samples = Vec::new();
+                        self.image[slot].samples = Vec::new();
                     }
                 }
-                let mut components = Components {
-                    parts: &mut self.tile.comps,
-                    resolutions: decoded,
-                    slots: self.slot,
-                    direct: direct.as_mut().map(DirectPlanes::as_mut),
-                };
-                if let Some(result) = jobs
-                    .and_then(|jobs| components.parallel_inverse(jobs, self.workers, self.serial, data, diagnostics))
-                {
-                    result?;
-                } else {
-                    components.inverse(data, self.serial, diagnostics)?;
+            } else if whole {
+                for (component, slot) in self.tile.comps.iter_mut().zip(self.slot) {
+                    if let Some(slot) = *slot
+                        && self.image[slot].samples.capacity() > component.samples.capacity()
+                    {
+                        // The tile is the image. Keep one allocation per component across requests.
+                        core::mem::swap(&mut component.samples, &mut self.image[slot].samples);
+                    }
                 }
-                Ok(decoded)
-            })
-            .and_then(|decoded| {
-                if coding.mct != 0 && input.params.components.is_none() {
-                    if whole {
-                        fused_mct = whole_mct_rect(&self.tile.comps, decoded).filter(|rect| {
-                            self.slot[..3].iter().all(|slot| {
-                                slot.is_some_and(|slot| {
-                                    let info = self.image[slot].info;
-                                    info.width == rect.width() && info.height == rect.height()
-                                })
+            }
+            let mut components = Components {
+                parts: &mut self.tile.comps,
+                resolutions: decoded,
+                slots: self.slot,
+                direct: direct.as_mut().map(DirectPlanes::as_mut),
+            };
+            if let Some(result) =
+                jobs.and_then(|jobs| components.parallel_inverse(jobs, self.workers, self.serial, data, diagnostics))
+            {
+                result?;
+            } else {
+                components.inverse(data, self.serial, diagnostics)?;
+            }
+            Ok(decoded)
+        })
+        .and_then(|decoded| {
+            if coding.mct != 0 && input.params.components.is_none() {
+                if whole {
+                    fused_mct = whole_mct_rect(&self.tile.comps, decoded).filter(|rect| {
+                        self.slot[..3].iter().all(|slot| {
+                            slot.is_some_and(|slot| {
+                                let info = self.image[slot].info;
+                                info.width == rect.width() && info.height == rect.height()
                             })
-                        });
-                    }
-                    if fused_mct.is_none() {
+                        })
+                    });
+                }
+                if fused_mct.is_none() {
+                    timed!(
+                        crate::stage::Stage::Colour,
                         transform_colour(
                             &mut self.tile.comps,
                             direct.as_mut().map(DirectPlanes::as_mut),
                             decoded,
                             diagnostics,
                             jobs,
-                        )?;
-                    }
+                        )
+                    )?;
                 }
-                Ok(decoded)
-            })
-            .map_err(|error| {
-                if !error.message().is_empty() {
-                    diagnostics.error(error.message());
-                }
-                Error::static_message(error.kind(), "Failed to decode.\n")
-            })?;
+            }
+            Ok(decoded)
+        })
+        .map_err(|error| {
+            if !error.message().is_empty() {
+                diagnostics.error(error.message());
+            }
+            Error::static_message(error.kind(), "Failed to decode.\n")
+        })?;
         walk.after_tile(index, diagnostics)?;
         if let Some(rect) = fused_mct {
             let reversible = self.tile.comps[0].reversible;
@@ -899,7 +915,10 @@ impl TileOutput<'_> {
                 };
                 [&mut y.samples, &mut u.samples, &mut v.samples]
             };
-            finish_whole_mct(planes, reversible, finishes, rect, jobs);
+            timed!(
+                crate::stage::Stage::Colour,
+                finish_whole_mct(planes, reversible, finishes, rect, jobs)
+            );
         }
         for (index, (component, (&resolution, slot))) in self
             .tile
@@ -923,9 +942,15 @@ impl TileOutput<'_> {
                 let samples = planes.as_mut()[index]
                     .as_deref_mut()
                     .expect("selected components have direct planes");
-                finish_tile_component(component, resolution, samples, finish, jobs)
+                timed!(
+                    crate::stage::Stage::Finish,
+                    finish_tile_component(component, resolution, samples, finish, jobs)
+                )
             } else {
-                copy_component(component, resolution, finish, &mut self.image[slot], whole, jobs)?
+                timed!(
+                    crate::stage::Stage::Finish,
+                    copy_component(component, resolution, finish, &mut self.image[slot], whole, jobs)
+                )?
             };
         }
         Ok(())
@@ -1047,8 +1072,14 @@ fn inverse_component(
     scratch: &mut ComponentScratch,
     diagnostics: &mut Diagnostics,
 ) -> Result<(), Error> {
-    blocks::decode(component, data, &mut scratch.tier1, diagnostics)?;
-    inverse_wavelet(component, 0..(decoded as usize + 1), &mut scratch.wavelet, None)
+    timed!(
+        crate::stage::Stage::Tier1,
+        blocks::decode(component, data, &mut scratch.tier1, diagnostics)
+    )?;
+    timed!(
+        crate::stage::Stage::Wavelet,
+        inverse_wavelet(component, 0..(decoded as usize + 1), &mut scratch.wavelet, None)
+    )
 }
 
 struct Reconstruction<'a> {

@@ -11,6 +11,18 @@ use crate::t1::{Block, Destination, Scratch};
 use crate::tile::Segment;
 
 pub use crate::encoder::bench::{EncodeParams, EncodeWorkspace, EncodedBlock, EncodedPass};
+pub use crate::stage::Stage;
+
+/// Clears the stage totals.
+pub fn stage_reset() {
+    crate::stage::reset();
+}
+
+/// The stage totals since the last reset, one entry per [`Stage::ALL`], in that order.
+#[must_use]
+pub fn stage_totals() -> [core::time::Duration; Stage::ALL.len()] {
+    crate::stage::totals()
+}
 
 /// One code-block as the decoder's Tier-1 receives it, prepared once (its segments are built here, not in the
 /// timed call).

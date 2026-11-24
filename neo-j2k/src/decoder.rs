@@ -568,7 +568,10 @@ impl Decoder {
     }
 
     fn finish_planar_decode(&mut self, result: Result<(), Error>) -> Result<DecodedImage<'_>, Error> {
-        self.work.trim_retained(self.config.retain_bytes, result.is_ok());
+        timed!(
+            crate::stage::Stage::Trim,
+            self.work.trim_retained(self.config.retain_bytes, result.is_ok())
+        );
         if let Err(error) = result {
             self.diagnostics.error(error.message());
             return Err(error);
@@ -622,9 +625,12 @@ impl Decoder {
             return Err(error);
         }
         if let Some((sample, targets)) = output {
-            self.work.write_targets(sample, targets);
+            timed!(crate::stage::Stage::Output, self.work.write_targets(sample, targets));
         }
-        self.work.trim_retained(self.config.retain_bytes, false);
+        timed!(
+            crate::stage::Stage::Trim,
+            self.work.trim_retained(self.config.retain_bytes, false)
+        );
         Ok(self.work.truncated)
     }
 
@@ -634,6 +640,7 @@ impl Decoder {
         params: DecodeParams<'_>,
         output: DecodeOutput<'_, '_>,
     ) -> Result<(), Error> {
+        let request = stage_start!();
         let state = self.header.as_mut().expect("decode reads the header first");
         if matches!(source, Source::Reader(_)) && state.needs_resize() {
             state.resize_components()?;
@@ -685,6 +692,7 @@ impl Decoder {
             }
         }
 
+        stage_stop!(crate::stage::Stage::Request, request);
         let codestream_end = state
             .info
             .codestream_length
@@ -709,7 +717,7 @@ impl Decoder {
         };
         self.work.decode(input, params, typed.as_mut(), &mut self.diagnostics)?;
         if let Some(output) = &mut typed {
-            self.work.write_i32_targets(output);
+            timed!(crate::stage::Stage::Output, self.work.write_i32_targets(output));
         }
         if let Some(jp2) = state
             .jp2
@@ -725,6 +733,10 @@ impl Decoder {
     ///
     /// A later call with the same header prefix and limits reuses the validated header.
     pub fn read_header(&mut self, data: &[u8]) -> Result<&Info, Error> {
+        timed!(crate::stage::Stage::Header, self.read_header_untimed(data))
+    }
+
+    fn read_header_untimed(&mut self, data: &[u8]) -> Result<&Info, Error> {
         self.diagnostics.clear();
         let cached = self.header.as_mut().filter(|state| {
             state.limits == self.config.limits && !state.prefix.is_empty() && data.starts_with(&state.prefix)
