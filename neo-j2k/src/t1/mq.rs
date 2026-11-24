@@ -87,20 +87,33 @@ struct Registers {
 
 /// RENORMD when the code register has fewer bits than the interval needs shifts (a byte comes in: 0.07 to 0.11 of a
 /// decision): the shifts taken as many at a time as the register has bits, a byte read whenever none is left. The
-/// registers go in and out by value, so that the decision's own copies stay in machine registers (no address escapes).
+/// helper is outlined and cold. The two registers it changes go in as plain integers and come back as one `u64` (the
+/// code register in the low half, the bit count in the high half), so that no three-word aggregate is built, passed by
+/// address and copied back around the call; the interval `a` is not passed at all, the caller shifts it by `total`.
+/// That is the intent: whether the compiler keeps these values in machine registers depends on the target and is not
+/// relied on for correctness.
 #[cold]
 #[inline(never)]
-fn renormalize_with_bytes(mut r: Registers, source: &mut Source<'_>, total: u32) -> Registers {
+fn renormalize_with_bytes(mut c: u32, mut bits: u32, source: &mut Source<'_>, total: u32) -> u64 {
     let mut shifts = total;
-    while shifts > r.bits {
-        r.c <<= r.bits;
-        shifts -= r.bits;
-        (r.c, r.bits) = source.byte_in(r.c);
+    while shifts > bits {
+        c <<= bits;
+        shifts -= bits;
+        (c, bits) = source.byte_in(c);
     }
-    r.a <<= total;
-    r.c <<= shifts;
-    r.bits -= shifts;
-    r
+    c <<= shifts;
+    bits -= shifts;
+    u64::from(c) | (u64::from(bits) << 32)
+}
+
+/// The code register and the bit count that `renormalize_with_bytes` packed into one `u64`.
+#[inline(always)]
+#[allow(
+    clippy::cast_possible_truncation,
+    reason = "the two halves are taken apart on purpose: the low 32 bits are the code register, the high 32 the bit count, both built from u32 values"
+)]
+const fn unpack_registers(packed: u64) -> (u32, u32) {
+    (packed as u32, (packed >> 32) as u32)
 }
 
 /// One code-block's arithmetic state, reused across its codeword segments: the registers, the byte source and the
@@ -234,16 +247,10 @@ impl Mq<'_, '_> {
             self.c <<= total;
             self.bits -= total;
         } else {
-            let r = renormalize_with_bytes(
-                Registers {
-                    a,
-                    c: self.c,
-                    bits: self.bits,
-                },
-                self.source,
-                total,
-            );
-            (self.a, self.c, self.bits) = (r.a, r.c, r.bits);
+            let (c, bits) = unpack_registers(renormalize_with_bytes(self.c, self.bits, self.source, total));
+            self.a = a << total;
+            self.c = c;
+            self.bits = bits;
         }
         bit
     }

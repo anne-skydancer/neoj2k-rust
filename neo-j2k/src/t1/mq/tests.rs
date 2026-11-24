@@ -272,3 +272,57 @@ fn no_run_when_the_mps_is_one_or_the_room_is_short() {
     decoder.registers.c = 0xffff_0000;
     assert_eq!(decoder.aggregate_run(&cells(&[0, 0])), 0);
 }
+
+#[test]
+fn chained_decisions_over_short_and_exhausted_input_equal_the_model() {
+    // The byte-in path of a decision (the outlined helper) over whole runs rather than one decision: starting with no
+    // bits left, so that bytes come in at once and repeatedly (a shift of up to 15 needs two); stuffed 0xff bytes,
+    // bytes next to the marker range (0x8f, 0x90) and an input of zero to seven bytes, which runs out and then reads
+    // the marker again for as long as the run lasts (a malformed or overlong segment). After every decision the bit,
+    // the next context, all three registers and the position in the source must equal the model's.
+    let mut seed = 0x2545_f491_4f6c_dd1d_u64;
+    // a value below `n` (the high half of the generator, which is a u32 by construction)
+    let mut below = move |n: u32| -> u32 {
+        seed ^= seed << 13;
+        seed ^= seed >> 7;
+        seed ^= seed << 17;
+        u32::try_from(seed >> 32).unwrap() % n
+    };
+    let runs = if cfg!(miri) { 20 } else { 4000 };
+    for _ in 0..runs {
+        let len = usize::try_from(below(8)).unwrap();
+        let tail: Vec<u8> = (0..len).map(|_| BYTES[usize::try_from(below(6)).unwrap()]).collect();
+        let mut index = usize::try_from(below(u32::try_from(MQ_STATES.len()).unwrap())).unwrap();
+        let mut model = Model {
+            a: 0x8000 + below(0x8000),
+            c: (below(0x1_0000) << 16) | below(0x1_0000),
+            bits: below(3),
+            current: [0x12, 0xff, 0x00][usize::try_from(below(3)).unwrap()],
+            consumed: 0,
+        };
+        let mut decoder = decoder_from(&tail, index, model);
+        for step in 0..(if cfg!(miri) { 40 } else { 300 }) {
+            let (want_bit, want_next, want) = model_decision(index, model, &tail);
+            let bit = decoder.symbol(0);
+            let got = Model {
+                a: decoder.registers.a,
+                c: decoder.registers.c,
+                bits: decoder.registers.bits,
+                current: decoder.source.current,
+                consumed: tail.len() - decoder.source.data.len(),
+            };
+            assert_eq!(bit, want_bit, "bit: step {step}, state {index}, bytes {tail:02x?}");
+            assert_eq!(
+                decoder.contexts[0], PACKED_STATES[want_next],
+                "next state: step {step}, bytes {tail:02x?}"
+            );
+            // past the end the model keeps counting the artificial 0xff bytes it reads, the source stays at the end
+            let at_end = Model {
+                consumed: want.consumed.min(tail.len()),
+                ..want
+            };
+            assert_eq!(got, at_end, "registers: step {step}, state {index}, bytes {tail:02x?}");
+            (index, model) = (want_next, want);
+        }
+    }
+}
