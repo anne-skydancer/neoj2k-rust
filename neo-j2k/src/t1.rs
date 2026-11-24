@@ -619,10 +619,17 @@ mod tests {
         ];
         let mut blocks = 0;
         let mut nonzero = 0;
-        for width in [1u32, 2, 3, 4, 5, 8, 9, 17, 64, 1_024] {
+        // Miri runs the same code far slower: fewer widths and orientations there, the extremes kept.
+        let widths: &[u32] = if cfg!(miri) {
+            &[1, 3, 9, 1_024]
+        } else {
+            &[1, 2, 3, 4, 5, 8, 9, 17, 64, 1_024]
+        };
+        let orients = if cfg!(miri) { 1..3 } else { 0..4 };
+        for &width in widths {
             for height in 1..=4u32 {
                 for (index, &cblksty) in styles.iter().enumerate() {
-                    for orient in 0..4 {
+                    for orient in orients.clone() {
                         let seed = width * 8 + height * 64 + orient + u32::try_from(index).unwrap();
                         let numbps = 1 + seed % 7;
                         let roishift = seed % 3;
@@ -683,7 +690,7 @@ mod tests {
             (2, 6),
         ];
         let mut run = 0u32;
-        for round in 0..3u32 {
+        for round in 0..if cfg!(miri) { 1u32 } else { 3 } {
             for &(width, height) in &shapes {
                 run += 1;
                 let cblksty = [0, RESET | SEGMENT_SYMBOL, VERTICAL_CAUSAL, LAZY][((run + round) % 4) as usize];
