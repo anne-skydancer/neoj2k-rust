@@ -104,7 +104,7 @@ def plan(env):
              "py": "python" if os_name.startswith("windows") else "python3"}
             for name, base, head, side in pairs for os_name in GATE_OS for cpu in CPU_LEVELS]
     base_cells = []
-    for os_name, compiler in (("ubuntu-26.04", "GCC 15"), ("windows-2025", "MSVC")):
+    for os_name, compiler in (("ubuntu-26.04", "GCC 16"), ("windows-2025", "MSVC")):
         for cpu in CPU_LEVELS:
             linux = os_name.startswith("ubuntu")
             if linux:
@@ -501,7 +501,7 @@ def table_command(args):
         if args.compiler.startswith("MSVC"):
             why = "MSVC is the compiler the C++ performance numbers of the baseline were measured with."
         else:
-            why = "GCC 15 is not the compiler the C++ performance numbers of the baseline were measured with (MSVC)."
+            why = "GCC 16 is not the compiler the C++ performance numbers of the baseline were measured with (MSVC)."
         notes.append("C++ side: the neo-j2k oracle (v0.1.3, RelWithDebInfo) built with %s%s. %s" % (
             args.compiler, ", SIMD %s" % args.oracle if args.oracle else "", why))
     if not like:
@@ -675,7 +675,7 @@ def selftest():
     with tempfile.TemporaryDirectory() as tmp:
         with open(os.path.join(tmp, "rep-1.txt"), "w", encoding="utf-8") as f:
             f.write(GOLDEN)
-        assert table_command(argparse.Namespace(dir=tmp, compiler="GCC 15", oracle="scalar", like_for_like="yes",
+        assert table_command(argparse.Namespace(dir=tmp, compiler="GCC 16", oracle="scalar", like_for_like="yes",
                                                 cpus=4)) == 0
     # the pair's step gate: one side only, the control count over all eight
     enc = pair_verdict(PAIR_GOLDEN, "encode")
@@ -786,7 +786,7 @@ def selftest():
             assert "Outputs that are NOT identical (1 of 23 rows): encode 64x64 RGB / lossy 9/7" in out, out
             assert "Not counted (more workers than the runner's 4 logical CPUs" in out
             assert "%s faster in 8 rows, within noise in 2, slower in 11, of 21" % first in out, out
-            ns = argparse.Namespace(dir=tmp, kind=kind, compiler="GCC 15", oracle=None, like_for_like="no", cpus=4)
+            ns = argparse.Namespace(dir=tmp, kind=kind, compiler="GCC 16", oracle=None, like_for_like="no", cpus=4)
             assert table_command(ns) == 0
         assert "not like for like" in pair_table(agg, "openjpeg", False, 4)
         with open(os.path.join(tmp, "rep-3.txt"), "w", encoding="utf-8") as f:
