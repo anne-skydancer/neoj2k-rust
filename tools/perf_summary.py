@@ -85,8 +85,8 @@ def plan(env):
     custom = bool(base)
     if custom:
         side = (env.get("PAIR_SIDE_IN") or "").strip() or "decode"
-        if side not in ("decode", "encode"):
-            raise SystemExit("perf_summary: pair_side is decode or encode, not %r" % side)
+        if side not in ("decode", "encode", "image"):
+            raise SystemExit("perf_summary: pair_side is decode, encode or image, not %r" % side)
         name = (env.get("PAIR_NAME_IN") or "").strip() or "adhoc-" + side
         if not re.fullmatch(r"[A-Za-z0-9._-]+", name):
             raise SystemExit("perf_summary: pair_name may hold letters, digits, '.', '_' and '-' only, not %r" % name)
@@ -322,7 +322,7 @@ def parse_pair_table(text):
     rows = []
     for line in text.splitlines():
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) != 8 or not re.match(r"^(decode|encode)/", cells[0]):
+        if len(cells) != 8 or not re.match(r"^(decode|encode|image|rated)/", cells[0]):
             continue
         head = re.match(r"^([+-]\d+\.\d+) %$", cells[2])
         control = re.match(r"^([+-]\d+\.\d+) %$", cells[4])
@@ -342,14 +342,15 @@ def pair_verdict(text, side):
         raise SystemExit("perf_summary: the driver's table has no %s sets" % side)
     passed = sum(1 for r in mine if r["gate"])
     strayed = sum(1 for r in rows if abs(r["control"]) > CONTROL_BAND)
-    other = "encode" if side == "decode" else "decode"
+    other = {"decode": "encode", "encode": "decode", "image": "decode, encode and rated"}[side]
     return [
         "Step gate (%s sets): %s (%d of %d sets at least %.1f %% faster, control within +-%.1f %%, outputs identical)" % (
             side, "Yes" if passed == len(mine) else "No", passed, len(mine), MIN_GAIN, CONTROL_BAND),
         "",
         "Control outside +-%.1f %% in %d of %d sets (a noisy runner for those rows)" % (CONTROL_BAND, strayed, len(rows)),
         "",
-        "The %s sets are not judged: this step does not change that code, so their rows show layout and noise." % other,
+        "The %s sets are not judged: this step does not change that code (or, for the rated sets, is not meant to "
+        "speed it up), so their rows show layout, noise and regressions." % other,
     ]
 
 
@@ -490,6 +491,10 @@ def selftest():
     assert dec[0].startswith("Step gate (decode sets): No (0 of 6 sets"), dec[0]
     allyes = PAIR_GOLDEN.replace("| Yes | No |", "| Yes | Yes |")
     assert pair_verdict(allyes, "decode")[0].startswith("Step gate (decode sets): Yes (6 of 6 sets")
+    rows = ("| image/rgb32_lossy | 0.88 | -6.62 % | -9.00 to -5.00 | -0.11 % | -0.50 to +0.40 | Yes | Yes |\n"
+            "| rated/rgb128_lossy_cap | 13.79 | +0.27 % | -1.00 to +1.00 | -0.01 % | -0.50 to +0.40 | Yes | No |\n")
+    img = pair_verdict(PAIR_GOLDEN + rows, "image")
+    assert img[0].startswith("Step gate (image sets): Yes (1 of 1 sets"), img[0]
     try:
         pair_verdict("no table", "decode")
     except SystemExit:
@@ -557,7 +562,7 @@ def main():
     t.add_argument("--cpus", type=int, help="the runner's logical CPUs (default: this process's)")
     v = sub.add_parser("pair-verdict")
     v.add_argument("--file", required=True)
-    v.add_argument("--side", required=True, choices=["decode", "encode"])
+    v.add_argument("--side", required=True, choices=["decode", "encode", "image"])
     args = ap.parse_args()
     if args.command == "selftest":
         return selftest()

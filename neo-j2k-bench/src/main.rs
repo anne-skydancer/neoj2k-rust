@@ -96,6 +96,7 @@ fn run(options: &Options) -> Result<(), String> {
     )?;
     let mut all = sets::decode_sets(&dumps)?;
     all.extend(sets::encode_sets(options.blocks));
+    all.extend(sets::image_sets());
     let pinned = match options.pin {
         _ if options.digest_only => "pinned=no reason=digest-only".to_owned(),
         None => "pinned=no reason=not-requested".to_owned(),

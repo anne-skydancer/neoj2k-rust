@@ -275,9 +275,14 @@ impl Encoder {
                 .encode_blocks_parallel(&settings, jobs, &mut self.tier1_workers)?;
         } else {
             let code_blocks = &mut self.tier1;
+            let encode = if settings.all_passes {
+                tier1::encode_all_passes
+            } else {
+                tier1::encode
+            };
             self.buffers
                 .encode_blocks(&settings, |samples, width, height, params, block| {
-                    tier1::encode(code_blocks, samples, width, height, params, block)
+                    encode(code_blocks, samples, width, height, params, block)
                 })?;
         }
         let packets = &mut self.tier2;
@@ -401,6 +406,11 @@ impl EncodingBuffers {
             resize_with(&mut worker.zigzag, BLOCK_SIDE * BLOCK_SIDE, || 0)?;
         }
 
+        let encode = if settings.all_passes {
+            tier1::encode_all_passes
+        } else {
+            tier1::encode
+        };
         let samples = &self.samples;
         let blocks = &mut self.blocks;
         let block_jobs = &self.block_jobs;
@@ -423,7 +433,7 @@ impl EncodingBuffers {
                     descriptor.params,
                     zigzag,
                 );
-                worker.error = tier1::encode(
+                worker.error = encode(
                     &mut worker.tier1,
                     zigzag,
                     descriptor.width,
@@ -565,6 +575,8 @@ struct Settings<'p> {
     mct: bool,
     steps: [wavelet::Step; MAX_BANDS],
     rates: [f32; MAX_LAYERS],
+    /// Every layer's effective rate is zero, so every pass is kept and no distortion is read.
+    all_passes: bool,
     comment: &'p [u8],
     tile_capacity: usize,
 }
@@ -658,6 +670,7 @@ impl<'p> Settings<'p> {
             mct: params.mct,
             steps: [wavelet::Step::default(); MAX_BANDS],
             rates,
+            all_passes: false,
             comment,
             tile_capacity: tile_capacity(samples, components),
         };
@@ -666,6 +679,7 @@ impl<'p> Settings<'p> {
         validate_extra_options(&params.extra_options)?;
         image.validate_samples(&settings)?;
         settings.update_rates(samples);
+        settings.all_passes = tier2::takes_all_passes(&settings.rates[..settings.layers]);
         for (index, step) in settings.steps[..3 * resolutions - 2].iter_mut().enumerate() {
             let resolution = if index == 0 { 0 } else { (index - 1) / 3 + 1 };
             let level = resolutions - 1 - resolution;
@@ -960,18 +974,40 @@ pub(super) struct T1Params {
     pub(super) mct: bool,
 }
 
+/// Writes the block's fixed-point samples in stripe-column order: each column of a four-row stripe, top row first.
 fn gather_samples(plane: &[i32], stride: usize, width: usize, height: usize, params: T1Params, dst: &mut [i32]) {
-    let mut dst = dst.iter_mut();
-    for band in (0..height).step_by(4) {
-        for column in 0..width {
-            for row in band..(band + 4).min(height) {
-                let sample = plane[row * stride + column];
-                let value = if params.reversible {
-                    sample.wrapping_shl(6)
-                } else {
-                    quantize(sample, params.step_size)
-                };
-                *dst.next().expect("one destination per code-block sample") = value;
+    if params.reversible {
+        gather_with(plane, stride, width, height, dst, |sample| sample.wrapping_shl(6));
+    } else {
+        let step_size = params.step_size;
+        gather_with(plane, stride, width, height, dst, |sample| quantize(sample, step_size));
+    }
+}
+
+#[inline(always)]
+fn gather_with(
+    plane: &[i32],
+    stride: usize,
+    width: usize,
+    height: usize,
+    dst: &mut [i32],
+    convert: impl Fn(i32) -> i32,
+) {
+    let (whole, tail) = dst.split_at_mut(height / 4 * 4 * width);
+    for (stripe, out) in whole.chunks_exact_mut(4 * width).enumerate() {
+        let top = stripe * 4 * stride;
+        let row = |index: usize| &plane[top + index * stride..][..width];
+        let rows = row(0).iter().zip(row(1)).zip(row(2)).zip(row(3));
+        for (out, (((&a, &b), &c), &d)) in out.as_chunks_mut::<4>().0.iter_mut().zip(rows) {
+            *out = [convert(a), convert(b), convert(c), convert(d)];
+        }
+    }
+    let rows = height % 4;
+    if rows != 0 {
+        let top = height / 4 * 4 * stride;
+        for (column, out) in tail.chunks_exact_mut(rows).enumerate() {
+            for (index, out) in out.iter_mut().enumerate() {
+                *out = convert(plane[top + index * stride + column]);
             }
         }
     }
@@ -982,11 +1018,19 @@ fn gather_samples(plane: &[i32], stride: usize, width: usize, height: usize, par
     reason = "the bounds check mirrors the C++ float-to-int conversion"
 )]
 fn quantize(sample: i32, step_size: f32) -> i32 {
-    let value = ((wavelet::from_sample(sample) / step_size) * 64.0).round_ties_even();
-    if (-2_147_483_648.0..2_147_483_648.0).contains(&value) {
-        value as i32
-    } else {
-        i32::MIN
+    let value = (wavelet::from_sample(sample) / step_size) * 64.0;
+    // The conversion rounds to nearest even in the default environment and gives i32::MIN for NaN and for a result
+    // outside the i32 range, as the C++ cast does; the call it replaces was a libm call per sample at baseline.
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
+    return crate::simd::round_i32(value);
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
+    {
+        let value = value.round_ties_even();
+        if (-2_147_483_648.0..2_147_483_648.0).contains(&value) {
+            value as i32
+        } else {
+            i32::MIN
+        }
     }
 }
 
@@ -1051,6 +1095,103 @@ mod tests {
             .prepare(&image, &params, None, &mut diagnostics, |_, _| {})
             .unwrap();
         assert_eq!(encoder.samples, expected);
+    }
+
+    /// The gather the encoder had before the four-row kernels: one sample at a time, rounded by the standard library.
+    #[allow(
+        clippy::cast_possible_truncation,
+        reason = "the range is checked, as the C++ conversion is"
+    )]
+    fn gather_reference(plane: &[i32], stride: usize, width: usize, height: usize, params: T1Params) -> Vec<i32> {
+        let mut out = Vec::new();
+        for top in (0..height).step_by(4) {
+            for column in 0..width {
+                for row in top..(top + 4).min(height) {
+                    let sample = plane[row * stride + column];
+                    out.push(if params.reversible {
+                        sample.wrapping_shl(6)
+                    } else {
+                        let value = ((wavelet::from_sample(sample) / params.step_size) * 64.0).round_ties_even();
+                        if (-2_147_483_648.0..2_147_483_648.0).contains(&value) {
+                            value as i32
+                        } else {
+                            i32::MIN
+                        }
+                    });
+                }
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn gather_matches_the_one_sample_at_a_time_gather() {
+        let specials = [
+            0.0_f32,
+            -0.0,
+            0.5,
+            1.5,
+            2.5,
+            -0.5,
+            -1.5,
+            -2.5,
+            0.0078125,
+            0.0234375,
+            -0.0234375,
+            1.0e9,
+            3.3e7,
+            3.3e9,
+            -3.3e9,
+            f32::MAX,
+            f32::MIN,
+            f32::INFINITY,
+            f32::NEG_INFINITY,
+            f32::NAN,
+            -f32::NAN,
+            f32::MIN_POSITIVE,
+            33_554_432.0,
+        ];
+        for (width, height, stride) in [
+            (1, 1, 1),
+            (3, 2, 5),
+            (8, 4, 8),
+            (7, 5, 9),
+            (64, 64, 64),
+            (5, 7, 6),
+            (2, 3, 2),
+        ] {
+            let mut random = 0x9e37_79b9_u32 ^ u32::try_from(width * height).unwrap();
+            let mut next = || {
+                random ^= random << 13;
+                random ^= random >> 17;
+                random ^= random << 5;
+                random
+            };
+            let plane: Vec<i32> = (0..stride * height)
+                .map(|index| match index % 3 {
+                    0 => specials[next() as usize % specials.len()].to_bits().cast_signed(),
+                    1 => next().cast_signed(),
+                    _ => f32::from_bits(next() & 0x4fff_ffff).to_bits().cast_signed(),
+                })
+                .collect();
+            for (reversible, step_size) in [(true, 1.0), (false, 0.125), (false, 1.0), (false, 3.0e-5), (false, 0.7)] {
+                let params = T1Params {
+                    orientation: 1,
+                    level: 0,
+                    component: 0,
+                    reversible,
+                    step_size,
+                    mct: false,
+                };
+                let mut got = vec![0; width * height];
+                gather_samples(&plane, stride, width, height, params, &mut got);
+                let expected = gather_reference(&plane, stride, width, height, params);
+                assert_eq!(
+                    got, expected,
+                    "{width}x{height}, stride {stride}, reversible {reversible}, step {step_size}"
+                );
+            }
+        }
     }
 
     #[test]

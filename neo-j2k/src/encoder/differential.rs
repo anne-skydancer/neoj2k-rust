@@ -81,17 +81,25 @@ fn encoded_bytes_match_cpp_across_core_settings() {
                     row_stride: stride,
                 },
             };
-            for reversible in [true, false] {
+            // The all-zero cases keep every pass; the positive and mixed ones take the rate allocator's normal path.
+            let cases = [
+                (true, vec![]),
+                (true, vec![24.0, 0.0]),
+                (false, vec![]),
+                (false, vec![0.0, 0.0]),
+                (false, vec![32.0, 8.0, 0.0]),
+            ];
+            for (reversible, layer_ratios) in cases {
                 let params = EncodeParams {
                     reversible,
                     mct: components >= 3 && height % 2 == 1,
-                    layer_ratios: if reversible { vec![] } else { vec![32.0, 8.0, 0.0] },
+                    layer_ratios,
                     comment: (width == 8).then(|| b"\xe9Rust\0ignored".to_vec()),
                     ..EncodeParams::default()
                 };
                 let what = format!(
-                    "{width}x{height}x{components}, reversible={reversible}, mct={}",
-                    params.mct
+                    "{width}x{height}x{components}, reversible={reversible}, ratios={:?}, mct={}",
+                    params.layer_ratios, params.mct
                 );
                 tested += usize::from(compare(&mut encoder, &image, &params, &what));
             }

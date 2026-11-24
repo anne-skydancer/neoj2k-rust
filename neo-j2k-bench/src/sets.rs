@@ -15,6 +15,7 @@ use std::hint::black_box;
 use std::path::Path;
 
 use neo_j2k::bench::{DecodeBlock, DecodeWorkspace, EncodeParams, EncodeWorkspace};
+use neo_j2k::{EncodeParams as ImageParams, Encoder, ImageSamples, ImageView};
 use neo_j2k_testkit::fnv::Fnv64;
 use neo_j2k_testkit::mqng;
 
@@ -59,6 +60,40 @@ pub(crate) enum Set {
         blocks: Vec<UploadBlock>,
         workspace: EncodeWorkspace,
     },
+    /// One whole-image encode through the public API with a fresh encoder per pass, as the small-encoder rows of
+    /// `small_image_gates` time it.
+    Image(ImageSet),
+}
+
+/// A whole-image encode request: the pixels of a square interleaved RGB image and the settings.
+pub(crate) struct ImageSet {
+    /// The set's prefix in the output: `image` (every pass kept) or `rated` (a rate target or a size cap).
+    group: &'static str,
+    name: String,
+    side: u32,
+    pixels: Vec<u8>,
+    params: ImageParams<'static>,
+}
+
+impl ImageSet {
+    /// The encoded codestream of one pass.
+    fn encode(&self) -> Result<Vec<u8>, String> {
+        let stride = self.side as usize * 3;
+        let view = ImageView {
+            width: self.side,
+            height: self.side,
+            flip_vertical: false,
+            samples: ImageSamples::Interleaved {
+                samples: &self.pixels,
+                components: 3,
+                row_stride: stride,
+            },
+        };
+        Encoder::new()
+            .encode(black_box(&view), &self.params)
+            .map(<[u8]>::to_vec)
+            .map_err(|e| format!("image {}: {}", self.name, e.message().trim_end()))
+    }
 }
 
 impl Set {
@@ -67,6 +102,7 @@ impl Set {
         match self {
             Self::Decode { name, .. } => format!("decode/{name}"),
             Self::Encode { name, .. } => format!("encode/{name}"),
+            Self::Image(set) => format!("{}/{}", set.group, set.name),
         }
     }
 
@@ -74,6 +110,7 @@ impl Set {
         match self {
             Self::Decode { blocks, .. } => blocks.len(),
             Self::Encode { blocks, .. } => blocks.len(),
+            Self::Image(_) => 1,
         }
     }
 
@@ -102,6 +139,24 @@ impl Set {
                     black_box(workspace.encode(&block.samples, 64, 64, &block.params(*reversible)));
                     black_box(workspace.block());
                 }
+            }
+            Self::Image(set) => {
+                let view = ImageView {
+                    width: set.side,
+                    height: set.side,
+                    flip_vertical: false,
+                    samples: ImageSamples::Interleaved {
+                        samples: &set.pixels,
+                        components: 3,
+                        row_stride: set.side as usize * 3,
+                    },
+                };
+                black_box(
+                    Encoder::new()
+                        .encode(black_box(&view), &set.params)
+                        .map(<[u8]>::len)
+                        .ok(),
+                );
             }
         }
     }
@@ -153,6 +208,7 @@ impl Set {
                     hash.bytes(encoded.data);
                 }
             }
+            Self::Image(set) => hash.bytes(&set.encode()?),
         }
         Ok(hash.value())
     }
@@ -261,6 +317,58 @@ pub(crate) fn encode_sets(blocks: u32) -> Vec<Set> {
         .collect()
 }
 
+/// The whole-image sets. The six `image/` sets are the small-encoder rows of `neo-j2k/tests/small_image_gates.rs`
+/// (RGB, three sizes, lossless 5/3 and lossy 9/7, six resolutions, colour transform, every pass kept); the `rated/`
+/// sets are requests with a rate target or a size cap, which keep the rate allocator's search in the code.
+pub(crate) fn image_sets() -> Vec<Set> {
+    let make =
+        |group: &'static str, side: u32, reversible: bool, tweak: &dyn Fn(&mut ImageParams<'static>), tag: &str| {
+            let stride = side as usize * 3;
+            let pixels = (0..side as usize * stride)
+                .map(|index| {
+                    let x = (index % stride) / 3;
+                    let y = index / stride;
+                    let component = index % 3;
+                    (3 * x + 5 * y + 13 * (x ^ y) + 23 * component).to_le_bytes()[0]
+                })
+                .collect();
+            let mut params = ImageParams::default();
+            params.reversible = reversible;
+            params.mct = true;
+            params.resolutions = Some(6);
+            tweak(&mut params);
+            Set::Image(ImageSet {
+                group,
+                name: format!("rgb{side}_{}{tag}", if reversible { "lossless" } else { "lossy" }),
+                side,
+                pixels,
+                params,
+            })
+        };
+    let mut sets = Vec::new();
+    for side in [32, 64, 128] {
+        for reversible in [true, false] {
+            sets.push(make("image", side, reversible, &|_| {}, ""));
+        }
+    }
+    sets.push(make(
+        "rated",
+        128,
+        true,
+        &|p| p.layer_ratios = vec![3.0, 1.5],
+        "_layers",
+    ));
+    sets.push(make(
+        "rated",
+        128,
+        false,
+        &|p| p.layer_ratios = vec![30.0, 10.0, 0.0],
+        "_layers",
+    ));
+    sets.push(make("rated", 128, false, &|p| p.max_codestream_size = 6000, "_cap"));
+    sets
+}
+
 /// What one set measured.
 pub(crate) struct Measurement {
     /// The clock units of one pass over the set's blocks (the median of the timed units).
@@ -317,6 +425,20 @@ mod tests {
             assert_eq!(Ok(digest), b.digest());
             assert_eq!(a.blocks(), 16);
         }
+    }
+
+    #[test]
+    fn the_image_sets_encode_and_are_the_same_every_time() {
+        let mut one = image_sets();
+        let mut two = image_sets();
+        assert_eq!(one.len(), 9);
+        for (a, b) in one.iter_mut().zip(&mut two) {
+            let digest = a.digest().expect("the image requests encode");
+            assert_eq!(Ok(digest), b.digest(), "{}", a.name());
+            a.pass();
+        }
+        assert_eq!(one[0].name(), "image/rgb32_lossless");
+        assert_eq!(one[8].name(), "rated/rgb128_lossy_cap");
     }
 
     #[test]
