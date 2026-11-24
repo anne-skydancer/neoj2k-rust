@@ -90,6 +90,50 @@
   ]
  },
  {
+  "name": "MQ byte-in helper: a byte read when the register still has exactly the bits",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "while shifts > bits {",
+  "new": "while shifts >= bits {",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::tests::chained_decisions_over_short_and_exhausted_input_equal_the_model",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ byte-in helper: the interval shifted one place short",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "self.a = a << total;\n            self.c = c;",
+  "new": "self.a = a << (total - 1);\n            self.c = c;",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::tests::chained_decisions_over_short_and_exhausted_input_equal_the_model",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ byte-in helper: the bit count packed one place low",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "u64::from(c) | (u64::from(bits) << 32)",
+  "new": "u64::from(c) | (u64::from(bits) << 31)",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::tests::chained_decisions_over_short_and_exhausted_input_equal_the_model",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
+  "name": "MQ byte-in helper: the code register not shifted by the remaining shifts",
+  "file": "neo-j2k/src/t1/mq.rs",
+  "old": "    c <<= shifts;\n    bits -= shifts;\n    u64::from(c)",
+  "new": "    bits -= shifts;\n    u64::from(c)",
+  "tests": [
+   "t1::mq::tests::the_select_decision_equals_the_standards_branches",
+   "t1::mq::tests::chained_decisions_over_short_and_exhausted_input_equal_the_model",
+   "t1::mq::differential::single_decisions_decode_as_the_cpp_does"
+  ]
+ },
+ {
   "name": "AGG run: the room's interval part left out",
   "file": "neo-j2k/src/t1/mq.rs",
   "old": "let room = (self.a - 0x8000).min(self.c >> 16);",
