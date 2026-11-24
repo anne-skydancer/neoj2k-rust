@@ -80,10 +80,24 @@ pub(super) struct Passes<'a> {
 }
 
 impl Passes<'_> {
-    pub(super) fn initialize(&mut self) {
+    /// Zero the samples and set up the flag rows. A short block (at most four rows: one stripe, `SHORT`) has no
+    /// stripe above or below it, so only its own flag row is set; the two rows around it keep whatever an earlier
+    /// block left. Nothing reads them: `record` skips the updates of the neighbouring stripes in a short block (and
+    /// `stripe` only borrows them), and a general block, which does read its outer rows, clears and sets all of its own.
+    pub(super) fn initialize<const SHORT: bool>(&mut self) {
         self.data.fill(0);
-        self.flags.fill(0);
         let stride = self.width + 2;
+        if SHORT {
+            // The lanes below the block's last row are marked visited, as in the last stripe of a general block.
+            let out_of_bounds = if self.height == 4 {
+                0
+            } else {
+                ALL_PI & (u32::MAX << (21 + self.height * 3))
+            };
+            self.flags[stride..2 * stride].fill(out_of_bounds);
+            return;
+        }
+        self.flags.fill(0);
         let stripes = self.height.div_ceil(4);
         self.flags[..stride].fill(ALL_PI);
         self.flags[(stripes + 1) * stride..].fill(ALL_PI);
@@ -91,6 +105,22 @@ impl Passes<'_> {
         if rows != 0 {
             let out_of_bounds = ALL_PI & (u32::MAX << (21 + rows * 3));
             self.flags[stripes * stride..(stripes + 1) * stride].fill(out_of_bounds);
+        }
+    }
+
+    /// How many stripes the passes walk: one for a short block, whose height is at most four.
+    #[inline(always)]
+    fn stripe_count<const SHORT: bool>(&self) -> usize {
+        if SHORT { 1 } else { self.height.div_ceil(4) }
+    }
+
+    /// The lanes of stripe `index`: four, but for the last stripe of a block (the only one of a short block).
+    #[inline(always)]
+    fn stripe_rows<const SHORT: bool>(&self, index: usize) -> usize {
+        if SHORT {
+            self.height
+        } else {
+            (self.height - index * 4).min(4)
         }
     }
 
@@ -132,7 +162,7 @@ impl Passes<'_> {
     /// The caller stores the column's own word when the column is done. Nothing reads a column's own sign bits before
     /// that store except `sign`, which is given the merged word.
     #[inline(always)]
-    fn record(
+    fn record<const SHORT: bool>(
         stripe: &Stripe<'_>,
         col: usize,
         column: &mut Column,
@@ -145,12 +175,12 @@ impl Passes<'_> {
         let shift = lane * 3;
         set_bits(&stripe.here.left[col], (1 << 5) << shift);
         set_bits(&stripe.here.right[col], (1 << 3) << shift);
-        if lane == 0 && !stripe.vertical_causal {
+        if !SHORT && lane == 0 && !stripe.vertical_causal {
             set_bits(&stripe.above.mid[col], (sign << 31) | (1 << 16));
             set_bits(&stripe.above.left[col], 1 << 17);
             set_bits(&stripe.above.right[col], 1 << 15);
         }
-        if lane == 3 {
+        if !SHORT && lane == 3 {
             set_bits(&stripe.below.mid[col], (sign << 18) | (1 << 1));
             set_bits(&stripe.below.left[col], 1 << 2);
             set_bits(&stripe.below.right[col], 1);
@@ -161,7 +191,7 @@ impl Passes<'_> {
 
     /// Decode the sign of the sample at `lane` of the column and record it.
     #[inline(always)]
-    fn mark_sample(
+    fn mark_sample<const SHORT: bool>(
         mq: &mut Mq<'_, '_>,
         stripe: &Stripe<'_>,
         col: usize,
@@ -171,11 +201,11 @@ impl Passes<'_> {
         sample: &mut i32,
     ) {
         let sign = Self::sign(mq, stripe, col, lane, column.flags | column.chi);
-        Self::record(stripe, col, column, magnitude, lane, sign, sample);
+        Self::record::<SHORT>(stripe, col, column, magnitude, lane, sign, sample);
     }
 
     #[inline(always)]
-    fn significance_step<const RAW: bool>(
+    fn significance_step<const RAW: bool, const SHORT: bool>(
         mq: &mut Mq<'_, '_>,
         stripe: &Stripe<'_>,
         context: &Context<'_>,
@@ -200,13 +230,13 @@ impl Passes<'_> {
             } else {
                 Self::sign(mq, stripe, col, lane, column.flags | column.chi)
             };
-            Self::record(stripe, col, column, context.magnitude, lane, sign, sample);
+            Self::record::<SHORT>(stripe, col, column, context.magnitude, lane, sign, sample);
         }
         column.flags |= PI_THIS << shift;
     }
 
     #[inline(always)]
-    fn cleanup_step(
+    fn cleanup_step<const SHORT: bool>(
         mq: &mut Mq<'_, '_>,
         stripe: &Stripe<'_>,
         context: &Context<'_>,
@@ -219,7 +249,7 @@ impl Passes<'_> {
         if flags & (SIGMA_THIS | PI_THIS) == 0
             && mq.symbol(Self::significance_context(context.zero_context, flags)) != 0
         {
-            Self::mark_sample(mq, stripe, col, column, context.magnitude, lane, sample);
+            Self::mark_sample::<SHORT>(mq, stripe, col, column, context.magnitude, lane, sample);
         }
     }
 
@@ -227,7 +257,7 @@ impl Passes<'_> {
     /// shifts are immediates, the tests of the first and the last lane (the neighbours above and below) are resolved
     /// at compile time, and the four sample rows are exactly `width` long.
     #[inline(always)]
-    fn significance_full<const RAW: bool>(
+    fn significance_full<const RAW: bool, const SHORT: bool>(
         mq: &mut Mq<'_, '_>,
         stripe: &Stripe<'_>,
         context: &Context<'_>,
@@ -246,17 +276,17 @@ impl Passes<'_> {
             if column.flags == 0 || (column.flags | (column.flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
                 continue;
             }
-            Self::significance_step::<RAW>(mq, stripe, context, col, &mut column, 0, &mut d0[col]);
-            Self::significance_step::<RAW>(mq, stripe, context, col, &mut column, 1, &mut d1[col]);
-            Self::significance_step::<RAW>(mq, stripe, context, col, &mut column, 2, &mut d2[col]);
-            Self::significance_step::<RAW>(mq, stripe, context, col, &mut column, 3, &mut d3[col]);
+            Self::significance_step::<RAW, SHORT>(mq, stripe, context, col, &mut column, 0, &mut d0[col]);
+            Self::significance_step::<RAW, SHORT>(mq, stripe, context, col, &mut column, 1, &mut d1[col]);
+            Self::significance_step::<RAW, SHORT>(mq, stripe, context, col, &mut column, 2, &mut d2[col]);
+            Self::significance_step::<RAW, SHORT>(mq, stripe, context, col, &mut column, 3, &mut d3[col]);
             stripe.here.mid[col].set(column.flags | column.chi);
         }
     }
 
     /// The columns of the last stripe of a block, of fewer than four lanes.
     #[inline(always)]
-    fn significance_partial<const RAW: bool>(
+    fn significance_partial<const RAW: bool, const SHORT: bool>(
         mq: &mut Mq<'_, '_>,
         stripe: &Stripe<'_>,
         context: &Context<'_>,
@@ -273,13 +303,13 @@ impl Passes<'_> {
             }
             for lane in 0..stripe.rows {
                 let sample = &mut samples[lane * width + col];
-                Self::significance_step::<RAW>(mq, stripe, context, col, &mut column, lane, sample);
+                Self::significance_step::<RAW, SHORT>(mq, stripe, context, col, &mut column, lane, sample);
             }
             stripe.here.mid[col].set(column.flags | column.chi);
         }
     }
 
-    pub(super) fn significance<const RAW: bool>(&mut self, state: &mut Decoder<'_>, bitplane: u32) {
+    pub(super) fn significance<const RAW: bool, const SHORT: bool>(&mut self, state: &mut Decoder<'_>, bitplane: u32) {
         // The MQ registers live in locals for the length of the pass.
         let mut mq = state.enter();
         let one = 1i32 << bitplane;
@@ -287,26 +317,26 @@ impl Passes<'_> {
             zero_context: &ZERO_CONTEXT.as_chunks::<512>().0[self.orient],
             magnitude: one | (one >> 1),
         };
-        let (width, height) = (self.width, self.height);
-        for index in 0..height.div_ceil(4) {
-            let rows = (height - index * 4).min(4);
+        let width = self.width;
+        for index in 0..self.stripe_count::<SHORT>() {
+            let rows = self.stripe_rows::<SHORT>(index);
             let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);
             let samples = &mut self.data[index * 4 * width..];
             if rows == 4 {
-                Self::significance_full::<RAW>(&mut mq, &stripe, &context, samples);
+                Self::significance_full::<RAW, SHORT>(&mut mq, &stripe, &context, samples);
             } else {
-                Self::significance_partial::<RAW>(&mut mq, &stripe, &context, samples);
+                Self::significance_partial::<RAW, SHORT>(&mut mq, &stripe, &context, samples);
             }
         }
         mq.leave();
     }
 
-    pub(super) fn refinement<const RAW: bool>(&mut self, state: &mut Decoder<'_>, bitplane: u32) {
+    pub(super) fn refinement<const RAW: bool, const SHORT: bool>(&mut self, state: &mut Decoder<'_>, bitplane: u32) {
         let mut mq = state.enter();
         let half = (1i32 << bitplane) >> 1;
-        let (width, height) = (self.width, self.height);
-        for index in 0..height.div_ceil(4) {
-            let rows = (height - index * 4).min(4);
+        let width = self.width;
+        for index in 0..self.stripe_count::<SHORT>() {
+            let rows = self.stripe_rows::<SHORT>(index);
             let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);
             let samples = &mut self.data[index * 4 * width..];
             for col in 0..width {
@@ -343,7 +373,12 @@ impl Passes<'_> {
     /// such a stripe takes the run of empty columns and the AGG decision. The AGG decision may have settled the
     /// lanes up to `start - 1` of its column.
     #[inline(always)]
-    fn cleanup_full(mq: &mut Mq<'_, '_>, stripe: &Stripe<'_>, context: &Context<'_>, samples: &mut [i32]) {
+    fn cleanup_full<const SHORT: bool>(
+        mq: &mut Mq<'_, '_>,
+        stripe: &Stripe<'_>,
+        context: &Context<'_>,
+        samples: &mut [i32],
+    ) {
         let width = stripe.width;
         let (d0, rest) = samples[..4 * width].split_at_mut(width);
         let (d1, rest) = rest.split_at_mut(width);
@@ -381,20 +416,20 @@ impl Passes<'_> {
                     2 => &mut d2[col],
                     _ => &mut d3[col],
                 };
-                Self::mark_sample(mq, stripe, col, &mut column, context.magnitude, lane, sample);
+                Self::mark_sample::<SHORT>(mq, stripe, col, &mut column, context.magnitude, lane, sample);
                 start = lane + 1;
             }
             if start == 0 {
-                Self::cleanup_step(mq, stripe, context, col, &mut column, 0, &mut d0[col]);
+                Self::cleanup_step::<SHORT>(mq, stripe, context, col, &mut column, 0, &mut d0[col]);
             }
             if start <= 1 {
-                Self::cleanup_step(mq, stripe, context, col, &mut column, 1, &mut d1[col]);
+                Self::cleanup_step::<SHORT>(mq, stripe, context, col, &mut column, 1, &mut d1[col]);
             }
             if start <= 2 {
-                Self::cleanup_step(mq, stripe, context, col, &mut column, 2, &mut d2[col]);
+                Self::cleanup_step::<SHORT>(mq, stripe, context, col, &mut column, 2, &mut d2[col]);
             }
             if start <= 3 {
-                Self::cleanup_step(mq, stripe, context, col, &mut column, 3, &mut d3[col]);
+                Self::cleanup_step::<SHORT>(mq, stripe, context, col, &mut column, 3, &mut d3[col]);
             }
             stripe.here.mid[col].set((column.flags | column.chi) & !ALL_PI);
         }
@@ -402,7 +437,12 @@ impl Passes<'_> {
 
     /// The columns of the last stripe of a block, of fewer than four lanes (no run and no AGG decision).
     #[inline(always)]
-    fn cleanup_partial(mq: &mut Mq<'_, '_>, stripe: &Stripe<'_>, context: &Context<'_>, samples: &mut [i32]) {
+    fn cleanup_partial<const SHORT: bool>(
+        mq: &mut Mq<'_, '_>,
+        stripe: &Stripe<'_>,
+        context: &Context<'_>,
+        samples: &mut [i32],
+    ) {
         let width = stripe.width;
         for col in 0..width {
             let mut column = Column {
@@ -415,28 +455,28 @@ impl Passes<'_> {
             }
             for lane in 0..stripe.rows {
                 let sample = &mut samples[lane * width + col];
-                Self::cleanup_step(mq, stripe, context, col, &mut column, lane, sample);
+                Self::cleanup_step::<SHORT>(mq, stripe, context, col, &mut column, lane, sample);
             }
             stripe.here.mid[col].set((column.flags | column.chi) & !ALL_PI);
         }
     }
 
-    pub(super) fn cleanup(&mut self, state: &mut Decoder<'_>, bitplane: u32, segment_symbol: bool) {
+    pub(super) fn cleanup<const SHORT: bool>(&mut self, state: &mut Decoder<'_>, bitplane: u32, segment_symbol: bool) {
         let mut mq = state.enter();
         let one = 1i32 << bitplane;
         let context = Context {
             zero_context: &ZERO_CONTEXT.as_chunks::<512>().0[self.orient],
             magnitude: one | (one >> 1),
         };
-        let (width, height) = (self.width, self.height);
-        for index in 0..height.div_ceil(4) {
-            let rows = (height - index * 4).min(4);
+        let width = self.width;
+        for index in 0..self.stripe_count::<SHORT>() {
+            let rows = self.stripe_rows::<SHORT>(index);
             let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);
             let samples = &mut self.data[index * 4 * width..];
             if rows == 4 {
-                Self::cleanup_full(&mut mq, &stripe, &context, samples);
+                Self::cleanup_full::<SHORT>(&mut mq, &stripe, &context, samples);
             } else {
-                Self::cleanup_partial(&mut mq, &stripe, &context, samples);
+                Self::cleanup_partial::<SHORT>(&mut mq, &stripe, &context, samples);
             }
         }
         if segment_symbol {

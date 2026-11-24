@@ -252,5 +252,52 @@
    "t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation",
    "t1::differential::committed_vectors_decode_as_the_cpp_does"
   ]
+ },
+ {
+  "name": "short path: a block of five rows takes it",
+  "file": "neo-j2k/src/t1.rs",
+  "old": "if height <= SHORT_HEIGHT {",
+  "new": "if height <= SHORT_HEIGHT + 1 {",
+  "tests": [
+   "t1::tests::a_retained_scratch_decodes_short_and_general_blocks_alike"
+  ]
+ },
+ {
+  "name": "short path: the lanes of its stripe, one fewer for a block of four rows",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "        if SHORT {\n            self.height\n        } else {",
+  "new": "        if SHORT {\n            self.height.min(3)\n        } else {",
+  "tests": [
+   "t1::tests::short_blocks_decode_as_the_general_path_does",
+   "t1::tests::a_retained_scratch_decodes_short_and_general_blocks_alike"
+  ]
+ },
+ {
+  "name": "short path: a second stripe walked in a block of one",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "if SHORT { 1 } else {",
+  "new": "if SHORT { 2 } else {",
+  "tests": [
+   "t1::tests::short_blocks_decode_as_the_general_path_does",
+   "t1::tests::a_retained_scratch_decodes_short_and_general_blocks_alike"
+  ]
+ },
+ {
+  "name": "short path: the general path loses its downward flag update",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "if !SHORT && lane == 3 {",
+  "new": "if SHORT && lane == 3 {",
+  "tests": [
+   "t1::tests::fragmented_codewords_match_the_cpp_coefficient_hashes"
+  ]
+ },
+ {
+  "name": "short path: the general path loses its upward flag update",
+  "file": "neo-j2k/src/t1/passes.rs",
+  "old": "if !SHORT && lane == 0 &&",
+  "new": "if SHORT && lane == 0 &&",
+  "tests": [
+   "t1::tests::a_raw_segments_passes_end_at_a_cleanup_pass"
+  ]
  }
 ]
