@@ -5,18 +5,27 @@
 
 usage: perf_summary.py plan                              the workflow's matrices, from the environment
        perf_summary.py machine                           the runner's CPU model and logical CPU count, one line
-       perf_summary.py table --dir DIR [--compiler T] [--oracle T] [--like-for-like yes|no] [--cpus N]
-                                                         one Markdown table from DIR/rep-*.txt, the output of
-                                                         the repetitions of the three suites of
-                                                         neo-j2k/tests/small_image_gates.rs; exit 1 (and a
-                                                         message in place of the table) unless every repetition
-                                                         is complete
+       perf_summary.py table --dir DIR [--kind cpp|openjpeg|versions] [--compiler T] [--oracle T]
+                                       [--like-for-like yes|no] [--cpus N]
+                                                         one Markdown table from DIR/rep-*.txt: with --kind cpp
+                                                         (the default) the output of the repetitions of the three
+                                                         suites of neo-j2k/tests/small_image_gates.rs; with
+                                                         --kind openjpeg the three suites of
+                                                         neo-j2k/tests/vs_openjpeg.rs (Rust against OpenJPEG);
+                                                         with --kind versions the program of
+                                                         tools/rust-versions (the crate at tag v0.1.2 against
+                                                         this checkout's); exit 1 (and a message in place of the
+                                                         table) unless every repetition is complete
        perf_summary.py pair-verdict --file F --side decode|encode
                                                          the step gate of a pair, from the driver's table
        perf_summary.py selftest
 
 The suites time Rust and the C++ oracle in one process and print, per row, both medians and a ratio column; the
 table reads the two medians and prints percent changes only (Rust's time against C++'s, minus is faster).
+
+The two other kinds print no ratio at all: per row the first side's median, the second's and `same` or `DIFFERENT` (the
+two outputs compared). Their tables are measurements, not gates: a percent change, a Yes/No column and the outputs'
+identity per row, with the API each side used stated above the table.
 """
 import argparse
 import json
@@ -94,7 +103,7 @@ def plan(env):
     gate = [{"name": name, "base": base, "head": head, "side": side, "os": os_name, "cpu": cpu,
              "py": "python" if os_name.startswith("windows") else "python3"}
             for name, base, head, side in pairs for os_name in GATE_OS for cpu in CPU_LEVELS]
-    cells = []
+    base_cells = []
     for os_name, compiler in (("ubuntu-26.04", "GCC 15"), ("windows-2025", "MSVC")):
         for cpu in CPU_LEVELS:
             linux = os_name.startswith("ubuntu")
@@ -107,15 +116,35 @@ def plan(env):
                 oracle = "AVX2"  # there is no scalar preset on Windows
             # the Windows baseline cell times a baseline-CPU Rust build against an AVX2 oracle
             like = "no" if (not linux and cpu == "baseline") else "yes"
-            cells.append({"os": os_name, "cpu": cpu, "rustflags": RUSTFLAGS[cpu], "preset": preset,
-                          "compiler": compiler, "oracle": oracle, "like": like,
-                          "py": "python" if not linux else "python3"})
-    if custom and (env.get("VS_CPP_IN") or "").strip().lower() != "true":
+            base_cells.append({"os": os_name, "cpu": cpu, "rustflags": RUSTFLAGS[cpu], "preset": preset,
+                               "compiler": compiler, "oracle": oracle, "like": like,
+                               "py": "python" if not linux else "python3"})
+    # the two measurements of Rust against others: a pull request smoke-tests both, a dispatch runs the ones it asks
+    # for (and then only those, unless it also names a pair of its own or asks for the C++ jobs with vs_cpp)
+    pull_request = env.get("EVENT_NAME") == "pull_request"
+    vs_openjpeg = pull_request or flag(env, "VS_OPENJPEG_IN")
+    vs_v012 = pull_request or flag(env, "VS_V012_IN")
+    only_those = (vs_openjpeg or vs_v012) and not pull_request and not custom
+    if only_those:
+        gate = []
+    cells = list(base_cells)
+    if (custom or only_those) and not flag(env, "VS_CPP_IN"):
         cells = []
+    # Rust against OpenJPEG: the oracle's OpenJPEG is always built with AVX2 (oracle/CMakeLists.txt), so a cell whose
+    # Rust build is for the baseline x86-64 is not like for like, on either system
+    opj_cells = [dict(c, like="yes" if c["cpu"] != "baseline" else "no") for c in base_cells] if vs_openjpeg else []
+    ver_cells = [{k: c[k] for k in ("os", "cpu", "rustflags", "py")} for c in base_cells] if vs_v012 else []
     return {"quick": "true" if quick else "false", "rounds": str(rounds), "reps": "1" if quick else "3",
             "bench_args": QUICK_BENCH_ARGS if quick else "",
-            "gate": json.dumps({"include": gate}), "cells": json.dumps({"include": cells}),
-            "cells_count": str(len(cells))}
+            "gate": json.dumps({"include": gate}), "gate_count": str(len(gate)),
+            "cells": json.dumps({"include": cells}), "cells_count": str(len(cells)),
+            "opj_cells": json.dumps({"include": opj_cells}), "opj_count": str(len(opj_cells)),
+            "ver_cells": json.dumps({"include": ver_cells}), "ver_count": str(len(ver_cells))}
+
+
+def flag(env, name):
+    """A boolean input of the dispatch: true only when it is the text `true`."""
+    return (env.get(name) or "").strip().lower() == "true"
 
 
 def cpu_name():
@@ -226,9 +255,11 @@ def aggregate(runs, cpus=None):
         changes = [change(r, c) for r, c in zip(rust, cpp)]
         median = statistics.median(changes)
         low, high = min(changes), max(changes)
+        identical = [run[index][4] for run in runs if len(run[index]) > 4]
         out.append({"key": key, "unit": unit, "rust": statistics.median(rust), "cpp": statistics.median(cpp),
                     "change": median, "low": low, "high": high, "verdict": verdict(median, low, high),
-                    "over": bool(cpus) and key[0] == "large decode" and key[2] > cpus})
+                    "over": bool(cpus) and key[0] == "large decode" and key[2] > cpus,
+                    "identical": all(identical) if identical else None})
     return out
 
 
@@ -274,7 +305,54 @@ def table(rows, like_for_like=True, oracle=None, cpus=None):
     return "\n".join(lines)
 
 
-def read_reps(folder):
+# The output of the two other kinds: per row the first side's median, the second's and `same` or `DIFFERENT`.
+PAIR_TEST_OK = re.compile(r"^(?:test|harness) result: ok\. 3 passed;", re.M)
+PAIR_LARGE = re.compile(r"^(\S+\.j2k)\s+(\d+)\s+(%s)\s+(%s)\s+(same|DIFFERENT)$" % (NUM, NUM))
+PAIR_SMALL = re.compile(r"^(.+?)\s+(%s)\s+(%s)\s+(same|DIFFERENT)$" % (NUM, NUM))
+
+
+def parse_pair_run(text):
+    """[(key, unit, first, second, identical)] from one run of the other two kinds, in the order printed."""
+    rows = []
+    for raw in text.splitlines():
+        line = PREFIX.sub("", raw.strip())
+        m = PAIR_LARGE.match(line)
+        if m:
+            rows.append((("large decode", m.group(1), int(m.group(2))), "ms", float(m.group(3)), float(m.group(4)),
+                         m.group(5) == "same"))
+            continue
+        m = PAIR_SMALL.match(line)
+        if not m:
+            continue
+        label = m.group(1).strip()
+        if " / reduce " in label:
+            suite = "small decode"
+        elif label.startswith("encode "):
+            suite = "small encode"
+        else:
+            continue
+        rows.append(((suite, label, 0), "us", float(m.group(2)), float(m.group(3)), m.group(4) == "same"))
+    return rows
+
+
+def check_complete_pair(text, number):
+    """The rows of repetition `number` of the other two kinds, or Incomplete: the run finished (libtest's result line
+    or the program's), every suite has all of its rows, every time is a positive number."""
+    if not PAIR_TEST_OK.search(text):
+        raise Incomplete("repetition %d has no result line 'ok. 3 passed' (a test failed, panicked or did not "
+                         "finish)" % number)
+    rows = parse_pair_run(text)
+    counts_ = {suite: sum(1 for r in rows if r[0][0] == suite) for suite in EXPECTED_ROWS}
+    if counts_ != EXPECTED_ROWS:
+        raise Incomplete("repetition %d has rows %s, expected %s" % (
+            number, ", ".join("%s %d" % kv for kv in counts_.items()), ", ".join("%s %d" % kv for kv in EXPECTED_ROWS.items())))
+    for key, _unit, first, second, _same in rows:
+        if not (first > 0.0 and second > 0.0):
+            raise Incomplete("repetition %d has a time of 0 in %r" % (number, key))
+    return rows
+
+
+def read_reps(folder, check=None):
     """The repetitions of a folder: rep-*.txt in name order, each checked complete and parsed."""
     names = sorted(n for n in os.listdir(folder) if re.fullmatch(r"rep-\d+\.txt", n))
     if not names:
@@ -282,11 +360,128 @@ def read_reps(folder):
     runs = []
     for number, name in enumerate(names, 1):
         with open(os.path.join(folder, name), encoding="utf-8", errors="replace") as f:
-            runs.append(check_complete(f.read(), number))
+            runs.append((check or check_complete)(f.read(), number))
     return runs
 
 
+# What differs between the kinds of table: the two sides' names, the heading, and the API each side used per suite.
+KINDS = {
+    "openjpeg": {
+        "title": "Rust against OpenJPEG",
+        "first": "Rust", "second": "OpenJPEG", "change": "Change (Rust against OpenJPEG)", "yes": "Rust faster",
+        "apis": [
+            ("large decode", "one Decoder kept across calls, decode_into_i32 into caller-owned planes; threads are the "
+                             "host executor of the Rust API (the test harness's persistent pool; the width counts the "
+                             "caller)",
+             "opj_decode: a codec and a memory stream made and destroyed in every call, the sample planes allocated by "
+             "OpenJPEG in every call and not copied out; width 1 has no threads, width N asks "
+             "opj_codec_set_threads(N), a pool of N workers made in every call"),
+            ("small decode", "one Decoder kept across calls, decode_into_i32 into caller-owned planes, no allocation "
+                             "per call",
+             "opj_decode: a codec and a memory stream made and destroyed in every call, the sample planes allocated by "
+             "OpenJPEG in every call and not copied out, no threads"),
+            ("small encode", "Encoder::new().encode on the borrowed interleaved pixels, one encoder per call",
+             "opj_image_create, the pixels copied into its int32 planes, opj_encode into a growing memory buffer, one "
+             "codec per call, one layer, no threads"),
+        ],
+    },
+    "versions": {
+        "title": "Rust 0.1.3 against Rust 0.1.2",
+        "first": "0.1.3", "second": "0.1.2", "change": "Change (0.1.3 against 0.1.2)", "yes": "0.1.3 faster",
+        "apis": [
+            ("large decode", "both versions: one Decoder kept across calls, decode_into_i32 into caller-owned planes; "
+                             "threads are the harness's own scheduler (scoped threads, width - 1 started per call, the "
+                             "width counts the caller), the same for both",
+             "the same code, built against the crate at tag v0.1.2"),
+            ("small decode", "both versions: one Decoder kept across calls, decode_into_i32 into caller-owned planes",
+             "the same code, built against the crate at tag v0.1.2"),
+            ("small encode", "both versions: Encoder::new().encode on the borrowed interleaved pixels, one encoder "
+                             "per call",
+             "the same code, built against the crate at tag v0.1.2"),
+        ],
+    },
+}
+
+
+def pair_table(rows, kind, like_for_like=True, cpus=None):
+    """The one table of the other two kinds in Markdown, and the lines under it: how many rows have the first side
+    faster, within noise and slower (rows with more workers than CPUs left out), and how many rows have the two
+    outputs different."""
+    k = KINDS[kind]
+    rows = sorted(rows, key=lambda r: SUITE_ORDER[r["key"][0]])
+    head = ["Suite", "Request", "Workers", "Unit", k["first"], k["second"], k["change"], "Spread of the repetitions",
+            k["yes"], "Output identical"]
+    lines = ["| " + " | ".join(head) + " |", "|---|---|---:|---|---:|---:|---:|---|:---:|:---:|"]
+    for r in rows:
+        suite, request, workers = r["key"]
+        lines.append("| %s | %s | %s | %s | %s | %s | %s | %s to %s | %s | %s |" % (
+            suite, request, workers if workers else "-", "ms" if r["unit"] == "ms" else "us",
+            number(r["rust"], r["unit"]), number(r["cpp"], r["unit"]), pct(r["change"]),
+            pct(r["low"]).replace(" %", ""), pct(r["high"]),
+            r["verdict"] + (" (oversubscribed)" if r["over"] else ""),
+            "Yes" if r["identical"] else "No"))
+    faster, noise, slower = counts(rows)
+    lines.append("")
+    over = [r for r in rows if r["over"]]
+    if over:
+        lines.append("Not counted (more workers than the runner's %s logical CPUs; the width includes the caller): %s" % (
+            cpus, "; ".join("%s, width %d" % (r["key"][1], r["key"][2]) for r in over)))
+        lines.append("")
+    different = [r for r in rows if not r["identical"]]
+    lines.append("%s faster in %d rows, within noise in %d, slower in %d, of %d%s" % (
+        k["first"], faster, noise, slower, faster + noise + slower,
+        "" if like_for_like else " (counts shown for reading only: this cell is not like for like)"))
+    lines.append("")
+    if different:
+        lines.append("Outputs that are NOT identical (%d of %d rows): %s" % (
+            len(different), len(rows), "; ".join("%s%s" % (r["key"][1], ", width %d" % r["key"][2] if r["key"][2] else "")
+                                                for r in different)))
+    else:
+        lines.append("Outputs identical in all %d rows (decoded samples, encoded bytes)." % len(rows))
+    return "\n".join(lines)
+
+
+def pair_command(args):
+    kind = args.kind
+    k = KINDS[kind]
+    try:
+        runs = read_reps(args.dir, check_complete_pair)
+    except Incomplete as e:
+        print("**The result of %s is incomplete: %s.** No table is shown; see the job log and the artifact." % (
+            k["title"], e))
+        return 1
+    cpus = args.cpus if args.cpus is not None else logical_cpus()
+    rows = aggregate(runs, cpus)
+    like = args.like_for_like != "no"
+    notes = ["%d repetitions of each suite in this job (rows read in each: %s); the two sides are timed in one process, "
+             "alternately. This is a measurement, with no pass or fail gate." % (
+                 len(runs), ", ".join("%s %d" % kv for kv in EXPECTED_ROWS.items())),
+             "%s is the first side's time against the second's, minus is faster: the median of the repetitions' own "
+             "changes (not the percent of the two median columns), with the lowest and the highest of them as the "
+             "spread. Times are medians of the suites' own rounds (ms for the large decodes, us for the rest). %s: Yes "
+             "when the median change is below zero and the spread does not straddle zero, No when it is above zero and "
+             "does not straddle it, Within noise when the spread straddles zero or the median is under %.1f %%. Output "
+             "identical: Yes when the two sides' outputs (the decoded samples, the encoded bytes) matched in every "
+             "repetition." % (k["change"], k["yes"], NOISE_BAND)]
+    if kind == "openjpeg":
+        if args.compiler:
+            notes.append("OpenJPEG side: the oracle's OpenJPEG 2.5.4 (oracle/PIN), built with %s, always with AVX2 "
+                         "(oracle/CMakeLists.txt); the Rust side is neo-j2k at this checkout." % args.compiler)
+        if not like:
+            notes.append("This cell is not like for like: the Rust build is for the baseline x86-64 and OpenJPEG is "
+                         "built with AVX2; the table is shown, its counts are for reading only.")
+    api = ["| Suite | %s uses | %s uses |" % (k["first"], k["second"]), "|---|---|---|"]
+    api += ["| %s | %s | %s |" % row for row in k["apis"]]
+    print("\n\n".join(notes) + "\n")
+    print("The API each side used:\n")
+    print("\n".join(api) + "\n")
+    print(pair_table(rows, kind, like, cpus))
+    return 0
+
+
 def table_command(args):
+    if getattr(args, "kind", "cpp") != "cpp":
+        return pair_command(args)
     try:
         runs = read_reps(args.dir)
     except Incomplete as e:
@@ -544,6 +739,86 @@ def selftest():
             raise AssertionError("rounds %r accepted" % bad)
     for good in ("6", "120", "24"):
         assert plan({"EVENT_NAME": "workflow_dispatch", "ROUNDS_IN": good})["rounds"] == good
+    # Rust against OpenJPEG and the crate's two versions: the output has the two medians and `same` per row
+    def pair_text(source, ok="test result: ok. 3 passed; 0 failed", differ=None, drop=None):
+        out = ["Rust: one Decoder kept across calls.", "Request    Rust us   OpenJPEG us Output"]
+        for key, _unit, first, second in source:
+            if drop and key[1].startswith(drop):
+                continue
+            mark = "DIFFERENT" if differ and key[1].startswith(differ) else "same"
+            if key[0] == "large decode":
+                out.append("%-26s %5d %9.3f %9.3f %s" % (key[1], key[2], first, second, mark))
+            else:
+                out.append("%-48s %9.2f %9.2f %s" % (key[1], first, second, mark))
+        return "\n".join(out) + "\n\n" + ok + "\n"
+
+    base = parse_run(GOLDEN)
+    text = pair_text(base)
+    parsed = parse_pair_run(text)
+    assert len(parsed) == 23 and parsed[0] == (("large decode", "large_1024_rgb_97.j2k", 1), "ms", 13.195, 21.519, True)
+    assert len(check_complete_pair(text, 1)) == 23
+    assert len(check_complete_pair(pair_text(base, ok="harness result: ok. 3 passed; 0 failed"), 1)) == 23
+    for bad, why in ((pair_text(base, ok="test result: FAILED. 2 passed"), "no result line"),
+                     (pair_text(base, drop="encode 32x32 RGB / lossless"), "small encode 5"),
+                     (pair_text(base, drop="large_4096"), "large decode 4"),
+                     (pair_text(base).replace("319.39", "0.00"), "time of 0"),
+                     ("", "no result line")):
+        try:
+            check_complete_pair(bad, 1)
+        except Incomplete as e:
+            assert why in str(e), (why, str(e))
+        else:
+            raise AssertionError("an incomplete pair repetition was accepted: " + why)
+    with tempfile.TemporaryDirectory() as tmp:
+        for number_, differ in ((1, None), (2, None), (3, "encode 64x64 RGB / lossy")):
+            with open(os.path.join(tmp, "rep-%d.txt" % number_), "w", encoding="utf-8") as f:
+                f.write(pair_text(base, differ=differ))
+        runs = read_reps(tmp, check_complete_pair)
+        agg = aggregate(runs, 4)
+        assert [r["identical"] for r in agg].count(False) == 1 and [r["over"] for r in agg].count(True) == 2
+        for kind, first, second in (("openjpeg", "Rust", "OpenJPEG"), ("versions", "0.1.3", "0.1.2")):
+            out = pair_table(agg, kind, True, 4)
+            assert "| Suite | Request | Workers | Unit | %s | %s | Change (%s against %s) |" % (
+                first, second, first, second) in out, out
+            assert "| %s faster | Output identical |" % first in out and "ratio" not in out.lower(), out
+            assert "| small encode | encode 64x64 RGB / lossy 9/7 | - | us | 1477.15 | 1339.23 | +10.3 % | +10.3 to +10.3 % " \
+                   "| No | No |" in out, out
+            assert "Outputs that are NOT identical (1 of 23 rows): encode 64x64 RGB / lossy 9/7" in out, out
+            assert "Not counted (more workers than the runner's 4 logical CPUs" in out
+            assert "%s faster in 8 rows, within noise in 2, slower in 11, of 21" % first in out, out
+            ns = argparse.Namespace(dir=tmp, kind=kind, compiler="GCC 15", oracle=None, like_for_like="no", cpus=4)
+            assert table_command(ns) == 0
+        assert "not like for like" in pair_table(agg, "openjpeg", False, 4)
+        with open(os.path.join(tmp, "rep-3.txt"), "w", encoding="utf-8") as f:
+            f.write(pair_text(base, ok="boom"))
+        assert table_command(argparse.Namespace(dir=tmp, kind="versions", compiler=None, oracle=None,
+                                                like_for_like="yes", cpus=4)) == 1
+    with tempfile.TemporaryDirectory() as tmp:
+        with open(os.path.join(tmp, "rep-1.txt"), "w", encoding="utf-8") as f:
+            f.write(pair_text(base))
+        out = pair_table(aggregate(read_reps(tmp, check_complete_pair), 4), "versions", True, 4)
+        assert "Outputs identical in all 23 rows" in out, out
+    # the plan of the two measurements of Rust against others: a pull request smoke-tests both, a dispatch runs the
+    # ones it names (only those, unless it also has a pair of its own or vs_cpp), the default dispatch runs neither
+    pr = plan({"EVENT_NAME": "pull_request"})
+    assert (pr["gate_count"], pr["cells_count"], pr["opj_count"], pr["ver_count"]) == ("4", "4", "4", "4"), pr
+    assert (full["gate_count"], full["cells_count"], full["opj_count"], full["ver_count"]) == ("16", "4", "0", "0")
+    both = {"EVENT_NAME": "workflow_dispatch", "ROUNDS_IN": "24", "VS_OPENJPEG_IN": "true", "VS_V012_IN": "true"}
+    only = plan(both)
+    assert (only["gate_count"], only["cells_count"], only["opj_count"], only["ver_count"]) == ("0", "0", "4", "4"), only
+    assert json.loads(only["gate"]) == {"include": []}
+    assert plan(dict(both, VS_V012_IN=""))["ver_count"] == "0" and plan(dict(both, VS_OPENJPEG_IN="false"))["opj_count"] == "0"
+    assert plan(dict(both, VS_CPP_IN="true"))["cells_count"] == "4" and plan(dict(both, VS_CPP_IN="true"))["gate_count"] == "0"
+    mixed = plan(dict(own, VS_V012_IN="true"))
+    assert (mixed["gate_count"], mixed["cells_count"], mixed["opj_count"], mixed["ver_count"]) == ("4", "0", "0", "4"), mixed
+    opj_cells = json.loads(only["opj_cells"])["include"]
+    assert [(c["os"], c["cpu"], c["like"]) for c in opj_cells] == [
+        ("ubuntu-26.04", "baseline", "no"), ("ubuntu-26.04", "x86-64-v3", "yes"),
+        ("windows-2025", "baseline", "no"), ("windows-2025", "x86-64-v3", "yes")]
+    assert all(c["preset"] and c["compiler"] and c["rustflags"] is not None for c in opj_cells)
+    ver_cells = json.loads(only["ver_cells"])["include"]
+    assert [sorted(c) for c in ver_cells] == [["cpu", "os", "py", "rustflags"]] * 4
+    assert [c["rustflags"] for c in ver_cells] == ["", "-C target-cpu=x86-64-v3"] * 2
     print("perf_summary: selftest passed")
     return 0
 
@@ -556,6 +831,7 @@ def main():
     sub.add_parser("selftest")
     t = sub.add_parser("table")
     t.add_argument("--dir", required=True)
+    t.add_argument("--kind", choices=["cpp", "openjpeg", "versions"], default="cpp")
     t.add_argument("--compiler")
     t.add_argument("--oracle")
     t.add_argument("--like-for-like", choices=["yes", "no"], default="yes")

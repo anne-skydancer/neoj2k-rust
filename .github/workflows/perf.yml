@@ -9,9 +9,16 @@
 #                 head and a byte copy of the base (the control), runs the three interleaved, and prints the gate
 #   rust-vs-cpp   per OS and CPU level: the whole-codec suites that time Rust and the C++ oracle in one process,
 #                 three repetitions, one table (tools/perf_summary.py)
+#   rust-vs-openjpeg  (vs_openjpeg) the same 23 requests, Rust against OpenJPEG 2.5.4 (the oracle's) through OpenJPEG's own
+#                 API, in one process, three repetitions, one table (neo-j2k/tests/vs_openjpeg.rs)
+#   rust-versions (vs_v012) the same 23 requests, the crate at tag v0.1.2 against this checkout's, through the public
+#                 whole-image API both have, in one process, three repetitions, one table (tools/rust-versions)
+# The two last tables are measurements: no pass or fail gate.
 # By hand: gh workflow run perf.yml --ref main -f rounds=24
 # Any one pair: gh workflow run perf.yml --ref BRANCH -f pair_base=SHA -f pair_head=SHA -f pair_side=decode
 #   [-f pair_name=NAME] [-f vs_cpp=true]  (only that pair, and the Rust-versus-C++ jobs only with vs_cpp)
+# Rust against OpenJPEG, or the two versions of Rust: gh workflow run perf.yml --ref BRANCH -f vs_openjpeg=true -f vs_v012=true
+#   (a dispatch that names either runs only those jobs; add -f vs_cpp=true for the Rust-versus-C++ jobs as well)
 # A pull request that touches this workflow or its two tools runs it once in quick mode (3 rounds, one pair, one
 # repetition), as a smoke test: those numbers prove the workflow works and nothing about speed.
 name: Performance
@@ -44,7 +51,15 @@ on:
         type: string
         default: ""
       vs_cpp:
-        description: With a pair of your own, also run the Rust-versus-C++ jobs (they are off otherwise)
+        description: With a pair of your own, or with vs_openjpeg or vs_v012, also run the Rust-versus-C++ jobs (they are off otherwise)
+        type: boolean
+        default: false
+      vs_openjpeg:
+        description: Run Rust against OpenJPEG 2.5.4 (the oracle's) in the four OS and CPU cells; alone, it runs only that
+        type: boolean
+        default: false
+      vs_v012:
+        description: Run Rust at tag v0.1.2 against this checkout's Rust in the four OS and CPU cells; alone, it runs only that
         type: boolean
         default: false
   pull_request:
@@ -77,8 +92,13 @@ jobs:
       reps: ${{ steps.plan.outputs.reps }}
       bench_args: ${{ steps.plan.outputs.bench_args }}
       gate: ${{ steps.plan.outputs.gate }}
+      gate_count: ${{ steps.plan.outputs.gate_count }}
       cells: ${{ steps.plan.outputs.cells }}
       cells_count: ${{ steps.plan.outputs.cells_count }}
+      opj_cells: ${{ steps.plan.outputs.opj_cells }}
+      opj_count: ${{ steps.plan.outputs.opj_count }}
+      ver_cells: ${{ steps.plan.outputs.ver_cells }}
+      ver_count: ${{ steps.plan.outputs.ver_count }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -96,10 +116,13 @@ jobs:
           PAIR_SIDE_IN: ${{ inputs.pair_side }}
           PAIR_NAME_IN: ${{ inputs.pair_name }}
           VS_CPP_IN: ${{ inputs.vs_cpp }}
+          VS_OPENJPEG_IN: ${{ inputs.vs_openjpeg }}
+          VS_V012_IN: ${{ inputs.vs_v012 }}
         run: python3 -I tools/perf_summary.py plan
   gate-pairs:
     name: PAIR ${{ matrix.name }} (${{ matrix.os }}, ${{ matrix.cpu }})
     needs: plan
+    if: needs.plan.outputs.gate_count != '0'
     runs-on: ${{ matrix.os }}
     timeout-minutes: 90
     strategy:
@@ -298,5 +321,189 @@ jobs:
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: perf-rust-vs-cpp-${{ matrix.os }}-${{ matrix.cpu }}-${{ github.run_attempt }}
+          path: perf/
+          if-no-files-found: ignore
+  rust-vs-openjpeg:
+    name: Rust versus OpenJPEG (${{ matrix.os }}, ${{ matrix.cpu }})
+    needs: plan
+    if: needs.plan.outputs.opj_count != '0'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.opj_cells) }}
+    env:
+      NJ2K_ORACLE_NO_BUILD: "0"
+      NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      OS_LABEL: ${{ matrix.os }}
+      CPU_LEVEL: ${{ matrix.cpu }}
+      COMPILER: ${{ matrix.compiler }}
+      LIKE_FOR_LIKE: ${{ matrix.like }}
+      REPS: ${{ needs.plan.outputs.reps }}
+      QUICK: ${{ needs.plan.outputs.quick }}
+      PY: ${{ matrix.py }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: anne-skydancer/neo-j2k
+          ref: 00f273d502d211905adb756d2f75ef74321983d0 # neo-j2k v0.1.3 (the commit, not the tag object)
+          persist-credentials: false
+          path: cpp
+      - name: C++ toolchain (Linux, GCC 15)
+        if: runner.os == 'Linux'
+        env:
+          ORACLE_PRESET: ${{ matrix.preset }}
+        run: |
+          set -euo pipefail
+          {
+            echo "NJ2K_ORACLE_PRESET=$ORACLE_PRESET"
+            echo "CC=gcc-15"
+            echo "CXX=g++-15"
+          } >> "$GITHUB_ENV"
+          apt_opts='-o Acquire::Retries=3 -o Acquire::http::Timeout=30'
+          for attempt in 1 2 3; do
+            if sudo apt-get $apt_opts update -qq && sudo apt-get $apt_opts install -y -qq ninja-build g++-15; then break; fi
+            [ "$attempt" = 3 ] && exit 1
+            sleep $((attempt * 15))
+          done
+          g++-15 --version | head -n 1
+      - name: Runner CPU
+        run: |
+          set -euo pipefail
+          mkdir -p perf
+          "$PY" -I tools/perf_summary.py machine | tr -d '\r' | tee perf/machine.txt
+      - name: Toolchain
+        run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          shared-key: perf-${{ matrix.os }}-${{ matrix.cpu }}
+          cache-on-failure: true
+      - name: Build the suite (the Rust codec and OpenJPEG through the oracle)
+        run: |
+          set -euo pipefail
+          cargo test --release --locked -p neo-j2k --test vs_openjpeg --no-run
+      - name: The three suites, repeated
+        run: |
+          set -euo pipefail
+          mkdir -p perf
+          for rep in $(seq 1 "$REPS"); do
+            echo "repetition $rep of $REPS"
+            cargo test --release --locked -p neo-j2k --test vs_openjpeg -- --ignored --nocapture --test-threads=1 \
+              --exact large_image_vs_openjpeg small_image_vs_openjpeg small_encoder_vs_openjpeg \
+              > "perf/rep-$rep.txt"
+          done
+      - name: Summary
+        if: always()
+        run: |
+          set -euo pipefail
+          if ! ls perf/rep-*.txt > /dev/null 2>&1; then
+            echo "The suites produced no output, see the job log." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          {
+            echo "### Native Rust against OpenJPEG 2.5.4 (the oracle), $OS_LABEL, $CPU_LEVEL, $(tr -d '\r' < perf/machine.txt), runner image ${ImageOS:-unknown} ${ImageVersion:-}"
+            echo
+            if [ "$QUICK" = true ]; then
+              echo "Quick mode (smoke test): one repetition, the figures prove nothing about speed."
+              echo
+            fi
+            "$PY" -I tools/perf_summary.py table --kind openjpeg --dir perf --compiler "$COMPILER" --like-for-like "$LIKE_FOR_LIKE" | tr -d '\r'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the raw output
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: perf-rust-vs-openjpeg-${{ matrix.os }}-${{ matrix.cpu }}-${{ github.run_attempt }}
+          path: perf/
+          if-no-files-found: ignore
+  rust-versions:
+    name: Rust 0.1.3 versus 0.1.2 (${{ matrix.os }}, ${{ matrix.cpu }})
+    needs: plan
+    if: needs.plan.outputs.ver_count != '0'
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.plan.outputs.ver_cells) }}
+    env:
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      OS_LABEL: ${{ matrix.os }}
+      CPU_LEVEL: ${{ matrix.cpu }}
+      REPS: ${{ needs.plan.outputs.reps }}
+      QUICK: ${{ needs.plan.outputs.quick }}
+      PY: ${{ matrix.py }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: The crate at tag v0.1.2, beside the checkout
+        run: |
+          set -euo pipefail
+          # outside the checkout's folder: inside it Cargo cannot tell the two crates of one name apart (tools/rust-versions)
+          v012=d81e4ec719ec6aaf5b8abdd3a8527c86a37ba14c # tag v0.1.2 (the commit)
+          test "$(git rev-parse 'v0.1.2^{commit}')" = "$v012"
+          git worktree add --detach ../v012 "$v012"
+          git -C ../v012 log -1 --format='old %H %s'
+          git log -1 --format='new %H %s'
+      - name: Runner CPU
+        run: |
+          set -euo pipefail
+          mkdir -p perf
+          "$PY" -I tools/perf_summary.py machine | tr -d '\r' | tee perf/machine.txt
+      - name: Toolchain
+        run: rustup show
+      - name: Build cache
+        uses: Swatinem/rust-cache@2201cc584a476d1b508be977bbe4b7d1c7a52e9c # v2.9.3
+        with:
+          workspaces: tools/rust-versions
+          shared-key: perf-versions-${{ matrix.os }}-${{ matrix.cpu }}
+          cache-on-failure: true
+      - name: Build the program (both versions of the crate)
+        working-directory: tools/rust-versions
+        run: |
+          set -euo pipefail
+          cargo build --release --locked
+      - name: The program, repeated
+        run: |
+          set -euo pipefail
+          mkdir -p perf
+          for rep in $(seq 1 "$REPS"); do
+            echo "repetition $rep of $REPS"
+            tools/rust-versions/target/release/neo-j2k-versions > "perf/rep-$rep.txt"
+          done
+      - name: Summary
+        if: always()
+        run: |
+          set -euo pipefail
+          if ! ls perf/rep-*.txt > /dev/null 2>&1; then
+            echo "The program produced no output, see the job log." >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+          {
+            echo "### Rust 0.1.3 (this checkout) against Rust 0.1.2 (tag v0.1.2), $OS_LABEL, $CPU_LEVEL, $(tr -d '\r' < perf/machine.txt), runner image ${ImageOS:-unknown} ${ImageVersion:-}"
+            echo
+            if [ "$QUICK" = true ]; then
+              echo "Quick mode (smoke test): one repetition, the figures prove nothing about speed."
+              echo
+            fi
+            "$PY" -I tools/perf_summary.py table --kind versions --dir perf | tr -d '\r'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Upload the raw output
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: perf-rust-versions-${{ matrix.os }}-${{ matrix.cpu }}-${{ github.run_attempt }}
           path: perf/
           if-no-files-found: ignore

@@ -5,3 +5,4 @@
 
 /.vscode/
 __pycache__/
+/tools/rust-versions/target/

@@ -52,6 +52,16 @@ pub(crate) struct EncT1 {
     _private: [u8; 0],
 }
 
+/// `nj2k_opj_decoder_t` (`shim/opj_shim.h`), opaque.
+#[repr(C)]
+pub(crate) struct OpjDecoder {
+    _private: [u8; 0],
+}
+/// `nj2k_opj_bytes_t` (`shim/opj_shim.h`), opaque.
+#[repr(C)]
+pub(crate) struct OpjBytes {
+    _private: [u8; 0],
+}
 /// `nj2k_shim_pool_t`, opaque.
 #[repr(C)]
 pub(crate) struct Pool {
@@ -195,6 +205,31 @@ pub(crate) const CODEC_J2K: u32 = 0;
 pub(crate) const CODEC_JP2: u32 = 2;
 
 unsafe extern "C" {
+    pub(crate) fn nj2k_opj_decoder_new(reduce: u32, threads: u32) -> *mut OpjDecoder;
+    pub(crate) fn nj2k_opj_decoder_free(decoder: *mut OpjDecoder);
+    pub(crate) fn nj2k_opj_decode(
+        decoder: *mut OpjDecoder,
+        data: *const u8,
+        size: u64,
+        out: *mut i32,
+        cap: u64,
+        count: *mut u64,
+    ) -> i32;
+    pub(crate) fn nj2k_opj_encode_u8(
+        pixels: *const u8,
+        stride: usize,
+        width: u32,
+        height: u32,
+        components: u32,
+        reversible: u32,
+        resolutions: u32,
+        mct: u32,
+        out: *mut *mut OpjBytes,
+    ) -> i32;
+    pub(crate) fn nj2k_opj_bytes_data(bytes: *const OpjBytes, len: *mut usize) -> *const u8;
+    pub(crate) fn nj2k_opj_bytes_free(bytes: *mut OpjBytes);
+    pub(crate) fn nj2k_opj_version() -> *const c_char;
+
     pub(crate) fn nj2k_shim_abi_version() -> u32;
     pub(crate) fn nj2k_shim_cpp_version() -> u32;
     pub(crate) fn nj2k_shim_ready() -> u32;
