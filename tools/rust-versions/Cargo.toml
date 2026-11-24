@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+#
+# The timing of the Rust crate at tag v0.1.2 against the crate of this checkout (perf.yml, `vs_v012`): one small
+# program that links both versions of the crate side by side (the same package, two paths) and times the whole-image
+# decode and encode of each in one process, alternating. Neither crate is changed. A workspace of its own, so the
+# repository's workspace neither builds nor lints it. The job checks the tag out beside the repository (../../../v012, outside its workspace: Cargo cannot tell two same-named crates apart inside one).
+[workspace]
+
+[package]
+name = "neo-j2k-versions"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.100"
+license = "BSD-2-Clause"
+publish = false
+description = "Times neo-j2k v0.1.2 against the checkout's neo-j2k (a measurement tool, never published)"
+
+[dependencies]
+# the tag's crate: its public whole-image API only, no features beyond its defaults
+neo_j2k_old = { package = "neo-j2k", path = "../../../v012/neo-j2k" }
+# the checkout's crate: the same public API, its defaults only (not bench-internals)
+neo_j2k_new = { package = "neo-j2k", path = "../../neo-j2k" }
+
+# as the repository's release profile: a program that depends on the crate uses its own
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+debug = "line-tables-only"
