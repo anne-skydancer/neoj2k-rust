@@ -281,22 +281,23 @@ fn chained_decisions_over_short_and_exhausted_input_equal_the_model() {
     // the marker again for as long as the run lasts (a malformed or overlong segment). After every decision the bit,
     // the next context, all three registers and the position in the source must equal the model's.
     let mut seed = 0x2545_f491_4f6c_dd1d_u64;
-    let mut next = move || {
+    // a value below `n` (the high half of the generator, which is a u32 by construction)
+    let mut below = move |n: u32| -> u32 {
         seed ^= seed << 13;
         seed ^= seed >> 7;
         seed ^= seed << 17;
-        seed
+        u32::try_from(seed >> 32).unwrap() % n
     };
     let runs = if cfg!(miri) { 20 } else { 4000 };
     for _ in 0..runs {
-        let len = (next() % 8) as usize;
-        let tail: Vec<u8> = (0..len).map(|_| BYTES[(next() % 6) as usize]).collect();
-        let mut index = (next() % MQ_STATES.len() as u64) as usize;
+        let len = usize::try_from(below(8)).unwrap();
+        let tail: Vec<u8> = (0..len).map(|_| BYTES[usize::try_from(below(6)).unwrap()]).collect();
+        let mut index = usize::try_from(below(u32::try_from(MQ_STATES.len()).unwrap())).unwrap();
         let mut model = Model {
-            a: 0x8000 + (next() % 0x8000) as u32,
-            c: (next() >> 16) as u32,
-            bits: (next() % 3) as u32,
-            current: [0x12, 0xff, 0x00][(next() % 3) as usize],
+            a: 0x8000 + below(0x8000),
+            c: (below(0x1_0000) << 16) | below(0x1_0000),
+            bits: below(3),
+            current: [0x12, 0xff, 0x00][usize::try_from(below(3)).unwrap()],
             consumed: 0,
         };
         let mut decoder = decoder_from(&tail, index, model);
