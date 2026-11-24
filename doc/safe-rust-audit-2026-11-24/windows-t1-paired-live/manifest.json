@@ -1,0 +1,8 @@
+{
+  "source_differences": [
+    "src\\simd\\t1.rs"
+  ],
+  "column_order": "original_us,new_us,old_safe_us,new_vs_old_safe,new_vs_original,old_safe_vs_original,equality",
+  "new_t1_sha256": "d3f0bccadd6eb7d47391d5cec980b539dd2b6366d99a25aef43703e1b9c46613",
+  "old_t1_sha256": "c86c219df92390df69540a19bab65a02488b3bdde0ab0beb10c31547aecd6071"
+}

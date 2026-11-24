@@ -14,7 +14,7 @@
 4. every other crate of the workspace is `publish = false`, and the crate's feature `bench-internals`
    (the benchmark's entry points) is not among its default features;
 5. the crate's sources hold no FFI (extern "C" or any other ABI, #[link], #[no_mangle],
-   #[export_name]), no `unsafe` outside src/simd/, no `static mut` and no `thread_local!`.
+   #[export_name]), no `unsafe` anywhere, no `static mut` and no `thread_local!`.
 
 usage: check_rust_native.py [--workspace DIR] [--selftest]
 """
@@ -121,16 +121,15 @@ def package_problems(files):
 
 
 def source_problems(text, rel):
-    """FFI, unsafe outside src/simd/, static mut, thread_local! in one source (comments left out)."""
+    """FFI, unsafe, static mut, thread_local! in one source (comments left out)."""
     problems = []
-    in_simd = rel.replace("\\", "/").startswith("src/simd/")
     for no, line in enumerate(text.splitlines(), 1):
         code = line.split("//", 1)[0]
         for rule, what in SOURCE_RULES:
             if rule.search(code):
                 problems.append("%s:%d: %s" % (rel, no, what))
-        if not in_simd and UNSAFE.search(code):
-            problems.append("%s:%d: unsafe outside src/simd/" % (rel, no))
+        if UNSAFE.search(code):
+            problems.append("%s:%d: unsafe code" % (rel, no))
     return problems
 
 
@@ -174,9 +173,12 @@ def selftest():
     assert source_problems("#[unsafe(no_mangle)] pub fn f() {}", "src/a.rs")
     assert source_problems("static mut X: u8 = 0;", "src/a.rs")
     assert source_problems("let v = unsafe { f() };", "src/a.rs")
-    assert not source_problems("let v = unsafe { f() };", "src/simd/x.rs")
+    assert source_problems("let v = unsafe { f() };", "src/simd/x.rs")
+    assert source_problems("unsafe fn f() {}", "src/simd/x.rs")
+    assert source_problems("unsafe impl Send for X {}", "src/simd/x.rs")
     assert not source_problems("// unsafe extern \"C\" in a comment", "src/a.rs")
     assert not source_problems("#![deny(unsafe_code)]", "src/lib.rs")  # the lint's name is no unsafe code
+    assert not source_problems("#![forbid(unsafe_code)]", "src/lib.rs")
     print("check_rust_native: selftest passed")
     return 0
 
@@ -213,8 +215,8 @@ def main():
     if problems:
         return 1
     print("check_rust_native: %s is native Rust: %d crate(s) in its normal and build graph, none building or "
-          "binding C or C++; a %d-file package of Rust sources; %d sources without FFI and without unsafe outside "
-          "src/simd/" % (CRATE, size, len(files), sources))
+          "binding C or C++; a %d-file package of Rust sources; %d sources without FFI or unsafe code" %
+          (CRATE, size, len(files), sources))
     return 0
 
 

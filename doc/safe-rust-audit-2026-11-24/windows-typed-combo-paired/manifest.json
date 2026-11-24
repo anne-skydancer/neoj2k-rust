@@ -1,0 +1,8 @@
+{
+  "source_differences": [
+    "src\\simd\\mct.rs"
+  ],
+  "columns": "original_us,new_us,old_safe_us,new_vs_old_safe,new_vs_original,old_safe_vs_original,equality",
+  "new_sha256": "08ada46821f4e6f3383829c0359dbe0b18b05bfbba578bc84af4db5bb201dd61",
+  "old_sha256": "d315946241409cd54cf1cd0940386bf7849a2db6dfd63773543583003814dad4"
+}

@@ -371,42 +371,51 @@ mod tests {
             (1 << 24) + 1,
             i32::MAX,
         ];
-        for width in [1, 7, 8, 9, 15, 16, 17, 32, 64, 1_024] {
-            let stride = width + 5;
-            let input: Vec<i32> = extremes.into_iter().cycle().take(3 * width).collect();
-            for reversible in [true, false] {
-                for roishift in [0, 1, 8, 30, 31, u32::MAX] {
-                    for stepsize in [-0.0, f32::MIN_POSITIVE, 1.3, f32::MAX] {
-                        let end = 1 + 2 * stride + width;
-                        let mut scalar = vec![PADDING; end + 1];
-                        let mut vector = scalar.clone();
-                        store_coefficients::<false>(
-                            &mut input.clone(),
-                            &mut scalar[1..end],
-                            width,
-                            stride,
-                            roishift,
-                            reversible,
-                            stepsize,
-                        );
-                        store_coefficients::<true>(
-                            &mut input.clone(),
-                            &mut vector[1..end],
-                            width,
-                            stride,
-                            roishift,
-                            reversible,
-                            stepsize,
-                        );
-                        assert_eq!(
-                            vector, scalar,
-                            "width {width}, reversible {reversible}, ROI {roishift}, step {stepsize}"
-                        );
-                        assert_eq!(vector[0], PADDING);
-                        assert_eq!(vector[end], PADDING);
-                        for row in 0..2 {
-                            let padding = 1 + row * stride + width;
-                            assert_eq!(vector[padding..padding + 5], [PADDING; 5]);
+        // The interpreter focuses on the vector entry and long-row crossover;
+        // native tests retain the large rows and the other tail boundaries.
+        let widths: &[usize] = if cfg!(miri) {
+            &[8, 31, 32, 33]
+        } else {
+            &[1, 7, 8, 9, 15, 16, 17, 31, 32, 33, 64, 1_024]
+        };
+        for &width in widths {
+            let strides = [width + 5, 256, 257, 1_024];
+            for &stride in &strides[..if width == 32 { 4 } else { 1 }] {
+                let input: Vec<i32> = extremes.into_iter().cycle().take(3 * width).collect();
+                for reversible in [true, false] {
+                    for roishift in [0, 1, 8, 30, 31, u32::MAX] {
+                        for stepsize in [-0.0, f32::MIN_POSITIVE, 1.3, f32::MAX] {
+                            let end = 1 + 2 * stride + width;
+                            let mut scalar = vec![PADDING; end + 1];
+                            let mut vector = scalar.clone();
+                            store_coefficients::<false>(
+                                &mut input.clone(),
+                                &mut scalar[1..end],
+                                width,
+                                stride,
+                                roishift,
+                                reversible,
+                                stepsize,
+                            );
+                            store_coefficients::<true>(
+                                &mut input.clone(),
+                                &mut vector[1..end],
+                                width,
+                                stride,
+                                roishift,
+                                reversible,
+                                stepsize,
+                            );
+                            assert_eq!(
+                                vector, scalar,
+                                "width {width}, stride {stride}, reversible {reversible}, ROI {roishift}, step {stepsize}"
+                            );
+                            assert_eq!(vector[0], PADDING);
+                            assert_eq!(vector[end], PADDING);
+                            for row in 0..2 {
+                                let padding = 1 + row * stride + width;
+                                assert_eq!(vector[padding..padding + 5], [PADDING; 5]);
+                            }
                         }
                     }
                 }

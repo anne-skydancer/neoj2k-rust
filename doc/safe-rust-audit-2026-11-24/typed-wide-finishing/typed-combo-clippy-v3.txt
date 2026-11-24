@@ -1,0 +1,4 @@
+   Compiling neo-j2k-oracle v0.1.3 (/home/dev/safe-crate-audit/candidate/neo-j2k-oracle)
+    Checking neo-j2k-testkit v0.1.3 (/home/dev/safe-crate-audit/candidate/neo-j2k-testkit)
+    Checking neo-j2k v0.1.3 (/home/dev/safe-crate-audit/candidate/neo-j2k)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.46s

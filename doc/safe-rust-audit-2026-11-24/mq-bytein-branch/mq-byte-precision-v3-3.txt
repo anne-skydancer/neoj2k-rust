@@ -1,0 +1,7 @@
+DIAGNOSTIC MQ BYTEIN: third slot is identical safe code before constant-shift byte branch, NOT unchanged original control; percent columns new/old_safe,new/reference,old_safe/reference
+decode|p24_sl_64_rgb_97.j2k|r0|cutfalse|w1|55.4479|55.8762|55.0574|+3.357%|+2.392%|-1.083%|same
+decode|p24_sl_128_rgba_97.j2k|r0|cutfalse|w1|119.4757|120.7453|120.0878|+4.667%|+2.051%|+0.911%|same
+decode|p24_large_1024_rgb_97.j2k|r0|cutfalse|w1|4141.9020|4266.9135|4190.0130|+1.130%|+3.241%|+1.209%|same
+decode|p31_sl_64_rgb_97.j2k|r0|cutfalse|w1|55.8311|55.5647|55.4832|+0.615%|+0.343%|-1.677%|same
+decode|p31_sl_128_rgba_97.j2k|r0|cutfalse|w1|116.4153|117.5822|117.0464|+0.053%|+0.786%|+0.081%|same
+decode|p31_large_1024_rgb_97.j2k|r0|cutfalse|w1|3903.8960|4094.2485|4019.4625|+2.634%|+5.068%|+3.646%|same

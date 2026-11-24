@@ -1,0 +1,1 @@
+PASS 2115584 independent float-pattern/tie checks

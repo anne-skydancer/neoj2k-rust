@@ -1,0 +1,9 @@
+{
+  "compiler": "rustc1.100.0",
+  "flags": "--edition2024 -Awarnings -O -Ctarget-cpu=x86-64-v3",
+  "cpu": "Linux taskset CPU7",
+  "before_binary_sha256": "b14625201c402356a6abf64314cb8a975a85608a47aaef7a6750d740323f97d8",
+  "after_binary_sha256": "5379f06a96d6d8faa7d1272523cf671d82e179aebc997be3e3cdb9dfc8108e6e",
+  "reference_source_sha256": "d77643dd5dbf37b299c781c7038d000d38af0ed33c424e5a4a15eedbc6b9cebd",
+  "current_mct_source_sha256": "2ff411c1c5f44103bd506c9ccadfe59f5382696274702d4e50a757b469afe9de"
+}

@@ -1,0 +1,155 @@
+
+/home/dev/safe-crate-audit/target-independent-stage-v3/release/neo-j2k-versions:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000116690 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct29inverse_and_finish_typed_rowsKb0_EB6_>:
+  116690:	cmp    %rcx,%rsi
+  116693:	cmovb  %rsi,%rcx
+  116697:	cmp    %r9,%rcx
+  11669a:	cmovae %r9,%rcx
+  11669e:	test   %rcx,%rcx
+  1166a1:	je     116950 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct29inverse_and_finish_typed_rowsKb0_EB6_+0x2c0>
+  1166a7:	push   %rbx
+  1166a8:	mov    0x10(%rsp),%rsi
+  1166ad:	mov    (%rsi),%eax
+  1166af:	mov    0x4(%rsi),%r9d
+  1166b3:	mov    0x8(%rsi),%esi
+  1166b6:	sub    %eax,%r9d
+  1166b9:	vcvtsi2ss %r9d,%xmm15,%xmm0
+  1166be:	mov    %esi,%r9d
+  1166c1:	sub    %eax,%r9d
+  1166c4:	vcvtsi2ss %r9d,%xmm15,%xmm1
+  1166c9:	add    $0x74c00000,%eax
+  1166ce:	cmp    $0x8,%rcx
+  1166d2:	jae    1166dc <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct29inverse_and_finish_typed_rowsKb0_EB6_+0x4c>
+  1166d4:	xor    %r9d,%r9d
+  1166d7:	jmp    116831 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct29inverse_and_finish_typed_rowsKb0_EB6_+0x1a1>
+  1166dc:	movabs $0x1ffffffffffffff8,%r9
+  1166e6:	and    %rcx,%r9
+  1166e9:	vbroadcastss %xmm0,%ymm2
+  1166ee:	vbroadcastss %xmm1,%ymm3
+  1166f3:	vmovd  %eax,%xmm4
+  1166f7:	vpbroadcastd %xmm4,%ymm4
+  1166fc:	vmovd  %esi,%xmm5
+  116700:	vpbroadcastd %xmm5,%ymm5
+  116705:	lea    0x0(,%rcx,4),%r10
+  11670d:	and    $0xffffffffffffffe0,%r10
+  116711:	xor    %r11d,%r11d
+  116714:	vbroadcastss -0x100e91(%rip),%ymm7        # 1588c <GCC_except_table1004+0x22e8>
+  11671d:	vbroadcastss -0x100eda(%rip),%ymm8        # 1584c <GCC_except_table1004+0x22a8>
+  116726:	vbroadcastss -0x100d5f(%rip),%ymm9        # 159d0 <GCC_except_table1004+0x242c>
+  11672f:	vbroadcastss -0x100e64(%rip),%ymm10        # 158d4 <GCC_except_table1004+0x2330>
+  116738:	vbroadcastss -0x100e79(%rip),%ymm11        # 158c8 <GCC_except_table1004+0x2324>
+  116741:	data16 data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+  116750:	vmovups (%rdi,%r11,1),%ymm12
+  116756:	vmovups (%r8,%r11,1),%ymm13
+  11675c:	vbroadcastss -0x100e45(%rip),%ymm6        # 15920 <GCC_except_table1004+0x237c>
+  116765:	vmulps %ymm6,%ymm13,%ymm14
+  116769:	vaddps %ymm14,%ymm12,%ymm14
+  11676e:	vmaxps %ymm2,%ymm14,%ymm14
+  116772:	vminps %ymm3,%ymm14,%ymm14
+  116776:	vaddps %ymm7,%ymm14,%ymm15
+  11677a:	vsubps %ymm15,%ymm8,%ymm6
+  11677f:	vaddps %ymm6,%ymm14,%ymm6
+  116783:	vpslld $0x8,%ymm15,%ymm14
+  116789:	vpaddd %ymm4,%ymm14,%ymm14
+  11678d:	vpaddd %ymm6,%ymm14,%ymm6
+  116791:	vpminud %ymm5,%ymm6,%ymm6
+  116796:	vmovdqu %ymm6,(%rdi,%r11,1)
+  11679c:	vmovups (%rdx,%r11,1),%ymm6
+  1167a2:	vmulps %ymm6,%ymm9,%ymm14
+  1167a6:	vaddps %ymm14,%ymm12,%ymm14
+  1167ab:	vmulps %ymm10,%ymm13,%ymm13
+  1167b0:	vaddps %ymm13,%ymm14,%ymm13
+  1167b5:	vmaxps %ymm2,%ymm13,%ymm13
+  1167b9:	vminps %ymm3,%ymm13,%ymm13
+  1167bd:	vaddps %ymm7,%ymm13,%ymm14
+  1167c1:	vsubps %ymm14,%ymm8,%ymm15
+  1167c6:	vaddps %ymm15,%ymm13,%ymm13
+  1167cb:	vpslld $0x8,%ymm14,%ymm14
+  1167d1:	vpaddd %ymm4,%ymm14,%ymm14
+  1167d5:	vpaddd %ymm13,%ymm14,%ymm13
+  1167da:	vpminud %ymm5,%ymm13,%ymm13
+  1167df:	vmovdqu %ymm13,(%rdx,%r11,1)
+  1167e5:	vmulps %ymm6,%ymm11,%ymm6
+  1167e9:	vaddps %ymm6,%ymm12,%ymm6
+  1167ed:	vmaxps %ymm2,%ymm6,%ymm6
+  1167f1:	vminps %ymm3,%ymm6,%ymm6
+  1167f5:	vaddps %ymm7,%ymm6,%ymm12
+  1167f9:	vsubps %ymm12,%ymm8,%ymm13
+  1167fe:	vaddps %ymm6,%ymm13,%ymm6
+  116802:	vpslld $0x8,%ymm12,%ymm12
+  116808:	vpaddd %ymm4,%ymm12,%ymm12
+  11680c:	vpaddd %ymm6,%ymm12,%ymm6
+  116810:	vpminud %ymm5,%ymm6,%ymm6
+  116815:	vmovdqu %ymm6,(%r8,%r11,1)
+  11681b:	add    $0x20,%r11
+  11681f:	cmp    %r11,%r10
+  116822:	jne    116750 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct29inverse_and_finish_typed_rowsKb0_EB6_+0xc0>
+  116828:	cmp    %r9,%rcx
+  11682b:	je     11694f <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct29inverse_and_finish_typed_rowsKb0_EB6_+0x2bf>
+  116831:	vmovss -0x100f19(%rip),%xmm2        # 15920 <GCC_except_table1004+0x237c>
+  116839:	vmovss -0x100fb5(%rip),%xmm3        # 1588c <GCC_except_table1004+0x22e8>
+  116841:	vmovss -0x100ffd(%rip),%xmm4        # 1584c <GCC_except_table1004+0x22a8>
+  116849:	vmovss -0x100e81(%rip),%xmm5        # 159d0 <GCC_except_table1004+0x242c>
+  116851:	vmovss -0x100f85(%rip),%xmm6        # 158d4 <GCC_except_table1004+0x2330>
+  116859:	vmovss -0x100f99(%rip),%xmm7        # 158c8 <GCC_except_table1004+0x2324>
+  116861:	data16 data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+  116870:	vmovss (%rdi,%r9,4),%xmm8
+  116876:	vmovss (%rdx,%r9,4),%xmm9
+  11687c:	vmovss (%r8,%r9,4),%xmm10
+  116882:	vmulss %xmm2,%xmm10,%xmm11
+  116886:	vaddss %xmm11,%xmm8,%xmm11
+  11688b:	vmaxss %xmm0,%xmm11,%xmm11
+  11688f:	vminss %xmm1,%xmm11,%xmm11
+  116893:	vaddss %xmm3,%xmm11,%xmm12
+  116897:	vsubss %xmm12,%xmm4,%xmm13
+  11689c:	vaddss %xmm13,%xmm11,%xmm11
+  1168a1:	vmovd  %xmm12,%r10d
+  1168a6:	shl    $0x8,%r10d
+  1168aa:	vmovd  %xmm11,%r11d
+  1168af:	add    %eax,%r10d
+  1168b2:	add    %r11d,%r10d
+  1168b5:	cmp    %esi,%r10d
+  1168b8:	cmovae %esi,%r10d
+  1168bc:	vmulss %xmm5,%xmm9,%xmm11
+  1168c0:	vaddss %xmm11,%xmm8,%xmm11
+  1168c5:	vmulss %xmm6,%xmm10,%xmm10
+  1168c9:	vaddss %xmm10,%xmm11,%xmm10
+  1168ce:	vmaxss %xmm0,%xmm10,%xmm10
+  1168d2:	vminss %xmm1,%xmm10,%xmm10
+  1168d6:	vaddss %xmm3,%xmm10,%xmm11
+  1168da:	vsubss %xmm11,%xmm4,%xmm12
+  1168df:	vaddss %xmm12,%xmm10,%xmm10
+  1168e4:	vmovd  %xmm11,%r11d
+  1168e9:	shl    $0x8,%r11d
+  1168ed:	vmovd  %xmm10,%ebx
+  1168f1:	add    %eax,%r11d
+  1168f4:	add    %ebx,%r11d
+  1168f7:	cmp    %esi,%r11d
+  1168fa:	cmovae %esi,%r11d
+  1168fe:	mov    %r10d,(%rdi,%r9,4)
+  116902:	vmulss %xmm7,%xmm9,%xmm9
+  116906:	vaddss %xmm9,%xmm8,%xmm8
+  11690b:	vmaxss %xmm0,%xmm8,%xmm8
+  11690f:	vminss %xmm1,%xmm8,%xmm8
+  116913:	vaddss %xmm3,%xmm8,%xmm9
+  116917:	vsubss %xmm9,%xmm4,%xmm10
+  11691c:	vaddss %xmm10,%xmm8,%xmm8
+  116921:	vmovd  %xmm9,%r10d
+  116926:	shl    $0x8,%r10d
+  11692a:	vmovd  %xmm8,%ebx
+  11692e:	add    %eax,%r10d
+  116931:	add    %ebx,%r10d
+  116934:	cmp    %esi,%r10d
+  116937:	cmovae %esi,%r10d
+  11693b:	mov    %r11d,(%rdx,%r9,4)
+  11693f:	mov    %r10d,(%r8,%r9,4)
+  116943:	inc    %r9
+  116946:	cmp    %r9,%rcx
+  116949:	jne    116870 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct29inverse_and_finish_typed_rowsKb0_EB6_+0x1e0>
+  11694f:	pop    %rbx
+  116950:	vzeroupper
+  116953:	ret

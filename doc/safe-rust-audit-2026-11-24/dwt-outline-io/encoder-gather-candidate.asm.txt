@@ -1,0 +1,646 @@
+
+/home/dev/safe-crate-audit/target-io-paired-v3/release/neo-j2k-versions:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+000000000007be00 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples>:
+   7be00:	push   %rbp
+   7be01:	push   %r15
+   7be03:	push   %r14
+   7be05:	push   %r13
+   7be07:	push   %r12
+   7be09:	push   %rbx
+   7be0a:	sub    $0xf8,%rsp
+   7be11:	mov    %rdx,%rbx
+   7be14:	mov    0x138(%rsp),%r10
+   7be1c:	mov    %r8,0x48(%rsp)
+   7be21:	and    $0xfffffffffffffffc,%r8
+   7be25:	mov    %rcx,(%rsp)
+   7be29:	imul   %rcx,%r8
+   7be2d:	mov    %r8,%rcx
+   7be30:	test   $0x1,%r9b
+   7be34:	je     7be6f <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x6f>
+   7be36:	sub    %rcx,%r10
+   7be39:	jb     7ca23 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xc23>
+   7be3f:	mov    (%rsp),%rax
+   7be43:	lea    0x0(,%rax,4),%r8
+   7be4b:	test   %r8,%r8
+   7be4e:	je     7ca3b <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xc3b>
+   7be54:	mov    %rcx,%rax
+   7be57:	or     %r8,%rax
+   7be5a:	shr    $0x20,%rax
+   7be5e:	mov    %r10,0x20(%rsp)
+   7be63:	je     7bebd <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbd>
+   7be65:	mov    %rcx,%rax
+   7be68:	xor    %edx,%edx
+   7be6a:	div    %r8
+   7be6d:	jmp    7bec4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xc4>
+   7be6f:	sub    %rcx,%r10
+   7be72:	jb     7ca23 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xc23>
+   7be78:	mov    (%rsp),%rax
+   7be7c:	lea    0x0(,%rax,4),%r8
+   7be84:	test   %r8,%r8
+   7be87:	je     7ca3b <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xc3b>
+   7be8d:	vmovaps %xmm0,%xmm2
+   7be91:	mov    %rcx,%rax
+   7be94:	or     %r8,%rax
+   7be97:	shr    $0x20,%rax
+   7be9b:	je     7c1e4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x3e4>
+   7bea1:	mov    %rcx,%rax
+   7bea4:	xor    %edx,%edx
+   7bea6:	div    %r8
+   7bea9:	mov    %rcx,%r11
+   7beac:	sub    %rdx,%r11
+   7beaf:	cmp    %r11,%r8
+   7beb2:	ja     7c1f6 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x3f6>
+   7beb8:	jmp    7c22b <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x42b>
+   7bebd:	mov    %ecx,%eax
+   7bebf:	xor    %edx,%edx
+   7bec1:	div    %r8d
+   7bec4:	mov    %rcx,0x40(%rsp)
+   7bec9:	mov    %rcx,%r11
+   7becc:	sub    %rdx,%r11
+   7becf:	cmp    %r11,%r8
+   7bed2:	jbe    7bf13 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x113>
+   7bed4:	mov    0x48(%rsp),%r8
+   7bed9:	and    $0x3,%r8
+   7bedd:	mov    0x20(%rsp),%r10
+   7bee2:	mov    0x40(%rsp),%rcx
+   7bee7:	je     7c9cf <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbcf>
+   7beed:	mov    %r10,%rax
+   7bef0:	shr    $0x20,%rax
+   7bef4:	je     7c94d <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xb4d>
+   7befa:	mov    %r10,%rax
+   7befd:	xor    %edx,%edx
+   7beff:	div    %r8
+   7bf02:	sub    %rdx,%r10
+   7bf05:	cmp    %r10,%r8
+   7bf08:	jbe    7c95d <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xb5d>
+   7bf0e:	jmp    7c9cf <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbcf>
+   7bf13:	mov    $0x3c,%cl
+   7bf15:	mov    (%rsp),%rax
+   7bf19:	bzhi   %rcx,%rax,%rcx
+   7bf1e:	mov    %rcx,0x18(%rsp)
+   7bf23:	movabs $0xffffffffffffff8,%rcx
+   7bf2d:	and    %rax,%rcx
+   7bf30:	mov    %rcx,0x10(%rsp)
+   7bf35:	mov    %rbx,%rcx
+   7bf38:	shl    $0x4,%rcx
+   7bf3c:	mov    %rcx,0xc8(%rsp)
+   7bf44:	lea    0x0(,%rbx,4),%r13
+   7bf4c:	lea    0x0(,%rbx,8),%rbp
+   7bf54:	lea    0x0(,%r13,2),%r10
+   7bf5c:	add    %r13,%r10
+   7bf5f:	shl    $0x4,%rax
+   7bf63:	mov    %rax,0x50(%rsp)
+   7bf68:	lea    (%rdi,%rbx,4),%rax
+   7bf6c:	mov    %rax,0x30(%rsp)
+   7bf71:	lea    (%rdi,%rbx,8),%rax
+   7bf75:	mov    %rax,0x28(%rsp)
+   7bf7a:	lea    (%rdi,%r10,1),%rax
+   7bf7e:	mov    %rax,0x78(%rsp)
+   7bf83:	xor    %r14d,%r14d
+   7bf86:	mov    0x130(%rsp),%rcx
+   7bf8e:	mov    %rdi,%r15
+   7bf91:	mov    %r8,0xd0(%rsp)
+   7bf99:	jmp    7bfe3 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x1e3>
+   7bf9b:	nopl   0x0(%rax,%rax,1)
+   7bfa0:	mov    0xd0(%rsp),%r8
+   7bfa8:	mov    0x70(%rsp),%r11
+   7bfad:	sub    %r8,%r11
+   7bfb0:	mov    0xd8(%rsp),%r14
+   7bfb8:	inc    %r14
+   7bfbb:	mov    0xc8(%rsp),%rax
+   7bfc3:	add    %rax,%r15
+   7bfc6:	add    0x50(%rsp),%rcx
+   7bfcb:	add    %rax,0x30(%rsp)
+   7bfd0:	add    %rax,0x28(%rsp)
+   7bfd5:	add    %rax,0x78(%rsp)
+   7bfda:	cmp    %r11,%r8
+   7bfdd:	ja     7bed4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xd4>
+   7bfe3:	lea    0x0(,%r14,4),%rax
+   7bfeb:	mov    %rax,%r9
+   7bfee:	imul   %rbx,%r9
+   7bff2:	mov    %rsi,%rdx
+   7bff5:	sub    %r9,%rdx
+   7bff8:	jb     7c9f9 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbf9>
+   7bffe:	cmp    %rdx,(%rsp)
+   7c002:	ja     7c9e4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbe4>
+   7c008:	add    %rbx,%r9
+   7c00b:	mov    %rsi,%rdx
+   7c00e:	sub    %r9,%rdx
+   7c011:	jb     7c9f9 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbf9>
+   7c017:	cmp    %rdx,(%rsp)
+   7c01b:	ja     7c9e4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbe4>
+   7c021:	lea    0x2(%rax),%r9
+   7c025:	imul   %rbx,%r9
+   7c029:	mov    %rsi,%rdx
+   7c02c:	sub    %r9,%rdx
+   7c02f:	jb     7c9f9 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbf9>
+   7c035:	cmp    %rdx,(%rsp)
+   7c039:	ja     7c9e4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbe4>
+   7c03f:	or     $0x3,%rax
+   7c043:	imul   %rbx,%rax
+   7c047:	mov    %rsi,%rdx
+   7c04a:	sub    %rax,%rdx
+   7c04d:	jb     7ca0e <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xc0e>
+   7c053:	cmp    %rdx,(%rsp)
+   7c057:	ja     7c9e4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbe4>
+   7c05d:	mov    %r14,0xd8(%rsp)
+   7c065:	mov    %r11,0x70(%rsp)
+   7c06a:	cmpq   $0x0,0x18(%rsp)
+   7c070:	je     7bfa0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x1a0>
+   7c076:	cmpq   $0x8,0x18(%rsp)
+   7c07c:	jae    7c090 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x290>
+   7c07e:	xor    %eax,%eax
+   7c080:	jmp    7c17e <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x37e>
+   7c085:	data16 cs nopw 0x0(%rax,%rax,1)
+   7c090:	mov    %rcx,%rax
+   7c093:	mov    %r15,%rdx
+   7c096:	mov    0x10(%rsp),%r9
+   7c09b:	nopl   0x0(%rax,%rax,1)
+   7c0a0:	vmovdqu (%rdx),%ymm0
+   7c0a4:	vmovdqu (%rdx,%r13,1),%ymm1
+   7c0aa:	vmovdqu (%rdx,%rbp,1),%ymm2
+   7c0af:	vmovdqu (%rdx,%r10,1),%ymm3
+   7c0b5:	vpunpckldq %ymm3,%ymm2,%ymm4
+   7c0b9:	vpermq $0xe8,%ymm4,%ymm4
+   7c0bf:	vpunpckldq %ymm1,%ymm0,%ymm5
+   7c0c3:	vpermq $0xf6,%ymm5,%ymm5
+   7c0c9:	vpblendd $0xcc,%ymm4,%ymm5,%ymm4
+   7c0cf:	vpunpckhdq %ymm3,%ymm2,%ymm2
+   7c0d3:	vpermq $0xe8,%ymm2,%ymm2
+   7c0d9:	vpunpckhdq %ymm1,%ymm0,%ymm0
+   7c0dd:	vpermq $0xf6,%ymm0,%ymm0
+   7c0e3:	vpblendd $0xcc,%ymm2,%ymm0,%ymm0
+   7c0e9:	vmovdqu (%rdx,%r10,1),%xmm1
+   7c0ef:	vmovdqu (%rdx,%rbp,1),%xmm2
+   7c0f4:	vpunpckhdq %xmm1,%xmm2,%xmm3
+   7c0f8:	vpermq $0x60,%ymm3,%ymm3
+   7c0fe:	vmovdqu (%rdx,%r13,1),%xmm5
+   7c104:	vmovdqu (%rdx),%xmm6
+   7c108:	vpunpckhdq %xmm5,%xmm6,%xmm7
+   7c10c:	vpermq $0xd4,%ymm7,%ymm7
+   7c112:	vpblendd $0xcc,%ymm3,%ymm7,%ymm3
+   7c118:	vpunpckldq %xmm1,%xmm2,%xmm1
+   7c11c:	vpermq $0x60,%ymm1,%ymm1
+   7c122:	vpunpckldq %xmm5,%xmm6,%xmm2
+   7c126:	vpermq $0xd4,%ymm2,%ymm2
+   7c12c:	vpblendd $0xcc,%ymm1,%ymm2,%ymm1
+   7c132:	vpslld $0x6,%ymm1,%ymm1
+   7c137:	vpslld $0x6,%ymm3,%ymm2
+   7c13c:	vpslld $0x6,%ymm0,%ymm0
+   7c141:	vpslld $0x6,%ymm4,%ymm3
+   7c146:	vmovdqu %ymm3,0x40(%rax)
+   7c14b:	vmovdqu %ymm0,0x60(%rax)
+   7c150:	vmovdqu %ymm2,0x20(%rax)
+   7c155:	vmovdqu %ymm1,(%rax)
+   7c159:	add    $0x20,%rdx
+   7c15d:	sub    $0xffffffffffffff80,%rax
+   7c161:	add    $0xfffffffffffffff8,%r9
+   7c165:	jne    7c0a0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x2a0>
+   7c16b:	mov    0x10(%rsp),%rdx
+   7c170:	mov    %rdx,%rax
+   7c173:	cmp    %rdx,0x18(%rsp)
+   7c178:	je     7bfa0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x1a0>
+   7c17e:	mov    0x18(%rsp),%rdx
+   7c183:	sub    %rax,%rdx
+   7c186:	lea    (%r15,%rax,4),%r9
+   7c18a:	mov    0x30(%rsp),%r8
+   7c18f:	lea    (%r8,%rax,4),%r14
+   7c193:	mov    0x28(%rsp),%r8
+   7c198:	lea    (%r8,%rax,4),%r12
+   7c19c:	mov    0x78(%rsp),%r8
+   7c1a1:	lea    (%r8,%rax,4),%r11
+   7c1a5:	shl    $0x4,%rax
+   7c1a9:	add    %rcx,%rax
+   7c1ac:	xor    %r8d,%r8d
+   7c1af:	nop
+   7c1b0:	vmovd  (%r9,%r8,1),%xmm0
+   7c1b6:	vpinsrd $0x1,(%r14,%r8,1),%xmm0,%xmm0
+   7c1bd:	vpinsrd $0x2,(%r12,%r8,1),%xmm0,%xmm0
+   7c1c4:	vpinsrd $0x3,(%r11,%r8,1),%xmm0,%xmm0
+   7c1cb:	vpslld $0x6,%xmm0,%xmm0
+   7c1d0:	vmovdqu %xmm0,(%rax,%r8,4)
+   7c1d6:	add    $0x4,%r8
+   7c1da:	dec    %rdx
+   7c1dd:	jne    7c1b0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x3b0>
+   7c1df:	jmp    7bfa0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x1a0>
+   7c1e4:	mov    %ecx,%eax
+   7c1e6:	xor    %edx,%edx
+   7c1e8:	div    %r8d
+   7c1eb:	mov    %rcx,%r11
+   7c1ee:	sub    %rdx,%r11
+   7c1f1:	cmp    %r11,%r8
+   7c1f4:	jbe    7c22b <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x42b>
+   7c1f6:	mov    0x48(%rsp),%r14
+   7c1fb:	and    $0x3,%r14
+   7c1ff:	je     7c9cf <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbcf>
+   7c205:	mov    %r10,%rax
+   7c208:	shr    $0x20,%rax
+   7c20c:	je     7c82c <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xa2c>
+   7c212:	mov    %r10,%rax
+   7c215:	xor    %edx,%edx
+   7c217:	div    %r14
+   7c21a:	sub    %rdx,%r10
+   7c21d:	cmp    %r10,%r14
+   7c220:	jbe    7c840 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xa40>
+   7c226:	jmp    7c9cf <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbcf>
+   7c22b:	mov    %rcx,0x40(%rsp)
+   7c230:	mov    $0x3c,%cl
+   7c232:	mov    (%rsp),%rax
+   7c236:	bzhi   %rcx,%rax,%rdx
+   7c23b:	vbroadcastss %xmm2,%xmm1
+   7c240:	mov    %rbx,%rcx
+   7c243:	shl    $0x4,%rcx
+   7c247:	mov    %rcx,0xd0(%rsp)
+   7c24f:	lea    0x0(,%rbx,4),%rcx
+   7c257:	lea    (%rcx,%rcx,2),%r9
+   7c25b:	mov    0x40(%rsp),%rcx
+   7c260:	shl    $0x4,%rax
+   7c264:	mov    %rax,0xc8(%rsp)
+   7c26c:	mov    %rdx,0x78(%rsp)
+   7c271:	lea    0x0(,%rdx,4),%rdx
+   7c279:	xor    %r14d,%r14d
+   7c27c:	vbroadcastss -0x63405(%rip),%xmm3        # 18e80 <GCC_except_table1172+0x254c>
+   7c285:	vbroadcastss -0x6328a(%rip),%xmm4        # 19004 <GCC_except_table1172+0x26d0>
+   7c28e:	vbroadcastss -0x633c7(%rip),%xmm5        # 18ed0 <GCC_except_table1172+0x259c>
+   7c297:	vbroadcastss -0x63298(%rip),%xmm6        # 19008 <GCC_except_table1172+0x26d4>
+   7c2a0:	vpbroadcastd -0x63379(%rip),%xmm7        # 18f30 <GCC_except_table1172+0x25fc>
+   7c2a9:	vmovss -0x633e1(%rip),%xmm8        # 18ed0 <GCC_except_table1172+0x259c>
+   7c2b1:	vmovss -0x632b1(%rip),%xmm9        # 19008 <GCC_except_table1172+0x26d4>
+   7c2b9:	mov    0x130(%rsp),%rax
+   7c2c1:	mov    %rax,0x18(%rsp)
+   7c2c6:	mov    %rdi,0x70(%rsp)
+   7c2cb:	mov    %r9,0x30(%rsp)
+   7c2d0:	mov    %rdx,0x28(%rsp)
+   7c2d5:	jmp    7c31b <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x51b>
+   7c2d7:	nopw   0x0(%rax,%rax,1)
+   7c2e0:	sub    %r8,%r11
+   7c2e3:	mov    0xd8(%rsp),%r14
+   7c2eb:	inc    %r14
+   7c2ee:	mov    0x70(%rsp),%rax
+   7c2f3:	add    0xd0(%rsp),%rax
+   7c2fb:	mov    %rax,0x70(%rsp)
+   7c300:	mov    0x18(%rsp),%rax
+   7c305:	add    0xc8(%rsp),%rax
+   7c30d:	mov    %rax,0x18(%rsp)
+   7c312:	cmp    %r11,%r8
+   7c315:	ja     7c1f6 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x3f6>
+   7c31b:	lea    0x0(,%r14,4),%rax
+   7c323:	mov    %rax,%r9
+   7c326:	imul   %rbx,%r9
+   7c32a:	mov    %rsi,%rdx
+   7c32d:	sub    %r9,%rdx
+   7c330:	jb     7c9f9 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbf9>
+   7c336:	cmp    %rdx,(%rsp)
+   7c33a:	ja     7c9e4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbe4>
+   7c340:	add    %rbx,%r9
+   7c343:	mov    %rsi,%rdx
+   7c346:	sub    %r9,%rdx
+   7c349:	jb     7c9f9 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbf9>
+   7c34f:	cmp    %rdx,(%rsp)
+   7c353:	ja     7c9e4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbe4>
+   7c359:	lea    0x2(%rax),%r9
+   7c35d:	imul   %rbx,%r9
+   7c361:	mov    %rsi,%rdx
+   7c364:	sub    %r9,%rdx
+   7c367:	jb     7c9f9 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbf9>
+   7c36d:	cmp    %rdx,(%rsp)
+   7c371:	ja     7c9e4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbe4>
+   7c377:	or     $0x3,%rax
+   7c37b:	imul   %rbx,%rax
+   7c37f:	mov    %rsi,%rdx
+   7c382:	sub    %rax,%rdx
+   7c385:	jb     7ca0e <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xc0e>
+   7c38b:	cmp    %rdx,(%rsp)
+   7c38f:	ja     7c9e4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbe4>
+   7c395:	mov    %r14,0xd8(%rsp)
+   7c39d:	cmpq   $0x0,0x78(%rsp)
+   7c3a3:	mov    0x30(%rsp),%r9
+   7c3a8:	mov    0x28(%rsp),%rdx
+   7c3ad:	je     7c2e0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x4e0>
+   7c3b3:	xor    %r14d,%r14d
+   7c3b6:	mov    0x70(%rsp),%r15
+   7c3bb:	jmp    7c3e4 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x5e4>
+   7c3bd:	nopl   (%rax)
+   7c3c0:	vaddps %xmm6,%xmm10,%xmm0
+   7c3c4:	vpaddd %xmm7,%xmm0,%xmm0
+   7c3c8:	mov    0x18(%rsp),%rax
+   7c3cd:	vmovdqu %xmm0,(%rax,%r14,4)
+   7c3d3:	add    $0x4,%r15
+   7c3d7:	add    $0x4,%r14
+   7c3db:	cmp    %r14,%rdx
+   7c3de:	je     7c2e0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x4e0>
+   7c3e4:	vmovss (%r15),%xmm0
+   7c3e9:	vinsertps $0x10,(%r15,%rbx,4),%xmm0,%xmm0
+   7c3f0:	vinsertps $0x20,(%r15,%rbx,8),%xmm0,%xmm0
+   7c3f7:	vinsertps $0x30,(%r15,%r9,1),%xmm0,%xmm0
+   7c3fe:	vdivps %xmm1,%xmm0,%xmm0
+   7c402:	vmulps %xmm3,%xmm0,%xmm10
+   7c406:	vandps %xmm4,%xmm10,%xmm11
+   7c40a:	vcmpnleps %xmm5,%xmm11,%xmm0
+   7c40f:	vtestps %xmm0,%xmm0
+   7c414:	je     7c3c0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x5c0>
+   7c416:	vucomiss %xmm11,%xmm8
+   7c41b:	jb     7c4b8 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x6b8>
+   7c421:	vaddss %xmm9,%xmm10,%xmm0
+   7c426:	vmovd  %xmm0,%ebp
+   7c42a:	add    $0xb4c00000,%ebp
+   7c430:	vmovshdup %xmm11,%xmm0
+   7c435:	vucomiss %xmm0,%xmm8
+   7c439:	vmovshdup %xmm10,%xmm0
+   7c43e:	jb     7c59d <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x79d>
+   7c444:	vaddss %xmm0,%xmm9,%xmm0
+   7c448:	vmovd  %xmm0,%r12d
+   7c44d:	add    $0xb4c00000,%r12d
+   7c454:	vshufpd $0x1,%xmm11,%xmm11,%xmm0
+   7c45a:	vucomiss %xmm0,%xmm8
+   7c45e:	vshufpd $0x1,%xmm10,%xmm10,%xmm0
+   7c464:	jb     7c685 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x885>
+   7c46a:	vaddss %xmm0,%xmm9,%xmm0
+   7c46e:	vmovd  %xmm0,%r13d
+   7c473:	add    $0xb4c00000,%r13d
+   7c47a:	vshufps $0xff,%xmm11,%xmm11,%xmm0
+   7c480:	vucomiss %xmm0,%xmm8
+   7c484:	vshufps $0xff,%xmm10,%xmm10,%xmm0
+   7c48a:	vmovd  %ebp,%xmm10
+   7c48e:	jb     7c760 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x960>
+   7c494:	vaddss %xmm0,%xmm9,%xmm0
+   7c498:	vmovd  %xmm0,%eax
+   7c49c:	add    $0xb4c00000,%eax
+   7c4a1:	vpinsrd $0x1,%r12d,%xmm10,%xmm0
+   7c4a7:	vpinsrd $0x2,%r13d,%xmm0,%xmm0
+   7c4ad:	vpinsrd $0x3,%eax,%xmm0,%xmm0
+   7c4b3:	jmp    7c3c8 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x5c8>
+   7c4b8:	vmovaps %xmm10,%xmm0
+   7c4bc:	mov    %rsi,%r12
+   7c4bf:	mov    %rdi,%r13
+   7c4c2:	mov    %r10,%rbp
+   7c4c5:	vmovaps %xmm2,0x50(%rsp)
+   7c4cb:	mov    %r8,0x10(%rsp)
+   7c4d0:	mov    %r11,0x38(%rsp)
+   7c4d5:	vmovaps %xmm1,0xb0(%rsp)
+   7c4de:	vmovaps %xmm4,0xa0(%rsp)
+   7c4e7:	vmovdqa %xmm7,0x90(%rsp)
+   7c4f0:	vmovaps %xmm10,0x80(%rsp)
+   7c4f9:	vmovaps %xmm11,0xe0(%rsp)
+   7c502:	call   147620 <_RNvNtCsbWCI0taggj7_7neo_j2k4simd13round_general>
+   7c507:	vmovaps 0xe0(%rsp),%xmm11
+   7c510:	vmovaps 0x80(%rsp),%xmm10
+   7c519:	vmovss -0x63519(%rip),%xmm9        # 19008 <GCC_except_table1172+0x26d4>
+   7c521:	vmovss -0x63659(%rip),%xmm8        # 18ed0 <GCC_except_table1172+0x259c>
+   7c529:	vmovdqa 0x90(%rsp),%xmm7
+   7c532:	vbroadcastss -0x63533(%rip),%xmm6        # 19008 <GCC_except_table1172+0x26d4>
+   7c53b:	vbroadcastss -0x63674(%rip),%xmm5        # 18ed0 <GCC_except_table1172+0x259c>
+   7c544:	vmovaps 0xa0(%rsp),%xmm4
+   7c54d:	vbroadcastss -0x636d6(%rip),%xmm3        # 18e80 <GCC_except_table1172+0x254c>
+   7c556:	mov    0x28(%rsp),%rdx
+   7c55b:	mov    0x30(%rsp),%r9
+   7c560:	vmovaps 0xb0(%rsp),%xmm1
+   7c569:	mov    0x38(%rsp),%r11
+   7c56e:	mov    0x10(%rsp),%r8
+   7c573:	vmovaps 0x50(%rsp),%xmm2
+   7c579:	mov    0x40(%rsp),%rcx
+   7c57e:	mov    %rbp,%r10
+   7c581:	mov    %r13,%rdi
+   7c584:	mov    %r12,%rsi
+   7c587:	mov    %eax,%ebp
+   7c589:	vmovshdup %xmm11,%xmm0
+   7c58e:	vucomiss %xmm0,%xmm8
+   7c592:	vmovshdup %xmm10,%xmm0
+   7c597:	jae    7c444 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x644>
+   7c59d:	mov    %rsi,%r12
+   7c5a0:	mov    %rdi,%r13
+   7c5a3:	mov    %r10,0x20(%rsp)
+   7c5a8:	vmovaps %xmm2,0x50(%rsp)
+   7c5ae:	mov    %r8,0x10(%rsp)
+   7c5b3:	mov    %r11,0x38(%rsp)
+   7c5b8:	vmovaps %xmm1,0xb0(%rsp)
+   7c5c1:	vmovaps %xmm4,0xa0(%rsp)
+   7c5ca:	vmovdqa %xmm7,0x90(%rsp)
+   7c5d3:	vmovaps %xmm10,0x80(%rsp)
+   7c5dc:	vmovaps %xmm11,0xe0(%rsp)
+   7c5e5:	call   147620 <_RNvNtCsbWCI0taggj7_7neo_j2k4simd13round_general>
+   7c5ea:	vmovapd 0xe0(%rsp),%xmm11
+   7c5f3:	vmovapd 0x80(%rsp),%xmm10
+   7c5fc:	vmovss -0x635fc(%rip),%xmm9        # 19008 <GCC_except_table1172+0x26d4>
+   7c604:	vmovss -0x6373c(%rip),%xmm8        # 18ed0 <GCC_except_table1172+0x259c>
+   7c60c:	vmovdqa 0x90(%rsp),%xmm7
+   7c615:	vbroadcastss -0x63616(%rip),%xmm6        # 19008 <GCC_except_table1172+0x26d4>
+   7c61e:	vbroadcastss -0x63757(%rip),%xmm5        # 18ed0 <GCC_except_table1172+0x259c>
+   7c627:	vmovaps 0xa0(%rsp),%xmm4
+   7c630:	vbroadcastss -0x637b9(%rip),%xmm3        # 18e80 <GCC_except_table1172+0x254c>
+   7c639:	mov    0x28(%rsp),%rdx
+   7c63e:	mov    0x30(%rsp),%r9
+   7c643:	vmovaps 0xb0(%rsp),%xmm1
+   7c64c:	mov    0x38(%rsp),%r11
+   7c651:	mov    0x10(%rsp),%r8
+   7c656:	vmovaps 0x50(%rsp),%xmm2
+   7c65c:	mov    0x40(%rsp),%rcx
+   7c661:	mov    0x20(%rsp),%r10
+   7c666:	mov    %r13,%rdi
+   7c669:	mov    %r12,%rsi
+   7c66c:	mov    %eax,%r12d
+   7c66f:	vshufpd $0x1,%xmm11,%xmm11,%xmm0
+   7c675:	vucomiss %xmm0,%xmm8
+   7c679:	vshufpd $0x1,%xmm10,%xmm10,%xmm0
+   7c67f:	jae    7c46a <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x66a>
+   7c685:	mov    %rsi,%r13
+   7c688:	mov    %rdi,0x68(%rsp)
+   7c68d:	mov    %r10,0x20(%rsp)
+   7c692:	vmovaps %xmm2,0x50(%rsp)
+   7c698:	mov    %r8,0x10(%rsp)
+   7c69d:	mov    %r11,0x38(%rsp)
+   7c6a2:	vmovaps %xmm1,0xb0(%rsp)
+   7c6ab:	vmovaps %xmm4,0xa0(%rsp)
+   7c6b4:	vmovdqa %xmm7,0x90(%rsp)
+   7c6bd:	vmovapd %xmm10,0x80(%rsp)
+   7c6c6:	vmovapd %xmm11,0xe0(%rsp)
+   7c6cf:	call   147620 <_RNvNtCsbWCI0taggj7_7neo_j2k4simd13round_general>
+   7c6d4:	vmovapd 0xe0(%rsp),%xmm11
+   7c6dd:	vmovapd 0x80(%rsp),%xmm10
+   7c6e6:	vmovss -0x636e6(%rip),%xmm9        # 19008 <GCC_except_table1172+0x26d4>
+   7c6ee:	vmovss -0x63826(%rip),%xmm8        # 18ed0 <GCC_except_table1172+0x259c>
+   7c6f6:	vmovdqa 0x90(%rsp),%xmm7
+   7c6ff:	vbroadcastss -0x63700(%rip),%xmm6        # 19008 <GCC_except_table1172+0x26d4>
+   7c708:	vbroadcastss -0x63841(%rip),%xmm5        # 18ed0 <GCC_except_table1172+0x259c>
+   7c711:	vmovaps 0xa0(%rsp),%xmm4
+   7c71a:	vbroadcastss -0x638a3(%rip),%xmm3        # 18e80 <GCC_except_table1172+0x254c>
+   7c723:	mov    0x28(%rsp),%rdx
+   7c728:	mov    0x30(%rsp),%r9
+   7c72d:	vmovaps 0xb0(%rsp),%xmm1
+   7c736:	mov    0x38(%rsp),%r11
+   7c73b:	mov    0x10(%rsp),%r8
+   7c740:	vmovaps 0x50(%rsp),%xmm2
+   7c746:	mov    0x40(%rsp),%rcx
+   7c74b:	mov    0x20(%rsp),%r10
+   7c750:	mov    0x68(%rsp),%rdi
+   7c755:	mov    %r13,%rsi
+   7c758:	mov    %eax,%r13d
+   7c75b:	jmp    7c47a <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x67a>
+   7c760:	mov    %rsi,%rbp
+   7c763:	mov    %rdi,0x68(%rsp)
+   7c768:	mov    %r10,0x20(%rsp)
+   7c76d:	vmovaps %xmm2,0x50(%rsp)
+   7c773:	mov    %r8,0x10(%rsp)
+   7c778:	mov    %r11,0x38(%rsp)
+   7c77d:	vmovaps %xmm1,0xb0(%rsp)
+   7c786:	vmovaps %xmm4,0xa0(%rsp)
+   7c78f:	vmovdqa %xmm7,0x90(%rsp)
+   7c798:	vmovdqa %xmm10,0x80(%rsp)
+   7c7a1:	call   147620 <_RNvNtCsbWCI0taggj7_7neo_j2k4simd13round_general>
+   7c7a6:	vmovss -0x637a6(%rip),%xmm9        # 19008 <GCC_except_table1172+0x26d4>
+   7c7ae:	vmovss -0x638e6(%rip),%xmm8        # 18ed0 <GCC_except_table1172+0x259c>
+   7c7b6:	vmovdqa 0x90(%rsp),%xmm7
+   7c7bf:	vbroadcastss -0x637c0(%rip),%xmm6        # 19008 <GCC_except_table1172+0x26d4>
+   7c7c8:	vbroadcastss -0x63901(%rip),%xmm5        # 18ed0 <GCC_except_table1172+0x259c>
+   7c7d1:	vmovaps 0xa0(%rsp),%xmm4
+   7c7da:	vbroadcastss -0x63963(%rip),%xmm3        # 18e80 <GCC_except_table1172+0x254c>
+   7c7e3:	mov    0x28(%rsp),%rdx
+   7c7e8:	mov    0x30(%rsp),%r9
+   7c7ed:	vmovaps 0xb0(%rsp),%xmm1
+   7c7f6:	mov    0x38(%rsp),%r11
+   7c7fb:	mov    0x10(%rsp),%r8
+   7c800:	vmovaps 0x50(%rsp),%xmm2
+   7c806:	mov    0x40(%rsp),%rcx
+   7c80b:	mov    0x20(%rsp),%r10
+   7c810:	mov    0x68(%rsp),%rdi
+   7c815:	mov    %rbp,%rsi
+   7c818:	vmovdqa 0x80(%rsp),%xmm0
+   7c821:	vpinsrd $0x1,%r12d,%xmm0,%xmm0
+   7c827:	jmp    7c4a7 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0x6a7>
+   7c82c:	mov    %r10d,%eax
+   7c82f:	xor    %edx,%edx
+   7c831:	div    %r14d
+   7c834:	sub    %rdx,%r10
+   7c837:	cmp    %r10,%r14
+   7c83a:	ja     7c9cf <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbcf>
+   7c840:	mov    0x130(%rsp),%rax
+   7c848:	lea    (%rax,%rcx,4),%r12
+   7c84c:	lea    0x0(,%r14,4),%r13d
+   7c854:	mov    0x48(%rsp),%rcx
+   7c859:	shr    $0x2,%rcx
+   7c85d:	imul   %rbx,%rcx
+   7c861:	shl    $0x2,%rcx
+   7c865:	vmovss -0x639ed(%rip),%xmm3        # 18e80 <GCC_except_table1172+0x254c>
+   7c86d:	vbroadcastss -0x63872(%rip),%xmm4        # 19004 <GCC_except_table1172+0x26d0>
+   7c876:	vmovss -0x639ae(%rip),%xmm5        # 18ed0 <GCC_except_table1172+0x259c>
+   7c87e:	vmovss -0x6387e(%rip),%xmm6        # 19008 <GCC_except_table1172+0x26d4>
+   7c886:	jmp    7c89f <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xa9f>
+   7c888:	nopl   0x0(%rax,%rax,1)
+   7c890:	inc    %rcx
+   7c893:	add    %r13,%r12
+   7c896:	cmp    %r10,%r14
+   7c899:	ja     7c9cf <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbcf>
+   7c89f:	sub    %r14,%r10
+   7c8a2:	xor    %ebp,%ebp
+   7c8a4:	mov    %rcx,%r15
+   7c8a7:	nopw   0x0(%rax,%rax,1)
+   7c8b0:	cmp    %rsi,%r15
+   7c8b3:	jae    7ca53 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xc53>
+   7c8b9:	vmovss (%rdi,%r15,4),%xmm0
+   7c8bf:	vdivss %xmm2,%xmm0,%xmm0
+   7c8c3:	vmulss %xmm3,%xmm0,%xmm0
+   7c8c7:	vandps %xmm4,%xmm0,%xmm1
+   7c8cb:	vucomiss %xmm1,%xmm5
+   7c8cf:	jb     7c8f0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xaf0>
+   7c8d1:	vaddss %xmm6,%xmm0,%xmm0
+   7c8d5:	vmovd  %xmm0,%eax
+   7c8d9:	add    $0xb4c00000,%eax
+   7c8de:	mov    %eax,(%r12,%rbp,1)
+   7c8e2:	add    %rbx,%r15
+   7c8e5:	add    $0x4,%rbp
+   7c8e9:	cmp    %rbp,%r13
+   7c8ec:	jne    7c8b0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xab0>
+   7c8ee:	jmp    7c890 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xa90>
+   7c8f0:	mov    %rsi,0x18(%rsp)
+   7c8f5:	mov    %rcx,0x48(%rsp)
+   7c8fa:	mov    %rdi,0x68(%rsp)
+   7c8ff:	mov    %r10,0x20(%rsp)
+   7c904:	vmovaps %xmm2,0x50(%rsp)
+   7c90a:	vmovaps %xmm4,(%rsp)
+   7c90f:	call   147620 <_RNvNtCsbWCI0taggj7_7neo_j2k4simd13round_general>
+   7c914:	vmovss -0x63914(%rip),%xmm6        # 19008 <GCC_except_table1172+0x26d4>
+   7c91c:	vmovss -0x63a54(%rip),%xmm5        # 18ed0 <GCC_except_table1172+0x259c>
+   7c924:	vmovaps (%rsp),%xmm4
+   7c929:	vmovss -0x63ab1(%rip),%xmm3        # 18e80 <GCC_except_table1172+0x254c>
+   7c931:	vmovaps 0x50(%rsp),%xmm2
+   7c937:	mov    0x20(%rsp),%r10
+   7c93c:	mov    0x68(%rsp),%rdi
+   7c941:	mov    0x48(%rsp),%rcx
+   7c946:	mov    0x18(%rsp),%rsi
+   7c94b:	jmp    7c8de <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xade>
+   7c94d:	mov    %r10d,%eax
+   7c950:	xor    %edx,%edx
+   7c952:	div    %r8d
+   7c955:	sub    %rdx,%r10
+   7c958:	cmp    %r10,%r8
+   7c95b:	ja     7c9cf <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xbcf>
+   7c95d:	mov    0x130(%rsp),%rax
+   7c965:	lea    (%rax,%rcx,4),%rdx
+   7c969:	lea    0x0(,%r8,4),%r9d
+   7c971:	mov    0x48(%rsp),%rcx
+   7c976:	shr    $0x2,%rcx
+   7c97a:	imul   %rbx,%rcx
+   7c97e:	shl    $0x2,%rcx
+   7c982:	data16 data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   7c990:	sub    %r8,%r10
+   7c993:	mov    %r10,%r14
+   7c996:	xor    %r10d,%r10d
+   7c999:	mov    %rcx,%rax
+   7c99c:	nopl   0x0(%rax)
+   7c9a0:	cmp    %rsi,%rax
+   7c9a3:	jae    7ca62 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xc62>
+   7c9a9:	mov    (%rdi,%rax,4),%r11d
+   7c9ad:	shl    $0x6,%r11d
+   7c9b1:	mov    %r11d,(%rdx,%r10,1)
+   7c9b5:	add    %rbx,%rax
+   7c9b8:	add    $0x4,%r10
+   7c9bc:	cmp    %r10,%r9
+   7c9bf:	jne    7c9a0 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xba0>
+   7c9c1:	inc    %rcx
+   7c9c4:	add    %r9,%rdx
+   7c9c7:	mov    %r14,%r10
+   7c9ca:	cmp    %r14,%r8
+   7c9cd:	jbe    7c990 <_RNvNtCscmlNaaSWqWF_7neo_j2k7encoder14gather_samples+0xb90>
+   7c9cf:	add    $0xf8,%rsp
+   7c9d6:	pop    %rbx
+   7c9d7:	pop    %r12
+   7c9d9:	pop    %r13
+   7c9db:	pop    %r14
+   7c9dd:	pop    %r15
+   7c9df:	pop    %rbp
+   7c9e0:	vzeroupper
+   7c9e3:	ret
+   7c9e4:	lea    0x23a2bd(%rip),%rcx        # 2b6ca8 <__frame_dummy_init_array_entry+0x1e88>
+   7c9eb:	xor    %edi,%edi
+   7c9ed:	mov    (%rsp),%rsi
+   7c9f1:	vzeroupper
+   7c9f4:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+   7c9f9:	lea    0x23a2c0(%rip),%rcx        # 2b6cc0 <__frame_dummy_init_array_entry+0x1ea0>
+   7ca00:	mov    %r9,%rdi
+   7ca03:	mov    %rsi,%rdx
+   7ca06:	vzeroupper
+   7ca09:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+   7ca0e:	lea    0x23a2ab(%rip),%rcx        # 2b6cc0 <__frame_dummy_init_array_entry+0x1ea0>
+   7ca15:	mov    %rax,%rdi
+   7ca18:	mov    %rsi,%rdx
+   7ca1b:	vzeroupper
+   7ca1e:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+   7ca23:	lea    -0x58580(%rip),%rdi        # 244aa <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x1ada>
+   7ca2a:	lea    0x23a097(%rip),%rdx        # 2b6ac8 <__frame_dummy_init_array_entry+0x1ca8>
+   7ca31:	mov    $0x13,%esi
+   7ca36:	call   67750 <_RNvNtCs8uuN1nrGffB_4core9panicking9panic_fmt>
+   7ca3b:	lea    -0x59c07(%rip),%rdi        # 22e3b <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x46b>
+   7ca42:	lea    0x23a097(%rip),%rdx        # 2b6ae0 <__frame_dummy_init_array_entry+0x1cc0>
+   7ca49:	mov    $0x37,%esi
+   7ca4e:	call   67750 <_RNvNtCs8uuN1nrGffB_4core9panicking9panic_fmt>
+   7ca53:	lea    0x23a09e(%rip),%rdx        # 2b6af8 <__frame_dummy_init_array_entry+0x1cd8>
+   7ca5a:	mov    %r15,%rdi
+   7ca5d:	call   68ef8 <_RNvNtCs8uuN1nrGffB_4core9panicking18panic_bounds_check>
+   7ca62:	lea    0x23a08f(%rip),%rdx        # 2b6af8 <__frame_dummy_init_array_entry+0x1cd8>
+   7ca69:	mov    %rax,%rdi
+   7ca6c:	vzeroupper
+   7ca6f:	call   68ef8 <_RNvNtCs8uuN1nrGffB_4core9panicking18panic_bounds_check>

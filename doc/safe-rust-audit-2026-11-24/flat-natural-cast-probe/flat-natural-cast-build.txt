@@ -1,0 +1,42 @@
+warning: due to multiple output types requested, the explicitly specified output file name will be adapted for each output type
+
+warning: unused variable: `lower`
+   --> /home/dev/safe-crate-audit/parent-mct/flat-natural-cast.rs:161:9
+    |
+161 |     let lower = (lo - shift) as f32;
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_lower`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `upper`
+   --> /home/dev/safe-crate-audit/parent-mct/flat-natural-cast.rs:162:9
+    |
+162 |     let upper = (hi - shift) as f32;
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_upper`
+
+warning: unused variable: `offset`
+   --> /home/dev/safe-crate-audit/parent-mct/flat-natural-cast.rs:163:9
+    |
+163 |     let offset = shift
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_offset`
+
+warning: unused variable: `lower`
+   --> /home/dev/safe-crate-audit/parent-mct/flat-natural-cast.rs:267:9
+    |
+267 |     let lower = (lo - shift) as f32;
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_lower`
+
+warning: unused variable: `upper`
+   --> /home/dev/safe-crate-audit/parent-mct/flat-natural-cast.rs:268:9
+    |
+268 |     let upper = (hi - shift) as f32;
+    |         ^^^^^ help: if this is intentional, prefix it with an underscore: `_upper`
+
+warning: unused variable: `offset`
+   --> /home/dev/safe-crate-audit/parent-mct/flat-natural-cast.rs:269:9
+    |
+269 |     let offset = shift
+    |         ^^^^^^ help: if this is intentional, prefix it with an underscore: `_offset`
+
+warning: 7 warnings emitted
+

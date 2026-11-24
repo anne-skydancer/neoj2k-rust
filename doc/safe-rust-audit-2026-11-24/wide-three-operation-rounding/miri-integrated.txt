@@ -1,0 +1,12 @@
+WARNING: Ignoring `RUSTC_WRAPPER` environment variable, Miri does not support wrapping.
+   Compiling neo-j2k-oracle v0.1.3 (C:\Users\annes\source\repos\neoj2k-rust-safe-simd\neo-j2k-oracle)
+   Compiling neo-j2k-testkit v0.1.3 (C:\Users\annes\source\repos\neoj2k-rust-safe-simd\neo-j2k-testkit)
+   Compiling neo-j2k v0.1.3 (C:\Users\annes\source\repos\neoj2k-rust-safe-simd\neo-j2k)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.77s
+     Running unittests src\lib.rs (target-audit-safe-miri-three-op\miri\x86_64-pc-windows-msvc\debug\build\neo-j2k/4fd6a815eb3beb60\out\neo_j2k-4fd6a815eb3beb60.exe)
+
+running 1 test
+test simd::mct::wide_tests::avx2_wide_colour_matches_reference_with_mixed_finishes_and_untouched_tails ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 77 filtered out; finished in 4.80s
+

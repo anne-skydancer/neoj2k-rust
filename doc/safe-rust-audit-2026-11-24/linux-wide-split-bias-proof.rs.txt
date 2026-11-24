@@ -1,0 +1,48 @@
+#![allow(dead_code)]
+#[path="/home/dev/safe-crate-audit/base/neo-j2k/src/simd/mct.rs"] mod reference;
+#[path="/home/dev/safe-crate-audit/base/neo-j2k/src/simd/mct.rs"] mod control;
+mod safe {
+#[path="/home/dev/safe-crate-audit/candidate/neo-j2k/src/simd/lanes.rs"] pub mod lanes;
+/// Round to nearest even in the default floating-point environment.
+/// NaN and an unrepresentable result produce i32::MIN.
+#[inline]
+#[allow(clippy::cast_possible_truncation, reason = "rounded and range checked")]
+pub(crate) fn round_i32(value: f32) -> i32 {
+    if (-4_194_304.0..=4_194_304.0).contains(&value) {
+        return (value + 12_582_912.0).to_bits().wrapping_sub(0x4b40_0000).cast_signed();
+    }
+    round_general(value)
+}
+
+#[cold]
+#[inline(never)]
+#[allow(clippy::cast_possible_truncation, reason = "rounded and range checked")]
+fn round_general(value: f32) -> i32 {
+    // Values with magnitude at least 2^23 have no fractional bits. In the
+    // remaining outer interval a signed 2^23 bias removes the fraction.
+    let rounded = if value.abs() < 8_388_608.0 {
+        let bias = f32::from_bits(0x4b00_0000 | (value.to_bits() & 0x8000_0000));
+        (value + bias) - bias
+    } else {
+        value
+    };
+    if (-2_147_483_648.0..2_147_483_648.0).contains(&rounded) {
+        rounded as i32
+    } else {
+        i32::MIN
+    }
+}
+
+
+#[path="/home/dev/safe-crate-audit/precision-probe/split-bias.rs"] pub mod kernel;
+}
+
+
+fn main(){
+ let mut state=0x97674321u32;
+ for precision in 1..=31{for signed in [true,false]{let m=1i32<<(precision-1);let shift=if signed{0}else{m};let(lo,hi)=if signed{(-m,m-1)}else{(0,(m-1)*2+1)};
+ for block in 0..4096 {let mut values:[i32;8]=core::array::from_fn(|lane|{state^=state<<13;state^=state>>17;state^=state<<5;let index=block*8+lane;
+ if index<1024 {let n=[-1073741824f32,-8388608.,-4194304.,-256.,-128.,-1.,0.,1.,128.,256.,4194304.,8388608.,1073741824.][index/8%13];let v=n+if index/104%2==0{0.5}else{-0.5};v.to_bits().wrapping_add((index%3)as u32).wrapping_sub(1).cast_signed()}else{state.cast_signed()}});
+ let mut expected=values;reference::level_shift(&mut expected,shift,lo,hi,false);safe::kernel::level_shift(&mut values,shift,lo,hi,false);assert_eq!(values,expected,"p{precision} s{signed} block{block}");
+ }} }println!("splitbias: allprecisions,signed/unsigned,2millionfloatpatterns+tieedges exact vsintrinsic");
+}

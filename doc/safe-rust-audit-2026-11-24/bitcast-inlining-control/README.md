@@ -1,0 +1,5 @@
+# Bit reinterpretation inlining control
+
+Diagnostic standalone compiler experiment, not whole-codec acceptance. Two modules include the identical f64 MCT source. Before replacing two pure bitcast array::map calls with explicit eight-element constructors, one retained three out-of-line core::array::try_map calls per pixel group and spilled around them. Assembly and binary hashes preserve this observation. Afterwards both MCT functions have the same size and eight-bit timings agree within roughly0.1%; wide timings agree within normal small measurement variation. The standalone driver uses the named Linux sandbox paths and runtime-blackboxed finishing records. Its flags and codegen environment differ from the fat-LTO codec acceptance executable.
+
+With stabilized helpers, shared RGB bounds gained only about1–2% on the wide microkernel and lost a similar amount with mixed bounds; outlining was flat, and the f32 split-bias prototype was slightly slower than f64. None of those three MCT source alternatives was ported. Public precision/tail measurements and full native tests are the next acceptance checks for the minimal bitcast change.

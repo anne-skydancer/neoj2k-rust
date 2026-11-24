@@ -1,0 +1,123 @@
+   Compiling neo-j2k v0.1.3 (/home/dev/safe-crate-audit/candidate/neo-j2k)
+    Finished `release` profile [optimized + debuginfo] target(s) in 14.35s
+     Running unittests src/lib.rs (../target-native-dense-v3/release/build/neo-j2k/1229b097d389baa0/out/neo_j2k-1229b097d389baa0)
+
+running 115 tests
+test decode::output::tests::incompatible_targets_are_rejected_before_any_byte_changes ... ok
+test decode::output::tests::packed_i32_rows_allow_unaligned_bottom_up_output_and_padding ... ok
+test decode::output::tests::interleaved_targets_match_plane_writes_at_every_channel_count ... ok
+test decode::walk::tests::packed_header_ranges_are_merged_by_marker_index ... ok
+test dwt::differential::cpp_wavelet_shim_checks_slice_and_resolution_bounds ... ok
+test dwt::safe_rows_tests::avx2_dense_horizontal_nonfinite_samples_finish_as_scalar_does ... ok
+test dwt::safe_rows_tests::avx2_dense_horizontal_matches_scalar_with_parities_odd_widths_and_padding ... ok
+test dwt::tests::avx2_lanes_match_scalar_and_reuse_scratch ... ok
+test dwt::tests::avx2_and_scalar_scheduled_wavelets_match_serial_with_edge_stripes_and_padding ... ok
+test dwt::tests::invalid_plane_geometry_leaves_the_samples_unchanged ... ok
+test dwt::tests::irreversible_pair_matches_the_openjpeg_lifting_bits ... ok
+test dwt::tests::avx2_irreversible_stripes_and_cycles_run_on_separate_threads ... ok
+test dwt::tests::vertical_integer_mirror_wraps_only_for_complete_column_groups ... ok
+test dwt::tests::reversible_odd_origin_keeps_padding_and_reuses_scratch ... ok
+test encoder::quantize_tests::grouped_quantization_matches_scalar_across_float_bit_patterns ... ok
+test decode::tests::plane_clear_uses_the_host_at_four_mebibytes ... ok
+test encoder::quantize_tests::grouped_quantization_matches_scalar_at_rounding_and_range_boundaries ... ok
+test encoder::tests::cap_lifts_layers_in_order_using_the_actual_main_header_size ... ok
+test encoder::tests::prep_builds_striped_code_blocks_and_counts_the_tile_part ... ok
+test decoder::retention_tests::failed_requests_trim_previous_storage_and_allow_retries ... ok
+test encoder::tests::reversible_wavelet_transforms_columns_then_rows ... ok
+test encoder::tests::gather_matches_the_one_sample_at_a_time_gather ... ok
+test encoder::tests::supports_padded_interleaved_and_planar_rows_with_vertical_flip ... ok
+test encoder::tier1::differential::nightly_tier1_encode_sweep ... ignored, nightly: the long generated Tier-1 encode sweep
+test decoder::retention_tests::retention_limits_apply_after_planar_and_caller_owned_decodes ... ok
+test encoder::tier1::mq::differential::a_fresh_encoder_starts_where_the_cpp_does ... ok
+test dwt::differential::whole_tile_components_match_the_cpp_wavelet ... ok
+test encoder::tier1::mq::differential::nightly_mq_encoder_every_decision ... ignored, nightly: 4.4 billion single decisions of the MQ encoder against the C++
+test encoder::tier1::mq::differential::nightly_mq_flush_every_low_word ... ignored, nightly: every low word of the MQ encoder's flush against the C++
+test encoder::differential::reused_encoder_matches_cpp_after_caps_and_refusals ... ok
+test encoder::tier1::mq::differential::flushes_encode_as_the_cpp_does_including_the_boundary ... ok
+test encoder::tier1::tests::all_passes_encoding_differs_from_the_full_one_only_in_the_distortion ... ok
+test encoder::tier1::tests::codeword_and_pass_distortion_match_the_cpp ... ok
+test encoder::tier1::tests::fractional_only_block_has_no_passes ... ok
+test encoder::tier2::coding::tests::writer_stuffs_after_ff_on_flush ... ok
+test encoder::tier2::tests::lossless_packet_and_later_empty_layer_match_the_packet_codes ... ok
+test encoder::tier2::tests::only_all_zero_rates_take_all_passes ... ok
+test encoder::tier2::tests::rate_search_rounds_up_the_byte_target_and_preserves_the_remaining_pass ... ok
+test executor::tests::scoped_workers_write_distinct_rows ... ok
+test header::tests::component_override_precedes_a_later_default ... ok
+test header::tests::partial_and_forbidden_marker_segments_have_distinct_statuses ... ok
+test header::tests::ppm_lengths_and_bytes_have_distinct_marker_boundary_rules ... ok
+test header::tile::tests::component_overrides_win_and_quantization_is_checked_after_resolution ... ok
+test header::tile::tests::malformed_and_cut_tile_headers_have_distinct_statuses ... ok
+test header::tile::tests::sparse_override_slots_keep_storage_without_retaining_previous_markers ... ok
+test jp2::tests::accepts_a_complete_box_header_even_without_its_codestream ... ok
+test jp2::tests::decoded_palette_and_channel_order_match_the_cpp_stream_api ... ok
+test jp2::tests::incomplete_children_inside_a_complete_box_are_invalid ... ok
+test jp2::tests::one_component_direct_mapping_is_repaired_like_cpp ... ok
+test jp2::tests::palette_values_and_following_channel_definitions_match_cpp_order ... ok
+test jp2::tests::validates_palette_payload_before_charging_entries ... ok
+test jp2::tests::zero_short_and_large_codestream_boxes_extend_to_the_end ... ok
+test mct::avx2_and_scalar_fused_colour_finishing_match_staged_output ... ok
+test mct::avx2_tests::avx2_colour_and_finishing_match_scalar_with_tails ... ok
+test mct::irreversible_finishing_matches_round_to_even_across_float_exponents ... ok
+test mct::tests::colour_transforms_match_cpp_precision_and_wraparound ... ok
+test mct::tests::dc_shift_matches_cpp_on_limits_and_ties ... ok
+test mct::tests::irreversible_shift_matches_cpp_for_all_float_bits ... ignored, exhaustive sweep of all 32-bit floating-point encodings
+test mem::header::tests::dedicated_blocks_leave_the_current_block_available ... ok
+test mem::header::tests::reset_combines_retained_blocks_and_preserves_the_budget ... ok
+test mem::layout::table_tests::variants_name_their_rows ... ok
+test mem::layout::tests::equals_the_cpp_size_table ... ok
+test simd::mct::tests::wide_finishing_matches_independent_rounding_and_integer_clamping ... ok
+test simd::mct::wide_tests::avx2_wide_colour_matches_reference_with_mixed_finishes_and_untouched_tails ... ok
+test simd::mct::wide_tests::avx2_wide_level_shift_matches_reference_with_untouched_tails ... ok
+test simd::output::tests::avx2_packed_groups_preserve_limits_and_padding_at_wide_row_boundaries ... ok
+test simd::round_tests::round_matches_ties_even_across_float_bit_patterns ... ok
+test simd::round_tests::round_matches_ties_even_at_halfway_and_range_boundaries ... ok
+test stream::tests::skipping_reader_bytes_keeps_the_buffer_capacity ... ok
+test encoder::tier1::mq::differential::streams_encode_as_the_cpp_does ... ok
+test t1::differential::bench_dumps_decode_as_the_cpp_does ... ok
+test t1::differential::committed_vectors_decode_as_the_cpp_does ... ok
+test t1::differential::a_raw_segment_with_a_cleanup_pass_ends_there_as_in_the_cpp ... ok
+test t1::differential::nightly_tier1_decode_split ... ignored, nightly: the C++ test_split, extended: 5.8 million tiny blocks
+test t1::differential::nightly_tier1_decode_sweep ... ignored, nightly: the long generated Tier-1 decode sweep
+test encoder::differential::encoded_bytes_match_cpp_across_core_settings ... ok
+test t1::differential::stores_match_the_cpp_including_the_roi_threshold ... ok
+test t1::differential::the_full_dump_set_decodes_as_the_cpp_does_when_named ... ok
+test t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation ... ok
+test t1::mq::differential::nightly_mq_decoder_every_decision ... ignored, nightly: 443 million single decisions of the MQ decoder against the C++
+test t1::differential::overlong_segments_are_cut_as_the_cpp_cuts_them ... ok
+test t1::mq::differential::streams_decode_as_the_cpp_does ... ok
+test t1::mq::differential::single_decisions_decode_as_the_cpp_does ... ok
+test t1::mq::tests::a_run_stops_at_the_first_column_that_is_not_empty ... ok
+test t1::mq::tests::chained_decisions_over_short_and_exhausted_input_equal_the_model ... ok
+test t1::mq::tests::no_run_when_the_mps_is_one_or_the_room_is_short ... ok
+test t1::mq::tests::the_select_decision_equals_the_standards_branches ... ok
+test t1::tests::a_raw_segments_passes_end_at_a_cleanup_pass ... ok
+test t1::tests::a_retained_scratch_decodes_short_and_general_blocks_alike ... ok
+test t1::tests::a_zero_length_raw_segment_reads_the_marker ... ok
+test t1::tests::an_over_long_segment_is_cut_to_the_bytes_there ... ok
+test t1::tests::avx2_stores_match_scalar_with_tails_and_padding ... ok
+test t1::tests::fragmented_codewords_match_the_cpp_coefficient_hashes ... ok
+test t1::tests::missing_blocks_zero_their_rows_and_still_check_bit_planes ... ok
+test t1::tests::roi_store_matches_threshold_and_wrapping_magnitude_rules ... ok
+test encoder::differential::corpus_images_reencode_byte_for_byte ... ok
+test t2::progression::tests::all_progressions_and_overlapping_pocs_visit_the_same_packets_in_order ... ok
+test t2::tests::a_warmed_workspace_reuses_storage_and_charges_the_same_tile_budget ... ok
+test t2::tests::aligning_consumes_the_byte_after_ff_or_marks_an_overrun ... ok
+test t2::tests::complete_tags_match_successive_thresholds_with_and_without_input ... ok
+test t2::tests::layers_and_cut_segments_keep_only_complete_wanted_contributions ... ok
+test t2::tests::odd_grids_share_intermediate_nodes_and_reject_invalid_leaves ... ok
+test t2::tests::packed_fields_match_single_bit_reads_at_every_offset ... ok
+test t2::tests::packed_header_cursor_crosses_tiles_and_precedes_ppt ... ok
+test t2::tests::packet_header_bits_are_stuffed_and_missing_bits_read_as_zero ... ok
+test t2::tests::packet_header_codes_cover_each_pass_count_range ... ok
+test t2::tests::repeated_thresholds_share_the_decoded_root_and_leaf_values ... ok
+test t2::tests::sop_and_eph_are_outside_the_retained_segment ... ok
+test t1::tests::short_blocks_decode_as_the_general_path_does ... ok
+test t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time ... ok
+test encoder::tier1::mq::differential::single_decisions_encode_as_the_cpp_does ... ok
+test t1::differential::generated_blocks_decode_as_the_cpp_does ... ok
+test encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does ... ok
+test encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does ... ok
+test encoder::tier1::differential::generated_blocks_encode_as_the_cpp_does ... ok
+
+test result: ok. 108 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 0.99s
+

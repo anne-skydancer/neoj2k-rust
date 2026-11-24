@@ -1,0 +1,334 @@
+#![allow(dead_code)]
+#[derive(Clone,Copy)]struct T1Params{reversible:bool,step_size:f32}
+mod wavelet{pub fn from_sample(v:i32)->f32{f32::from_bits(v.cast_unsigned())}}
+mod simd{/// Round to nearest even in the default floating-point environment.
+/// NaN and an unrepresentable result produce i32::MIN.
+#[inline]
+#[allow(clippy::cast_possible_truncation, reason = "rounded and range checked")]
+pub(crate) fn round_i32(value: f32) -> i32 {
+    if (-4_194_304.0..=4_194_304.0).contains(&value) {
+        return (value + 12_582_912.0).to_bits().wrapping_sub(0x4b40_0000).cast_signed();
+    }
+    round_general(value)
+}
+
+// Exceptional quantizer values and wider-precision decoded samples use the same
+// conversion rules without replicating the general path in every gathered lane.
+#[cold]
+#[inline(never)]
+#[allow(clippy::cast_possible_truncation, reason = "rounded and range checked")]
+fn round_general(value: f32) -> i32 {
+    // Values with magnitude at least 2^23 have no fractional bits. In the
+    // remaining outer interval a signed 2^23 bias removes the fraction.
+    let rounded = if value.abs() < 8_388_608.0 {
+        let bias = f32::from_bits(0x4b00_0000 | (value.to_bits() & 0x8000_0000));
+        (value + bias) - bias
+    } else {
+        value
+    };
+    if (-2_147_483_648.0..2_147_483_648.0).contains(&rounded) {
+        rounded as i32
+    } else {
+        i32::MIN
+    }
+}
+
+}
+fn old_round(v:f32)->i32{unsafe{std::arch::x86_64::_mm_cvtss_si32(std::arch::x86_64::_mm_set_ss(v))}}
+mod reference {use super::*;pub(crate) fn gather_samples(plane: &[i32], stride: usize, width: usize, height: usize, params: T1Params, dst: &mut [i32]) {
+    if params.reversible {
+        gather_with(plane, stride, width, height, dst, |sample| sample.wrapping_shl(6));
+    } else {
+        let step_size = params.step_size;
+        gather_with(plane, stride, width, height, dst, |sample| quantize(sample, step_size));
+    }
+}
+#[inline(always)]
+fn gather_with(
+    plane: &[i32],
+    stride: usize,
+    width: usize,
+    height: usize,
+    dst: &mut [i32],
+    convert: impl Fn(i32) -> i32,
+) {
+    let (whole, tail) = dst.split_at_mut(height / 4 * 4 * width);
+    for (stripe, out) in whole.chunks_exact_mut(4 * width).enumerate() {
+        let top = stripe * 4 * stride;
+        let row = |index: usize| &plane[top + index * stride..][..width];
+        let rows = row(0).iter().zip(row(1)).zip(row(2)).zip(row(3));
+        for (out, (((&a, &b), &c), &d)) in out.as_chunks_mut::<4>().0.iter_mut().zip(rows) {
+            *out = [convert(a), convert(b), convert(c), convert(d)];
+        }
+    }
+    let rows = height % 4;
+    if rows != 0 {
+        let top = height / 4 * 4 * stride;
+        for (column, out) in tail.chunks_exact_mut(rows).enumerate() {
+            for (index, out) in out.iter_mut().enumerate() {
+                *out = convert(plane[top + index * stride + column]);
+            }
+        }
+    }
+}
+fn quantize(sample: i32, step_size: f32) -> i32 {
+    let value = (wavelet::from_sample(sample) / step_size) * 64.0;
+    // The conversion rounds to nearest even in the default environment and gives i32::MIN for NaN and for a result
+    // outside the i32 range, as the C++ cast does; the call it replaces was a libm call per sample at baseline.
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
+    return crate::old_round(value);
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
+    {
+        let value = value.round_ties_even();
+        if (-2_147_483_648.0..2_147_483_648.0).contains(&value) {
+            value as i32
+        } else {
+            i32::MIN
+        }
+    }
+}}
+mod control {use super::*;pub(crate) fn gather_samples(plane: &[i32], stride: usize, width: usize, height: usize, params: T1Params, dst: &mut [i32]) {
+    if params.reversible {
+        gather_with(plane, stride, width, height, dst, |sample| sample.wrapping_shl(6));
+    } else {
+        let step_size = params.step_size;
+        gather_with(plane, stride, width, height, dst, |sample| quantize(sample, step_size));
+    }
+}
+#[inline(always)]
+fn gather_with(
+    plane: &[i32],
+    stride: usize,
+    width: usize,
+    height: usize,
+    dst: &mut [i32],
+    convert: impl Fn(i32) -> i32,
+) {
+    let (whole, tail) = dst.split_at_mut(height / 4 * 4 * width);
+    for (stripe, out) in whole.chunks_exact_mut(4 * width).enumerate() {
+        let top = stripe * 4 * stride;
+        let row = |index: usize| &plane[top + index * stride..][..width];
+        let rows = row(0).iter().zip(row(1)).zip(row(2)).zip(row(3));
+        for (out, (((&a, &b), &c), &d)) in out.as_chunks_mut::<4>().0.iter_mut().zip(rows) {
+            *out = [convert(a), convert(b), convert(c), convert(d)];
+        }
+    }
+    let rows = height % 4;
+    if rows != 0 {
+        let top = height / 4 * 4 * stride;
+        for (column, out) in tail.chunks_exact_mut(rows).enumerate() {
+            for (index, out) in out.iter_mut().enumerate() {
+                *out = convert(plane[top + index * stride + column]);
+            }
+        }
+    }
+}
+fn quantize(sample: i32, step_size: f32) -> i32 {
+    let value = (wavelet::from_sample(sample) / step_size) * 64.0;
+    // The conversion rounds to nearest even in the default environment and gives i32::MIN for NaN and for a result
+    // outside the i32 range, as the C++ cast does; the call it replaces was a libm call per sample at baseline.
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
+    return crate::old_round(value);
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
+    {
+        let value = value.round_ties_even();
+        if (-2_147_483_648.0..2_147_483_648.0).contains(&value) {
+            value as i32
+        } else {
+            i32::MIN
+        }
+    }
+}}
+mod current {use super::*;pub(crate) fn gather_samples(plane: &[i32], stride: usize, width: usize, height: usize, params: T1Params, dst: &mut [i32]) {
+    if params.reversible {
+        gather_with(
+            plane,
+            stride,
+            width,
+            height,
+            dst,
+            |sample| sample.wrapping_shl(6),
+            |samples| samples.map(|sample| sample.wrapping_shl(6)),
+        );
+    } else {
+        let step_size = params.step_size;
+        gather_with(
+            plane,
+            stride,
+            width,
+            height,
+            dst,
+            |sample| quantize(sample, step_size),
+            |samples| quantize_four(samples, step_size),
+        );
+    }
+}
+#[inline(always)]
+fn gather_with(
+    plane: &[i32],
+    stride: usize,
+    width: usize,
+    height: usize,
+    dst: &mut [i32],
+    convert: impl Fn(i32) -> i32,
+    convert_four: impl Fn([i32; 4]) -> [i32; 4],
+) {
+    let (whole, tail) = dst.split_at_mut(height / 4 * 4 * width);
+    for (stripe, out) in whole.chunks_exact_mut(4 * width).enumerate() {
+        let top = stripe * 4 * stride;
+        let row = |index: usize| &plane[top + index * stride..][..width];
+        let rows = row(0).iter().zip(row(1)).zip(row(2)).zip(row(3));
+        for (out, (((&a, &b), &c), &d)) in out.as_chunks_mut::<4>().0.iter_mut().zip(rows) {
+            *out = convert_four([a, b, c, d]);
+        }
+    }
+    let rows = height % 4;
+    if rows != 0 {
+        let top = height / 4 * 4 * stride;
+        for (column, out) in tail.chunks_exact_mut(rows).enumerate() {
+            for (index, out) in out.iter_mut().enumerate() {
+                *out = convert(plane[top + index * stride + column]);
+            }
+        }
+    }
+}
+fn quantize_four(samples: [i32; 4], step_size: f32) -> [i32; 4] {
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
+    {
+        let values = samples.map(|sample| (wavelet::from_sample(sample) / step_size) * 64.0);
+        if values
+            .map(|value| value.abs() <= 4_194_304.0)
+            .into_iter()
+            .fold(true, |valid, lane| valid & lane)
+        {
+            return values.map(|value| (value + 12_582_912.0).to_bits().wrapping_sub(0x4b40_0000).cast_signed());
+        }
+        values.map(crate::simd::round_i32)
+    }
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
+    samples.map(|sample| quantize(sample, step_size))
+}
+fn quantize(sample: i32, step_size: f32) -> i32 {
+    let value = (wavelet::from_sample(sample) / step_size) * 64.0;
+    // The conversion rounds to nearest even in the default environment and gives i32::MIN for NaN and for a result
+    // outside the i32 range, as the C++ cast does; the call it replaces was a libm call per sample at baseline.
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
+    return crate::simd::round_i32(value);
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
+    {
+        let value = value.round_ties_even();
+        if (-2_147_483_648.0..2_147_483_648.0).contains(&value) {
+            value as i32
+        } else {
+            i32::MIN
+        }
+    }
+}}
+mod scan {use super::*;pub(crate) fn gather_samples(plane: &[i32], stride: usize, width: usize, height: usize, params: T1Params, dst: &mut [i32]) {
+    if params.reversible {
+        gather_with(
+            plane,
+            stride,
+            width,
+            height,
+            dst,
+            |sample| sample.wrapping_shl(6),
+            |samples| samples.map(|sample| sample.wrapping_shl(6)),
+        );
+    } else {
+        let step_size = params.step_size;
+        if width*height>=64 && step_size.is_finite() && step_size>0.0 {
+            let mut maximum=0u32;
+            for row in plane.chunks(stride).take(height){
+                for &v in &row[..width]{maximum=maximum.max(v.cast_unsigned() & 0x7fff_ffff);}
+            }
+            let q=(f32::from_bits(maximum)/step_size)*64.0;
+            if q<=4_194_304.0 {
+                let convert=|sample:i32| {let v=(wavelet::from_sample(sample)/step_size)*64.0;(v+12_582_912.0).to_bits().wrapping_sub(0x4b40_0000).cast_signed()};
+                gather_with(plane,stride,width,height,dst,convert,|values|values.map(convert));return;
+            }
+        }
+
+        gather_with(
+            plane,
+            stride,
+            width,
+            height,
+            dst,
+            |sample| quantize(sample, step_size),
+            |samples| quantize_four(samples, step_size),
+        );
+    }
+}
+#[inline(always)]
+fn gather_with(
+    plane: &[i32],
+    stride: usize,
+    width: usize,
+    height: usize,
+    dst: &mut [i32],
+    convert: impl Fn(i32) -> i32,
+    convert_four: impl Fn([i32; 4]) -> [i32; 4],
+) {
+    let (whole, tail) = dst.split_at_mut(height / 4 * 4 * width);
+    for (stripe, out) in whole.chunks_exact_mut(4 * width).enumerate() {
+        let top = stripe * 4 * stride;
+        let row = |index: usize| &plane[top + index * stride..][..width];
+        let rows = row(0).iter().zip(row(1)).zip(row(2)).zip(row(3));
+        for (out, (((&a, &b), &c), &d)) in out.as_chunks_mut::<4>().0.iter_mut().zip(rows) {
+            *out = convert_four([a, b, c, d]);
+        }
+    }
+    let rows = height % 4;
+    if rows != 0 {
+        let top = height / 4 * 4 * stride;
+        for (column, out) in tail.chunks_exact_mut(rows).enumerate() {
+            for (index, out) in out.iter_mut().enumerate() {
+                *out = convert(plane[top + index * stride + column]);
+            }
+        }
+    }
+}
+fn quantize_four(samples: [i32; 4], step_size: f32) -> [i32; 4] {
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
+    {
+        let values = samples.map(|sample| (wavelet::from_sample(sample) / step_size) * 64.0);
+        if values
+            .map(|value| value.abs() <= 4_194_304.0)
+            .into_iter()
+            .fold(true, |valid, lane| valid & lane)
+        {
+            return values.map(|value| (value + 12_582_912.0).to_bits().wrapping_sub(0x4b40_0000).cast_signed());
+        }
+        values.map(crate::simd::round_i32)
+    }
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
+    samples.map(|sample| quantize(sample, step_size))
+}
+fn quantize(sample: i32, step_size: f32) -> i32 {
+    let value = (wavelet::from_sample(sample) / step_size) * 64.0;
+    // The conversion rounds to nearest even in the default environment and gives i32::MIN for NaN and for a result
+    // outside the i32 range, as the C++ cast does; the call it replaces was a libm call per sample at baseline.
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
+    return crate::simd::round_i32(value);
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
+    {
+        let value = value.round_ties_even();
+        if (-2_147_483_648.0..2_147_483_648.0).contains(&value) {
+            value as i32
+        } else {
+            i32::MIN
+        }
+    }
+}}
+
+use std::{hint::black_box,time::Instant};
+fn main(){
+ let ops:[fn(&[i32],usize,usize,usize,T1Params,&mut[i32]);4]=[reference::gather_samples,current::gather_samples,scan::gather_samples,control::gather_samples];
+ for (w,h) in [(4,4),(8,8),(16,16),(32,32),(64,64),(7,6),(33,35)]{
+ let stride=w+3;let mut input=vec![f32::NAN.to_bits().cast_signed();stride*h];for r in 0..h{for c in 0..w{input[r*stride+c]=(((r*w+c)%171)as f32-87.25).to_bits().cast_signed();}}
+ let params=T1Params{reversible:false,step_size:3.14};let mut expected=vec![0;w*h];ops[0](&input,stride,w,h,params,&mut expected);for op in ops{let mut dst=vec![0;w*h];op(&input,stride,w,h,params,&mut dst);assert_eq!(dst,expected);}
+ let mut times:[Vec<f64>;4]=core::array::from_fn(|_|Vec::new());let mut dst=vec![0;w*h];for r in 0..24{for k in 0..4{let i=(r+k)%4;let begin=Instant::now();for _ in 0..2000{ops[i](black_box(&input),stride,w,h,black_box(params),black_box(&mut dst));}times[i].push(begin.elapsed().as_secs_f64()*1e9/2000.0);}}
+ let ns=times.map(|mut v|{v.sort_by(f64::total_cmp);v[v.len()/2]});println!("{w}x{h}: ref{:.2} current{:.2} scan{:.2} control{:.2}",ns[0],ns[1],ns[2],ns[3]);
+ }
+}

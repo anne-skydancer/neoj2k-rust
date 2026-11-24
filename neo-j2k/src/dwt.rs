@@ -1409,3 +1409,6 @@ mod differential {
         assert_eq!(plane, [10, 20, 30]);
     }
 }
+
+#[cfg(all(test, feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+mod safe_rows_tests;

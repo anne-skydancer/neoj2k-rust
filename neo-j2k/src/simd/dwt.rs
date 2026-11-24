@@ -1,14 +1,10 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 
-//! Eight independent inverse wavelet lines in AVX2 lanes. The lifting order is the scalar DWT's.
+//! Eight independent inverse wavelet lines expressed as safe lane arrays.
+//! The lifting order is the scalar DWT's.
 
-use core::arch::x86_64::{
-    __m256, __m256i, _mm256_add_epi32, _mm256_add_ps, _mm256_castps_si256, _mm256_castsi256_ps, _mm256_loadu_si256,
-    _mm256_mul_ps, _mm256_permute2x128_si256, _mm256_set1_epi32, _mm256_set1_ps, _mm256_srai_epi32,
-    _mm256_storeu_si256, _mm256_sub_epi32, _mm256_unpackhi_epi32, _mm256_unpackhi_epi64, _mm256_unpacklo_epi32,
-    _mm256_unpacklo_epi64,
-};
+use super::lanes::*;
 
 use crate::dwt::{ALPHA, BETA, DELTA, GAMMA, K, TWO_INV_K};
 
@@ -50,11 +46,9 @@ pub(crate) fn inverse(
     }
 
     if reversible {
-        // SAFETY: this module is compiled only when AVX2 is a target feature.
-        unsafe { inverse_53(scratch, parity) };
+        inverse_53(scratch, parity);
     } else {
-        // SAFETY: this module is compiled only when AVX2 is a target feature.
-        unsafe { inverse_97(scratch, parity) };
+        inverse_97(scratch, parity);
     }
 
     for (index, lanes) in scratch.iter().enumerate() {
@@ -69,10 +63,9 @@ pub(crate) fn inverse(
     }
 }
 
-/// Transform eight contiguous 9/7 rows, transposing full blocks of coefficients into lanes.
+/// Transform eight contiguous 9/7 rows using dense low/high bands in the existing scratch.
 pub(crate) fn inverse_97_rows(data: &mut [i32], stride: usize, parity: usize, scratch: &mut [Lane]) {
-    // SAFETY: this module is compiled only when AVX2 is a target feature.
-    unsafe { inverse_97_rows_avx2(data, stride, parity, scratch) };
+    inverse_97_rows_dense(data, stride, parity, scratch);
 }
 
 /// Transform eight columns whose rows are borrowed separately by an executor job.
@@ -91,120 +84,39 @@ pub(crate) fn inverse_stripe(
         lanes.copy_from_slice(&rows[row][columns.clone()]);
     }
     if reversible {
-        // SAFETY: this module is compiled only when AVX2 is a target feature.
-        unsafe { inverse_53(scratch, parity) };
+        inverse_53(scratch, parity);
     } else {
-        // SAFETY: this module is compiled only when AVX2 is a target feature.
-        unsafe { inverse_97(scratch, parity) };
+        inverse_97(scratch, parity);
     }
     for (row, lanes) in rows.iter_mut().zip(scratch) {
         row[columns.clone()].copy_from_slice(lanes);
     }
 }
 
-#[target_feature(enable = "avx2")]
-fn read(lanes: &Lane) -> __m256i {
-    // SAFETY: a Lane has exactly 32 initialized bytes, and loadu permits its alignment.
-    unsafe { _mm256_loadu_si256(lanes.as_ptr().cast()) }
+fn read(lanes: &Lane) -> IntLanes {
+    *lanes
 }
 
-#[target_feature(enable = "avx2")]
-fn write(lanes: &mut Lane, value: __m256i) {
-    // SAFETY: the exclusive Lane gives 32 writable bytes, and storeu permits its alignment.
-    unsafe { _mm256_storeu_si256(lanes.as_mut_ptr().cast(), value) };
+fn write(lanes: &mut Lane, value: IntLanes) {
+    *lanes = value;
 }
 
-#[target_feature(enable = "avx2")]
-fn transpose_four(rows: [__m256i; 4]) -> [__m256i; 4] {
-    let a = _mm256_unpacklo_epi32(rows[0], rows[1]);
-    let b = _mm256_unpackhi_epi32(rows[0], rows[1]);
-    let c = _mm256_unpacklo_epi32(rows[2], rows[3]);
-    let d = _mm256_unpackhi_epi32(rows[2], rows[3]);
-    [
-        _mm256_unpacklo_epi64(a, c),
-        _mm256_unpackhi_epi64(a, c),
-        _mm256_unpacklo_epi64(b, d),
-        _mm256_unpackhi_epi64(b, d),
-    ]
-}
-
-#[target_feature(enable = "avx2")]
-fn transpose([a, b, c, d, e, f, g, h]: [__m256i; LANES]) -> [__m256i; LANES] {
-    // Transpose four rows within each 128-bit half, then join the halves into columns.
-    let [a, b, c, d] = transpose_four([a, b, c, d]);
-    let [e, f, g, h] = transpose_four([e, f, g, h]);
-    [
-        _mm256_permute2x128_si256::<0x20>(a, e),
-        _mm256_permute2x128_si256::<0x20>(b, f),
-        _mm256_permute2x128_si256::<0x20>(c, g),
-        _mm256_permute2x128_si256::<0x20>(d, h),
-        _mm256_permute2x128_si256::<0x31>(a, e),
-        _mm256_permute2x128_si256::<0x31>(b, f),
-        _mm256_permute2x128_si256::<0x31>(c, g),
-        _mm256_permute2x128_si256::<0x31>(d, h),
-    ]
-}
-
-#[target_feature(enable = "avx2")]
-fn gather_band(rows: &[&[i32]; LANES], start: usize, count: usize, parity: usize, scratch: &mut [Lane]) {
-    let complete = count / LANES * LANES;
-    for at in (0..complete).step_by(LANES) {
-        let x = start + at;
-        let block = rows.map(|row| read(row[x..x + LANES].try_into().expect("eight samples")));
-        for (sample, packed) in transpose(block).into_iter().enumerate() {
-            write(&mut scratch[parity + 2 * (at + sample)], packed);
-        }
-    }
-    for at in complete..count {
-        scratch[parity + 2 * at] = rows.map(|row| row[start + at]);
-    }
-}
-
-#[target_feature(enable = "avx2")]
-fn inverse_97_rows_avx2(data: &mut [i32], stride: usize, parity: usize, scratch: &mut [Lane]) {
-    // Transpose each input band in blocks. This loads eight adjacent samples of a row at once
-    // instead of loading one sample from each of the eight rows.
-    let len = scratch.len();
-    let low_len = len / 2 + (len % 2) * (1 - parity);
-    let rows = core::array::from_fn(|lane| &data[lane * stride..lane * stride + len]);
-    gather_band(&rows, 0, low_len, parity, scratch);
-    gather_band(&rows, low_len, len - low_len, 1 - parity, scratch);
-    inverse_97(scratch, parity);
-
-    let (blocks, tail) = scratch.as_chunks::<LANES>();
-    for (at, [a, b, c, d, e, f, g, h]) in blocks.iter().enumerate() {
-        let rows = transpose([read(a), read(b), read(c), read(d), read(e), read(f), read(g), read(h)]);
-        let x = at * LANES;
-        for (row, samples) in data.chunks_mut(stride).zip(rows) {
-            let dest = (&mut row[x..x + LANES]).try_into().expect("eight samples");
-            write(dest, samples);
-        }
-    }
-    let x = blocks.len() * LANES;
-    for (lane, row) in data.chunks_mut(stride).take(LANES).enumerate() {
-        for (sample, packed) in row[x..len].iter_mut().zip(tail) {
-            *sample = packed[lane];
-        }
-    }
-}
-
-#[target_feature(enable = "avx2")]
 fn inverse_53(line: &mut [Lane], parity: usize) {
     let last = line.len() - 1;
     // Complete 16-column groups double the edge neighbour with wrapping arithmetic. The two-
     // sample odd-origin case is the scalar shortcut in the reference for both groups and tails.
     let full_group_edge = parity == 0 || last > 1;
-    let one = _mm256_set1_epi32(1);
-    let two = _mm256_set1_epi32(2);
+    let one = splat_i32(1);
+    let two = splat_i32(2);
     for index in (parity..=last).step_by(2) {
         let previous = read(&line[index.abs_diff(1)]);
         let next = read(&line[if index == last { last - 1 } else { index + 1 }]);
         let adjustment = if (index == 0 || index == last) && !full_group_edge {
-            _mm256_srai_epi32::<1>(_mm256_add_epi32(previous, one))
+            arithmetic_right::<1>(add_i32(previous, one))
         } else {
-            _mm256_srai_epi32::<2>(_mm256_add_epi32(_mm256_add_epi32(previous, next), two))
+            arithmetic_right::<2>(add_i32(add_i32(previous, next), two))
         };
-        let sample = _mm256_sub_epi32(read(&line[index]), adjustment);
+        let sample = sub_i32(read(&line[index]), adjustment);
         write(&mut line[index], sample);
     }
     for index in ((1 - parity)..=last).step_by(2) {
@@ -212,58 +124,51 @@ fn inverse_53(line: &mut [Lane], parity: usize) {
         let adjustment = if index == 0 || index == last {
             previous
         } else {
-            _mm256_srai_epi32::<1>(_mm256_add_epi32(previous, read(&line[index + 1])))
+            arithmetic_right::<1>(add_i32(previous, read(&line[index + 1])))
         };
-        let sample = _mm256_add_epi32(read(&line[index]), adjustment);
+        let sample = add_i32(read(&line[index]), adjustment);
         write(&mut line[index], sample);
     }
 }
 
-#[target_feature(enable = "avx2")]
-fn read_float(lanes: &Lane) -> __m256 {
-    _mm256_castsi256_ps(read(lanes))
+fn read_float(lanes: &Lane) -> FloatLanes {
+    from_float_bits(read(lanes))
 }
 
-#[target_feature(enable = "avx2")]
-fn write_float(lanes: &mut Lane, value: __m256) {
-    write(lanes, _mm256_castps_si256(value));
+fn write_float(lanes: &mut Lane, value: FloatLanes) {
+    write(lanes, float_bits(value));
 }
 
 pub(crate) fn sweep_97_rows<const ODD: bool>(low: &mut [&mut [i32]; 4], high: &mut [&mut [i32]; 3]) -> usize {
-    // SAFETY: this module is compiled only when AVX2 is a target feature.
-    unsafe { sweep_97_avx2::<ODD>(low, high) }
+    sweep_97_avx2::<ODD>(low, high)
 }
 
-#[target_feature(enable = "avx2")]
-fn read_row(row: &[i32], column: usize) -> __m256 {
+fn read_row(row: &[i32], column: usize) -> FloatLanes {
     read_float(row[column..column + LANES].try_into().expect("an AVX2 group"))
 }
 
-#[target_feature(enable = "avx2")]
-fn write_row(row: &mut [i32], column: usize, samples: __m256) {
+fn write_row(row: &mut [i32], column: usize, samples: FloatLanes) {
     write_float(
         (&mut row[column..column + LANES]).try_into().expect("an AVX2 group"),
         samples,
     );
 }
 
-#[target_feature(enable = "avx2")]
-fn lift_rows(sample: __m256, a: __m256, b: __m256, coefficient: __m256) -> __m256 {
-    _mm256_add_ps(sample, _mm256_mul_ps(_mm256_add_ps(a, b), coefficient))
+fn lift_rows(sample: FloatLanes, a: FloatLanes, b: FloatLanes, coefficient: FloatLanes) -> FloatLanes {
+    add_f32(sample, mul_f32(add_f32(a, b), coefficient))
 }
 
-#[target_feature(enable = "avx2")]
 fn sweep_97_avx2<const ODD: bool>(low: &mut [&mut [i32]; 4], high: &mut [&mut [i32]; 3]) -> usize {
     let [l0, l1, l2, l3] = low;
     let [h0, h1, h2] = high;
     let width = l0.len();
     let end = width / LANES * LANES;
-    let (k, two_inv_k) = (_mm256_set1_ps(K), _mm256_set1_ps(TWO_INV_K));
-    let (delta, gamma) = (_mm256_set1_ps(-DELTA), _mm256_set1_ps(-GAMMA));
-    let (beta, alpha) = (_mm256_set1_ps(-BETA), _mm256_set1_ps(-ALPHA));
+    let (k, two_inv_k) = (splat_f32(K), splat_f32(TWO_INV_K));
+    let (delta, gamma) = (splat_f32(-DELTA), splat_f32(-GAMMA));
+    let (beta, alpha) = (splat_f32(-BETA), splat_f32(-ALPHA));
     for x in (0..end).step_by(LANES) {
-        let lk = _mm256_mul_ps(read_row(l0, x), k);
-        let hk = _mm256_mul_ps(read_row(h0, x), two_inv_k);
+        let lk = mul_f32(read_row(l0, x), k);
+        let hk = mul_f32(read_row(h0, x), two_inv_k);
         let hk1 = read_row(h1, x);
         let hk2 = read_row(h2, x);
         let lk1 = read_row(l1, x);
@@ -293,37 +198,194 @@ fn sweep_97_avx2<const ODD: bool>(low: &mut [&mut [i32]; 4], high: &mut [&mut [i
     end
 }
 
-#[target_feature(enable = "avx2")]
+#[inline(always)]
 fn lift_97(line: &mut [Lane], parity: usize, coefficient: f32) {
     let last = line.len() - 1;
-    let scale = _mm256_set1_ps(coefficient);
+    let scale = splat_f32(coefficient);
     for index in (parity..last).step_by(2) {
-        let sum = _mm256_add_ps(read_float(&line[index.abs_diff(1)]), read_float(&line[index + 1]));
-        let delta = _mm256_mul_ps(sum, scale);
-        let sample = _mm256_add_ps(read_float(&line[index]), delta);
+        let sum = add_f32(read_float(&line[index.abs_diff(1)]), read_float(&line[index + 1]));
+        let delta = mul_f32(sum, scale);
+        let sample = add_f32(read_float(&line[index]), delta);
         write_float(&mut line[index], sample);
     }
     if last % 2 == parity {
-        let delta = _mm256_mul_ps(_mm256_add_ps(scale, scale), read_float(&line[last - 1]));
-        let sample = _mm256_add_ps(read_float(&line[last]), delta);
+        let delta = mul_f32(add_f32(scale, scale), read_float(&line[last - 1]));
+        let sample = add_f32(read_float(&line[last]), delta);
         write_float(&mut line[last], sample);
     }
 }
 
-#[target_feature(enable = "avx2")]
 fn inverse_97(line: &mut [Lane], parity: usize) {
-    let low = _mm256_set1_ps(K);
-    let high = _mm256_set1_ps(TWO_INV_K);
+    let low = splat_f32(K);
+    let high = splat_f32(TWO_INV_K);
     for sample in line.iter_mut().skip(parity).step_by(2) {
-        let scaled = _mm256_mul_ps(read_float(sample), low);
+        let scaled = mul_f32(read_float(sample), low);
         write_float(sample, scaled);
     }
     for sample in line.iter_mut().skip(1 - parity).step_by(2) {
-        let scaled = _mm256_mul_ps(read_float(sample), high);
+        let scaled = mul_f32(read_float(sample), high);
         write_float(sample, scaled);
     }
     lift_97(line, parity, -DELTA);
     lift_97(line, 1 - parity, -GAMMA);
     lift_97(line, parity, -BETA);
     lift_97(line, 1 - parity, -ALPHA);
+}
+
+#[inline(always)]
+#[allow(clippy::too_many_arguments)]
+fn fill_dense(
+    out: &mut [Lane],
+    scale: f32,
+    a: &[i32],
+    b: &[i32],
+    c: &[i32],
+    d: &[i32],
+    e: &[i32],
+    f: &[i32],
+    g: &[i32],
+    h: &[i32],
+) {
+    for (target, (((((((&a, &b), &c), &d), &e), &f), &g), &h)) in out
+        .iter_mut()
+        .zip(a.iter().zip(b).zip(c).zip(d).zip(e).zip(f).zip(g).zip(h))
+    {
+        *target = [
+            (f32::from_bits(a.cast_unsigned()) * scale).to_bits().cast_signed(),
+            (f32::from_bits(b.cast_unsigned()) * scale).to_bits().cast_signed(),
+            (f32::from_bits(c.cast_unsigned()) * scale).to_bits().cast_signed(),
+            (f32::from_bits(d.cast_unsigned()) * scale).to_bits().cast_signed(),
+            (f32::from_bits(e.cast_unsigned()) * scale).to_bits().cast_signed(),
+            (f32::from_bits(f.cast_unsigned()) * scale).to_bits().cast_signed(),
+            (f32::from_bits(g.cast_unsigned()) * scale).to_bits().cast_signed(),
+            (f32::from_bits(h.cast_unsigned()) * scale).to_bits().cast_signed(),
+        ];
+    }
+}
+
+#[inline(always)]
+fn lift_dense(mut band: &mut [Lane], neighbour: &[Lane], first: bool, coefficient: f32) {
+    let scale = splat_f32(coefficient);
+    if first {
+        let (target, rest) = band.split_first_mut().unwrap();
+        let n = from_float_bits(neighbour[0]);
+        *target = float_bits(add_f32(from_float_bits(*target), mul_f32(add_f32(n, n), scale)));
+        band = rest;
+    }
+    let span = band.len().min(neighbour.len() - 1);
+    let (body, tail) = band.split_at_mut(span);
+    for ((target, &a), &b) in body
+        .as_flattened_mut()
+        .iter_mut()
+        .zip(neighbour.as_flattened())
+        .zip(neighbour[1..].as_flattened())
+    {
+        let sample = f32::from_bits(target.cast_unsigned());
+        let a = f32::from_bits(a.cast_unsigned());
+        let b = f32::from_bits(b.cast_unsigned());
+        *target = (sample + (a + b) * coefficient).to_bits().cast_signed();
+    }
+
+    if let [last] = tail {
+        let product = mul_f32(
+            splat_f32(coefficient + coefficient),
+            from_float_bits(neighbour[neighbour.len() - 1]),
+        );
+        *last = float_bits(add_f32(from_float_bits(*last), product));
+    }
+}
+
+#[inline(never)]
+// Separate mutable row arguments preserve disjoint destination streams for auto-vectorization.
+#[allow(clippy::too_many_arguments)]
+fn scatter_dense(
+    first: &[Lane],
+    second: &[Lane],
+    a: &mut [i32],
+    b: &mut [i32],
+    c: &mut [i32],
+    d: &mut [i32],
+    e: &mut [i32],
+    f: &mut [i32],
+    g: &mut [i32],
+    h: &mut [i32],
+) {
+    let odd = !a.len().is_multiple_of(2);
+    for ((((((((a, b), c), d), e), f), g), h), (lo, hi)) in a
+        .as_chunks_mut::<2>()
+        .0
+        .iter_mut()
+        .zip(b.as_chunks_mut::<2>().0.iter_mut())
+        .zip(c.as_chunks_mut::<2>().0.iter_mut())
+        .zip(d.as_chunks_mut::<2>().0.iter_mut())
+        .zip(e.as_chunks_mut::<2>().0.iter_mut())
+        .zip(f.as_chunks_mut::<2>().0.iter_mut())
+        .zip(g.as_chunks_mut::<2>().0.iter_mut())
+        .zip(h.as_chunks_mut::<2>().0.iter_mut())
+        .zip(first.iter().zip(second))
+    {
+        *a = [lo[0], hi[0]];
+        *b = [lo[1], hi[1]];
+        *c = [lo[2], hi[2]];
+        *d = [lo[3], hi[3]];
+        *e = [lo[4], hi[4]];
+        *f = [lo[5], hi[5]];
+        *g = [lo[6], hi[6]];
+        *h = [lo[7], hi[7]];
+    }
+    if odd {
+        let last = first[first.len() - 1];
+        *a.last_mut().unwrap() = last[0];
+        *b.last_mut().unwrap() = last[1];
+        *c.last_mut().unwrap() = last[2];
+        *d.last_mut().unwrap() = last[3];
+        *e.last_mut().unwrap() = last[4];
+        *f.last_mut().unwrap() = last[5];
+        *g.last_mut().unwrap() = last[6];
+        *h.last_mut().unwrap() = last[7];
+    }
+}
+
+fn inverse_97_rows_dense(data: &mut [i32], stride: usize, parity: usize, scratch: &mut [Lane]) {
+    // Dense bands keep every lane group contiguous without increasing the eight-row scratch.
+    let len = scratch.len();
+    let low_len = len / 2 + len % 2 * (1 - parity);
+    let rows: [&[i32]; 8] = core::array::from_fn(|r| &data[r * stride..r * stride + len]);
+    let (low, high) = scratch.split_at_mut(low_len);
+    fill_dense(
+        low,
+        K,
+        &rows[0][..low_len],
+        &rows[1][..low_len],
+        &rows[2][..low_len],
+        &rows[3][..low_len],
+        &rows[4][..low_len],
+        &rows[5][..low_len],
+        &rows[6][..low_len],
+        &rows[7][..low_len],
+    );
+    fill_dense(
+        high,
+        TWO_INV_K,
+        &rows[0][low_len..],
+        &rows[1][low_len..],
+        &rows[2][low_len..],
+        &rows[3][low_len..],
+        &rows[4][low_len..],
+        &rows[5][low_len..],
+        &rows[6][low_len..],
+        &rows[7][low_len..],
+    );
+
+    lift_dense(low, high, parity == 0, -DELTA);
+    lift_dense(high, low, parity == 1, -GAMMA);
+    lift_dense(low, high, parity == 0, -BETA);
+    lift_dense(high, low, parity == 1, -ALPHA);
+    let (first, second) = if parity == 0 { (&*low, &*high) } else { (&*high, &*low) };
+    let mut rows = data.chunks_mut(stride);
+    let [a, b, c, d, e, f, g, h]: [&mut [i32]; 8] = core::array::from_fn(|_| {
+        let row = rows.next().unwrap();
+        &mut row[..len]
+    });
+    scatter_dense(first, second, a, b, c, d, e, f, g, h);
 }

@@ -1,0 +1,92 @@
+// SPDX-License-Identifier: BSD-2-Clause
+// Copyright (c) 2026, Anne Skydancer (neo-j2k)
+pub mod current {
+#[derive(Clone, Copy, Debug)]
+pub struct Source<'a> {
+    data: &'a [u8],
+    current: u32,
+}
+
+impl Source<'_> {
+    /// BYTEIN of ISO 15444-1 C.3.4: the next byte into the code register `c` (a 0xff before a byte above 0x8f is a
+    /// marker and gives 0xff00 with no byte taken). Returns the code register and the count of bits it now holds.
+    fn byte_in(&mut self, c: u32) -> (u32, u32) {
+        let (next, rest) = next_byte(self.data);
+        let stuffed = self.current == 0xff;
+        if stuffed && next > 0x8f {
+            (c.wrapping_add(0xff00), 8)
+        } else {
+            self.data = rest;
+            self.current = next;
+            let bits = 8 - u32::from(stuffed);
+            (c.wrapping_add(next << (16 - bits)), bits)
+        }
+    }
+}
+
+fn next_byte(data: &[u8]) -> (u32, &[u8]) {
+    // The two artificial 0xff bytes form a marker. The existing byte-in logic stops on it.
+    data.split_first()
+        .map_or((0xff, data), |(&byte, rest)| (u32::from(byte), rest))
+}
+
+#[cold]
+#[inline(never)]
+pub fn renormalize_with_bytes(mut c: u32, mut bits: u32, source: &mut Source<'_>, total: u32) -> u64 {
+    let mut shifts = total;
+    while shifts > bits {
+        c <<= bits;
+        shifts -= bits;
+        (c, bits) = source.byte_in(c);
+    }
+    c <<= shifts;
+    bits -= shifts;
+    u64::from(c) | (u64::from(bits) << 32)
+}
+
+}
+pub mod selected {
+#[derive(Clone, Copy, Debug)]
+pub struct Source<'a> {
+    data: &'a [u8],
+    current: u32,
+}
+
+impl Source<'_> {
+    /// BYTEIN of ISO 15444-1 C.3.4: the next byte into the code register `c` (a 0xff before a byte above 0x8f is a
+    /// marker and gives 0xff00 with no byte taken). Returns the code register and the count of bits it now holds.
+    fn byte_in(&mut self, c: u32) -> (u32, u32) {
+        let (next, rest) = next_byte(self.data);
+        let stuffed = self.current == 0xff;
+        if stuffed && next > 0x8f {
+            (c.wrapping_add(0xff00), 8)
+        } else {
+            self.data = rest;
+            self.current = next;
+            let bits = 8 - u32::from(stuffed);
+            (c.wrapping_add(core::hint::select_unpredictable(stuffed, next << 9, next << 8)), bits)
+        }
+    }
+}
+
+fn next_byte(data: &[u8]) -> (u32, &[u8]) {
+    // The two artificial 0xff bytes form a marker. The existing byte-in logic stops on it.
+    data.split_first()
+        .map_or((0xff, data), |(&byte, rest)| (u32::from(byte), rest))
+}
+
+#[cold]
+#[inline(never)]
+pub fn renormalize_with_bytes(mut c: u32, mut bits: u32, source: &mut Source<'_>, total: u32) -> u64 {
+    let mut shifts = total;
+    while shifts > bits {
+        c <<= bits;
+        shifts -= bits;
+        (c, bits) = source.byte_in(c);
+    }
+    c <<= shifts;
+    bits -= shifts;
+    u64::from(c) | (u64::from(bits) << 32)
+}
+
+}

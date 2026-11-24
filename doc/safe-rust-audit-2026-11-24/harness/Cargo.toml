@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: BSD-2-Clause
+# Copyright (c) 2026, Anne Skydancer (neo-j2k)
+# Controlled public-API benchmark only; not a production dependency.
+[workspace]
+
+[package]
+name = "neo-j2k-versions"
+version = "0.0.0"
+edition = "2024"
+rust-version = "1.100"
+license = "BSD-2-Clause"
+publish = false
+description = "Compare safe Rust candidate, d13082f and an unchanged control"
+
+[dependencies]
+neo_j2k_old = { package = "neo-j2k-reference", path = "../base/neo-j2k" }
+neo_j2k_new = { package = "neo-j2k", path = "../candidate/neo-j2k" }
+neo_j2k_control = { package = "neo-j2k-control", path = "../control/neo-j2k" }
+neo-j2k-oracle = { path = "../candidate/neo-j2k-oracle" }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+debug = "line-tables-only"

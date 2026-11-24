@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-11-03",
+    "miri",
+    "test",
+    "-p",
+    "neo-j2k",
+    "--lib",
+    "--locked",
+    "--",
+    "avx2_wide_colour"
+  ],
+  "rustflags": "-C target-cpu=x86-64-v3",
+  "exit": 0,
+  "seconds": 4.008832900006382,
+  "mct_sha256": "781f27c92e641d5b3bda9fed126109f9f559b22febd21215a821a9ebc118e092"
+}

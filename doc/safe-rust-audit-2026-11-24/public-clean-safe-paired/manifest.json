@@ -1,0 +1,7 @@
+{
+  "reference": "d13082f",
+  "new_mct_sha256": "4873924a48672bfae3e063a2385d59404a884d362a8f506450d53a01135ebee5",
+  "old_mct_sha256": "910332803a0ef80ac2dfa9029d756ca7218135d3c8b19d0c9d2fdf85a9af8ec0",
+  "binary_sha256": "5ffc48b049e41c95e8dd38eedb35f3e403ad8353efca3ccc2c1885b93401c899",
+  "diagnostic": "thirdslot old-safe f64, not unchanged original; percent new/old_safe,new/original,old_safe/original"
+}

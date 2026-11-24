@@ -1,0 +1,9 @@
+{
+  "source_differences": [
+    "src\\simd\\dwt.rs"
+  ],
+  "change": "scatter_dense inline(always) to inline(never), no arithmetic change",
+  "columns": "original_us,new_us,old_safe_us,new_vs_old_safe,new_vs_original,old_safe_vs_original,equality",
+  "old_sha256": "5fe3075cd03a0507edb256037c0c5389fd08155a8aaa5554d06a54b279ca723a",
+  "new_sha256": "1d139476ecd925aa3432a84f563b1594b006a17c1bf2ef7fc0396ffae070901a"
+}

@@ -1,0 +1,133 @@
+// SPDX-License-Identifier: BSD-2-Clause
+// Copyright (c) 2026, Anne Skydancer (neo-j2k)
+
+// The requests of one version of the crate, through its public whole-image API only. This file is included once per
+// version (main.rs), inside a module that has `neo_j2k` aliased to that version's crate.
+
+use neo_j2k::{DecodeParams,Decoder,DecoderConfig,EncodeParams,Encoder,Executor,I32Plane,ImageSamples,ImageView};
+struct Pool<'a>(&'a neo_j2k_oracle::BenchmarkPool);
+impl Executor for Pool<'_> {
+ fn concurrency(&self)->usize {self.0.concurrency() as usize}
+ fn parallel_for(&self,count:usize,job:&(dyn Fn(usize)+Sync)){self.0.parallel_for(count.try_into().unwrap(),&|i|job(i as usize));}
+}
+
+/// One decode request, set up and warmed: `body` gets the call to time and the samples one decode gives (planes one
+/// after the other).
+pub fn decode<R>(
+    data: &[u8],
+    reduce: u32,
+    shared: &neo_j2k_oracle::BenchmarkPool,
+    body: impl FnOnce(&mut dyn FnMut(), Vec<i32>) -> R,
+) -> R {
+    let pool = Pool(shared);
+    let width=pool.concurrency();
+    let params = DecodeParams {
+        executor: (width > 1).then_some(&pool as &dyn Executor),
+        ..DecodeParams::default()
+    };
+    let mut decoder = Decoder::new(DecoderConfig {
+        reduce,
+        ..DecoderConfig::default()
+    });
+    decoder.set_retained_bytes(256 << 20);
+    decoder.read_header(data).expect("the fixture has a header");
+    let sizes: Vec<usize> = decoder
+        .decoded_dimensions()
+        .expect("the header was read")
+        .iter()
+        .map(|info| info.width as usize * info.height as usize)
+        .collect();
+    let mut buffer = vec![0i32; sizes.iter().sum()];
+    let mut planes = Vec::with_capacity(sizes.len());
+    let mut rest = buffer.as_mut_slice();
+    for (component, size) in sizes.iter().enumerate() {
+        let (samples, tail) = core::mem::take(&mut rest).split_at_mut(*size);
+        rest = tail;
+        planes.push(I32Plane {
+            component: u32::try_from(component).expect("a component index fits in u32"),
+            samples,
+        });
+    }
+    // two decodes before anything is measured; a codestream without its end marker is a result, not an error
+    for _ in 0..2 {
+        decoder
+            .decode_into_i32(data, params, &mut planes)
+            .expect("the fixture decodes");
+    }
+    let output: Vec<i32> = planes.iter().flat_map(|plane| plane.samples.iter().copied()).collect();
+    body(
+        &mut || {
+            decoder
+                .decode_into_i32(std::hint::black_box(data), params, &mut planes)
+                .expect("a warmed decode");
+            std::hint::black_box(planes.as_slice());
+        },
+        output,
+    )
+}
+
+/// The test image of the small encodes: interleaved RGB, `side` by `side`.
+pub fn pixels(side: usize) -> Vec<u8> {
+    let stride = side * 3;
+    (0..side * stride)
+        .map(|index| {
+            let x = (index % stride) / 3;
+            let y = index / stride;
+            let component = index % 3;
+            (3 * x + 5 * y + 13 * (x ^ y) + 23 * component).to_le_bytes()[0]
+        })
+        .collect()
+}
+
+/// One encode request: `body` gets the call to time (a new encoder per call, as the small encode rows of the other
+/// suites do) and the codestream one encode gives.
+pub fn encode<R>(pixels: &[u8], side: u32, reversible: bool, body: impl FnOnce(&mut dyn FnMut(), Vec<u8>) -> R) -> R {
+    let view = ImageView {
+        width: side,
+        height: side,
+        flip_vertical: false,
+        samples: ImageSamples::Interleaved {
+            samples: pixels,
+            components: 3,
+            row_stride: side as usize * 3,
+        },
+    };
+    let mut params = EncodeParams::default();
+    params.reversible = reversible;
+    params.mct = true;
+    params.resolutions = Some(6);
+    let output = Encoder::new()
+        .encode(&view, &params)
+        .expect("the encoder accepts the fixture")
+        .to_vec();
+    body(
+        &mut || {
+            std::hint::black_box(
+                Encoder::new()
+                    .encode(std::hint::black_box(&view), &params)
+                    .expect("an encode"),
+            );
+        },
+        output,
+    )
+}
+
+/// The crate's release version.
+pub fn version() -> &'static str {
+    neo_j2k::version()
+}
+
+/// Warm caller-owned packed U8 target, one-byte offset and padded rows.
+pub fn packed<R>(data:&[u8],reduce:u32,channels:usize,body:impl FnOnce(&mut dyn FnMut(),Vec<u8>)->R)->R{
+ use neo_j2k::{DecodeTarget,OutputPlane,SampleType};
+ let mut decoder=Decoder::new(DecoderConfig{reduce,..DecoderConfig::default()});
+ decoder.set_retained_bytes(256<<20);decoder.read_header(data).unwrap();
+ let dimensions=decoder.decoded_dimensions().unwrap();let width=dimensions[0].width as usize;let height=dimensions[0].height as usize;
+ let all=dimensions.len();assert!(channels<=all);let selected:Vec<u32>=(0..channels as u32).collect();
+ let params=DecodeParams{components:if channels==all{None}else{Some(&selected)},..DecodeParams::default()};
+ let stride=width*channels+3;let mut buffer=vec![0xe5;1+stride*height+5];
+ let planes:Vec<_>=(0..channels).map(|c|OutputPlane{component:c as u32,offset:1+c,row_stride:stride as isize,sample_stride:channels}).collect();
+ for _ in 0..2{decoder.decode_into(data,params,SampleType::U8,&mut[DecodeTarget{bytes:&mut buffer,planes:&planes}]).unwrap();}
+ assert_eq!(buffer[0],0xe5);for row in 0..height{assert!(buffer[1+row*stride+width*channels..1+(row+1)*stride].iter().all(|&b|b==0xe5));}
+ let output=buffer.clone();body(&mut||{decoder.decode_into(std::hint::black_box(data),params,SampleType::U8,&mut[DecodeTarget{bytes:&mut buffer,planes:&planes}]).unwrap();std::hint::black_box(&buffer);},output)
+}

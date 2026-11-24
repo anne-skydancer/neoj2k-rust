@@ -1,0 +1,98 @@
+[
+  {
+    "cell": "baseline",
+    "mode": "full",
+    "run": 1,
+    "host_seconds": 28.977046343003167,
+    "rows": 32,
+    "exe_sha256": "6279487332ae1e904271cfd0d6ca42772ab33886eaf40797a9fd99b216b4a1c6"
+  },
+  {
+    "cell": "baseline",
+    "mode": "precision",
+    "run": 1,
+    "host_seconds": 3.1702650139995967,
+    "rows": 6,
+    "exe_sha256": "6279487332ae1e904271cfd0d6ca42772ab33886eaf40797a9fd99b216b4a1c6"
+  },
+  {
+    "cell": "baseline",
+    "mode": "full",
+    "run": 2,
+    "host_seconds": 28.922155822001514,
+    "rows": 32,
+    "exe_sha256": "6279487332ae1e904271cfd0d6ca42772ab33886eaf40797a9fd99b216b4a1c6"
+  },
+  {
+    "cell": "baseline",
+    "mode": "precision",
+    "run": 2,
+    "host_seconds": 3.1193788689997746,
+    "rows": 6,
+    "exe_sha256": "6279487332ae1e904271cfd0d6ca42772ab33886eaf40797a9fd99b216b4a1c6"
+  },
+  {
+    "cell": "baseline",
+    "mode": "full",
+    "run": 3,
+    "host_seconds": 28.974047817006067,
+    "rows": 32,
+    "exe_sha256": "6279487332ae1e904271cfd0d6ca42772ab33886eaf40797a9fd99b216b4a1c6"
+  },
+  {
+    "cell": "baseline",
+    "mode": "precision",
+    "run": 3,
+    "host_seconds": 3.169545876000484,
+    "rows": 6,
+    "exe_sha256": "6279487332ae1e904271cfd0d6ca42772ab33886eaf40797a9fd99b216b4a1c6"
+  },
+  {
+    "cell": "v3",
+    "mode": "full",
+    "run": 1,
+    "host_seconds": 21.9084636530024,
+    "rows": 32,
+    "exe_sha256": "9b1b6fc8125e4856a0dcd9626dd4c9c3a5fe11a17735ab24fa609f94dfdee84b"
+  },
+  {
+    "cell": "v3",
+    "mode": "precision",
+    "run": 1,
+    "host_seconds": 2.168574194001849,
+    "rows": 6,
+    "exe_sha256": "9b1b6fc8125e4856a0dcd9626dd4c9c3a5fe11a17735ab24fa609f94dfdee84b"
+  },
+  {
+    "cell": "v3",
+    "mode": "full",
+    "run": 2,
+    "host_seconds": 21.958799432002706,
+    "rows": 32,
+    "exe_sha256": "9b1b6fc8125e4856a0dcd9626dd4c9c3a5fe11a17735ab24fa609f94dfdee84b"
+  },
+  {
+    "cell": "v3",
+    "mode": "precision",
+    "run": 2,
+    "host_seconds": 2.1178970980035956,
+    "rows": 6,
+    "exe_sha256": "9b1b6fc8125e4856a0dcd9626dd4c9c3a5fe11a17735ab24fa609f94dfdee84b"
+  },
+  {
+    "cell": "v3",
+    "mode": "full",
+    "run": 3,
+    "host_seconds": 21.86941120499978,
+    "rows": 32,
+    "exe_sha256": "9b1b6fc8125e4856a0dcd9626dd4c9c3a5fe11a17735ab24fa609f94dfdee84b"
+  },
+  {
+    "cell": "v3",
+    "mode": "precision",
+    "run": 3,
+    "host_seconds": 2.117761016001168,
+    "rows": 6,
+    "exe_sha256": "9b1b6fc8125e4856a0dcd9626dd4c9c3a5fe11a17735ab24fa609f94dfdee84b"
+  }
+]

@@ -1,0 +1,97 @@
+{
+  "diagnostic_only": true,
+  "rows": 18,
+  "verified_plane_layouts": 54,
+  "output": "all three Rust outputs match; both fixtures additionally match C++ and C++ status0. Rust Result success asserted; this scratch timing harness does not separately assert Rust truncation bool. Existing final matrix remains status acceptance evidence.",
+  "exe_sha256": "72e6e82c064ed2b3ef789ca77313d906f17aa8e7b18d35ec8636a7bd3541ee5e",
+  "aggregate": {
+    "p31_large_1024_rgb_97.j2k": {
+      "0": {
+        "candidate": [
+          0.437,
+          0.486,
+          0.681
+        ],
+        "control": [
+          0.027,
+          0.255,
+          0.348
+        ],
+        "candidate_median": 0.486,
+        "control_median": 0.255
+      },
+      "32": {
+        "candidate": [
+          0.383,
+          1.203,
+          0.23
+        ],
+        "control": [
+          0.231,
+          -0.033,
+          0.071
+        ],
+        "candidate_median": 0.383,
+        "control_median": 0.071
+      },
+      "64": {
+        "candidate": [
+          0.297,
+          0.198,
+          0.08
+        ],
+        "control": [
+          -0.267,
+          -0.093,
+          0.065
+        ],
+        "candidate_median": 0.198,
+        "control_median": -0.093
+      }
+    },
+    "p31_sl_128_rgba_97.j2k": {
+      "0": {
+        "candidate": [
+          2.919,
+          1.946,
+          0.654
+        ],
+        "control": [
+          1.412,
+          1.689,
+          -0.278
+        ],
+        "candidate_median": 1.946,
+        "control_median": 1.412
+      },
+      "32": {
+        "candidate": [
+          0.691,
+          -0.713,
+          0.445
+        ],
+        "control": [
+          -1.411,
+          -1.241,
+          0.489
+        ],
+        "candidate_median": 0.445,
+        "control_median": -1.241
+      },
+      "64": {
+        "candidate": [
+          0.544,
+          2.682,
+          1.072
+        ],
+        "control": [
+          0.849,
+          0.976,
+          0.55
+        ],
+        "candidate_median": 1.072,
+        "control_median": 0.849
+      }
+    }
+  }
+}

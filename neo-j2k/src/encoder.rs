@@ -977,10 +977,26 @@ pub(super) struct T1Params {
 /// Writes the block's fixed-point samples in stripe-column order: each column of a four-row stripe, top row first.
 fn gather_samples(plane: &[i32], stride: usize, width: usize, height: usize, params: T1Params, dst: &mut [i32]) {
     if params.reversible {
-        gather_with(plane, stride, width, height, dst, |sample| sample.wrapping_shl(6));
+        gather_with(
+            plane,
+            stride,
+            width,
+            height,
+            dst,
+            |sample| sample.wrapping_shl(6),
+            |samples| samples.map(|sample| sample.wrapping_shl(6)),
+        );
     } else {
         let step_size = params.step_size;
-        gather_with(plane, stride, width, height, dst, |sample| quantize(sample, step_size));
+        gather_with(
+            plane,
+            stride,
+            width,
+            height,
+            dst,
+            |sample| quantize(sample, step_size),
+            |samples| quantize_four(samples, step_size),
+        );
     }
 }
 
@@ -992,6 +1008,7 @@ fn gather_with(
     height: usize,
     dst: &mut [i32],
     convert: impl Fn(i32) -> i32,
+    convert_four: impl Fn([i32; 4]) -> [i32; 4],
 ) {
     let (whole, tail) = dst.split_at_mut(height / 4 * 4 * width);
     for (stripe, out) in whole.chunks_exact_mut(4 * width).enumerate() {
@@ -999,7 +1016,7 @@ fn gather_with(
         let row = |index: usize| &plane[top + index * stride..][..width];
         let rows = row(0).iter().zip(row(1)).zip(row(2)).zip(row(3));
         for (out, (((&a, &b), &c), &d)) in out.as_chunks_mut::<4>().0.iter_mut().zip(rows) {
-            *out = [convert(a), convert(b), convert(c), convert(d)];
+            *out = convert_four([a, b, c, d]);
         }
     }
     let rows = height % 4;
@@ -1011,6 +1028,24 @@ fn gather_with(
             }
         }
     }
+}
+
+#[inline]
+fn quantize_four(samples: [i32; 4], step_size: f32) -> [i32; 4] {
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
+    {
+        let values = samples.map(|sample| (wavelet::from_sample(sample) / step_size) * 64.0);
+        if values
+            .map(|value| value.abs() <= 4_194_304.0)
+            .into_iter()
+            .fold(true, |valid, lane| valid & lane)
+        {
+            return values.map(|value| (value + 12_582_912.0).to_bits().wrapping_sub(0x4b40_0000).cast_signed());
+        }
+        values.map(crate::simd::round_i32)
+    }
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
+    samples.map(|sample| quantize(sample, step_size))
 }
 
 #[allow(
@@ -1049,6 +1084,9 @@ fn resize_with<T>(data: &mut Vec<T>, len: usize, value: impl FnMut() -> T) -> Re
     data.resize_with(len, value);
     Ok(())
 }
+
+#[cfg(test)]
+mod quantize_tests;
 
 #[cfg(test)]
 mod tests {

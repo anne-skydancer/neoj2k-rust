@@ -1,0 +1,16 @@
+   Compiling neo-j2k-oracle v0.1.3 (/home/dev/safe-crate-audit/mq-byte-profile/neo-j2k-oracle)
+   Compiling neo-j2k-testkit v0.1.3 (/home/dev/safe-crate-audit/mq-byte-profile/neo-j2k-testkit)
+   Compiling neo-j2k v0.1.3 (/home/dev/safe-crate-audit/mq-byte-profile/neo-j2k)
+    Finished `release` profile [optimized + debuginfo] target(s) in 15.66s
+     Running unittests src/lib.rs (../target-mq-byte-profile/release/build/neo-j2k/1229b097d389baa0/out/neo_j2k-1229b097d389baa0)
+
+running 1 test
+PROFILE|sl_64_rgb_97.j2k|total1121|non_ff1101|stuffed20|markers17|eof61|non_ff_pct98.2159
+PROFILE|sl_128_rgba_97.j2k|total1661|non_ff1643|stuffed18|markers10|eof56|non_ff_pct98.9163
+PROFILE|large_1024_rgb_97.j2k|total30531|non_ff30373|stuffed158|markers59|eof262|non_ff_pct99.4825
+PROFILE|p24_sl_128_rgba_97.j2k|total1661|non_ff1643|stuffed18|markers10|eof56|non_ff_pct98.9163
+PROFILE|p31_large_1024_rgb_97.j2k|total30531|non_ff30373|stuffed158|markers59|eof262|non_ff_pct99.4825
+test t1::mq::byte_in_profile_real_fixtures ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 115 filtered out; finished in 0.02s
+

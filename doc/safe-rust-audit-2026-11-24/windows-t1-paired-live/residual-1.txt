@@ -1,0 +1,8 @@
+DIAGNOSTIC: third slot is old-safe f64, NOT unchanged original control; percent columns new/old_safe,new/reference,old_safe/reference
+decode|sl_64_rgb_97.j2k|r0|cutfalse|w1|51.3062|52.8469|52.6719|+0.617%|+1.286%|+0.071%|same
+decode|sl_128_rgba_97.j2k|r0|cutfalse|w1|109.3281|113.8906|113.0625|+0.849%|+3.996%|+3.519%|same
+decode|sl_128_rgba_97.j2k|r2|cutfalse|w1|55.5062|58.7781|58.6594|+0.340%|+1.702%|+6.082%|same
+packed|sl_128_rgba_97.j2k|r0|channels3|86.3438|88.7563|90.1562|-1.390%|+0.625%|-3.098%|same
+packed|sl_128_rgba_97.j2k|r0|channels4|116.9562|121.5250|122.3687|+0.694%|+3.906%|+5.863%|same
+encode|32|reversibletrue|132.5312|131.3187|130.6625|+1.680%|+2.027%|-0.472%|same
+encode|32|reversiblefalse|138.1219|139.6969|137.5656|+1.517%|+1.223%|-1.338%|same

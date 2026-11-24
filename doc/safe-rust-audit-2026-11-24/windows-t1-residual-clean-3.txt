@@ -1,0 +1,7 @@
+decode|sl_64_rgb_97.j2k|r0|cutfalse|w1|51.6844|52.4625|53.0531|+0.565%|+0.758%|same
+decode|sl_128_rgba_97.j2k|r0|cutfalse|w1|110.0688|113.4813|115.0594|+3.592%|+4.277%|same
+decode|sl_128_rgba_97.j2k|r2|cutfalse|w1|55.9344|58.4781|58.3344|+3.587%|+3.848%|same
+packed|sl_128_rgba_97.j2k|r0|channels3|86.1250|89.5625|89.7188|+4.019%|+5.042%|same
+packed|sl_128_rgba_97.j2k|r0|channels4|117.2687|121.2687|122.7438|+3.000%|+6.071%|same
+encode|32|reversibletrue|130.3000|129.8656|128.9406|+0.353%|-1.505%|same
+encode|32|reversiblefalse|139.2625|137.9594|138.4219|-0.875%|-0.470%|same

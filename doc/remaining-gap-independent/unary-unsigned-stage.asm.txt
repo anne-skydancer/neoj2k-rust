@@ -1,0 +1,147 @@
+
+/home/dev/safe-crate-audit/target-independent-stage-v3/release/neo-j2k-versions:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000114950 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_>:
+  114950:	test   %rsi,%rsi
+  114953:	je     114bda <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_+0x28a>
+  114959:	sub    %edx,%ecx
+  11495b:	vcvtsi2ss %ecx,%xmm15,%xmm10
+  11495f:	mov    %r8d,%eax
+  114962:	sub    %edx,%eax
+  114964:	vcvtsi2ss %eax,%xmm15,%xmm1
+  114968:	lea    0x0(,%rsi,4),%r10
+  114970:	add    $0x74c00000,%edx
+  114976:	add    $0xfffffffffffffffc,%r10
+  11497a:	mov    %rdi,%rax
+  11497d:	cmp    $0xc,%r10
+  114981:	jb     114b82 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_+0x232>
+  114987:	mov    %r10,%rcx
+  11498a:	shr    $0x2,%rcx
+  11498e:	inc    %rcx
+  114991:	movabs $0x7fffffffffffffe0,%r9
+  11499b:	vmovd  %edx,%xmm2
+  11499f:	vmovd  %r8d,%xmm0
+  1149a4:	cmp    $0x7c,%r10
+  1149a8:	jae    1149b2 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_+0x62>
+  1149aa:	xor    %r10d,%r10d
+  1149ad:	jmp    114b07 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_+0x1b7>
+  1149b2:	mov    %rcx,%r10
+  1149b5:	and    %r9,%r10
+  1149b8:	lea    (%rdi,%r10,4),%rax
+  1149bc:	vmovdqa %xmm2,-0x38(%rsp)
+  1149c2:	vpbroadcastd %xmm2,%ymm4
+  1149c7:	vmovaps %xmm10,-0x18(%rsp)
+  1149cd:	vbroadcastss %xmm10,%ymm5
+  1149d2:	vbroadcastss %xmm1,%ymm6
+  1149d7:	vmovdqa %xmm0,-0x28(%rsp)
+  1149dd:	vpbroadcastd %xmm0,%ymm7
+  1149e2:	xor    %r11d,%r11d
+  1149e5:	vbroadcastss -0xff162(%rip),%ymm8        # 1588c <GCC_except_table1004+0x22e8>
+  1149ee:	vbroadcastss -0xff1ab(%rip),%ymm9        # 1584c <GCC_except_table1004+0x22a8>
+  1149f7:	nopw   0x0(%rax,%rax,1)
+  114a00:	vmovups (%rdi,%r11,4),%ymm10
+  114a06:	vmovups 0x20(%rdi,%r11,4),%ymm11
+  114a0d:	vmovups 0x40(%rdi,%r11,4),%ymm12
+  114a14:	vmovups 0x60(%rdi,%r11,4),%ymm13
+  114a1b:	vmaxps %ymm5,%ymm10,%ymm10
+  114a1f:	vmaxps %ymm5,%ymm11,%ymm11
+  114a23:	vmaxps %ymm5,%ymm12,%ymm12
+  114a27:	vmaxps %ymm5,%ymm13,%ymm13
+  114a2b:	vminps %ymm6,%ymm10,%ymm10
+  114a2f:	vminps %ymm6,%ymm11,%ymm11
+  114a33:	vminps %ymm6,%ymm12,%ymm12
+  114a37:	vminps %ymm6,%ymm13,%ymm13
+  114a3b:	vaddps %ymm8,%ymm10,%ymm14
+  114a40:	vaddps %ymm8,%ymm11,%ymm15
+  114a45:	vaddps %ymm8,%ymm12,%ymm2
+  114a4a:	vaddps %ymm8,%ymm13,%ymm3
+  114a4f:	vsubps %ymm14,%ymm9,%ymm0
+  114a54:	vaddps %ymm0,%ymm10,%ymm0
+  114a58:	vsubps %ymm15,%ymm9,%ymm10
+  114a5d:	vaddps %ymm10,%ymm11,%ymm10
+  114a62:	vsubps %ymm2,%ymm9,%ymm11
+  114a66:	vaddps %ymm11,%ymm12,%ymm11
+  114a6b:	vsubps %ymm3,%ymm9,%ymm12
+  114a6f:	vaddps %ymm12,%ymm13,%ymm12
+  114a74:	vpslld $0x8,%ymm14,%ymm13
+  114a7a:	vpaddd %ymm4,%ymm13,%ymm13
+  114a7e:	vpaddd %ymm0,%ymm13,%ymm0
+  114a82:	vpslld $0x8,%ymm15,%ymm13
+  114a88:	vpaddd %ymm4,%ymm13,%ymm13
+  114a8c:	vpaddd %ymm10,%ymm13,%ymm10
+  114a91:	vpslld $0x8,%ymm2,%ymm2
+  114a96:	vpaddd %ymm2,%ymm4,%ymm2
+  114a9a:	vpaddd %ymm2,%ymm11,%ymm2
+  114a9e:	vpminud %ymm7,%ymm0,%ymm0
+  114aa3:	vmovdqu %ymm0,(%rdi,%r11,4)
+  114aa9:	vpslld $0x8,%ymm3,%ymm0
+  114aae:	vpaddd %ymm0,%ymm4,%ymm0
+  114ab2:	vpaddd %ymm0,%ymm12,%ymm0
+  114ab6:	vpminud %ymm7,%ymm10,%ymm3
+  114abb:	vmovdqu %ymm3,0x20(%rdi,%r11,4)
+  114ac2:	vpminud %ymm7,%ymm2,%ymm2
+  114ac7:	vmovdqu %ymm2,0x40(%rdi,%r11,4)
+  114ace:	vpminud %ymm7,%ymm0,%ymm0
+  114ad3:	vmovdqu %ymm0,0x60(%rdi,%r11,4)
+  114ada:	add    $0x20,%r11
+  114ade:	cmp    %r11,%r10
+  114ae1:	jne    114a00 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_+0xb0>
+  114ae7:	cmp    %r10,%rcx
+  114aea:	vmovaps -0x18(%rsp),%xmm10
+  114af0:	vmovdqa -0x28(%rsp),%xmm0
+  114af6:	vmovdqa -0x38(%rsp),%xmm2
+  114afc:	je     114bda <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_+0x28a>
+  114b02:	test   $0x1c,%cl
+  114b05:	je     114b82 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_+0x232>
+  114b07:	add    $0x1c,%r9
+  114b0b:	and    %rcx,%r9
+  114b0e:	lea    (%rdi,%r9,4),%rax
+  114b12:	vpbroadcastd %xmm2,%xmm3
+  114b17:	vbroadcastss %xmm10,%xmm4
+  114b1c:	vbroadcastss %xmm1,%xmm5
+  114b21:	vpbroadcastd %xmm0,%xmm2
+  114b26:	vbroadcastss -0xff2a3(%rip),%xmm6        # 1588c <GCC_except_table1004+0x22e8>
+  114b2f:	vbroadcastss -0xff2ec(%rip),%xmm7        # 1584c <GCC_except_table1004+0x22a8>
+  114b38:	nopl   0x0(%rax,%rax,1)
+  114b40:	vmovups (%rdi,%r10,4),%xmm0
+  114b46:	vmaxps %xmm4,%xmm0,%xmm0
+  114b4a:	vminps %xmm5,%xmm0,%xmm0
+  114b4e:	vaddps %xmm6,%xmm0,%xmm8
+  114b52:	vsubps %xmm8,%xmm7,%xmm9
+  114b57:	vaddps %xmm0,%xmm9,%xmm0
+  114b5b:	vpslld $0x8,%xmm8,%xmm8
+  114b61:	vpaddd %xmm3,%xmm8,%xmm8
+  114b65:	vpaddd %xmm0,%xmm8,%xmm0
+  114b69:	vpminud %xmm2,%xmm0,%xmm0
+  114b6e:	vmovdqu %xmm0,(%rdi,%r10,4)
+  114b74:	add    $0x4,%r10
+  114b78:	cmp    %r10,%r9
+  114b7b:	jne    114b40 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_+0x1f0>
+  114b7d:	cmp    %r9,%rcx
+  114b80:	je     114bda <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_+0x28a>
+  114b82:	lea    (%rdi,%rsi,4),%rcx
+  114b86:	vmovss -0xff302(%rip),%xmm2        # 1588c <GCC_except_table1004+0x22e8>
+  114b8e:	vmovss -0xff34a(%rip),%xmm3        # 1584c <GCC_except_table1004+0x22a8>
+  114b96:	cs nopw 0x0(%rax,%rax,1)
+  114ba0:	vmovss (%rax),%xmm0
+  114ba4:	vmaxss %xmm10,%xmm0,%xmm0
+  114ba9:	vminss %xmm1,%xmm0,%xmm0
+  114bad:	vaddss %xmm2,%xmm0,%xmm4
+  114bb1:	vsubss %xmm4,%xmm3,%xmm5
+  114bb5:	vaddss %xmm5,%xmm0,%xmm0
+  114bb9:	vmovd  %xmm4,%esi
+  114bbd:	shl    $0x8,%esi
+  114bc0:	vmovd  %xmm0,%edi
+  114bc4:	add    %edx,%esi
+  114bc6:	add    %edi,%esi
+  114bc8:	cmp    %r8d,%esi
+  114bcb:	cmovae %r8d,%esi
+  114bcf:	mov    %esi,(%rax)
+  114bd1:	add    $0x4,%rax
+  114bd5:	cmp    %rcx,%rax
+  114bd8:	jne    114ba0 <_RINvNtNtCsizVqlDxAocH_7neo_j2k4simd3mct17level_shift_typedKb0_EB6_+0x250>
+  114bda:	vzeroupper
+  114bdd:	ret

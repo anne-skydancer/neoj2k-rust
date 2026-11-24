@@ -1,0 +1,74 @@
+// SPDX-License-Identifier: BSD-2-Clause
+// Copyright (c) 2026, Anne Skydancer (neo-j2k)
+//! Fixed lanes expressed as safe arrays for release auto-vectorization.
+pub(super) type IntLanes = [i32; 8];
+pub(super) type FloatLanes = [f32; 8];
+#[inline(always)]
+pub(super) fn add_i32(a: IntLanes, b: IntLanes) -> IntLanes {
+    core::array::from_fn(|i| a[i].wrapping_add(b[i]))
+}
+#[inline(always)]
+pub(super) fn sub_i32(a: IntLanes, b: IntLanes) -> IntLanes {
+    core::array::from_fn(|i| a[i].wrapping_sub(b[i]))
+}
+#[inline(always)]
+pub(super) fn arithmetic_right<const N: u32>(a: IntLanes) -> IntLanes {
+    a.map(|x| x >> N)
+}
+#[cfg(target_feature = "avx2")]
+#[inline(always)]
+pub(super) fn logical_right<const N: u32>(a: IntLanes) -> IntLanes {
+    a.map(|x| (x.cast_unsigned() >> N).cast_signed())
+}
+#[cfg(target_feature = "avx2")]
+#[inline(always)]
+pub(super) fn splat_i32(a: i32) -> IntLanes {
+    [a; 8]
+}
+#[cfg(target_feature = "avx2")]
+#[inline(always)]
+pub(super) fn splat_f32(a: f32) -> FloatLanes {
+    [a; 8]
+}
+#[cfg(target_feature = "avx2")]
+#[inline(always)]
+pub(super) fn add_f32(a: FloatLanes, b: FloatLanes) -> FloatLanes {
+    core::array::from_fn(|i| a[i] + b[i])
+}
+#[cfg(target_feature = "avx2")]
+#[inline(always)]
+pub(super) fn mul_f32(a: FloatLanes, b: FloatLanes) -> FloatLanes {
+    core::array::from_fn(|i| a[i] * b[i])
+}
+// Explicit bitcasts avoid out-of-line array::map helpers under inlining pressure.
+#[inline(always)]
+pub(super) fn float_bits([a, b, c, d, e, f, g, h]: FloatLanes) -> IntLanes {
+    [
+        a.to_bits().cast_signed(),
+        b.to_bits().cast_signed(),
+        c.to_bits().cast_signed(),
+        d.to_bits().cast_signed(),
+        e.to_bits().cast_signed(),
+        f.to_bits().cast_signed(),
+        g.to_bits().cast_signed(),
+        h.to_bits().cast_signed(),
+    ]
+}
+#[inline(always)]
+pub(super) fn from_float_bits([a, b, c, d, e, f, g, h]: IntLanes) -> FloatLanes {
+    [
+        f32::from_bits(a.cast_unsigned()),
+        f32::from_bits(b.cast_unsigned()),
+        f32::from_bits(c.cast_unsigned()),
+        f32::from_bits(d.cast_unsigned()),
+        f32::from_bits(e.cast_unsigned()),
+        f32::from_bits(f.cast_unsigned()),
+        f32::from_bits(g.cast_unsigned()),
+        f32::from_bits(h.cast_unsigned()),
+    ]
+}
+#[cfg(target_feature = "avx2")]
+#[inline(always)]
+pub(super) fn to_f32(a: IntLanes) -> FloatLanes {
+    a.map(|x| x as f32)
+}

@@ -1,0 +1,5 @@
+# Rejected fused DWT stream experiment
+
+These are external diagnostic kernels, not production changes. Fusing the four lifting stages in an even-origin streaming recurrence passes 142 independent original/current/raw-bit comparisons covering odd/even lengths, parity, stride and randomized finite exponents. The recurrence keeps too much vector state live: default lowering has many stack references. A compiler-only fence constrains widening and improves it, but remains roughly 8–14% slower than the best safe dense kernel, so neither variant was adopted. Odd-origin uses the existing kernel.
+
+The real-strides diagnostic includes original/reference and identical current/control kernels. It resets only active rows, so large padding does not dominate timing. Best safe horizontal32 at stride128 remains roughly 13–15% behind original;64 stride128 around9%;128 around6%. These are kernel diagnostics, not whole-decoder percentages. An extra raw-gather/scaling pass was also slower20–30% and rejected. No production DWT changes resulted from these probes.

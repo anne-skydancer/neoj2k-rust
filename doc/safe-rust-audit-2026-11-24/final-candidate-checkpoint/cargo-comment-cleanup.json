@@ -1,0 +1,6 @@
+{
+  "file": "neo-j2k/Cargo.toml",
+  "change": "comment only: SIMD description now matches safe vectorizable kernels; features/dependencies unchanged",
+  "before_sha256": "7a25e5bcb9ef2d8aacb174731e2a27f5e045b57d13e7100ddd0ede95e2b42390",
+  "after_sha256": "1b9e2559a4769e323b352a723b65175a48986e325af5da5aa4aa3a4817d5b34c"
+}

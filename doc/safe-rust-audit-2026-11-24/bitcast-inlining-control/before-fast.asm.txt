@@ -1,0 +1,533 @@
+
+identical-four-way:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+0000000000018d90 <identical_four_way::safe::kernel::inverse_and_finish>:
+   18d90:	55                   	push   %rbp
+   18d91:	41 57                	push   %r15
+   18d93:	41 56                	push   %r14
+   18d95:	41 55                	push   %r13
+   18d97:	41 54                	push   %r12
+   18d99:	53                   	push   %rbx
+   18d9a:	48 83 ec 38          	sub    $0x38,%rsp
+   18d9e:	48 8b 0f             	mov    (%rdi),%rcx
+   18da1:	48 8b 5f 08          	mov    0x8(%rdi),%rbx
+   18da5:	4c 8b 47 10          	mov    0x10(%rdi),%r8
+   18da9:	48 8b 47 18          	mov    0x18(%rdi),%rax
+   18dad:	4c 8b 4f 20          	mov    0x20(%rdi),%r9
+   18db1:	4c 8b 5f 28          	mov    0x28(%rdi),%r11
+   18db5:	48 c1 eb 03          	shr    $0x3,%rbx
+   18db9:	48 c1 e8 03          	shr    $0x3,%rax
+   18dbd:	49 c1 eb 03          	shr    $0x3,%r11
+   18dc1:	85 f6                	test   %esi,%esi
+   18dc3:	0f 84 55 01 00 00    	je     18f1e <identical_four_way::safe::kernel::inverse_and_finish+0x18e>
+   18dc9:	48 39 c3             	cmp    %rax,%rbx
+   18dcc:	48 0f 42 c3          	cmovb  %rbx,%rax
+   18dd0:	4c 39 d8             	cmp    %r11,%rax
+   18dd3:	49 0f 43 c3          	cmovae %r11,%rax
+   18dd7:	48 85 c0             	test   %rax,%rax
+   18dda:	0f 84 13 05 00 00    	je     192f3 <identical_four_way::safe::kernel::inverse_and_finish+0x563>
+   18de0:	44 8b 1a             	mov    (%rdx),%r11d
+   18de3:	8b 6a 04             	mov    0x4(%rdx),%ebp
+   18de6:	8b 5a 08             	mov    0x8(%rdx),%ebx
+   18de9:	44 29 dd             	sub    %r11d,%ebp
+   18dec:	44 29 db             	sub    %r11d,%ebx
+   18def:	39 dd                	cmp    %ebx,%ebp
+   18df1:	0f 8f a8 08 00 00    	jg     1969f <identical_four_way::safe::kernel::inverse_and_finish+0x90f>
+   18df7:	44 8b 72 0c          	mov    0xc(%rdx),%r14d
+   18dfb:	8b 72 10             	mov    0x10(%rdx),%esi
+   18dfe:	8b 7a 14             	mov    0x14(%rdx),%edi
+   18e01:	44 8b 7a 18          	mov    0x18(%rdx),%r15d
+   18e05:	44 8b 52 1c          	mov    0x1c(%rdx),%r10d
+   18e09:	8b 52 20             	mov    0x20(%rdx),%edx
+   18e0c:	44 29 f6             	sub    %r14d,%esi
+   18e0f:	44 29 f7             	sub    %r14d,%edi
+   18e12:	45 29 fa             	sub    %r15d,%r10d
+   18e15:	44 29 fa             	sub    %r15d,%edx
+   18e18:	c5 f9 6e c5          	vmovd  %ebp,%xmm0
+   18e1c:	c4 e2 7d 58 c0       	vpbroadcastd %xmm0,%ymm0
+   18e21:	c5 f9 6e cb          	vmovd  %ebx,%xmm1
+   18e25:	c4 e2 7d 58 c9       	vpbroadcastd %xmm1,%ymm1
+   18e2a:	c4 c1 79 6e d3       	vmovd  %r11d,%xmm2
+   18e2f:	c4 e2 7d 58 d2       	vpbroadcastd %xmm2,%ymm2
+   18e34:	c5 f9 6e de          	vmovd  %esi,%xmm3
+   18e38:	c4 e2 7d 58 db       	vpbroadcastd %xmm3,%ymm3
+   18e3d:	c5 f9 6e e7          	vmovd  %edi,%xmm4
+   18e41:	c4 e2 7d 58 e4       	vpbroadcastd %xmm4,%ymm4
+   18e46:	c4 c1 79 6e ee       	vmovd  %r14d,%xmm5
+   18e4b:	c4 e2 7d 58 ed       	vpbroadcastd %xmm5,%ymm5
+   18e50:	c4 c1 79 6e f2       	vmovd  %r10d,%xmm6
+   18e55:	c4 e2 7d 58 f6       	vpbroadcastd %xmm6,%ymm6
+   18e5a:	c5 f9 6e fa          	vmovd  %edx,%xmm7
+   18e5e:	c4 e2 7d 58 ff       	vpbroadcastd %xmm7,%ymm7
+   18e63:	c4 41 79 6e c7       	vmovd  %r15d,%xmm8
+   18e68:	c4 42 7d 58 c0       	vpbroadcastd %xmm8,%ymm8
+   18e6d:	45 31 db             	xor    %r11d,%r11d
+   18e70:	48 89 c3             	mov    %rax,%rbx
+   18e73:	66 66 66 66 2e 0f 1f 	data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   18e7a:	84 00 00 00 00 00 
+   18e80:	c4 21 7e 6f 14 19    	vmovdqu (%rcx,%r11,1),%ymm10
+   18e86:	c4 01 7e 6f 0c 18    	vmovdqu (%r8,%r11,1),%ymm9
+   18e8c:	c4 01 7e 6f 1c 19    	vmovdqu (%r9,%r11,1),%ymm11
+   18e92:	c4 41 25 fe e1       	vpaddd %ymm9,%ymm11,%ymm12
+   18e97:	c4 c1 1d 72 e4 02    	vpsrad $0x2,%ymm12,%ymm12
+   18e9d:	c4 41 2d fa d4       	vpsubd %ymm12,%ymm10,%ymm10
+   18ea2:	c4 41 2d fe db       	vpaddd %ymm11,%ymm10,%ymm11
+   18ea7:	c4 41 7d 66 e3       	vpcmpgtd %ymm11,%ymm0,%ymm12
+   18eac:	c4 62 25 39 d9       	vpminsd %ymm1,%ymm11,%ymm11
+   18eb1:	c4 63 25 4a d8 c0    	vblendvps %ymm12,%ymm0,%ymm11,%ymm11
+   18eb7:	c5 25 fe da          	vpaddd %ymm2,%ymm11,%ymm11
+   18ebb:	c4 21 7e 7f 1c 19    	vmovdqu %ymm11,(%rcx,%r11,1)
+   18ec1:	39 fe                	cmp    %edi,%esi
+   18ec3:	0f 8f 82 07 00 00    	jg     1964b <identical_four_way::safe::kernel::inverse_and_finish+0x8bb>
+   18ec9:	c4 41 65 66 da       	vpcmpgtd %ymm10,%ymm3,%ymm11
+   18ece:	c4 62 2d 39 e4       	vpminsd %ymm4,%ymm10,%ymm12
+   18ed3:	c4 63 1d 4a db b0    	vblendvps %ymm11,%ymm3,%ymm12,%ymm11
+   18ed9:	c5 25 fe dd          	vpaddd %ymm5,%ymm11,%ymm11
+   18edd:	c4 01 7e 7f 1c 18    	vmovdqu %ymm11,(%r8,%r11,1)
+   18ee3:	41 39 d2             	cmp    %edx,%r10d
+   18ee6:	0f 8f 69 07 00 00    	jg     19655 <identical_four_way::safe::kernel::inverse_and_finish+0x8c5>
+   18eec:	c4 41 2d fe c9       	vpaddd %ymm9,%ymm10,%ymm9
+   18ef1:	c4 41 4d 66 d1       	vpcmpgtd %ymm9,%ymm6,%ymm10
+   18ef6:	c4 62 35 39 cf       	vpminsd %ymm7,%ymm9,%ymm9
+   18efb:	c4 63 35 4a ce a0    	vblendvps %ymm10,%ymm6,%ymm9,%ymm9
+   18f01:	c4 41 35 fe c8       	vpaddd %ymm8,%ymm9,%ymm9
+   18f06:	c4 01 7e 7f 0c 19    	vmovdqu %ymm9,(%r9,%r11,1)
+   18f0c:	49 83 c3 20          	add    $0x20,%r11
+   18f10:	48 ff cb             	dec    %rbx
+   18f13:	0f 85 67 ff ff ff    	jne    18e80 <identical_four_way::safe::kernel::inverse_and_finish+0xf0>
+   18f19:	e9 d7 03 00 00       	jmp    192f5 <identical_four_way::safe::kernel::inverse_and_finish+0x565>
+   18f1e:	44 8b 12             	mov    (%rdx),%r10d
+   18f21:	44 8b 72 04          	mov    0x4(%rdx),%r14d
+   18f25:	8b 7a 0c             	mov    0xc(%rdx),%edi
+   18f28:	8b 6a 10             	mov    0x10(%rdx),%ebp
+   18f2b:	45 29 d6             	sub    %r10d,%r14d
+   18f2e:	41 81 fe 00 00 c0 ff 	cmp    $0xffc00000,%r14d
+   18f35:	44 89 54 24 14       	mov    %r10d,0x14(%rsp)
+   18f3a:	7c 22                	jl     18f5e <identical_four_way::safe::kernel::inverse_and_finish+0x1ce>
+   18f3c:	8b 72 08             	mov    0x8(%rdx),%esi
+   18f3f:	44 29 d6             	sub    %r10d,%esi
+   18f42:	81 fe 00 00 40 00    	cmp    $0x400000,%esi
+   18f48:	7f 14                	jg     18f5e <identical_four_way::safe::kernel::inverse_and_finish+0x1ce>
+   18f4a:	c4 c1 79 6e c6       	vmovd  %r14d,%xmm0
+   18f4f:	c4 e3 79 22 c6 01    	vpinsrd $0x1,%esi,%xmm0,%xmm0
+   18f55:	c5 f8 5b c0          	vcvtdq2ps %xmm0,%xmm0
+   18f59:	41 b5 01             	mov    $0x1,%r13b
+   18f5c:	eb 03                	jmp    18f61 <identical_four_way::safe::kernel::inverse_and_finish+0x1d1>
+   18f5e:	45 31 ed             	xor    %r13d,%r13d
+   18f61:	44 8b 62 14          	mov    0x14(%rdx),%r12d
+   18f65:	44 8b 52 18          	mov    0x18(%rdx),%r10d
+   18f69:	44 8b 7a 1c          	mov    0x1c(%rdx),%r15d
+   18f6d:	29 fd                	sub    %edi,%ebp
+   18f6f:	81 fd 00 00 c0 ff    	cmp    $0xffc00000,%ebp
+   18f75:	89 7c 24 08          	mov    %edi,0x8(%rsp)
+   18f79:	7c 2f                	jl     18faa <identical_four_way::safe::kernel::inverse_and_finish+0x21a>
+   18f7b:	44 89 e6             	mov    %r12d,%esi
+   18f7e:	29 fe                	sub    %edi,%esi
+   18f80:	81 fe 00 00 40 00    	cmp    $0x400000,%esi
+   18f86:	7f 22                	jg     18faa <identical_four_way::safe::kernel::inverse_and_finish+0x21a>
+   18f88:	c5 f9 6e cd          	vmovd  %ebp,%xmm1
+   18f8c:	c4 e3 71 22 ce 01    	vpinsrd $0x1,%esi,%xmm1,%xmm1
+   18f92:	c5 f8 5b c9          	vcvtdq2ps %xmm1,%xmm1
+   18f96:	8b 72 20             	mov    0x20(%rdx),%esi
+   18f99:	45 29 d7             	sub    %r10d,%r15d
+   18f9c:	41 81 ff 00 00 c0 ff 	cmp    $0xffc00000,%r15d
+   18fa3:	7d 1b                	jge    18fc0 <identical_four_way::safe::kernel::inverse_and_finish+0x230>
+   18fa5:	e9 81 01 00 00       	jmp    1912b <identical_four_way::safe::kernel::inverse_and_finish+0x39b>
+   18faa:	45 31 ed             	xor    %r13d,%r13d
+   18fad:	8b 72 20             	mov    0x20(%rdx),%esi
+   18fb0:	45 29 d7             	sub    %r10d,%r15d
+   18fb3:	41 81 ff 00 00 c0 ff 	cmp    $0xffc00000,%r15d
+   18fba:	0f 8c 6b 01 00 00    	jl     1912b <identical_four_way::safe::kernel::inverse_and_finish+0x39b>
+   18fc0:	89 f7                	mov    %esi,%edi
+   18fc2:	44 29 d7             	sub    %r10d,%edi
+   18fc5:	81 ff 00 00 40 00    	cmp    $0x400000,%edi
+   18fcb:	0f 8f 5a 01 00 00    	jg     1912b <identical_four_way::safe::kernel::inverse_and_finish+0x39b>
+   18fd1:	45 84 ed             	test   %r13b,%r13b
+   18fd4:	0f 84 51 01 00 00    	je     1912b <identical_four_way::safe::kernel::inverse_and_finish+0x39b>
+   18fda:	48 39 c3             	cmp    %rax,%rbx
+   18fdd:	48 0f 42 c3          	cmovb  %rbx,%rax
+   18fe1:	4c 39 d8             	cmp    %r11,%rax
+   18fe4:	49 0f 43 c3          	cmovae %r11,%rax
+   18fe8:	48 85 c0             	test   %rax,%rax
+   18feb:	0f 84 02 03 00 00    	je     192f3 <identical_four_way::safe::kernel::inverse_and_finish+0x563>
+   18ff1:	c5 82 2a d7          	vcvtsi2ss %edi,%xmm15,%xmm2
+   18ff5:	c4 c1 02 2a df       	vcvtsi2ss %r15d,%xmm15,%xmm3
+   18ffa:	44 8b 7c 24 14       	mov    0x14(%rsp),%r15d
+   18fff:	41 81 c7 00 00 c0 b4 	add    $0xb4c00000,%r15d
+   19006:	81 44 24 08 00 00 c0 	addl   $0xb4c00000,0x8(%rsp)
+   1900d:	b4 
+   1900e:	41 81 c2 00 00 c0 b4 	add    $0xb4c00000,%r10d
+   19015:	48 83 f8 07          	cmp    $0x7,%rax
+   19019:	0f 87 c8 04 00 00    	ja     194e7 <identical_four_way::safe::kernel::inverse_and_finish+0x757>
+   1901f:	c4 e2 7d 18 e0       	vbroadcastss %xmm0,%ymm4
+   19024:	c4 e2 7d 18 3d 17 cd 	vbroadcastss -0x132e9(%rip),%ymm7        # 5d44 <__abi_tag+0x5a48>
+   1902b:	fe ff 
+   1902d:	c4 e2 45 16 c0       	vpermps %ymm0,%ymm7,%ymm0
+   19032:	c4 c1 79 6e ef       	vmovd  %r15d,%xmm5
+   19037:	c4 e2 7d 58 ed       	vpbroadcastd %xmm5,%ymm5
+   1903c:	c4 e2 7d 18 f1       	vbroadcastss %xmm1,%ymm6
+   19041:	c4 e2 45 16 c9       	vpermps %ymm1,%ymm7,%ymm1
+   19046:	c5 f9 6e 7c 24 08    	vmovd  0x8(%rsp),%xmm7
+   1904c:	c4 e2 7d 58 ff       	vpbroadcastd %xmm7,%ymm7
+   19051:	c4 e2 7d 18 db       	vbroadcastss %xmm3,%ymm3
+   19056:	c4 e2 7d 18 d2       	vbroadcastss %xmm2,%ymm2
+   1905b:	c4 41 79 6e c2       	vmovd  %r10d,%xmm8
+   19060:	c4 42 7d 58 c0       	vpbroadcastd %xmm8,%ymm8
+   19065:	31 d2                	xor    %edx,%edx
+   19067:	c4 62 7d 18 15 f8 cc 	vbroadcastss -0x13308(%rip),%ymm10        # 5d68 <__abi_tag+0x5a6c>
+   1906e:	fe ff 
+   19070:	c4 62 7d 18 2d ab cc 	vbroadcastss -0x13355(%rip),%ymm13        # 5d24 <__abi_tag+0x5a28>
+   19077:	fe ff 
+   19079:	48 89 c6             	mov    %rax,%rsi
+   1907c:	0f 1f 40 00          	nopl   0x0(%rax)
+   19080:	c4 41 7c 10 34 11    	vmovups (%r9,%rdx,1),%ymm14
+   19086:	c5 7c 10 3c 11       	vmovups (%rcx,%rdx,1),%ymm15
+   1908b:	c4 41 7c 10 0c 10    	vmovups (%r8,%rdx,1),%ymm9
+   19091:	c4 62 7d 18 1d de cc 	vbroadcastss -0x13322(%rip),%ymm11        # 5d78 <__abi_tag+0x5a7c>
+   19098:	fe ff 
+   1909a:	c4 41 34 59 db       	vmulps %ymm11,%ymm9,%ymm11
+   1909f:	c4 41 04 58 db       	vaddps %ymm11,%ymm15,%ymm11
+   190a4:	c4 62 7d 18 25 7b cc 	vbroadcastss -0x13385(%rip),%ymm12        # 5d28 <__abi_tag+0x5a2c>
+   190ab:	fe ff 
+   190ad:	c4 41 0c 59 e4       	vmulps %ymm12,%ymm14,%ymm12
+   190b2:	c4 41 24 58 dc       	vaddps %ymm12,%ymm11,%ymm11
+   190b7:	c4 62 7d 18 25 80 cc 	vbroadcastss -0x13380(%rip),%ymm12        # 5d40 <__abi_tag+0x5a44>
+   190be:	fe ff 
+   190c0:	c4 41 0c 59 e4       	vmulps %ymm12,%ymm14,%ymm12
+   190c5:	c4 41 1c 58 e7       	vaddps %ymm15,%ymm12,%ymm12
+   190ca:	c5 1c 5f e4          	vmaxps %ymm4,%ymm12,%ymm12
+   190ce:	c5 1c 5d e0          	vminps %ymm0,%ymm12,%ymm12
+   190d2:	c4 41 1c 58 e2       	vaddps %ymm10,%ymm12,%ymm12
+   190d7:	c5 1d fe e5          	vpaddd %ymm5,%ymm12,%ymm12
+   190db:	c5 7e 7f 24 11       	vmovdqu %ymm12,(%rcx,%rdx,1)
+   190e0:	c5 24 5f de          	vmaxps %ymm6,%ymm11,%ymm11
+   190e4:	c5 24 5d d9          	vminps %ymm1,%ymm11,%ymm11
+   190e8:	c4 41 24 58 da       	vaddps %ymm10,%ymm11,%ymm11
+   190ed:	c5 25 fe df          	vpaddd %ymm7,%ymm11,%ymm11
+   190f1:	c4 41 7e 7f 1c 10    	vmovdqu %ymm11,(%r8,%rdx,1)
+   190f7:	c4 41 34 59 cd       	vmulps %ymm13,%ymm9,%ymm9
+   190fc:	c4 41 34 58 cf       	vaddps %ymm15,%ymm9,%ymm9
+   19101:	c5 34 5f cb          	vmaxps %ymm3,%ymm9,%ymm9
+   19105:	c5 34 5d ca          	vminps %ymm2,%ymm9,%ymm9
+   19109:	c4 41 34 58 ca       	vaddps %ymm10,%ymm9,%ymm9
+   1910e:	c4 41 3d fe c9       	vpaddd %ymm9,%ymm8,%ymm9
+   19113:	c4 41 7e 7f 0c 11    	vmovdqu %ymm9,(%r9,%rdx,1)
+   19119:	48 83 c2 20          	add    $0x20,%rdx
+   1911d:	48 ff ce             	dec    %rsi
+   19120:	0f 85 5a ff ff ff    	jne    19080 <identical_four_way::safe::kernel::inverse_and_finish+0x2f0>
+   19126:	e9 ca 01 00 00       	jmp    192f5 <identical_four_way::safe::kernel::inverse_and_finish+0x565>
+   1912b:	48 39 c3             	cmp    %rax,%rbx
+   1912e:	48 0f 42 c3          	cmovb  %rbx,%rax
+   19132:	4c 39 d8             	cmp    %r11,%rax
+   19135:	49 0f 43 c3          	cmovae %r11,%rax
+   19139:	48 85 c0             	test   %rax,%rax
+   1913c:	0f 84 b1 01 00 00    	je     192f3 <identical_four_way::safe::kernel::inverse_and_finish+0x563>
+   19142:	c4 c1 03 2a ce       	vcvtsi2sd %r14d,%xmm15,%xmm1
+   19147:	8b 52 08             	mov    0x8(%rdx),%edx
+   1914a:	44 8b 6c 24 14       	mov    0x14(%rsp),%r13d
+   1914f:	44 29 ea             	sub    %r13d,%edx
+   19152:	c5 83 2a d2          	vcvtsi2sd %edx,%xmm15,%xmm2
+   19156:	c5 83 2a e5          	vcvtsi2sd %ebp,%xmm15,%xmm4
+   1915a:	44 2b 64 24 08       	sub    0x8(%rsp),%r12d
+   1915f:	c4 c1 03 2a ec       	vcvtsi2sd %r12d,%xmm15,%xmm5
+   19164:	c4 c1 03 2a ff       	vcvtsi2sd %r15d,%xmm15,%xmm7
+   19169:	44 29 d6             	sub    %r10d,%esi
+   1916c:	c5 03 2a c6          	vcvtsi2sd %esi,%xmm15,%xmm8
+   19170:	48 83 f8 07          	cmp    $0x7,%rax
+   19174:	0f 87 91 01 00 00    	ja     1930b <identical_four_way::safe::kernel::inverse_and_finish+0x57b>
+   1917a:	c4 e2 7d 19 c1       	vbroadcastsd %xmm1,%ymm0
+   1917f:	c4 e2 7d 19 ca       	vbroadcastsd %xmm2,%ymm1
+   19184:	c4 c1 79 6e d5       	vmovd  %r13d,%xmm2
+   19189:	c4 e2 7d 58 d2       	vpbroadcastd %xmm2,%ymm2
+   1918e:	c4 e2 7d 19 dc       	vbroadcastsd %xmm4,%ymm3
+   19193:	c4 e2 7d 19 e5       	vbroadcastsd %xmm5,%ymm4
+   19198:	c5 f9 6e 6c 24 08    	vmovd  0x8(%rsp),%xmm5
+   1919e:	c4 e2 7d 58 ed       	vpbroadcastd %xmm5,%ymm5
+   191a3:	c4 e2 7d 19 f7       	vbroadcastsd %xmm7,%ymm6
+   191a8:	c4 c2 7d 19 f8       	vbroadcastsd %xmm8,%ymm7
+   191ad:	c4 41 79 6e c2       	vmovd  %r10d,%xmm8
+   191b2:	c4 42 7d 58 c0       	vpbroadcastd %xmm8,%ymm8
+   191b7:	31 d2                	xor    %edx,%edx
+   191b9:	c4 62 7d 19 15 f6 cb 	vbroadcastsd -0x1340a(%rip),%ymm10        # 5db8 <__abi_tag+0x5abc>
+   191c0:	fe ff 
+   191c2:	48 89 c6             	mov    %rax,%rsi
+   191c5:	c4 62 7d 18 2d 5a cb 	vbroadcastss -0x134a6(%rip),%ymm13        # 5d28 <__abi_tag+0x5a2c>
+   191cc:	fe ff 
+   191ce:	66 90                	xchg   %ax,%ax
+   191d0:	c4 41 7c 10 3c 11    	vmovups (%r9,%rdx,1),%ymm15
+   191d6:	c5 7c 10 34 11       	vmovups (%rcx,%rdx,1),%ymm14
+   191db:	c4 62 7d 18 0d 5c cb 	vbroadcastss -0x134a4(%rip),%ymm9        # 5d40 <__abi_tag+0x5a44>
+   191e2:	fe ff 
+   191e4:	c4 41 04 59 c9       	vmulps %ymm9,%ymm15,%ymm9
+   191e9:	c4 41 34 58 ce       	vaddps %ymm14,%ymm9,%ymm9
+   191ee:	c4 41 7c 5a d9       	vcvtps2pd %xmm9,%ymm11
+   191f3:	c4 43 7d 19 c9 01    	vextractf128 $0x1,%ymm9,%xmm9
+   191f9:	c4 41 7c 5a c9       	vcvtps2pd %xmm9,%ymm9
+   191fe:	c5 35 5f c8          	vmaxpd %ymm0,%ymm9,%ymm9
+   19202:	c5 25 5f d8          	vmaxpd %ymm0,%ymm11,%ymm11
+   19206:	c5 25 5d d9          	vminpd %ymm1,%ymm11,%ymm11
+   1920a:	c5 35 5d c9          	vminpd %ymm1,%ymm9,%ymm9
+   1920e:	c4 41 35 58 ca       	vaddpd %ymm10,%ymm9,%ymm9
+   19213:	c4 41 25 58 da       	vaddpd %ymm10,%ymm11,%ymm11
+   19218:	c4 41 24 c6 c9 88    	vshufps $0x88,%ymm9,%ymm11,%ymm9
+   1921e:	c4 41 7c 10 1c 10    	vmovups (%r8,%rdx,1),%ymm11
+   19224:	c4 62 7d 18 25 4b cb 	vbroadcastss -0x134b5(%rip),%ymm12        # 5d78 <__abi_tag+0x5a7c>
+   1922b:	fe ff 
+   1922d:	c4 41 24 59 e4       	vmulps %ymm12,%ymm11,%ymm12
+   19232:	c4 41 0c 58 e4       	vaddps %ymm12,%ymm14,%ymm12
+   19237:	c4 41 04 59 fd       	vmulps %ymm13,%ymm15,%ymm15
+   1923c:	c4 41 1c 58 e7       	vaddps %ymm15,%ymm12,%ymm12
+   19241:	c4 43 fd 01 c9 d8    	vpermpd $0xd8,%ymm9,%ymm9
+   19247:	c5 35 fe ca          	vpaddd %ymm2,%ymm9,%ymm9
+   1924b:	c5 7e 7f 0c 11       	vmovdqu %ymm9,(%rcx,%rdx,1)
+   19250:	c4 41 7c 5a cc       	vcvtps2pd %xmm12,%ymm9
+   19255:	c4 43 7d 19 e4 01    	vextractf128 $0x1,%ymm12,%xmm12
+   1925b:	c4 41 7c 5a e4       	vcvtps2pd %xmm12,%ymm12
+   19260:	c5 1d 5f e3          	vmaxpd %ymm3,%ymm12,%ymm12
+   19264:	c5 35 5f cb          	vmaxpd %ymm3,%ymm9,%ymm9
+   19268:	c5 35 5d cc          	vminpd %ymm4,%ymm9,%ymm9
+   1926c:	c5 1d 5d e4          	vminpd %ymm4,%ymm12,%ymm12
+   19270:	c4 41 1d 58 e2       	vaddpd %ymm10,%ymm12,%ymm12
+   19275:	c4 41 35 58 ca       	vaddpd %ymm10,%ymm9,%ymm9
+   1927a:	c4 41 34 c6 cc 88    	vshufps $0x88,%ymm12,%ymm9,%ymm9
+   19280:	c4 43 fd 01 c9 d8    	vpermpd $0xd8,%ymm9,%ymm9
+   19286:	c5 35 fe cd          	vpaddd %ymm5,%ymm9,%ymm9
+   1928a:	c4 41 7e 7f 0c 10    	vmovdqu %ymm9,(%r8,%rdx,1)
+   19290:	c4 62 7d 18 0d 8b ca 	vbroadcastss -0x13575(%rip),%ymm9        # 5d24 <__abi_tag+0x5a28>
+   19297:	fe ff 
+   19299:	c4 41 24 59 c9       	vmulps %ymm9,%ymm11,%ymm9
+   1929e:	c4 41 34 58 ce       	vaddps %ymm14,%ymm9,%ymm9
+   192a3:	c4 41 7c 5a d9       	vcvtps2pd %xmm9,%ymm11
+   192a8:	c4 43 7d 19 c9 01    	vextractf128 $0x1,%ymm9,%xmm9
+   192ae:	c4 41 7c 5a c9       	vcvtps2pd %xmm9,%ymm9
+   192b3:	c5 35 5f ce          	vmaxpd %ymm6,%ymm9,%ymm9
+   192b7:	c5 25 5f de          	vmaxpd %ymm6,%ymm11,%ymm11
+   192bb:	c5 25 5d df          	vminpd %ymm7,%ymm11,%ymm11
+   192bf:	c5 35 5d cf          	vminpd %ymm7,%ymm9,%ymm9
+   192c3:	c4 41 35 58 ca       	vaddpd %ymm10,%ymm9,%ymm9
+   192c8:	c4 41 25 58 da       	vaddpd %ymm10,%ymm11,%ymm11
+   192cd:	c4 41 24 c6 c9 88    	vshufps $0x88,%ymm9,%ymm11,%ymm9
+   192d3:	c4 43 fd 01 c9 d8    	vpermpd $0xd8,%ymm9,%ymm9
+   192d9:	c4 41 3d fe c9       	vpaddd %ymm9,%ymm8,%ymm9
+   192de:	c4 41 7e 7f 0c 11    	vmovdqu %ymm9,(%r9,%rdx,1)
+   192e4:	48 83 c2 20          	add    $0x20,%rdx
+   192e8:	48 ff ce             	dec    %rsi
+   192eb:	0f 85 df fe ff ff    	jne    191d0 <identical_four_way::safe::kernel::inverse_and_finish+0x440>
+   192f1:	eb 02                	jmp    192f5 <identical_four_way::safe::kernel::inverse_and_finish+0x565>
+   192f3:	31 c0                	xor    %eax,%eax
+   192f5:	48 c1 e0 03          	shl    $0x3,%rax
+   192f9:	48 83 c4 38          	add    $0x38,%rsp
+   192fd:	5b                   	pop    %rbx
+   192fe:	41 5c                	pop    %r12
+   19300:	41 5d                	pop    %r13
+   19302:	41 5e                	pop    %r14
+   19304:	41 5f                	pop    %r15
+   19306:	5d                   	pop    %rbp
+   19307:	c5 f8 77             	vzeroupper
+   1930a:	c3                   	ret
+   1930b:	48 89 c2             	mov    %rax,%rdx
+   1930e:	48 c1 e2 05          	shl    $0x5,%rdx
+   19312:	48 8d 3c 11          	lea    (%rcx,%rdx,1),%rdi
+   19316:	49 8d 1c 10          	lea    (%r8,%rdx,1),%rbx
+   1931a:	4c 01 ca             	add    %r9,%rdx
+   1931d:	48 39 d9             	cmp    %rbx,%rcx
+   19320:	40 0f 92 c5          	setb   %bpl
+   19324:	49 39 f8             	cmp    %rdi,%r8
+   19327:	41 0f 92 c6          	setb   %r14b
+   1932b:	48 39 d1             	cmp    %rdx,%rcx
+   1932e:	40 0f 92 c6          	setb   %sil
+   19332:	49 39 f9             	cmp    %rdi,%r9
+   19335:	41 0f 92 c3          	setb   %r11b
+   19339:	49 39 d0             	cmp    %rdx,%r8
+   1933c:	0f 92 c2             	setb   %dl
+   1933f:	49 39 d9             	cmp    %rbx,%r9
+   19342:	40 0f 92 c7          	setb   %dil
+   19346:	44 84 f5             	test   %r14b,%bpl
+   19349:	0f 85 2b fe ff ff    	jne    1917a <identical_four_way::safe::kernel::inverse_and_finish+0x3ea>
+   1934f:	44 20 de             	and    %r11b,%sil
+   19352:	0f 85 22 fe ff ff    	jne    1917a <identical_four_way::safe::kernel::inverse_and_finish+0x3ea>
+   19358:	40 20 fa             	and    %dil,%dl
+   1935b:	0f 85 19 fe ff ff    	jne    1917a <identical_four_way::safe::kernel::inverse_and_finish+0x3ea>
+   19361:	c4 c1 79 6e c5       	vmovd  %r13d,%xmm0
+   19366:	c4 e2 7d 58 c0       	vpbroadcastd %xmm0,%ymm0
+   1936b:	c4 e2 7d 19 c9       	vbroadcastsd %xmm1,%ymm1
+   19370:	c4 e2 7d 19 d2       	vbroadcastsd %xmm2,%ymm2
+   19375:	c5 f9 6e 5c 24 08    	vmovd  0x8(%rsp),%xmm3
+   1937b:	c4 e2 7d 58 db       	vpbroadcastd %xmm3,%ymm3
+   19380:	c4 e2 7d 19 e4       	vbroadcastsd %xmm4,%ymm4
+   19385:	c4 e2 7d 19 ed       	vbroadcastsd %xmm5,%ymm5
+   1938a:	c4 c1 79 6e f2       	vmovd  %r10d,%xmm6
+   1938f:	c4 e2 7d 58 f6       	vpbroadcastd %xmm6,%ymm6
+   19394:	c4 e2 7d 19 ff       	vbroadcastsd %xmm7,%ymm7
+   19399:	c4 42 7d 19 c0       	vbroadcastsd %xmm8,%ymm8
+   1939e:	31 d2                	xor    %edx,%edx
+   193a0:	c4 62 7d 18 25 7b c9 	vbroadcastss -0x13685(%rip),%ymm12        # 5d24 <__abi_tag+0x5a28>
+   193a7:	fe ff 
+   193a9:	c4 62 7d 19 2d 06 ca 	vbroadcastsd -0x135fa(%rip),%ymm13        # 5db8 <__abi_tag+0x5abc>
+   193b0:	fe ff 
+   193b2:	48 89 c6             	mov    %rax,%rsi
+   193b5:	66 66 2e 0f 1f 84 00 	data16 cs nopw 0x0(%rax,%rax,1)
+   193bc:	00 00 00 00 
+   193c0:	c4 41 7c 10 34 10    	vmovups (%r8,%rdx,1),%ymm14
+   193c6:	c4 41 7c 10 3c 11    	vmovups (%r9,%rdx,1),%ymm15
+   193cc:	c5 7c 10 0c 11       	vmovups (%rcx,%rdx,1),%ymm9
+   193d1:	c4 62 7d 18 15 9e c9 	vbroadcastss -0x13662(%rip),%ymm10        # 5d78 <__abi_tag+0x5a7c>
+   193d8:	fe ff 
+   193da:	c4 41 0c 59 d2       	vmulps %ymm10,%ymm14,%ymm10
+   193df:	c4 41 34 58 d2       	vaddps %ymm10,%ymm9,%ymm10
+   193e4:	c4 62 7d 18 1d 3b c9 	vbroadcastss -0x136c5(%rip),%ymm11        # 5d28 <__abi_tag+0x5a2c>
+   193eb:	fe ff 
+   193ed:	c4 41 04 59 db       	vmulps %ymm11,%ymm15,%ymm11
+   193f2:	c4 41 2c 58 d3       	vaddps %ymm11,%ymm10,%ymm10
+   193f7:	c4 62 7d 18 1d 40 c9 	vbroadcastss -0x136c0(%rip),%ymm11        # 5d40 <__abi_tag+0x5a44>
+   193fe:	fe ff 
+   19400:	c4 41 04 59 db       	vmulps %ymm11,%ymm15,%ymm11
+   19405:	c4 41 24 58 d9       	vaddps %ymm9,%ymm11,%ymm11
+   1940a:	c4 41 0c 59 f4       	vmulps %ymm12,%ymm14,%ymm14
+   1940f:	c4 41 0c 58 c9       	vaddps %ymm9,%ymm14,%ymm9
+   19414:	c4 41 7c 5a f3       	vcvtps2pd %xmm11,%ymm14
+   19419:	c4 43 7d 19 db 01    	vextractf128 $0x1,%ymm11,%xmm11
+   1941f:	c4 41 7c 5a db       	vcvtps2pd %xmm11,%ymm11
+   19424:	c5 25 5f d9          	vmaxpd %ymm1,%ymm11,%ymm11
+   19428:	c5 0d 5f f1          	vmaxpd %ymm1,%ymm14,%ymm14
+   1942c:	c5 0d 5d f2          	vminpd %ymm2,%ymm14,%ymm14
+   19430:	c5 25 5d da          	vminpd %ymm2,%ymm11,%ymm11
+   19434:	c4 41 25 58 dd       	vaddpd %ymm13,%ymm11,%ymm11
+   19439:	c4 41 0d 58 f5       	vaddpd %ymm13,%ymm14,%ymm14
+   1943e:	c4 41 0c c6 db 88    	vshufps $0x88,%ymm11,%ymm14,%ymm11
+   19444:	c4 43 fd 01 db d8    	vpermpd $0xd8,%ymm11,%ymm11
+   1944a:	c5 25 fe d8          	vpaddd %ymm0,%ymm11,%ymm11
+   1944e:	c5 7e 7f 1c 11       	vmovdqu %ymm11,(%rcx,%rdx,1)
+   19453:	c4 41 7c 5a da       	vcvtps2pd %xmm10,%ymm11
+   19458:	c4 43 7d 19 d2 01    	vextractf128 $0x1,%ymm10,%xmm10
+   1945e:	c4 41 7c 5a d2       	vcvtps2pd %xmm10,%ymm10
+   19463:	c5 2d 5f d4          	vmaxpd %ymm4,%ymm10,%ymm10
+   19467:	c5 25 5f dc          	vmaxpd %ymm4,%ymm11,%ymm11
+   1946b:	c5 25 5d dd          	vminpd %ymm5,%ymm11,%ymm11
+   1946f:	c5 2d 5d d5          	vminpd %ymm5,%ymm10,%ymm10
+   19473:	c4 41 2d 58 d5       	vaddpd %ymm13,%ymm10,%ymm10
+   19478:	c4 41 25 58 dd       	vaddpd %ymm13,%ymm11,%ymm11
+   1947d:	c4 41 24 c6 d2 88    	vshufps $0x88,%ymm10,%ymm11,%ymm10
+   19483:	c4 43 fd 01 d2 d8    	vpermpd $0xd8,%ymm10,%ymm10
+   19489:	c5 2d fe d3          	vpaddd %ymm3,%ymm10,%ymm10
+   1948d:	c4 41 7e 7f 14 10    	vmovdqu %ymm10,(%r8,%rdx,1)
+   19493:	c4 41 7c 5a d1       	vcvtps2pd %xmm9,%ymm10
+   19498:	c4 43 7d 19 c9 01    	vextractf128 $0x1,%ymm9,%xmm9
+   1949e:	c4 41 7c 5a c9       	vcvtps2pd %xmm9,%ymm9
+   194a3:	c5 35 5f cf          	vmaxpd %ymm7,%ymm9,%ymm9
+   194a7:	c5 2d 5f d7          	vmaxpd %ymm7,%ymm10,%ymm10
+   194ab:	c4 41 2d 5d d0       	vminpd %ymm8,%ymm10,%ymm10
+   194b0:	c4 41 35 5d c8       	vminpd %ymm8,%ymm9,%ymm9
+   194b5:	c4 41 35 58 cd       	vaddpd %ymm13,%ymm9,%ymm9
+   194ba:	c4 41 2d 58 d5       	vaddpd %ymm13,%ymm10,%ymm10
+   194bf:	c4 41 2c c6 c9 88    	vshufps $0x88,%ymm9,%ymm10,%ymm9
+   194c5:	c4 43 fd 01 c9 d8    	vpermpd $0xd8,%ymm9,%ymm9
+   194cb:	c5 35 fe ce          	vpaddd %ymm6,%ymm9,%ymm9
+   194cf:	c4 41 7e 7f 0c 11    	vmovdqu %ymm9,(%r9,%rdx,1)
+   194d5:	48 83 c2 20          	add    $0x20,%rdx
+   194d9:	48 ff ce             	dec    %rsi
+   194dc:	0f 85 de fe ff ff    	jne    193c0 <identical_four_way::safe::kernel::inverse_and_finish+0x630>
+   194e2:	e9 0e fe ff ff       	jmp    192f5 <identical_four_way::safe::kernel::inverse_and_finish+0x565>
+   194e7:	48 89 c2             	mov    %rax,%rdx
+   194ea:	48 c1 e2 05          	shl    $0x5,%rdx
+   194ee:	48 8d 3c 11          	lea    (%rcx,%rdx,1),%rdi
+   194f2:	49 8d 1c 10          	lea    (%r8,%rdx,1),%rbx
+   194f6:	4c 01 ca             	add    %r9,%rdx
+   194f9:	48 39 d9             	cmp    %rbx,%rcx
+   194fc:	40 0f 92 c5          	setb   %bpl
+   19500:	49 39 f8             	cmp    %rdi,%r8
+   19503:	41 0f 92 c6          	setb   %r14b
+   19507:	48 39 d1             	cmp    %rdx,%rcx
+   1950a:	40 0f 92 c6          	setb   %sil
+   1950e:	49 39 f9             	cmp    %rdi,%r9
+   19511:	41 0f 92 c3          	setb   %r11b
+   19515:	49 39 d0             	cmp    %rdx,%r8
+   19518:	0f 92 c2             	setb   %dl
+   1951b:	49 39 d9             	cmp    %rbx,%r9
+   1951e:	40 0f 92 c7          	setb   %dil
+   19522:	44 84 f5             	test   %r14b,%bpl
+   19525:	0f 85 f4 fa ff ff    	jne    1901f <identical_four_way::safe::kernel::inverse_and_finish+0x28f>
+   1952b:	44 20 de             	and    %r11b,%sil
+   1952e:	0f 85 eb fa ff ff    	jne    1901f <identical_four_way::safe::kernel::inverse_and_finish+0x28f>
+   19534:	40 20 fa             	and    %dil,%dl
+   19537:	0f 85 e2 fa ff ff    	jne    1901f <identical_four_way::safe::kernel::inverse_and_finish+0x28f>
+   1953d:	c4 c1 79 6e e7       	vmovd  %r15d,%xmm4
+   19542:	c4 e2 7d 58 e4       	vpbroadcastd %xmm4,%ymm4
+   19547:	c4 e2 7d 18 e8       	vbroadcastss %xmm0,%ymm5
+   1954c:	c4 62 7d 18 05 ef c7 	vbroadcastss -0x13811(%rip),%ymm8        # 5d44 <__abi_tag+0x5a48>
+   19553:	fe ff 
+   19555:	c4 e2 3d 16 c0       	vpermps %ymm0,%ymm8,%ymm0
+   1955a:	c5 f9 6e 74 24 08    	vmovd  0x8(%rsp),%xmm6
+   19560:	c4 e2 7d 58 f6       	vpbroadcastd %xmm6,%ymm6
+   19565:	c4 e2 7d 18 f9       	vbroadcastss %xmm1,%ymm7
+   1956a:	c4 e2 3d 16 c9       	vpermps %ymm1,%ymm8,%ymm1
+   1956f:	c4 41 79 6e c2       	vmovd  %r10d,%xmm8
+   19574:	c4 42 7d 58 c0       	vpbroadcastd %xmm8,%ymm8
+   19579:	c4 e2 7d 18 db       	vbroadcastss %xmm3,%ymm3
+   1957e:	c4 e2 7d 18 d2       	vbroadcastss %xmm2,%ymm2
+   19583:	31 d2                	xor    %edx,%edx
+   19585:	c4 62 7d 18 25 96 c7 	vbroadcastss -0x1386a(%rip),%ymm12        # 5d24 <__abi_tag+0x5a28>
+   1958c:	fe ff 
+   1958e:	c4 62 7d 18 2d d1 c7 	vbroadcastss -0x1382f(%rip),%ymm13        # 5d68 <__abi_tag+0x5a6c>
+   19595:	fe ff 
+   19597:	48 89 c6             	mov    %rax,%rsi
+   1959a:	66 0f 1f 44 00 00    	nopw   0x0(%rax,%rax,1)
+   195a0:	c4 41 7c 10 34 10    	vmovups (%r8,%rdx,1),%ymm14
+   195a6:	c4 41 7c 10 3c 11    	vmovups (%r9,%rdx,1),%ymm15
+   195ac:	c5 7c 10 0c 11       	vmovups (%rcx,%rdx,1),%ymm9
+   195b1:	c4 62 7d 18 15 be c7 	vbroadcastss -0x13842(%rip),%ymm10        # 5d78 <__abi_tag+0x5a7c>
+   195b8:	fe ff 
+   195ba:	c4 41 0c 59 d2       	vmulps %ymm10,%ymm14,%ymm10
+   195bf:	c4 41 34 58 d2       	vaddps %ymm10,%ymm9,%ymm10
+   195c4:	c4 62 7d 18 1d 5b c7 	vbroadcastss -0x138a5(%rip),%ymm11        # 5d28 <__abi_tag+0x5a2c>
+   195cb:	fe ff 
+   195cd:	c4 41 04 59 db       	vmulps %ymm11,%ymm15,%ymm11
+   195d2:	c4 41 2c 58 d3       	vaddps %ymm11,%ymm10,%ymm10
+   195d7:	c4 62 7d 18 1d 60 c7 	vbroadcastss -0x138a0(%rip),%ymm11        # 5d40 <__abi_tag+0x5a44>
+   195de:	fe ff 
+   195e0:	c4 41 04 59 db       	vmulps %ymm11,%ymm15,%ymm11
+   195e5:	c4 41 24 58 d9       	vaddps %ymm9,%ymm11,%ymm11
+   195ea:	c4 41 0c 59 f4       	vmulps %ymm12,%ymm14,%ymm14
+   195ef:	c4 41 0c 58 c9       	vaddps %ymm9,%ymm14,%ymm9
+   195f4:	c5 24 5f dd          	vmaxps %ymm5,%ymm11,%ymm11
+   195f8:	c5 24 5d d8          	vminps %ymm0,%ymm11,%ymm11
+   195fc:	c4 41 24 58 dd       	vaddps %ymm13,%ymm11,%ymm11
+   19601:	c5 25 fe dc          	vpaddd %ymm4,%ymm11,%ymm11
+   19605:	c5 7e 7f 1c 11       	vmovdqu %ymm11,(%rcx,%rdx,1)
+   1960a:	c5 2c 5f d7          	vmaxps %ymm7,%ymm10,%ymm10
+   1960e:	c5 2c 5d d1          	vminps %ymm1,%ymm10,%ymm10
+   19612:	c4 41 2c 58 d5       	vaddps %ymm13,%ymm10,%ymm10
+   19617:	c5 2d fe d6          	vpaddd %ymm6,%ymm10,%ymm10
+   1961b:	c4 41 7e 7f 14 10    	vmovdqu %ymm10,(%r8,%rdx,1)
+   19621:	c5 34 5f cb          	vmaxps %ymm3,%ymm9,%ymm9
+   19625:	c5 34 5d ca          	vminps %ymm2,%ymm9,%ymm9
+   19629:	c4 41 34 58 cd       	vaddps %ymm13,%ymm9,%ymm9
+   1962e:	c4 41 3d fe c9       	vpaddd %ymm9,%ymm8,%ymm9
+   19633:	c4 41 7e 7f 0c 11    	vmovdqu %ymm9,(%r9,%rdx,1)
+   19639:	48 83 c2 20          	add    $0x20,%rdx
+   1963d:	48 ff ce             	dec    %rsi
+   19640:	0f 85 5a ff ff ff    	jne    195a0 <identical_four_way::safe::kernel::inverse_and_finish+0x810>
+   19646:	e9 aa fc ff ff       	jmp    192f5 <identical_four_way::safe::kernel::inverse_and_finish+0x565>
+   1964b:	89 74 24 0c          	mov    %esi,0xc(%rsp)
+   1964f:	89 7c 24 10          	mov    %edi,0x10(%rsp)
+   19653:	eb 09                	jmp    1965e <identical_four_way::safe::kernel::inverse_and_finish+0x8ce>
+   19655:	44 89 54 24 0c       	mov    %r10d,0xc(%rsp)
+   1965a:	89 54 24 10          	mov    %edx,0x10(%rsp)
+   1965e:	48 8d 44 24 0c       	lea    0xc(%rsp),%rax
+   19663:	48 89 44 24 18       	mov    %rax,0x18(%rsp)
+   19668:	48 8d 05 41 00 00 00 	lea    0x41(%rip),%rax        # 196b0 <<i32 as core::fmt::Debug>::fmt>
+   1966f:	48 89 44 24 20       	mov    %rax,0x20(%rsp)
+   19674:	48 8d 4c 24 10       	lea    0x10(%rsp),%rcx
+   19679:	48 89 4c 24 28       	mov    %rcx,0x28(%rsp)
+   1967e:	48 89 44 24 30       	mov    %rax,0x30(%rsp)
+   19683:	48 8d 3d b1 d3 fe ff 	lea    -0x12c4f(%rip),%rdi        # 6a3b <anon.d1396dc69532c82cad4a8a2da7120846.11.llvm.6960510095889745066>
+   1968a:	48 8d 15 ef 3e 04 00 	lea    0x43eef(%rip),%rdx        # 5d580 <anon.d1396dc69532c82cad4a8a2da7120846.3.llvm.6960510095889745066>
+   19691:	48 8d 74 24 18       	lea    0x18(%rsp),%rsi
+   19696:	c5 f8 77             	vzeroupper
+   19699:	ff 15 c9 63 04 00    	call   *0x463c9(%rip)        # 5fa68 <_DYNAMIC+0x298>
+   1969f:	89 6c 24 0c          	mov    %ebp,0xc(%rsp)
+   196a3:	89 5c 24 10          	mov    %ebx,0x10(%rsp)
+   196a7:	eb b5                	jmp    1965e <identical_four_way::safe::kernel::inverse_and_finish+0x8ce>

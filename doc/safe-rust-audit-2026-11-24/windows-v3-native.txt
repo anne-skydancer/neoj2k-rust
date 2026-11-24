@@ -1,0 +1,394 @@
+   Compiling neo-j2k-testkit v0.1.3 (C:\Users\annes\source\repos\neoj2k-rust-safe-simd\neo-j2k-testkit)
+   Compiling neo-j2k-oracle v0.1.3 (C:\Users\annes\source\repos\neoj2k-rust-safe-simd\neo-j2k-oracle)
+   Compiling neo-j2k v0.1.3 (C:\Users\annes\source\repos\neoj2k-rust-safe-simd\neo-j2k)
+   Compiling neo-j2k-bench v0.1.3 (C:\Users\annes\source\repos\neoj2k-rust-safe-simd\neo-j2k-bench)
+    Finished `release` profile [optimized + debuginfo] target(s) in 30.43s
+     Running unittests src\lib.rs (target-audit-safe-v3-release\release\build\neo-j2k/cd7d62dac8d592e8\out\neo_j2k-cd7d62dac8d592e8.exe)
+
+running 109 tests
+test decode::output::tests::incompatible_targets_are_rejected_before_any_byte_changes ... ok
+test decode::output::tests::packed_i32_rows_allow_unaligned_bottom_up_output_and_padding ... ok
+test decode::walk::tests::packed_header_ranges_are_merged_by_marker_index ... ok
+test dwt::differential::cpp_wavelet_shim_checks_slice_and_resolution_bounds ... ok
+test decode::output::tests::interleaved_targets_match_plane_writes_at_every_channel_count ... ok
+test dwt::tests::invalid_plane_geometry_leaves_the_samples_unchanged ... ok
+test dwt::tests::avx2_lanes_match_scalar_and_reuse_scratch ... ok
+test dwt::tests::irreversible_pair_matches_the_openjpeg_lifting_bits ... ok
+test dwt::tests::avx2_and_scalar_scheduled_wavelets_match_serial_with_edge_stripes_and_padding ... ok
+test dwt::tests::reversible_odd_origin_keeps_padding_and_reuses_scratch ... ok
+test dwt::tests::vertical_integer_mirror_wraps_only_for_complete_column_groups ... ok
+test dwt::tests::avx2_irreversible_stripes_and_cycles_run_on_separate_threads ... ok
+test decode::tests::plane_clear_uses_the_host_at_four_mebibytes ... ok
+test encoder::quantize_tests::grouped_quantization_matches_scalar_at_rounding_and_range_boundaries ... ok
+test encoder::quantize_tests::grouped_quantization_matches_scalar_across_float_bit_patterns ... ok
+test encoder::tests::cap_lifts_layers_in_order_using_the_actual_main_header_size ... ok
+test encoder::tests::prep_builds_striped_code_blocks_and_counts_the_tile_part ... ok
+test decoder::retention_tests::failed_requests_trim_previous_storage_and_allow_retries ... ok
+test encoder::tests::reversible_wavelet_transforms_columns_then_rows ... ok
+test encoder::tests::gather_matches_the_one_sample_at_a_time_gather ... ok
+test encoder::tests::supports_padded_interleaved_and_planar_rows_with_vertical_flip ... ok
+test encoder::tier1::differential::nightly_tier1_encode_sweep ... ignored, nightly: the long generated Tier-1 encode sweep
+test decoder::retention_tests::retention_limits_apply_after_planar_and_caller_owned_decodes ... ok
+test encoder::tier1::mq::differential::a_fresh_encoder_starts_where_the_cpp_does ... ok
+test dwt::differential::whole_tile_components_match_the_cpp_wavelet ... ok
+test encoder::tier1::mq::differential::nightly_mq_encoder_every_decision ... ignored, nightly: 4.4 billion single decisions of the MQ encoder against the C++
+test encoder::tier1::mq::differential::nightly_mq_flush_every_low_word ... ignored, nightly: every low word of the MQ encoder's flush against the C++
+test encoder::differential::reused_encoder_matches_cpp_after_caps_and_refusals ... ok
+test encoder::tier1::mq::differential::streams_encode_as_the_cpp_does ... ok
+test encoder::tier1::tests::all_passes_encoding_differs_from_the_full_one_only_in_the_distortion ... ok
+test encoder::tier1::tests::codeword_and_pass_distortion_match_the_cpp ... ok
+test encoder::tier1::tests::fractional_only_block_has_no_passes ... ok
+test encoder::tier2::coding::tests::writer_stuffs_after_ff_on_flush ... ok
+test encoder::tier2::tests::lossless_packet_and_later_empty_layer_match_the_packet_codes ... ok
+test encoder::tier2::tests::only_all_zero_rates_take_all_passes ... ok
+test encoder::tier2::tests::rate_search_rounds_up_the_byte_target_and_preserves_the_remaining_pass ... ok
+test executor::tests::scoped_workers_write_distinct_rows ... ok
+test header::tests::component_override_precedes_a_later_default ... ok
+test header::tests::partial_and_forbidden_marker_segments_have_distinct_statuses ... ok
+test header::tests::ppm_lengths_and_bytes_have_distinct_marker_boundary_rules ... ok
+test header::tile::tests::component_overrides_win_and_quantization_is_checked_after_resolution ... ok
+test header::tile::tests::malformed_and_cut_tile_headers_have_distinct_statuses ... ok
+test header::tile::tests::sparse_override_slots_keep_storage_without_retaining_previous_markers ... ok
+test jp2::tests::accepts_a_complete_box_header_even_without_its_codestream ... ok
+test jp2::tests::decoded_palette_and_channel_order_match_the_cpp_stream_api ... ok
+test jp2::tests::incomplete_children_inside_a_complete_box_are_invalid ... ok
+test jp2::tests::one_component_direct_mapping_is_repaired_like_cpp ... ok
+test jp2::tests::palette_values_and_following_channel_definitions_match_cpp_order ... ok
+test jp2::tests::validates_palette_payload_before_charging_entries ... ok
+test jp2::tests::zero_short_and_large_codestream_boxes_extend_to_the_end ... ok
+test mct::avx2_and_scalar_fused_colour_finishing_match_staged_output ... ok
+test mct::avx2_tests::avx2_colour_and_finishing_match_scalar_with_tails ... ok
+test mct::irreversible_finishing_matches_round_to_even_across_float_exponents ... ok
+test mct::tests::colour_transforms_match_cpp_precision_and_wraparound ... ok
+test mct::tests::dc_shift_matches_cpp_on_limits_and_ties ... ok
+test mct::tests::irreversible_shift_matches_cpp_for_all_float_bits ... ignored, exhaustive sweep of all 32-bit floating-point encodings
+test mem::header::tests::dedicated_blocks_leave_the_current_block_available ... ok
+test mem::header::tests::reset_combines_retained_blocks_and_preserves_the_budget ... ok
+test mem::layout::table_tests::variants_name_their_rows ... ok
+test mem::layout::tests::equals_the_cpp_size_table ... ok
+test simd::round_tests::round_matches_ties_even_across_float_bit_patterns ... ok
+test simd::round_tests::round_matches_ties_even_at_halfway_and_range_boundaries ... ok
+test stream::tests::skipping_reader_bytes_keeps_the_buffer_capacity ... ok
+test encoder::tier1::mq::differential::flushes_encode_as_the_cpp_does_including_the_boundary ... ok
+test t1::differential::bench_dumps_decode_as_the_cpp_does ... ok
+test t1::differential::committed_vectors_decode_as_the_cpp_does ... ok
+test t1::differential::a_raw_segment_with_a_cleanup_pass_ends_there_as_in_the_cpp ... ok
+test t1::differential::nightly_tier1_decode_split ... ignored, nightly: the C++ test_split, extended: 5.8 million tiny blocks
+test t1::differential::nightly_tier1_decode_sweep ... ignored, nightly: the long generated Tier-1 decode sweep
+test encoder::differential::encoded_bytes_match_cpp_across_core_settings ... ok
+test t1::differential::stores_match_the_cpp_including_the_roi_threshold ... ok
+test t1::differential::the_full_dump_set_decodes_as_the_cpp_does_when_named ... ok
+test t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation ... ok
+test t1::mq::differential::nightly_mq_decoder_every_decision ... ignored, nightly: 443 million single decisions of the MQ decoder against the C++
+test t1::differential::overlong_segments_are_cut_as_the_cpp_cuts_them ... ok
+test encoder::differential::corpus_images_reencode_byte_for_byte ... ok
+test t1::mq::differential::streams_decode_as_the_cpp_does ... ok
+test t1::mq::differential::single_decisions_decode_as_the_cpp_does ... ok
+test t1::mq::tests::a_run_stops_at_the_first_column_that_is_not_empty ... ok
+test t1::mq::tests::no_run_when_the_mps_is_one_or_the_room_is_short ... ok
+test t1::mq::tests::chained_decisions_over_short_and_exhausted_input_equal_the_model ... ok
+test t1::tests::a_raw_segments_passes_end_at_a_cleanup_pass ... ok
+test t1::tests::a_retained_scratch_decodes_short_and_general_blocks_alike ... ok
+test t1::tests::a_zero_length_raw_segment_reads_the_marker ... ok
+test t1::tests::an_over_long_segment_is_cut_to_the_bytes_there ... ok
+test t1::mq::tests::the_select_decision_equals_the_standards_branches ... ok
+test t1::tests::avx2_stores_match_scalar_with_tails_and_padding ... ok
+test t1::tests::missing_blocks_zero_their_rows_and_still_check_bit_planes ... ok
+test t1::tests::fragmented_codewords_match_the_cpp_coefficient_hashes ... ok
+test t1::tests::roi_store_matches_threshold_and_wrapping_magnitude_rules ... ok
+test t2::progression::tests::all_progressions_and_overlapping_pocs_visit_the_same_packets_in_order ... ok
+test t2::tests::a_warmed_workspace_reuses_storage_and_charges_the_same_tile_budget ... ok
+test t2::tests::aligning_consumes_the_byte_after_ff_or_marks_an_overrun ... ok
+test t2::tests::complete_tags_match_successive_thresholds_with_and_without_input ... ok
+test t2::tests::layers_and_cut_segments_keep_only_complete_wanted_contributions ... ok
+test t2::tests::odd_grids_share_intermediate_nodes_and_reject_invalid_leaves ... ok
+test t2::tests::packed_fields_match_single_bit_reads_at_every_offset ... ok
+test t2::tests::packed_header_cursor_crosses_tiles_and_precedes_ppt ... ok
+test t2::tests::packet_header_bits_are_stuffed_and_missing_bits_read_as_zero ... ok
+test t2::tests::packet_header_codes_cover_each_pass_count_range ... ok
+test t2::tests::repeated_thresholds_share_the_decoded_root_and_leaf_values ... ok
+test t2::tests::sop_and_eph_are_outside_the_retained_segment ... ok
+test t1::tests::short_blocks_decode_as_the_general_path_does ... ok
+test t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time ... ok
+test encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does ... ok
+test t1::differential::generated_blocks_decode_as_the_cpp_does ... ok
+test encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does ... ok
+test encoder::tier1::differential::generated_blocks_encode_as_the_cpp_does ... ok
+test encoder::tier1::mq::differential::single_decisions_encode_as_the_cpp_does ... ok
+
+test result: ok. 102 passed; 0 failed; 7 ignored; 0 measured; 0 filtered out; finished in 1.48s
+
+     Running tests\cpp_release.rs (target-audit-safe-v3-release\release\build\neo-j2k/d5c4e81575440a37\out\cpp_release-d5c4e81575440a37.exe)
+
+running 1 test
+test the_cpp_checkout_is_the_crates_release ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\decode_executor.rs (target-audit-safe-v3-release\release\build\neo-j2k/e03f860178d0d1c8\out\decode_executor-e03f860178d0d1c8.exe)
+
+running 4 tests
+test parallel_tier1_uses_serial_diagnostics_for_a_refused_code_block ... ok
+test small_and_reduced_tiles_do_not_even_query_the_host ... ok
+test large_images_match_serial_across_reuse_and_selected_components ... ok
+test large_tiles_preserve_samples_at_every_supported_job_width ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests\decode_options.rs (target-audit-safe-v3-release\release\build\neo-j2k/4ae88704d28ca3c8\out\decode_options-4ae88704d28ca3c8.exe)
+
+running 5 tests
+test local_damaged_corpus_matches_cpp_when_requested ... ok
+test strict_cuts_match_cpp_with_in_band_and_packed_headers ... ok
+test strict_decode_matches_cpp_when_tile_part_count_is_one_short ... ok
+test layer_limits_match_cpp_and_remove_late_contributions ... ok
+test generated_damage_matches_cpp_and_allows_reuse ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 3.15s
+
+     Running tests\decode_parity.rs (target-audit-safe-v3-release\release\build\neo-j2k/6b53292f6a75eed2\out\decode_parity-6b53292f6a75eed2.exe)
+
+running 7 tests
+test conformance_pixels_match_cpp_when_test_data_is_available ... ok
+test nonregression_pixels_match_cpp_when_the_full_test_data_is_available ... ok
+test u8_interleaved_output_supports_bottom_up_rows_and_preserves_padding ... ok
+test caller_owned_targets_must_reference_selected_components ... ok
+test selected_cut_memory_decodes_match_cpp ... ok
+test whole_memory_decodes_match_cpp_at_every_reduce_level ... ok
+test small_codestream_prefixes_match_cpp ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 11.25s
+
+     Running tests\decode_stream.rs (target-audit-safe-v3-release\release\build\neo-j2k/8ca872430a9c32cc\out\decode_stream-8ca872430a9c32cc.exe)
+
+running 13 tests
+test eof_and_read_failure_inside_a_skipped_jp2_box_are_distinct ... ok
+test early_eof_is_distinct_from_a_short_advertised_length ... ok
+test limits_are_checked_before_the_reader_consumes_tile_data ... ok
+test skipped_jp2_boxes_are_read_again_after_rewinding_a_failed_reader ... ok
+test skipped_jp2_boxes_keep_physical_offsets_and_palette_samples ... ok
+test jp2_streams_apply_channels_and_stop_at_the_codestream_box_end ... ok
+test stream_header_can_be_inspected_without_reading_any_tile_data ... ok
+test hard_read_errors_leave_the_decoder_available_for_a_fresh_reader ... ok
+test stream_can_resume_at_a_late_reduce_into_borrowed_or_reusable_planes ... ok
+test stream_preflight_can_check_the_memory_for_a_component_selection ... ok
+test stream_reductions_refresh_geometry_and_pixels_after_a_reduced_header ... ok
+test unseekable_open_tile_reserves_two_bytes_for_eoc ... ok
+test seekable_streams_match_cpp_on_whole_and_cut_files ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\direct_i32.rs (target-audit-safe-v3-release\release\build\neo-j2k/a8c912f5cceaaecb\out\direct_i32-a8c912f5cceaaecb.exe)
+
+running 7 tests
+test selected_planes_can_use_direct_output_or_repeat_a_target ... ok
+test typed_planes_match_cpp_for_mct_cuts_and_multi_tile_images ... ok
+test direct_rgb_planes_match_cpp_at_different_executor_widths ... ok
+test coarse_wavelet_scratch_refusal_replays_only_the_failed_plane ... ok
+test grouped_tier1_refuses_scratch_after_a_job_has_written_coefficients ... ok
+test large_i32_output_avoids_a_plane_sized_allocation ... ok
+test tier1_planning_allocation_refusal_decodes_serially_and_can_retry ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\encode_executor.rs (target-audit-safe-v3-release\release\build\neo-j2k/2f59727f31ed6942\out\encode_executor-2f59727f31ed6942.exe)
+
+running 2 tests
+test small_encode_stays_serial ... ok
+test threaded_encode_is_byte_identical_at_every_width ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests\encode_stream.rs (target-audit-safe-v3-release\release\build\neo-j2k/b2708e2187dfc986\out\encode_stream-b2708e2187dfc986.exe)
+
+running 4 tests
+test extra_options_keep_default_bytes_and_refuse_before_writing ... ok
+test refuses_failed_writes_in_each_phase_and_accepts_a_new_request ... ok
+test writes_match_cpp_across_buffer_and_short_write_sizes ... ok
+test full_4096_byte_buffers_and_the_final_remainder_match_cpp ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\encode_updates.rs (target-audit-safe-v3-release\release\build\neo-j2k/ff290a9317bb5091\out\encode_updates-ff290a9317bb5091.exe)
+
+running 2 tests
+test writer_failure_preserves_accepted_setup_updates ... ok
+test setup_writebacks_and_reuse_match_cpp ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\generated_feature_parity.rs (target-audit-safe-v3-release\release\build\neo-j2k/ddb45cd1b6b6cf3a\out\generated_feature_parity-ddb45cd1b6b6cf3a.exe)
+
+running 1 test
+test odd_origin_signed_subsampling_matches_openjpeg ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests\generated_matrix.rs (target-audit-safe-v3-release\release\build\neo-j2k/f5c37f36d68d5e2a\out\generated_matrix-f5c37f36d68d5e2a.exe)
+
+running 2 tests
+test extended_generated_coding_matrix_matches_openjpeg ... ignored, larger generated matrix for nightly or local verification
+test generated_coding_matrix_matches_openjpeg ... ok
+
+test result: ok. 1 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 1.15s
+
+     Running tests\header_parity.rs (target-audit-safe-v3-release\release\build\neo-j2k/301645fb3ce95809\out\header_parity-301645fb3ce95809.exe)
+
+running 10 tests
+test conformance_file_headers_match_cpp_when_test_data_is_available ... ok
+test changing_header_limits_revalidates_the_same_bytes ... ok
+test changing_reduce_after_the_header_matches_cpp ... ok
+test header_and_dimension_limits_refuse_at_the_same_stage ... ok
+test header_reservation_and_diagnostics_match_cpp_in_order ... ok
+test jp2_header_and_prefixes_match_cpp ... ok
+test selected_dimensions_match_cpp_under_the_working_memory_limit ... ok
+test changing_memory_limits_on_a_reused_decoder_matches_cpp ... ok
+test selected_header_prefixes_match_exact_statuses_and_can_be_retried ... ok
+test generated_headers_match_cpp_at_every_reduce_level ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\ledger_parity.rs (target-audit-safe-v3-release\release\build\neo-j2k/e66ef16e4fcaa499\out\ledger_parity-e66ef16e4fcaa499.exe)
+
+running 1 test
+test generated_decodes_match_cpp_arena_reservations ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+     Running tests\memory_limits.rs (target-audit-safe-v3-release\release\build\neo-j2k/f7e12464cb4e04d0\out\memory_limits-f7e12464cb4e04d0.exe)
+
+running 1 test
+test generated_decodes_match_the_cpp_budget_at_the_limit ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running tests\miri_decode.rs (target-audit-safe-v3-release\release\build\neo-j2k/c0326f39e5cb4095\out\miri_decode-c0326f39e5cb4095.exe)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\reference_replay.rs (target-audit-safe-v3-release\release\build\neo-j2k/a45575fb1e0bcef5\out\reference_replay-a45575fb1e0bcef5.exe)
+
+running 5 tests
+test nightly_reference_cuts ... ignored, exhaustive nightly replay of generated inputs up to 16 KiB
+test dp3_empty_ppt_tiles_decode_to_the_sample_midpoint ... ok
+test dp3_matches_the_cpp_departure_reference ... ok
+test generated_reference_whole ... ok
+test generated_reference_cuts ... ok
+
+test result: ok. 4 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 36.16s
+
+     Running tests\small_image_gates.rs (target-audit-safe-v3-release\release\build\neo-j2k/7fbd4b07168a57d5\out\small_image_gates-7fbd4b07168a57d5.exe)
+
+running 6 tests
+test large_encoder_executor_latency ... ignored, run with --release and --nocapture on a quiet machine
+test large_image_executor_latency ... ignored, run with --release and --nocapture on a quiet machine
+test small_encoder_median_latency ... ignored, run with --release and --nocapture on a quiet machine
+test small_image_median_latency ... ignored, run with --release and --nocapture on a quiet machine
+test small_owned_image_median_latency ... ignored, run with --release and --nocapture on a quiet machine
+test warmed_small_decodes_make_no_heap_calls ... ok
+
+test result: ok. 1 passed; 0 failed; 5 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests\stage_profile.rs (target-audit-safe-v3-release\release\build\neo-j2k/cc40ffe2f4554b28\out\stage_profile-cc40ffe2f4554b28.exe)
+
+running 1 test
+test small_decode_stage_shares ... ignored, run with --release --features bench-internals and --nocapture; a measurement, not a check
+
+test result: ok. 0 passed; 0 failed; 1 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\vs_openjpeg.rs (target-audit-safe-v3-release\release\build\neo-j2k/43a0dadeb67f3cac\out\vs_openjpeg-43a0dadeb67f3cac.exe)
+
+running 3 tests
+test large_image_vs_openjpeg ... ignored, run with --release and --nocapture on a quiet machine
+test small_encoder_vs_openjpeg ... ignored, run with --release and --nocapture on a quiet machine
+test small_image_vs_openjpeg ... ignored, run with --release and --nocapture on a quiet machine
+
+test result: ok. 0 passed; 0 failed; 3 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src\main.rs (target-audit-safe-v3-release\release\build\neo-j2k-bench/620719069f138c38\out\neo_j2k_bench-620719069f138c38.exe)
+
+running 5 tests
+test tests::arguments_parse_and_bad_ones_are_refused ... ok
+test sets::tests::the_small_decode_sets_decode_and_are_the_same_every_time ... ok
+test sets::tests::a_pass_leaves_the_digest_alone_and_a_measurement_is_positive ... ok
+test sets::tests::the_upload_blocks_are_the_same_every_time ... ok
+test sets::tests::the_image_sets_encode_and_are_the_same_every_time ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running unittests src\lib.rs (target-audit-safe-v3-release\release\build\neo-j2k-oracle/21a183139d6e168a\out\neo_j2k_oracle-21a183139d6e168a.exe)
+
+running 3 tests
+test openjpeg::tests::a_huge_stride_cannot_wrap_to_a_small_count ... ok
+test openjpeg::tests::a_stride_shorter_than_a_row_or_no_rows_is_refused ... ok
+test openjpeg::tests::the_bytes_read_are_the_rows_without_the_last_padding ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests\differential.rs (target-audit-safe-v3-release\release\build\neo-j2k-oracle/cba6d85990eae133\out\differential-cba6d85990eae133.exe)
+
+running 10 tests
+test kernels_run ... ok
+test decode_i32_rejects_oversized_header_before_allocating_output ... ok
+test the_size_table_holds_the_arena_types ... ok
+test a_codec_decodes_and_reports_its_arenas ... ok
+test backends_agree_on_a_corpus_file ... ok
+test viewer_rules_equal_the_cpp ... ok
+test digests_reproduce_three_reference_lines ... ok
+test pgx_reader_equals_the_cpp ... ok
+test scanner_equals_the_cpp ... ok
+test digests_reproduce_every_whole_line ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.02s
+
+     Running unittests src\lib.rs (target-audit-safe-v3-release\release\build\neo-j2k-testkit/6d4fcc6a37f721b8\out\neo_j2k_testkit-6d4fcc6a37f721b8.exe)
+
+running 25 tests
+test digest::tests::cut_digest_counts_every_step ... ok
+test digest::tests::viewer_value_combines_both_hashes ... ok
+test digest::tests::failed_outcomes_hash_to_zero ... ok
+test fnv::tests::hex_round_trip ... ok
+test digest::tests::viewer_image_is_bottom_up_interleaved_low_bytes ... ok
+test fnv::tests::the_cpp_offset_basis ... ok
+test fnv::tests::integers_are_little_endian ... ok
+test generate::tests::chunks_add_up_and_the_generator_is_splitmix ... ok
+test mqng::tests::a_bad_dump_is_refused ... ok
+test files::tests::the_corpus_lists_sorted ... ok
+test pgx::tests::reads_both_byte_orders_and_signs ... ok
+test mqng::tests::a_dump_reads_back_field_for_field ... ok
+test pgx::tests::refusals_carry_the_cpp_reasons ... ok
+test reference::tests::refuses_bad_lines ... ok
+test reference::tests::parses_both_kinds ... ok
+test pool::tests::jobs_write_disjoint_slots ... ok
+test scan::tests::reads_a_tiny_codestream ... ok
+test scan::tests::every_prefix_scans_without_panic ... ok
+test request::tests::mode_names_round_trip ... ok
+test viewer::tests::data_size_at_known_points ... ok
+test viewer::tests::grid_side_wraps_to_32_bits ... ok
+test scan::tests::refusals_carry_the_cpp_reasons ... ok
+test viewer::tests::guards ... ok
+test viewer::tests::reduce_clamps_to_the_coarsest_level ... ok
+test pool::tests::every_job_runs_once ... ok
+
+test result: ok. 25 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests neo_j2k
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests neo_j2k_oracle
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests neo_j2k_testkit
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

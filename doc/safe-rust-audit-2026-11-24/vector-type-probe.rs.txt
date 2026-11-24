@@ -1,0 +1,11 @@
+#![forbid(unsafe_code)]
+use std::arch::x86_64::{__m256,__m256i};
+fn main(){
+ let a:__m256=[1.0f32;8].into();
+ let b=a+a;
+ let c:[f32;8]=b.into();
+ let i:__m256i=[1i32;8].into();
+ let j=i&i;
+ let k:[i32;8]=j.into();
+ println!("{c:?} {k:?}");
+}

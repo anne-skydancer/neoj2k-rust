@@ -6,7 +6,7 @@
 
 //! Inverse component transforms and sample finishing.
 
-#[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+#[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
 use crate::simd::mct as vector;
 
 /// Reversible inverse colour transform. Intermediate values wrap as int32.
@@ -24,9 +24,9 @@ pub(crate) fn inverse_irreversible(samples: [i32; 3]) -> [i32; 3] {
 }
 
 pub(crate) fn inverse([y, u, v]: [&mut [i32]; 3], reversible: bool) {
-    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
     let start = vector::inverse([y, u, v], reversible);
-    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2")))]
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
     let start = 0;
     let lanes = y[start..].iter_mut().zip(&mut u[start..]).zip(&mut v[start..]);
     if reversible {
@@ -51,13 +51,13 @@ pub(crate) fn inverse_and_finish([y, u, v]: [&mut [i32]; 3], reversible: bool, f
         return;
     }
 
-    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+    #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
     let start = vector::inverse_and_finish(
         [y, u, v],
         reversible,
         finishes.map(|finish| (finish.shift, finish.lo, finish.hi)),
     );
-    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2")))]
+    #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
     let start = 0;
     let tail = [&mut y[start..], &mut u[start..], &mut v[start..]];
     if reversible {
@@ -127,9 +127,9 @@ impl Finish {
     }
 
     pub(crate) fn apply(self, line: &mut [i32]) {
-        #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2"))]
+        #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
         let start = vector::level_shift(line, self.shift, self.lo, self.hi, self.reversible);
-        #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "avx2")))]
+        #[cfg(not(all(feature = "simd", target_arch = "x86_64", target_feature = "sse")))]
         let start = 0;
         if self.reversible {
             let (lo, hi) = (self.lo - self.shift, self.hi - self.shift);

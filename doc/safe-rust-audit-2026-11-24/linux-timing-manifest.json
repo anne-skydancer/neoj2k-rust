@@ -1,0 +1,58 @@
+{
+  "started_utc": "2026-11-24 18:13:58 UTC",
+  "available_cpus": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7
+  ],
+  "runs": [
+    {
+      "name": "final-baseline-1.txt",
+      "elapsed_seconds": 28.962371796002117,
+      "sha256": "5e511665d30ea618d6001f6ae70600fedbe3de6b3d4ee1b7765232c2c103b179",
+      "binary_sha256": "8fca4d90f3c36613058a1f73b9ab9c43132eae647f7e3023a2f541b210b74206",
+      "affinity": "all available CPUs"
+    },
+    {
+      "name": "final-v3-1.txt",
+      "elapsed_seconds": 21.955709449997812,
+      "sha256": "6b03a7a5c3ed573a85f89add6d222e08319a106f49b224f51c5df1a788c0a60c",
+      "binary_sha256": "306f339fd13f957f15ff57c9a2d21955ceb92dc9a824df0b23d5d541276af3ec",
+      "affinity": "all available CPUs"
+    },
+    {
+      "name": "final-baseline-2.txt",
+      "elapsed_seconds": 29.018432103999658,
+      "sha256": "87168058a9da9f2d799bdb8a6d464c2bf318629e8e141c8a70cd7be64c207337",
+      "binary_sha256": "8fca4d90f3c36613058a1f73b9ab9c43132eae647f7e3023a2f541b210b74206",
+      "affinity": "all available CPUs"
+    },
+    {
+      "name": "final-v3-2.txt",
+      "elapsed_seconds": 22.005967092998617,
+      "sha256": "748c258041987e793d722b7b804f50f2c0287c95863577231d13c15f030c9244",
+      "binary_sha256": "306f339fd13f957f15ff57c9a2d21955ceb92dc9a824df0b23d5d541276af3ec",
+      "affinity": "all available CPUs"
+    },
+    {
+      "name": "final-baseline-3.txt",
+      "elapsed_seconds": 29.673389974999736,
+      "sha256": "3df9591a1549a4ac1850fa82b53463c65fa7e7c7df39126a8cecc4ddfe879436",
+      "binary_sha256": "8fca4d90f3c36613058a1f73b9ab9c43132eae647f7e3023a2f541b210b74206",
+      "affinity": "all available CPUs"
+    },
+    {
+      "name": "final-v3-3.txt",
+      "elapsed_seconds": 22.484428831001424,
+      "sha256": "30d09d525f7e38e809fc6845f4646033b874383bfd4646c9a3e67e0ed549b16c",
+      "binary_sha256": "306f339fd13f957f15ff57c9a2d21955ceb92dc9a824df0b23d5d541276af3ec",
+      "affinity": "all available CPUs"
+    }
+  ],
+  "completed_utc": "2026-11-24 18:16:42 UTC"
+}

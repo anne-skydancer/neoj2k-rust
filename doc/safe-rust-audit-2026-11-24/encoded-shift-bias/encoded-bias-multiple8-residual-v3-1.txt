@@ -1,0 +1,8 @@
+DIAGNOSTIC ENCODED BIAS: third slot is identical safe code before encoded-shift bias, NOT unchanged original control; percent columns new/old_safe,new/reference,old_safe/reference
+decode|sl_64_rgb_97.j2k|r0|cutfalse|w1|55.2256|55.1861|56.0474|-1.997%|-0.480%|+2.043%|same
+decode|sl_128_rgba_97.j2k|r0|cutfalse|w1|118.6392|117.8420|118.7340|-0.201%|-0.441%|-2.002%|same
+decode|sl_128_rgba_97.j2k|r2|cutfalse|w1|60.8828|61.3816|61.4276|+2.622%|+0.865%|-1.462%|same
+packed|sl_128_rgba_97.j2k|r0|channels3|90.8565|92.0732|93.1584|+0.259%|+0.220%|+0.165%|same
+packed|sl_128_rgba_97.j2k|r0|channels4|126.7727|125.6211|127.2454|+0.410%|+0.279%|+1.147%|same
+encode|32|reversibletrue|133.7290|130.7524|129.6832|+1.801%|-0.069%|-2.940%|same
+encode|32|reversiblefalse|138.5613|138.6846|138.9911|+1.060%|+0.021%|+0.985%|same

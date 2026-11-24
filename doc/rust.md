@@ -41,4 +41,4 @@ dependencies. The C++ oracle is linked into test tools and benchmarks.
 
 The decoder's and the encoder's Tier-1 are tested against the C++ block by block and decision by decision (README,
 "Tier-1 against the C++"), and timed by `neo-j2k-bench` ([bench.md](bench.md)). The benchmark reaches the two
-code-block entry points through the off-by-default feature `bench-internals`; the crate's `unsafe` stays in `simd`.
+code-block entry points through the off-by-default feature `bench-internals`; the codec crate forbids `unsafe` code.

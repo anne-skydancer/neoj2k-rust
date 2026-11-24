@@ -1,0 +1,4 @@
+#![forbid(unsafe_code)]
+use std::arch::x86_64::*;
+fn load(a: &[i32;8]) -> __m256i { _mm256_setr_epi32(a[0],a[1],a[2],a[3],a[4],a[5],a[6],a[7]) }
+fn main() { let _ = load(&[1;8]); }

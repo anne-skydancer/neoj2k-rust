@@ -1,0 +1,5 @@
+# Three-operation wide rounding experiment
+
+This trial changes `low = v - (high - BIG) + SMALL` to `low = v + (COMBINED - high)`, with BIG=3221225472, SMALL=12582912, COMBINED=3233808384 exactly. After normalized clamping, high lies in [2^31,2^32]. COMBINED and high are within a factor of two; their subtraction is exact, and COMBINED-BIG=SMALL exactly. Thus the final addition rounds the same SMALL+residual. The residual is bounded by128 and the even multiple-of256 translation preserves nearest-even ties.
+
+The standalone independent test passed2,085,184 float/tie checks over all precisions1..31 and both signs. Controlled old-four-operation versus new-three-operation RGB kernels improved7–9% (1024:about404→372ns); mixed and eight-bit branches stayed within about0.5%. Built Rust1.100, edition2024, -O, target-cpu=x86-64-v3; timing pinned CPU7. Driver paths refer to the Linux audit sandbox. Native/Miri/public decoder validation remains pending for this source snapshot; kernel results are not final acceptance evidence.

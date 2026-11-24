@@ -1,0 +1,10 @@
+width32|parity0|reference0.0751|safe0.0735|barrier0.0919|control0.0762|same
+width32|parity1|reference0.0770|safe0.0707|barrier0.0894|control0.0768|same
+width64|parity0|reference0.1541|safe0.1300|barrier0.1681|control0.1534|same
+width64|parity1|reference0.1462|safe0.1356|barrier0.1713|control0.1507|same
+width128|parity0|reference0.2921|safe0.2483|barrier0.3027|control0.2835|same
+width128|parity1|reference0.2900|safe0.2476|barrier0.3034|control0.2791|same
+width256|parity0|reference0.5577|safe0.5302|barrier0.6404|control0.5628|same
+width256|parity1|reference0.5657|safe0.5362|barrier0.6401|control0.5584|same
+width1024|parity0|reference2.5633|safe2.2778|barrier2.7398|control2.5512|same
+width1024|parity1|reference2.5550|safe2.3128|barrier2.7703|control2.5770|same

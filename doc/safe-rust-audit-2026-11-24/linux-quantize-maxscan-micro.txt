@@ -1,0 +1,7 @@
+4x4: ref9.05 current8.88 scan9.24 control9.06
+8x8: ref31.73 current15.42 scan65.11 control31.73
+16x16: ref127.46 current47.40 scan180.41 control127.43
+32x32: ref513.50 current187.13 scan556.20 control516.78
+64x64: ref2060.91 current740.12 scan1858.44 control2071.79
+7x6: ref20.72 current17.23 scan18.26 control20.71
+33x35: ref579.62 current248.60 scan665.23 control583.09

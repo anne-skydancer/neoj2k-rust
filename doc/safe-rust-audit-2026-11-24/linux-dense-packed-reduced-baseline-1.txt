@@ -1,0 +1,4 @@
+packed|sl_128_rgba_97.j2k|r2|channels1|22.1294|21.5245|21.8777|-1.934%|-1.458%|same
+packed|sl_128_rgba_97.j2k|r2|channels2|36.1096|35.3119|36.5048|-0.225%|-0.428%|same
+packed|sl_128_rgba_97.j2k|r2|channels3|52.2578|51.4756|52.1294|+1.199%|-7.361%|same
+packed|sl_128_rgba_97.j2k|r2|channels4|68.7265|70.6025|72.8036|-2.753%|+7.325%|same

@@ -1,0 +1,7 @@
+DIAGNOSTIC: third slot is old-safe INLINE scatter, NOT unchanged original control; percent columns new/old_safe,new/reference,old_safe/reference
+decode|p24_sl_64_rgb_97.j2k|r0|cutfalse|w1|52.5281|53.3719|53.4813|-0.216%|+2.065%|+0.373%|same
+decode|p24_sl_128_rgba_97.j2k|r0|cutfalse|w1|108.0437|114.5875|114.2500|+1.671%|+5.256%|+2.375%|same
+decode|p24_large_1024_rgb_97.j2k|r0|cutfalse|w1|3864.6500|3981.1000|4019.3000|-0.663%|+3.054%|+3.818%|same
+decode|p31_sl_64_rgb_97.j2k|r0|cutfalse|w1|51.6719|52.4812|53.5344|-1.984%|+1.364%|+4.165%|same
+decode|p31_sl_128_rgba_97.j2k|r0|cutfalse|w1|108.3781|112.1031|113.5938|-1.111%|+2.226%|+0.736%|same
+decode|p31_large_1024_rgb_97.j2k|r0|cutfalse|w1|3866.0000|3958.7000|4025.1000|-0.405%|+2.637%|+2.910%|same

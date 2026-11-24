@@ -1,0 +1,39 @@
+// SPDX-License-Identifier: BSD-2-Clause
+// Scratch-only independent G-first scheduling probe. No production source modified.
+#![forbid(unsafe_code)]
+#![allow(dead_code)]
+mod current { mod lanes; pub mod mct; }
+mod green { mod lanes; pub mod mct; }
+mod control { mod lanes; pub mod mct; }
+use std::hint::black_box;
+use std::time::Instant;
+type Run=fn([&mut [i32];3],bool,[(i32,i32,i32);3])->usize;
+const CALLS:[Run;3]=[current::mct::inverse_and_finish,green::mct::inverse_and_finish,control::mct::inverse_and_finish];
+fn bounds(p:u32,signed:bool)->(i32,i32,i32){let h=1i32<<(p-1);if signed{(0,-h,h-1)}else{(h,0,(h-1)*2+1)}}
+fn random(s:&mut u32)->u32{*s^=*s<<13;*s^=*s>>17;*s^=*s<<5;*s}
+fn median(mut x:Vec<f64>)->f64{x.sort_by(f64::total_cmp);x[x.len()/2]}
+fn check(){
+ let mut state=0xa12c03d5u32;let mut n=0;
+ for p in 1..=31 { for signed in [false,true] {for len in [0,1,7,8,9,15,16,17,25,33,128,1024]{
+  let f=[bounds(p,signed);3];
+  let input:[Vec<i32>;3]=std::array::from_fn(|_|(0..len).map(|_|random(&mut state).cast_signed()).collect());
+  let mut want=None;
+  for run in CALLS {let mut data=input.clone();let[a,b,c]=&mut data;run([a,b,c],false,f);if let Some(w)=&want{assert_eq!(&data,w);}else{want=Some(data);}n+=3*len;}
+ }}}
+ println!("EXACT_CURRENT_GREEN_CONTROL_VALUES={n}");
+}
+fn timed(gap:usize,p:u32,signed:bool){
+ const LEN:usize=1024;const FRAMES:usize=128;let n=LEN*FRAMES;
+ let mut state=0x09a81253u32;
+ let mut seed=vec![0i32;n*3+2*gap];
+ for x in &mut seed{*x=((random(&mut state).cast_signed() as f32)*0.0625).to_bits().cast_signed();}
+ let mut data=seed.clone();let mut t:[Vec<f64>;3]=std::array::from_fn(|_|Vec::new());let mut g=Vec::new();let mut c=Vec::new();
+ let f=black_box([bounds(p,signed);3]);
+ let orders=[[0,1,2],[2,1,0],[1,0,2],[2,0,1],[0,2,1],[1,2,0]];
+ for r in 0..30{let mut time=[0.;3];for k in orders[r%6]{
+  data.copy_from_slice(&seed);let(a,rest)=data.split_at_mut(n);let(b,rest)=rest[gap..].split_at_mut(n);let c=&mut rest[gap..];
+  let begin=Instant::now();for((a,b),c)in a.chunks_mut(LEN).zip(b.chunks_mut(LEN)).zip(c.chunks_mut(LEN)){black_box(CALLS[k])([a,b,c],false,f);}time[k]=begin.elapsed().as_secs_f64()*1e9/FRAMES as f64;t[k].push(time[k]);black_box(&data);
+ }g.push((time[1]/time[0]-1.)*100.);c.push((time[2]/time[0]-1.)*100.);}
+ println!("KERNEL|p{p}|signed{signed}|gap{}|current_ns{:.3}|green_ns{:.3}|control_ns{:.3}|green{:+.3}%|control{:+.3}%",gap*4,median(std::mem::take(&mut t[0])),median(std::mem::take(&mut t[1])),median(std::mem::take(&mut t[2])),median(g),median(c));
+}
+fn main(){println!("ADDR|current{:p}|green{:p}|control{:p}",CALLS[0]as*const(),CALLS[1]as*const(),CALLS[2]as*const());check();if std::env::args().any(|a|a=="--bench"){for p in [24,31]{for signed in[false,true]{for gap in[0,8,16]{timed(gap,p,signed);}}}}}

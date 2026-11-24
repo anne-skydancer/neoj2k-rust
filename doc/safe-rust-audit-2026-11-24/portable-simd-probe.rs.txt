@@ -1,0 +1,3 @@
+#![forbid(unsafe_code)]
+use std::simd::Simd;
+fn main() { let a=Simd::<i32,8>::splat(1); println!("{:?}", a+a); }

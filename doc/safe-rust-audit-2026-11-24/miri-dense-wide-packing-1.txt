@@ -1,0 +1,9 @@
+WARNING: Ignoring `RUSTC_WRAPPER` environment variable, Miri does not support wrapping.
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.01s
+     Running unittests src\lib.rs (target-audit-safe-miri\miri\x86_64-pc-windows-msvc\debug\build\neo-j2k/f94523a0628e6445\out\neo_j2k-f94523a0628e6445.exe)
+
+running 1 test
+test dwt::safe_rows_tests::avx2_dense_horizontal_matches_scalar_with_parities_odd_widths_and_padding ... ok <14.277s>
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 76 filtered out; finished in 14.60s
+

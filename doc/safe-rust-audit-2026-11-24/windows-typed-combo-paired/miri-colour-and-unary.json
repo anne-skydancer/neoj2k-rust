@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-11-03",
+    "miri",
+    "test",
+    "-p",
+    "neo-j2k",
+    "--lib",
+    "--locked",
+    "--",
+    "avx2_wide_"
+  ],
+  "target_dir": "target-audit-safe-miri-typed-combo",
+  "rustflags": "-C target-cpu=x86-64-v3",
+  "exit": 0,
+  "seconds": 4.730409499999951,
+  "source_sha256": "08ada46821f4e6f3383829c0359dbe0b18b05bfbba578bc84af4db5bb201dd61"
+}

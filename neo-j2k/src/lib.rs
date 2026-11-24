@@ -10,7 +10,7 @@
 //! The codec has zero dependencies and uses the C++ library as a test oracle.
 
 #![cfg_attr(not(feature = "std"), no_std)]
-#![deny(unsafe_code)]
+#![forbid(unsafe_code)]
 
 #[cfg(not(feature = "std"))]
 compile_error!("neo-j2k needs the std feature in this version");
@@ -34,7 +34,6 @@ mod limits;
 mod mct;
 mod mem;
 #[cfg(all(feature = "simd", target_arch = "x86_64", target_feature = "sse"))]
-#[allow(unsafe_code)]
 mod simd;
 mod stream;
 mod t1;

@@ -1,0 +1,1489 @@
+
+/home/dev/safe-crate-audit/target-io-paired-v3/release/neo-j2k-versions:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000001565f0 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode>:
+  1565f0:	push   %rbp
+  1565f1:	push   %r15
+  1565f3:	push   %r14
+  1565f5:	push   %r13
+  1565f7:	push   %r12
+  1565f9:	push   %rbx
+  1565fa:	sub    $0x1000,%rsp
+  156601:	movq   $0x0,(%rsp)
+  156609:	sub    $0x1000,%rsp
+  156610:	movq   $0x0,(%rsp)
+  156618:	sub    $0x1000,%rsp
+  15661f:	movq   $0x0,(%rsp)
+  156627:	sub    $0x1000,%rsp
+  15662e:	movq   $0x0,(%rsp)
+  156636:	sub    $0xdb8,%rsp
+  15663d:	mov    %rcx,%r13
+  156640:	mov    %rdx,%rbp
+  156643:	mov    %rdi,0xe8(%rsp)
+  15664b:	mov    0x198(%rsi),%rbx
+  156652:	mov    0x1a0(%rsi),%r14
+  156659:	mov    %rsi,0x10(%rsp)
+  15665e:	movq   $0x0,0x1a0(%rsi)
+  156669:	test   %r14,%r14
+  15666c:	je     156698 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xa8>
+  15666e:	add    $0x10,%rbx
+  156672:	mov    0x16c94f(%rip),%r15        # 2c2fc8 <free@GLIBC_2.2.5>
+  156679:	jmp    156689 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x99>
+  15667b:	nopl   0x0(%rax,%rax,1)
+  156680:	add    $0x20,%rbx
+  156684:	dec    %r14
+  156687:	je     156698 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xa8>
+  156689:	cmpq   $0x0,-0x8(%rbx)
+  15668e:	je     156680 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x90>
+  156690:	mov    (%rbx),%rdi
+  156693:	call   *%r15
+  156696:	jmp    156680 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x90>
+  156698:	mov    0x20(%rbp),%r15d
+  15669c:	mov    0x24(%rbp),%r14d
+  1566a0:	mov    %r14,%rbx
+  1566a3:	imul   %r15,%rbx
+  1566a7:	cmp    $0x10000,%rbx
+  1566ae:	jb     1566ef <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xff>
+  1566b0:	mov    0x48(%r13),%rdi
+  1566b4:	test   %rdi,%rdi
+  1566b7:	je     1566ef <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xff>
+  1566b9:	mov    0x50(%r13),%rax
+  1566bd:	mov    %rdi,%r12
+  1566c0:	mov    %rax,0x38(%rsp)
+  1566c5:	call   *0x18(%rax)
+  1566c8:	cmp    $0x2,%rax
+  1566cc:	jb     156978 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x388>
+  1566d2:	cmp    $0x40,%rax
+  1566d6:	mov    $0x40,%edi
+  1566db:	cmovb  %rax,%rdi
+  1566df:	mov    %r12,%rsi
+  1566e2:	cmpb   $0x0,0x0(%rbp)
+  1566e6:	jne    1566f7 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x107>
+  1566e8:	movzwl 0x2(%rbp),%r12d
+  1566ed:	jmp    1566fb <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x10b>
+  1566ef:	xor    %esi,%esi
+  1566f1:	cmpb   $0x0,0x0(%rbp)
+  1566f5:	je     1566e8 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xf8>
+  1566f7:	mov    0x10(%rbp),%r12
+  1566fb:	mov    0x10(%rsp),%rax
+  156700:	add    $0x190,%rax
+  156706:	mov    %rax,0xe0(%rsp)
+  15670e:	mov    %r12,0xf0(%rsp)
+  156716:	test   %r12,%r12
+  156719:	je     156787 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x197>
+  15671b:	cmp    $0x8,%r12
+  15671f:	jbe    1567d9 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1e9>
+  156725:	lea    0xf0(%rsp),%rax
+  15672d:	mov    %rax,0xab8(%rsp)
+  156735:	lea    -0xe63ec(%rip),%rax        # 70350 <_RNvXsd_NtNtNtCs8uuN1nrGffB_4core3fmt3num3impyNtB9_7Display3fmt>
+  15673c:	mov    %rax,0xac0(%rsp)
+  156744:	lea    -0x13e34b(%rip),%rcx        # 18400 <GCC_except_table1172+0x1acc>
+  15674b:	mov    %rcx,0xac8(%rsp)
+  156753:	mov    %rax,0xad0(%rsp)
+  15675b:	lea    -0x13ae08(%rip),%rsi        # 1b95a <GCC_except_table1172+0x5026>
+  156762:	lea    0x150(%rsp),%rdi
+  15676a:	lea    0xab8(%rsp),%rdx
+  156772:	call   66f80 <_RNvNvNtCs3BN1jqgSbDf_5alloc3fmt6format12format_inner>
+  156777:	movl   $0xfffffffa,0x168(%rsp)
+  156782:	jmp    1568e0 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2f0>
+  156787:	mov    $0x1d,%edi
+  15678c:	call   *0x16c83e(%rip)        # 2c2fd0 <malloc@GLIBC_2.2.5>
+  156792:	test   %rax,%rax
+  156795:	je     1583ef <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1dff>
+  15679b:	vmovups -0x1337f5(%rip),%xmm0        # 22fae <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x5de>
+  1567a3:	vmovups %xmm0,0xd(%rax)
+  1567a8:	vmovups -0x13380f(%rip),%xmm0        # 22fa1 <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x5d1>
+  1567b0:	vmovups %xmm0,(%rax)
+  1567b4:	movq   $0x1d,0x150(%rsp)
+  1567c0:	mov    %rax,0x158(%rsp)
+  1567c8:	movq   $0x1d,0x160(%rsp)
+  1567d4:	jmp    1568d5 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2e5>
+  1567d9:	mov    %r15d,0xd4(%rsp)
+  1567e1:	mov    %r14d,0xd8(%rsp)
+  1567e9:	test   %r15d,%r15d
+  1567ec:	je     15688e <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x29e>
+  1567f2:	test   %r14d,%r14d
+  1567f5:	je     15688e <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x29e>
+  1567fb:	cmp    $0x1000,%r15d
+  156802:	ja     156989 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x399>
+  156808:	cmp    $0x1000,%r14d
+  15680f:	ja     156989 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x399>
+  156815:	imul   %r12,%rbx
+  156819:	cmp    $0x4000000,%rbx
+  156820:	ja     156989 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x399>
+  156826:	movzbl 0x5f(%r13),%r9d
+  15682b:	mov    %r9d,%eax
+  15682e:	xor    $0x1,%al
+  156830:	cmp    $0x3,%r12
+  156834:	setae  %cl
+  156837:	or     %al,%cl
+  156839:	jne    156a19 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x429>
+  15683f:	mov    $0x40,%edi
+  156844:	call   *0x16c786(%rip)        # 2c2fd0 <malloc@GLIBC_2.2.5>
+  15684a:	test   %rax,%rax
+  15684d:	je     158421 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1e31>
+  156853:	vmovups -0x133772(%rip),%ymm0        # 230e9 <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x719>
+  15685b:	vmovups %ymm0,0x20(%rax)
+  156860:	vmovups -0x13379f(%rip),%ymm0        # 230c9 <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x6f9>
+  156868:	vmovups %ymm0,(%rax)
+  15686c:	movq   $0x40,0x150(%rsp)
+  156878:	mov    %rax,0x158(%rsp)
+  156880:	movq   $0x40,0x160(%rsp)
+  15688c:	jmp    1568d5 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2e5>
+  15688e:	mov    $0x23,%edi
+  156893:	call   *0x16c737(%rip)        # 2c2fd0 <malloc@GLIBC_2.2.5>
+  156899:	test   %rax,%rax
+  15689c:	je     1583fe <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1e0e>
+  1568a2:	vmovups -0x1338ec(%rip),%ymm0        # 22fbe <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x5ee>
+  1568aa:	vmovups %ymm0,(%rax)
+  1568ae:	movl   $0xa656761,0x1f(%rax)
+  1568b5:	movq   $0x23,0x150(%rsp)
+  1568c1:	mov    %rax,0x158(%rsp)
+  1568c9:	movq   $0x23,0x160(%rsp)
+  1568d5:	movl   $0xfffffffe,0x168(%rsp)
+  1568e0:	mov    0x150(%rsp),%r15
+  1568e8:	cmp    $0xfffffffffffffffe,%r15
+  1568ec:	jne    15691a <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x32a>
+  1568ee:	mov    0x10(%rsp),%rax
+  1568f3:	mov    0xb0(%rax),%rdx
+  1568fa:	mov    0xa8(%rax),%rax
+  156901:	mov    0xe8(%rsp),%rcx
+  156909:	mov    %rax,0x8(%rcx)
+  15690d:	mov    %rdx,0x10(%rcx)
+  156911:	movq   $0xfffffffffffffffe,(%rcx)
+  156918:	jmp    156963 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x373>
+  15691a:	mov    0x158(%rsp),%r13
+  156922:	vmovdqa 0x160(%rsp),%xmm0
+  15692b:	vmovdqa %xmm0,0x10(%rsp)
+  156931:	vmovq  %xmm0,%rdx
+  156936:	mov    0xe0(%rsp),%rdi
+  15693e:	mov    %r13,%rsi
+  156941:	vzeroupper
+  156944:	call   143750 <_RINvMs2_NtCsbWCI0taggj7_7neo_j2k5errorNtB6_11Diagnostics4pushNCINvB2_5errorReE0EB8_>
+  156949:	mov    0xe8(%rsp),%rax
+  156951:	mov    %r15,(%rax)
+  156954:	mov    %r13,0x8(%rax)
+  156958:	vmovdqa 0x10(%rsp),%xmm0
+  15695e:	vmovdqu %xmm0,0x10(%rax)
+  156963:	add    $0x4db8,%rsp
+  15696a:	pop    %rbx
+  15696b:	pop    %r12
+  15696d:	pop    %r13
+  15696f:	pop    %r14
+  156971:	pop    %r15
+  156973:	pop    %rbp
+  156974:	vzeroupper
+  156977:	ret
+  156978:	xor    %esi,%esi
+  15697a:	cmpb   $0x0,0x0(%rbp)
+  15697e:	jne    1566f7 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x107>
+  156984:	jmp    1566e8 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xf8>
+  156989:	lea    0xd4(%rsp),%rax
+  156991:	mov    %rax,0xab8(%rsp)
+  156999:	lea    -0xeccf0(%rip),%rax        # 69cb0 <_RNvXs8_NtNtNtCs8uuN1nrGffB_4core3fmt3num3impmNtB9_7Display3fmt>
+  1569a0:	mov    %rax,0xac0(%rsp)
+  1569a8:	lea    0xd8(%rsp),%rcx
+  1569b0:	mov    %rcx,0xac8(%rsp)
+  1569b8:	mov    %rax,0xad0(%rsp)
+  1569c0:	lea    0xf0(%rsp),%rcx
+  1569c8:	mov    %rcx,0xad8(%rsp)
+  1569d0:	lea    -0xe6687(%rip),%rcx        # 70350 <_RNvXsd_NtNtNtCs8uuN1nrGffB_4core3fmt3num3impyNtB9_7Display3fmt>
+  1569d7:	mov    %rcx,0xae0(%rsp)
+  1569df:	lea    -0x13dac2(%rip),%rdx        # 18f24 <GCC_except_table1172+0x25f0>
+  1569e6:	mov    %rdx,0xae8(%rsp)
+  1569ee:	mov    %rax,0xaf0(%rsp)
+  1569f6:	lea    -0x13e47d(%rip),%rax        # 18580 <GCC_except_table1172+0x1c4c>
+  1569fd:	mov    %rax,0xaf8(%rsp)
+  156a05:	mov    %rcx,0xb00(%rsp)
+  156a0d:	lea    -0x136483(%rip),%rsi        # 20591 <GCC_except_table1172+0x9c5d>
+  156a14:	jmp    156762 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x172>
+  156a19:	cmp    %r14d,%r15d
+  156a1c:	mov    %r14d,%eax
+  156a1f:	cmovb  %r15d,%eax
+  156a23:	xor    %ecx,%ecx
+  156a25:	lzcnt  %eax,%ecx
+  156a29:	mov    $0x20,%eax
+  156a2e:	sub    %ecx,%eax
+  156a30:	movzbl 0x5d(%r13),%ecx
+  156a35:	cmp    $0x6,%eax
+  156a38:	mov    $0x6,%r11d
+  156a3e:	cmovb  %eax,%r11d
+  156a42:	cmpb   $0x0,0x5c(%r13)
+  156a47:	cmovne %ecx,%r11d
+  156a4b:	mov    %r11d,0xdc(%rsp)
+  156a53:	lea    -0x1(%r11),%ecx
+  156a57:	cmp    $0x21,%ecx
+  156a5a:	jae    156ad5 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x4e5>
+  156a5c:	mov    0x10(%r13),%r10
+  156a60:	mov    %r10,0xf8(%rsp)
+  156a68:	cmp    $0x64,%r10
+  156a6c:	jbe    156b15 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x525>
+  156a72:	lea    0xf8(%rsp),%rax
+  156a7a:	mov    %rax,0xab8(%rsp)
+  156a82:	lea    -0xe6739(%rip),%rax        # 70350 <_RNvXsd_NtNtNtCs8uuN1nrGffB_4core3fmt3num3impyNtB9_7Display3fmt>
+  156a89:	mov    %rax,0xac0(%rsp)
+  156a91:	lea    -0x13e650(%rip),%rcx        # 18448 <GCC_except_table1172+0x1b14>
+  156a98:	mov    %rcx,0xac8(%rsp)
+  156aa0:	mov    %rax,0xad0(%rsp)
+  156aa8:	lea    -0x139e17(%rip),%rsi        # 1cc98 <GCC_except_table1172+0x6364>
+  156aaf:	lea    0x150(%rsp),%rdi
+  156ab7:	lea    0xab8(%rsp),%rdx
+  156abf:	call   66f80 <_RNvNvNtCs3BN1jqgSbDf_5alloc3fmt6format12format_inner>
+  156ac4:	mov    $0xfffffffa,%eax
+  156ac9:	mov    %eax,0x168(%rsp)
+  156ad0:	jmp    1568e0 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2f0>
+  156ad5:	lea    0xdc(%rsp),%rax
+  156add:	mov    %rax,0xab8(%rsp)
+  156ae5:	lea    -0xece3c(%rip),%rax        # 69cb0 <_RNvXs8_NtNtNtCs8uuN1nrGffB_4core3fmt3num3impmNtB9_7Display3fmt>
+  156aec:	mov    %rax,0xac0(%rsp)
+  156af4:	lea    -0x138b38(%rip),%rsi        # 1dfc3 <GCC_except_table1172+0x768f>
+  156afb:	lea    0x150(%rsp),%rdi
+  156b03:	lea    0xab8(%rsp),%rdx
+  156b0b:	call   66f80 <_RNvNvNtCs3BN1jqgSbDf_5alloc3fmt6format12format_inner>
+  156b10:	jmp    1568d5 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2e5>
+  156b15:	mov    0x38(%r13),%rcx
+  156b19:	xor    %ebx,%ebx
+  156b1b:	cmpq   $0xffffffffffffffff,0x30(%r13)
+  156b20:	cmovne %rcx,%rbx
+  156b24:	je     156bb5 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x5c5>
+  156b2a:	mov    0x40(%r13),%rdx
+  156b2e:	xor    %r8d,%r8d
+  156b31:	test   %rdx,%rdx
+  156b34:	je     156bc4 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x5d4>
+  156b3a:	cmpb   $0x0,(%rcx,%r8,1)
+  156b3f:	je     156b4c <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x55c>
+  156b41:	inc    %r8
+  156b44:	cmp    %r8,%rdx
+  156b47:	jne    156b3a <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x54a>
+  156b49:	mov    %rdx,%r8
+  156b4c:	cmp    $0xfffb,%r8
+  156b53:	jbe    156bc7 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x5d7>
+  156b55:	mov    $0x46,%edi
+  156b5a:	call   *0x16c470(%rip)        # 2c2fd0 <malloc@GLIBC_2.2.5>
+  156b60:	test   %rax,%rax
+  156b63:	je     1585c5 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1fd5>
+  156b69:	vmovups -0x133ace(%rip),%ymm0        # 230a3 <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x6d3>
+  156b71:	vmovups %ymm0,0x20(%rax)
+  156b76:	vmovups -0x133afb(%rip),%ymm0        # 23083 <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x6b3>
+  156b7e:	vmovups %ymm0,(%rax)
+  156b82:	movabs $0xa73646c6f682074,%rcx
+  156b8c:	mov    %rcx,0x3e(%rax)
+  156b90:	movq   $0x46,0x150(%rsp)
+  156b9c:	mov    %rax,0x158(%rsp)
+  156ba4:	movq   $0x46,0x160(%rsp)
+  156bb0:	jmp    157588 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xf98>
+  156bb5:	lea    -0x133bdb(%rip),%rbx        # 22fe1 <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x611>
+  156bbc:	mov    $0x21,%r8d
+  156bc2:	jmp    156bc7 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x5d7>
+  156bc4:	mov    %rcx,%rbx
+  156bc7:	cmp    %eax,%r11d
+  156bca:	jbe    156c2c <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x63c>
+  156bcc:	mov    $0x45,%edi
+  156bd1:	call   *0x16c3f9(%rip)        # 2c2fd0 <malloc@GLIBC_2.2.5>
+  156bd7:	test   %rax,%rax
+  156bda:	je     1584fd <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1f0d>
+  156be0:	vmovups -0x133b8a(%rip),%ymm0        # 2305e <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x68e>
+  156be8:	vmovups %ymm0,0x20(%rax)
+  156bed:	vmovups -0x133bb7(%rip),%ymm0        # 2303e <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x66e>
+  156bf5:	vmovups %ymm0,(%rax)
+  156bf9:	movabs $0xa73656c69742066,%rcx
+  156c03:	mov    %rcx,0x3d(%rax)
+  156c07:	movq   $0x45,0x150(%rsp)
+  156c13:	mov    %rax,0x158(%rsp)
+  156c1b:	movq   $0x45,0x160(%rsp)
+  156c27:	jmp    157588 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xf98>
+  156c2c:	mov    0x58(%r13),%eax
+  156c30:	test   %eax,%eax
+  156c32:	js     15753b <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xf4b>
+  156c38:	mov    %rdi,0x90(%rsp)
+  156c40:	mov    %rsi,0x68(%rsp)
+  156c45:	vxorpd %xmm0,%xmm0,%xmm0
+  156c49:	vmovupd %ymm0,0x830(%rsp)
+  156c52:	vmovupd %ymm0,0x820(%rsp)
+  156c5b:	vmovupd %ymm0,0x800(%rsp)
+  156c64:	vmovupd %ymm0,0x7e0(%rsp)
+  156c6d:	vmovupd %ymm0,0x7c0(%rsp)
+  156c76:	vmovupd %ymm0,0x7a0(%rsp)
+  156c7f:	vmovupd %ymm0,0x780(%rsp)
+  156c88:	vmovupd %ymm0,0x760(%rsp)
+  156c91:	vmovupd %ymm0,0x740(%rsp)
+  156c9a:	vmovupd %ymm0,0x720(%rsp)
+  156ca3:	vmovupd %ymm0,0x700(%rsp)
+  156cac:	vmovupd %ymm0,0x6e0(%rsp)
+  156cb5:	vmovupd %ymm0,0x6c0(%rsp)
+  156cbe:	mov    0x8(%r13),%rsi
+  156cc2:	mov    %eax,0x48(%rsp)
+  156cc6:	lea    0x0(,%r10,4),%rdx
+  156cce:	lea    0x6c0(%rsp),%rdi
+  156cd6:	mov    %rbx,0x70(%rsp)
+  156cdb:	mov    %r8,0x50(%rsp)
+  156ce0:	mov    %r9b,0xe(%rsp)
+  156ce5:	mov    %r10,%rbx
+  156ce8:	mov    %r11,0x30(%rsp)
+  156ced:	vzeroupper
+  156cf0:	call   *0x16c2e2(%rip)        # 2c2fd8 <memcpy@GLIBC_2.14>
+  156cf6:	cmp    $0x1,%rbx
+  156cfa:	adc    $0x0,%rbx
+  156cfe:	mov    %rbx,0xf8(%rsp)
+  156d06:	movzbl 0x5e(%r13),%eax
+  156d0b:	mov    %r14d,%edi
+  156d0e:	imul   %r15d,%edi
+  156d12:	imul   %r12d,%edi
+  156d16:	vcvtsi2sd %edi,%xmm15,%xmm0
+  156d1a:	vmulsd -0x13e7da(%rip),%xmm0,%xmm0        # 18548 <GCC_except_table1172+0x1c14>
+  156d22:	vcvttsd2si %xmm0,%rcx
+  156d27:	mov    %rcx,%rdx
+  156d2a:	vsubsd -0x13e81a(%rip),%xmm0,%xmm1        # 18518 <GCC_except_table1172+0x1be4>
+  156d32:	vcvttsd2si %xmm1,%rsi
+  156d37:	sar    $0x3f,%rdx
+  156d3b:	and    %rdx,%rsi
+  156d3e:	or     %rcx,%rsi
+  156d41:	xor    %ecx,%ecx
+  156d43:	vxorpd %xmm1,%xmm1,%xmm1
+  156d47:	vucomisd %xmm1,%xmm0
+  156d4b:	cmovae %rsi,%rcx
+  156d4f:	mov    0x30(%rsp),%esi
+  156d53:	vucomisd -0x13e943(%rip),%xmm0        # 18418 <GCC_except_table1172+0x1ae4>
+  156d5b:	mov    $0xffffffffffffffff,%rdx
+  156d62:	cmovbe %rcx,%rdx
+  156d66:	lea    (%r12,%r12,4),%rcx
+  156d6a:	lea    (%r12,%rcx,4),%rcx
+  156d6e:	add    %r12,%rcx
+  156d71:	add    %rdx,%rcx
+  156d74:	add    $0x1f7,%rcx
+  156d7b:	mov    %rcx,0x30(%rsp)
+  156d80:	mov    %r15,0xc58(%rsp)
+  156d88:	mov    %r14,0xc60(%rsp)
+  156d90:	mov    %r12,0xc68(%rsp)
+  156d98:	mov    %rsi,%r12
+  156d9b:	mov    %rsi,0xc70(%rsp)
+  156da3:	mov    %rbx,0xc78(%rsp)
+  156dab:	mov    %al,0xd1c(%rsp)
+  156db2:	movzbl 0xe(%rsp),%eax
+  156db7:	mov    %al,0xd1d(%rsp)
+  156dbe:	mov    %edi,%ebx
+  156dc0:	movw   $0x0,0xc88(%rsp)
+  156dca:	movb   $0x0,0xc8a(%rsp)
+  156dd2:	movw   $0x0,0xc8c(%rsp)
+  156ddc:	movb   $0x0,0xc8e(%rsp)
+  156de4:	movw   $0x0,0xc90(%rsp)
+  156dee:	movb   $0x0,0xc92(%rsp)
+  156df6:	movw   $0x0,0xc94(%rsp)
+  156e00:	movb   $0x0,0xc96(%rsp)
+  156e08:	movw   $0x0,0xc98(%rsp)
+  156e12:	movb   $0x0,0xc9a(%rsp)
+  156e1a:	movw   $0x0,0xc9c(%rsp)
+  156e24:	movb   $0x0,0xc9e(%rsp)
+  156e2c:	movw   $0x0,0xca0(%rsp)
+  156e36:	movb   $0x0,0xca2(%rsp)
+  156e3e:	movw   $0x0,0xca4(%rsp)
+  156e48:	movb   $0x0,0xca6(%rsp)
+  156e50:	movw   $0x0,0xca8(%rsp)
+  156e5a:	movb   $0x0,0xcaa(%rsp)
+  156e62:	movw   $0x0,0xcac(%rsp)
+  156e6c:	movb   $0x0,0xcae(%rsp)
+  156e74:	movw   $0x0,0xcb0(%rsp)
+  156e7e:	movb   $0x0,0xcb2(%rsp)
+  156e86:	movw   $0x0,0xcb4(%rsp)
+  156e90:	movb   $0x0,0xcb6(%rsp)
+  156e98:	movw   $0x0,0xcb8(%rsp)
+  156ea2:	movb   $0x0,0xcba(%rsp)
+  156eaa:	movw   $0x0,0xcbc(%rsp)
+  156eb4:	movb   $0x0,0xcbe(%rsp)
+  156ebc:	movw   $0x0,0xcc0(%rsp)
+  156ec6:	movb   $0x0,0xcc2(%rsp)
+  156ece:	movw   $0x0,0xcc4(%rsp)
+  156ed8:	movb   $0x0,0xcc6(%rsp)
+  156ee0:	movw   $0x0,0xcc8(%rsp)
+  156eea:	movb   $0x0,0xcca(%rsp)
+  156ef2:	movw   $0x0,0xccc(%rsp)
+  156efc:	movb   $0x0,0xcce(%rsp)
+  156f04:	movw   $0x0,0xcd0(%rsp)
+  156f0e:	movb   $0x0,0xcd2(%rsp)
+  156f16:	movw   $0x0,0xcd4(%rsp)
+  156f20:	movb   $0x0,0xcd6(%rsp)
+  156f28:	movw   $0x0,0xcd8(%rsp)
+  156f32:	movb   $0x0,0xcda(%rsp)
+  156f3a:	movw   $0x0,0xcdc(%rsp)
+  156f44:	movb   $0x0,0xcde(%rsp)
+  156f4c:	movw   $0x0,0xce0(%rsp)
+  156f56:	movb   $0x0,0xce2(%rsp)
+  156f5e:	movw   $0x0,0xce4(%rsp)
+  156f68:	movb   $0x0,0xce6(%rsp)
+  156f70:	movw   $0x0,0xce8(%rsp)
+  156f7a:	movb   $0x0,0xcea(%rsp)
+  156f82:	movw   $0x0,0xcec(%rsp)
+  156f8c:	movb   $0x0,0xcee(%rsp)
+  156f94:	movw   $0x0,0xcf0(%rsp)
+  156f9e:	movb   $0x0,0xcf2(%rsp)
+  156fa6:	movw   $0x0,0xcf4(%rsp)
+  156fb0:	movb   $0x0,0xcf6(%rsp)
+  156fb8:	movw   $0x0,0xcf8(%rsp)
+  156fc2:	movb   $0x0,0xcfa(%rsp)
+  156fca:	movw   $0x0,0xcfc(%rsp)
+  156fd4:	movb   $0x0,0xcfe(%rsp)
+  156fdc:	movw   $0x0,0xd00(%rsp)
+  156fe6:	movb   $0x0,0xd02(%rsp)
+  156fee:	movw   $0x0,0xd04(%rsp)
+  156ff8:	movb   $0x0,0xd06(%rsp)
+  157000:	movw   $0x0,0xd08(%rsp)
+  15700a:	movb   $0x0,0xd0a(%rsp)
+  157012:	movw   $0x0,0xd0c(%rsp)
+  15701c:	movb   $0x0,0xd0e(%rsp)
+  157024:	movw   $0x0,0xd10(%rsp)
+  15702e:	movb   $0x0,0xd12(%rsp)
+  157036:	movw   $0x0,0xd14(%rsp)
+  157040:	movb   $0x0,0xd16(%rsp)
+  157048:	movw   $0x0,0xd18(%rsp)
+  157052:	movb   $0x0,0xd1a(%rsp)
+  15705a:	lea    0xab8(%rsp),%r15
+  157062:	mov    $0x190,%edx
+  157067:	mov    %r15,%rdi
+  15706a:	lea    0x6c0(%rsp),%rsi
+  157072:	call   *0x16bf60(%rip)        # 2c2fd8 <memcpy@GLIBC_2.14>
+  157078:	movb   $0x0,0xd1e(%rsp)
+  157080:	mov    0x70(%rsp),%rax
+  157085:	mov    %rax,0xc48(%rsp)
+  15708d:	mov    0x50(%rsp),%rax
+  157092:	mov    %rax,0xc50(%rsp)
+  15709a:	mov    0x30(%rsp),%rax
+  15709f:	mov    %rax,0xc80(%rsp)
+  1570a7:	mov    %r15,%rdi
+  1570aa:	mov    %ebx,%esi
+  1570ac:	mov    0x48(%rsp),%edx
+  1570b0:	mov    0xe0(%rsp),%rcx
+  1570b8:	call   13ae80 <_RNvMs3_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_8Settings11setup_rates>
+  1570bd:	mov    0xc78(%rsp),%rsi
+  1570c5:	cmp    $0x65,%rsi
+  1570c9:	jae    1580c3 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1ad3>
+  1570cf:	mov    0x20(%r13),%rsi
+  1570d3:	mov    0x28(%r13),%rdx
+  1570d7:	lea    0x130(%rsp),%rdi
+  1570df:	call   13af60 <_RNvNtCsbWCI0taggj7_7neo_j2k7encoder22validate_extra_options>
+  1570e4:	cmpq   $0xfffffffffffffffe,0x130(%rsp)
+  1570ed:	jne    157524 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xf34>
+  1570f3:	lea    0x130(%rsp),%rdi
+  1570fb:	lea    0xab8(%rsp),%rdx
+  157103:	mov    %rbp,%rsi
+  157106:	call   13b5e0 <_RNvMs2_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_9ImageView16validate_samples>
+  15710b:	cmpq   $0xfffffffffffffffe,0x130(%rsp)
+  157114:	jne    157524 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xf34>
+  15711a:	lea    0xab8(%rsp),%rdi
+  157122:	mov    %ebx,%esi
+  157124:	call   13b6e0 <_RNvMs3_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_8Settings12update_rates>
+  157129:	mov    0xc78(%rsp),%rsi
+  157131:	cmp    $0x65,%rsi
+  157135:	jae    1583c6 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1dd6>
+  15713b:	lea    0xc88(%rsp),%rbx
+  157143:	shl    $0x2,%rsi
+  157147:	xor    %ecx,%ecx
+  157149:	vxorpd %xmm0,%xmm0,%xmm0
+  15714d:	mov    %r12,%rdx
+  157150:	mov    %rcx,%rax
+  157153:	cmp    %rcx,%rsi
+  157156:	je     15716d <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xb7d>
+  157158:	vmovss 0xab8(%rsp,%rax,1),%xmm1
+  157161:	lea    0x4(%rax),%rcx
+  157165:	vucomiss %xmm0,%xmm1
+  157169:	jne    15716d <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xb7d>
+  15716b:	jnp    157150 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xb60>
+  15716d:	cmp    %rax,%rsi
+  157170:	sete   0xd1e(%rsp)
+  157178:	lea    (%rdx,%rdx,2),%r13
+  15717c:	add    $0xfffffffffffffffe,%r13
+  157180:	cmp    $0x26,%r13
+  157184:	jae    1583d9 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1de9>
+  15718a:	test   %r13,%r13
+  15718d:	je     15721d <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xc2d>
+  157193:	lea    -0x1(%r12),%rdi
+  157198:	movzbl 0xd1c(%rsp),%edx
+  1571a0:	xor    %esi,%esi
+  1571a2:	call   13b9c0 <_RNvNtNtCsbWCI0taggj7_7neo_j2k7encoder7wavelet4step>
+  1571a7:	mov    %ax,0xc88(%rsp)
+  1571af:	mov    %dl,0xc8a(%rsp)
+  1571b6:	cmp    $0x1,%r13d
+  1571ba:	je     15721d <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xc2d>
+  1571bc:	lea    (%rbx,%r13,4),%r14
+  1571c0:	add    $0xfffffffffffffffe,%r12
+  1571c4:	xor    %r13d,%r13d
+  1571c7:	movabs $0xaaaaaaaaaaaaaaab,%r15
+  1571d1:	mov    %r13,%rdx
+  1571d4:	mulx   %r15,%rax,%rax
+  1571d9:	shr    $1,%rax
+  1571dc:	lea    (%rax,%rax,2),%ecx
+  1571df:	mov    $0x1,%dl
+  1571e1:	sub    %cl,%dl
+  1571e3:	movzbl %dl,%esi
+  1571e6:	add    %r13d,%esi
+  1571e9:	mov    %r12,%rdi
+  1571ec:	sub    %rax,%rdi
+  1571ef:	movzbl 0xd1c(%rsp),%edx
+  1571f7:	call   13b9c0 <_RNvNtNtCsbWCI0taggj7_7neo_j2k7encoder7wavelet4step>
+  1571fc:	mov    %ax,0xc8c(%rsp,%r13,4)
+  157205:	mov    %dl,0xc8e(%rsp,%r13,4)
+  15720d:	lea    (%rbx,%r13,4),%rax
+  157211:	add    $0x8,%rax
+  157215:	inc    %r13
+  157218:	cmp    %r14,%rax
+  15721b:	jne    1571d1 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xbe1>
+  15721d:	lea    0x150(%rsp),%rdi
+  157225:	lea    0xab8(%rsp),%rsi
+  15722d:	mov    $0x268,%edx
+  157232:	call   *0x16bda0(%rip)        # 2c2fd8 <memcpy@GLIBC_2.14>
+  157238:	movzbl 0x3b6(%rsp),%eax
+  157240:	mov    0x150(%rsp),%r15
+  157248:	cmp    $0x2,%al
+  15724a:	je     1568e8 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2f8>
+  157250:	mov    0x158(%rsp),%rcx
+  157258:	mov    %rcx,0xc0(%rsp)
+  157260:	mov    0x160(%rsp),%rcx
+  157268:	mov    %rcx,0xb8(%rsp)
+  157270:	mov    0x168(%rsp),%ecx
+  157277:	mov    %ecx,0x60(%rsp)
+  15727b:	mov    0x16c(%rsp),%ecx
+  157282:	mov    %ecx,0x78(%rsp)
+  157286:	lea    0x170(%rsp),%rsi
+  15728e:	lea    0x4ab8(%rsp),%rdi
+  157296:	mov    $0x180,%edx
+  15729b:	mov    %al,0x80(%rsp)
+  1572a2:	mov    0x16bd2f(%rip),%rax        # 2c2fd8 <memcpy@GLIBC_2.14>
+  1572a9:	call   *%rax
+  1572ab:	mov    0x2f0(%rsp),%r13
+  1572b3:	vmovups 0x320(%rsp),%ymm0
+  1572bc:	vmovups %ymm0,0x3c0(%rsp)
+  1572c5:	mov    0x2f8(%rsp),%rax
+  1572cd:	mov    %rax,0x48(%rsp)
+  1572d2:	vmovups 0x340(%rsp),%ymm0
+  1572db:	vmovups %ymm0,0x3e0(%rsp)
+  1572e4:	mov    0x300(%rsp),%rax
+  1572ec:	mov    %rax,0x88(%rsp)
+  1572f4:	vmovups 0x360(%rsp),%ymm0
+  1572fd:	vmovups %ymm0,0x400(%rsp)
+  157306:	mov    0x308(%rsp),%r12
+  15730e:	vmovups 0x380(%rsp),%ymm0
+  157317:	vmovups %ymm0,0x420(%rsp)
+  157320:	mov    0x310(%rsp),%rbx
+  157328:	vmovups 0x394(%rsp),%ymm0
+  157331:	vmovups %ymm0,0x434(%rsp)
+  15733a:	mov    0x318(%rsp),%r14
+  157342:	movzbl 0x3b4(%rsp),%eax
+  15734a:	mov    %al,0xf(%rsp)
+  15734e:	movzbl 0x3b5(%rsp),%eax
+  157356:	mov    %al,0xe(%rsp)
+  15735a:	movzbl 0x3b7(%rsp),%eax
+  157362:	mov    %al,0xb0(%rsp)
+  157369:	lea    0x4c38(%rsp),%rdi
+  157371:	mov    $0x180,%edx
+  157376:	lea    0x4ab8(%rsp),%rsi
+  15737e:	vzeroupper
+  157381:	call   *0x16bc51(%rip)        # 2c2fd8 <memcpy@GLIBC_2.14>
+  157387:	mov    %r15,0x458(%rsp)
+  15738f:	mov    0xc0(%rsp),%rax
+  157397:	mov    %rax,0x460(%rsp)
+  15739f:	mov    0xb8(%rsp),%rax
+  1573a7:	mov    %rax,0x468(%rsp)
+  1573af:	mov    0x60(%rsp),%eax
+  1573b3:	mov    %eax,0x470(%rsp)
+  1573ba:	mov    0x78(%rsp),%eax
+  1573be:	mov    %eax,0x474(%rsp)
+  1573c5:	lea    0x478(%rsp),%rdi
+  1573cd:	mov    $0x180,%edx
+  1573d2:	lea    0x4ab8(%rsp),%rsi
+  1573da:	call   *0x16bbf8(%rip)        # 2c2fd8 <memcpy@GLIBC_2.14>
+  1573e0:	mov    %r13,0x5f8(%rsp)
+  1573e8:	mov    0x48(%rsp),%rcx
+  1573ed:	mov    %rcx,0x600(%rsp)
+  1573f5:	mov    0x88(%rsp),%rdx
+  1573fd:	mov    %rdx,0x608(%rsp)
+  157405:	mov    %r12,0x50(%rsp)
+  15740a:	mov    %r12,0x610(%rsp)
+  157412:	mov    %rbx,0xa8(%rsp)
+  15741a:	mov    %rbx,0x618(%rsp)
+  157422:	mov    %r14,0x58(%rsp)
+  157427:	mov    %r14,0x620(%rsp)
+  15742f:	vmovups 0x3c0(%rsp),%ymm0
+  157438:	vmovups 0x3e0(%rsp),%ymm1
+  157441:	vmovups 0x400(%rsp),%ymm2
+  15744a:	vmovups 0x420(%rsp),%ymm3
+  157453:	vmovups %ymm0,0x628(%rsp)
+  15745c:	vmovups %ymm1,0x648(%rsp)
+  157465:	vmovups %ymm2,0x668(%rsp)
+  15746e:	vmovups %ymm3,0x688(%rsp)
+  157477:	vmovdqu 0x434(%rsp),%ymm0
+  157480:	vmovdqu %ymm0,0x69c(%rsp)
+  157489:	movzbl 0xf(%rsp),%eax
+  15748e:	mov    %al,0x6bc(%rsp)
+  157495:	movzbl 0xe(%rsp),%eax
+  15749a:	mov    %al,0x6bd(%rsp)
+  1574a1:	movzbl 0x80(%rsp),%eax
+  1574a9:	mov    %al,0x6be(%rsp)
+  1574b0:	movzbl 0xb0(%rsp),%eax
+  1574b8:	mov    %al,0x6bf(%rsp)
+  1574bf:	mov    %rcx,%r14
+  1574c2:	imul   %r13,%r14
+  1574c6:	mov    %r14,%r12
+  1574c9:	imul   %rdx,%r12
+  1574cd:	mov    0x10(%rsp),%rcx
+  1574d2:	mov    0x68(%rcx),%rbx
+  1574d6:	mov    %r12,%rdx
+  1574d9:	sub    %rbx,%rdx
+  1574dc:	mov    %r13,0x70(%rsp)
+  1574e1:	mov    %r14,0x28(%rsp)
+  1574e6:	jbe    157599 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xfa9>
+  1574ec:	mov    0x58(%rcx),%rsi
+  1574f0:	mov    %rsi,%rax
+  1574f3:	sub    %rbx,%rax
+  1574f6:	cmp    %rax,%rdx
+  1574f9:	ja     157c63 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1673>
+  1574ff:	mov    0x60(%rcx),%r13
+  157503:	lea    0x0(,%rbx,4),%rdi
+  15750b:	add    %r13,%rdi
+  15750e:	shl    $0x2,%rdx
+  157512:	xor    %esi,%esi
+  157514:	vzeroupper
+  157517:	call   *0x16baeb(%rip)        # 2c3008 <memset@GLIBC_2.2.5>
+  15751d:	mov    0x10(%rsp),%rcx
+  157522:	jmp    15759d <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xfad>
+  157524:	vmovups 0x130(%rsp),%ymm0
+  15752d:	vmovups %ymm0,0x150(%rsp)
+  157536:	jmp    1568e0 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2f0>
+  15753b:	mov    $0x3c,%edi
+  157540:	call   *0x16ba8a(%rip)        # 2c2fd0 <malloc@GLIBC_2.2.5>
+  157546:	test   %rax,%rax
+  157549:	je     1585f4 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2004>
+  15754f:	vmovups -0x134539(%rip),%ymm0        # 2301e <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x64e>
+  157557:	vmovups %ymm0,0x1c(%rax)
+  15755c:	vmovups -0x134562(%rip),%ymm0        # 23002 <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x632>
+  157564:	vmovups %ymm0,(%rax)
+  157568:	movq   $0x3c,0x150(%rsp)
+  157574:	mov    %rax,0x158(%rsp)
+  15757c:	movq   $0x3c,0x160(%rsp)
+  157588:	mov    $0xfffffffe,%eax
+  15758d:	mov    %eax,0x168(%rsp)
+  157594:	jmp    1568e0 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2f0>
+  157599:	mov    0x60(%rcx),%r13
+  15759d:	mov    %r12,0x68(%rcx)
+  1575a1:	lea    0x458(%rsp),%rsi
+  1575a9:	mov    %rbp,%rdi
+  1575ac:	mov    %r13,%rdx
+  1575af:	mov    %r12,%rcx
+  1575b2:	vzeroupper
+  1575b5:	call   13bab0 <_RNvMs2_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_9ImageView12copy_samples>
+  1575ba:	testb  $0x1,0xe(%rsp)
+  1575bf:	mov    0x50(%rsp),%rbx
+  1575c4:	je     1575d9 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xfe9>
+  1575c6:	movzbl 0xf(%rsp),%ecx
+  1575cb:	mov    %r13,%rdi
+  1575ce:	mov    %r12,%rsi
+  1575d1:	mov    %r14,%rdx
+  1575d4:	call   13c4a0 <_RNvNtNtCsbWCI0taggj7_7neo_j2k7encoder7wavelet16colour_transform>
+  1575d9:	cmp    $0x1,%rbx
+  1575dd:	mov    0x48(%rsp),%rax
+  1575e2:	jbe    1578f8 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1308>
+  1575e8:	mov    %r12,%r14
+  1575eb:	lea    0x0(,%rax,8),%r12
+  1575f3:	mov    0x70(%rsp),%rdx
+  1575f8:	cmp    $0x8,%rdx
+  1575fc:	cmovb  %rax,%r12
+  157600:	cmp    %r12,%rdx
+  157603:	cmova  %rdx,%r12
+  157607:	cmpq   $0x0,0x68(%rsp)
+  15760d:	mov    %r12,0x40(%rsp)
+  157612:	je     157728 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1138>
+  157618:	cmpq   $0x2,0x608(%rsp)
+  157621:	jb     157728 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1138>
+  157627:	mov    0x10(%rsp),%rax
+  15762c:	lea    0x88(%rax),%rsi
+  157633:	lea    0xab8(%rsp),%rdi
+  15763b:	mov    0x88(%rsp),%rdx
+  157643:	call   13cc50 <_RINvNtCsbWCI0taggj7_7neo_j2k7encoder11resize_withINtNtCs3BN1jqgSbDf_5alloc3vec3VeclENvMBO_BL_3newEB4_>
+  157648:	mov    0xab8(%rsp),%r12
+  157650:	cmp    $0xfffffffffffffffe,%r12
+  157654:	jne    157bc8 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x15d8>
+  15765a:	mov    0x10(%rsp),%rax
+  15765f:	mov    0x90(%rax),%r12
+  157666:	mov    0x98(%rax),%rcx
+  15766d:	mov    %rcx,0x30(%rsp)
+  157672:	test   %rcx,%rcx
+  157675:	mov    0x40(%rsp),%rcx
+  15767a:	je     1577a2 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x11b2>
+  157680:	mov    0x30(%rsp),%rax
+  157685:	lea    0x0(,%rax,8),%rax
+  15768d:	lea    (%rax,%rax,2),%r14
+  157691:	xor    %r13d,%r13d
+  157694:	jmp    1576c5 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x10d5>
+  157696:	mov    0x8(%r12,%r13,1),%rax
+  15769b:	lea    (%rax,%rbx,4),%rdi
+  15769f:	shl    $0x2,%rbp
+  1576a3:	xor    %esi,%esi
+  1576a5:	mov    %rbp,%rdx
+  1576a8:	call   *0x16b95a(%rip)        # 2c3008 <memset@GLIBC_2.2.5>
+  1576ae:	mov    0x40(%rsp),%rcx
+  1576b3:	mov    %rcx,0x10(%r12,%r13,1)
+  1576b8:	add    $0x18,%r13
+  1576bc:	cmp    %r13,%r14
+  1576bf:	je     1577a2 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x11b2>
+  1576c5:	mov    0x10(%r12,%r13,1),%rbx
+  1576ca:	mov    %rcx,%rbp
+  1576cd:	sub    %rbx,%rbp
+  1576d0:	jbe    1576b3 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x10c3>
+  1576d2:	mov    (%r12,%r13,1),%rsi
+  1576d6:	mov    %rsi,%rax
+  1576d9:	sub    %rbx,%rax
+  1576dc:	cmp    %rax,%rbp
+  1576df:	jbe    157696 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x10a6>
+  1576e1:	mov    0x8(%r12,%r13,1),%rdx
+  1576e6:	mov    $0x4,%r8d
+  1576ec:	mov    $0x4,%r9d
+  1576f2:	lea    0xab8(%rsp),%rdi
+  1576fa:	call   13ad40 <_RNvMs8_NtCs3BN1jqgSbDf_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsbWCI0taggj7_7neo_j2k>
+  1576ff:	cmpb   $0x0,0xab8(%rsp)
+  157707:	jne    157c98 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x16a8>
+  15770d:	mov    0xac0(%rsp),%rax
+  157715:	mov    %rax,0x8(%r12,%r13,1)
+  15771a:	mov    0x40(%rsp),%rcx
+  15771f:	mov    %rcx,(%r12,%r13,1)
+  157723:	jmp    15769b <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x10ab>
+  157728:	mov    0x10(%rsp),%rax
+  15772d:	mov    0x80(%rax),%rbx
+  157734:	sub    %rbx,%r12
+  157737:	jbe    15776d <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x117d>
+  157739:	mov    0x10(%rsp),%rax
+  15773e:	mov    0x70(%rax),%rsi
+  157742:	mov    %rsi,%rax
+  157745:	sub    %rbx,%rax
+  157748:	cmp    %rax,%r12
+  15774b:	ja     15831c <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1d2c>
+  157751:	mov    0x10(%rsp),%rax
+  157756:	mov    0x78(%rax),%rax
+  15775a:	lea    (%rax,%rbx,4),%rdi
+  15775e:	shl    $0x2,%r12
+  157762:	xor    %esi,%esi
+  157764:	mov    %r12,%rdx
+  157767:	call   *0x16b89b(%rip)        # 2c3008 <memset@GLIBC_2.2.5>
+  15776d:	mov    0x10(%rsp),%rax
+  157772:	mov    0x40(%rsp),%rcx
+  157777:	mov    %rcx,0x80(%rax)
+  15777e:	mov    0x28(%rsp),%r12
+  157783:	test   %r12,%r12
+  157786:	je     158430 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1e40>
+  15778c:	mov    %r14,%rax
+  15778f:	or     %r12,%rax
+  157792:	shr    $0x20,%rax
+  157796:	je     1577ef <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x11ff>
+  157798:	mov    %r14,%rax
+  15779b:	xor    %edx,%edx
+  15779d:	div    %r12
+  1577a0:	jmp    1577f7 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1207>
+  1577a2:	cmpq   $0x0,0x28(%rsp)
+  1577a8:	je     158448 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1e58>
+  1577ae:	lea    0x458(%rsp),%rax
+  1577b6:	vmovq  %rax,%xmm0
+  1577bb:	vpbroadcastq %xmm0,%ymm0
+  1577c0:	vpaddq -0x13f968(%rip),%ymm0,%ymm0        # 17e60 <GCC_except_table1172+0x152c>
+  1577c8:	mov    0x10(%rsp),%rax
+  1577cd:	mov    0x60(%rax),%rsi
+  1577d1:	mov    0x68(%rax),%rcx
+  1577d5:	mov    %rcx,%rax
+  1577d8:	or     0x28(%rsp),%rax
+  1577dd:	shr    $0x20,%rax
+  1577e1:	je     157859 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1269>
+  1577e3:	mov    %rcx,%rax
+  1577e6:	xor    %edx,%edx
+  1577e8:	divq   0x28(%rsp)
+  1577ed:	jmp    157861 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1271>
+  1577ef:	mov    %r14d,%eax
+  1577f2:	xor    %edx,%edx
+  1577f4:	div    %r12d
+  1577f7:	sub    %rdx,%r14
+  1577fa:	cmp    %r14,%r12
+  1577fd:	mov    0x40(%rsp),%rbx
+  157802:	ja     1578f8 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1308>
+  157808:	mov    0x10(%rsp),%rax
+  15780d:	mov    0x78(%rax),%rax
+  157811:	mov    %rax,0x30(%rsp)
+  157816:	movzbl 0xf(%rsp),%ebp
+  15781b:	sub    %r12,%r14
+  15781e:	mov    %r13,%rdi
+  157821:	mov    %r12,%rsi
+  157824:	mov    0x70(%rsp),%rdx
+  157829:	mov    0x48(%rsp),%rcx
+  15782e:	mov    0x50(%rsp),%r8
+  157833:	mov    %ebp,%r9d
+  157836:	push   %rbx
+  157837:	push   0x38(%rsp)
+  15783b:	call   13ced0 <_RNvNtNtCsbWCI0taggj7_7neo_j2k7encoder7wavelet7forward>
+  157840:	add    $0x10,%rsp
+  157844:	lea    0x0(,%r12,4),%rax
+  15784c:	add    %rax,%r13
+  15784f:	cmp    %r14,%r12
+  157852:	jbe    15781b <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x122b>
+  157854:	jmp    1578f8 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1308>
+  157859:	mov    %ecx,%eax
+  15785b:	xor    %edx,%edx
+  15785d:	divl   0x28(%rsp)
+  157861:	sub    %rdx,%rcx
+  157864:	lea    (%rsi,%rcx,4),%rdi
+  157868:	mov    0x30(%rsp),%r9
+  15786d:	lea    (%r9,%r9,2),%r8
+  157871:	cmp    %r9,%rax
+  157874:	cmovb  %rax,%r9
+  157878:	lea    (%r12,%r8,8),%rax
+  15787c:	mov    %rdi,0xab8(%rsp)
+  157884:	mov    %rdx,0xac0(%rsp)
+  15788c:	mov    %rsi,0xac8(%rsp)
+  157894:	mov    %rcx,0xad0(%rsp)
+  15789c:	mov    0x28(%rsp),%rcx
+  1578a1:	mov    %rcx,0xad8(%rsp)
+  1578a9:	mov    %r12,0xae0(%rsp)
+  1578b1:	mov    %rax,0xae8(%rsp)
+  1578b9:	movq   $0x0,0xaf0(%rsp)
+  1578c5:	mov    %r9,0xaf8(%rsp)
+  1578cd:	vmovdqu %ymm0,0x150(%rsp)
+  1578d6:	lea    0xab8(%rsp),%rdx
+  1578de:	lea    0x150(%rsp),%rcx
+  1578e6:	mov    0x68(%rsp),%rdi
+  1578eb:	mov    0x38(%rsp),%rsi
+  1578f0:	vzeroupper
+  1578f3:	call   158640 <_RINvMNtCsbWCI0taggj7_7neo_j2k8executorNtB3_4Jobs3runTQSlQINtNtCs3BN1jqgSbDf_5alloc3vec3VeclEEINtNtNtNtCs8uuN1nrGffB_4core4iter8adapters3zip3ZipINtNtNtB1C_5slice4iter14ChunksExactMutlEINtB2k_7IterMutBT_EENCINvMs1_NtB5_7encoderNtB3o_15EncodingBuffers7prepareNCNvMs0_B3o_NtB3o_7Encoder6encode0Es1_0EB5_>
+  1578f8:	lea    0xab8(%rsp),%rdi
+  157900:	lea    0x458(%rsp),%rdx
+  157908:	mov    0x10(%rsp),%rbx
+  15790d:	mov    %rbx,%rsi
+  157910:	call   13c820 <_RNvMs4_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_10TileLayout5reset>
+  157915:	mov    0xab8(%rsp),%r12
+  15791d:	mov    0xac0(%rsp),%r13
+  157925:	cmp    $0xfffffffffffffffe,%r12
+  157929:	jne    157bd0 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x15e0>
+  15792f:	lea    0x28(%rbx),%rsi
+  157933:	lea    0xab8(%rsp),%rdi
+  15793b:	mov    %r13,%rdx
+  15793e:	call   13dde0 <_RINvNtCsbWCI0taggj7_7neo_j2k7encoder11resize_withNtB2_5BlockNvYBL_NtNtCs8uuN1nrGffB_4core7default7Default7defaultEB4_>
+  157943:	mov    0xab8(%rsp),%r12
+  15794b:	cmp    $0xfffffffffffffffe,%r12
+  15794f:	jne    157bc8 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x15d8>
+  157955:	lea    0xab8(%rsp),%rdi
+  15795d:	lea    0x458(%rsp),%rdx
+  157965:	mov    %rbx,%rsi
+  157968:	mov    %r13,%rcx
+  15796b:	call   13e090 <_RNvMs1_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_15EncodingBuffers16reset_block_jobs>
+  157970:	mov    0xab8(%rsp),%r12
+  157978:	cmp    $0xfffffffffffffffe,%r12
+  15797c:	jne    157bc8 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x15d8>
+  157982:	mov    0x10(%rsp),%rsi
+  157987:	movq   $0x0,0xb0(%rsi)
+  157992:	mov    0x608(%rsp),%rax
+  15799a:	mov    0x610(%rsp),%rcx
+  1579a2:	lea    (%rcx,%rcx,2),%rcx
+  1579a6:	add    $0xfffffffffffffffe,%rcx
+  1579aa:	movzbl 0x6bc(%rsp),%edx
+  1579b2:	xor    $0x1,%dl
+  1579b5:	lea    (%rax,%rax,2),%rax
+  1579b9:	add    0x58(%rsp),%rax
+  1579be:	add    0x5f0(%rsp),%rax
+  1579c6:	shlx   %rdx,%rcx,%rcx
+  1579cb:	lea    (%rcx,%rax,1),%r13
+  1579cf:	add    $0x45,%r13
+  1579d3:	mov    0xa0(%rsi),%rsi
+  1579da:	cmp    %rsi,%r13
+  1579dd:	ja     158370 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1d80>
+  1579e3:	mov    0x10(%rsp),%rax
+  1579e8:	lea    0xa0(%rax),%rsi
+  1579ef:	lea    0x458(%rsp),%rdi
+  1579f7:	mov    %rsi,0xa0(%rsp)
+  1579ff:	call   13e460 <_RNvMs3_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_8Settings12write_header>
+  157a04:	lea    0x870(%rsp),%rdi
+  157a0c:	lea    0x4c38(%rsp),%rsi
+  157a14:	mov    $0x180,%edx
+  157a19:	call   *0x16b5b9(%rip)        # 2c2fd8 <memcpy@GLIBC_2.14>
+  157a1f:	vmovups 0x3c0(%rsp),%ymm0
+  157a28:	vmovdqu 0x3e0(%rsp),%ymm1
+  157a31:	vmovups 0x400(%rsp),%ymm2
+  157a3a:	vmovups 0x420(%rsp),%ymm3
+  157a43:	vmovups %ymm0,0xa20(%rsp)
+  157a4c:	vmovdqu %ymm1,0xa40(%rsp)
+  157a55:	vmovups %ymm2,0xa60(%rsp)
+  157a5e:	vmovups %ymm3,0xa80(%rsp)
+  157a67:	vmovdqu 0x434(%rsp),%ymm0
+  157a70:	vmovdqu %ymm0,0xa94(%rsp)
+  157a79:	mov    %r15,0x850(%rsp)
+  157a81:	mov    0xc0(%rsp),%rax
+  157a89:	mov    %rax,0x858(%rsp)
+  157a91:	mov    0xb8(%rsp),%rax
+  157a99:	mov    %rax,0x860(%rsp)
+  157aa1:	mov    0x60(%rsp),%eax
+  157aa5:	mov    %eax,0x868(%rsp)
+  157aac:	mov    0x78(%rsp),%eax
+  157ab0:	mov    %eax,0x86c(%rsp)
+  157ab7:	mov    0x70(%rsp),%rax
+  157abc:	mov    %rax,0x9f0(%rsp)
+  157ac4:	mov    0x48(%rsp),%rax
+  157ac9:	mov    %rax,0x9f8(%rsp)
+  157ad1:	mov    0x88(%rsp),%rax
+  157ad9:	mov    %rax,0xa00(%rsp)
+  157ae1:	mov    0x50(%rsp),%rax
+  157ae6:	mov    %rax,0xa08(%rsp)
+  157aee:	mov    0xa8(%rsp),%rax
+  157af6:	mov    %rax,0xa10(%rsp)
+  157afe:	mov    0x58(%rsp),%rax
+  157b03:	mov    %rax,0xa18(%rsp)
+  157b0b:	movzbl 0xf(%rsp),%eax
+  157b10:	mov    %al,0xab4(%rsp)
+  157b17:	movzbl 0xe(%rsp),%eax
+  157b1c:	mov    %al,0xab5(%rsp)
+  157b23:	movzbl 0x80(%rsp),%eax
+  157b2b:	mov    %al,0xab6(%rsp)
+  157b32:	movzbl 0xb0(%rsp),%eax
+  157b3a:	mov    %al,0xab7(%rsp)
+  157b41:	cmpq   $0x0,0x68(%rsp)
+  157b47:	je     157bf6 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1606>
+  157b4d:	mov    0x68(%rsp),%rax
+  157b52:	mov    %rax,0x150(%rsp)
+  157b5a:	mov    0x38(%rsp),%rax
+  157b5f:	mov    %rax,0x158(%rsp)
+  157b67:	mov    0x90(%rsp),%rax
+  157b6f:	mov    %rax,0x160(%rsp)
+  157b77:	mov    0x10(%rsp),%rsi
+  157b7c:	lea    0x130(%rsi),%r8
+  157b83:	lea    0xab8(%rsp),%rdi
+  157b8b:	lea    0x850(%rsp),%rdx
+  157b93:	lea    0x150(%rsp),%rcx
+  157b9b:	vzeroupper
+  157b9e:	call   13f120 <_RNvMs1_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_15EncodingBuffers22encode_blocks_parallel>
+  157ba3:	mov    0xab8(%rsp),%r12
+  157bab:	cmp    $0xfffffffffffffffe,%r12
+  157baf:	je     1580e3 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1af3>
+  157bb5:	mov    0xac0(%rsp),%r13
+  157bbd:	vmovdqu 0xac8(%rsp),%xmm0
+  157bc6:	jmp    157bee <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x15fe>
+  157bc8:	mov    0xac0(%rsp),%r13
+  157bd0:	mov    0xac8(%rsp),%rcx
+  157bd8:	mov    0xad0(%rsp),%rax
+  157be0:	vmovq  %rax,%xmm0
+  157be5:	vmovq  %rcx,%xmm1
+  157bea:	vpunpcklqdq %xmm0,%xmm1,%xmm0
+  157bee:	mov    %r12,%r15
+  157bf1:	jmp    15692b <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x33b>
+  157bf6:	lea    -0x17e8d(%rip),%rax        # 13fd70 <_RNvNtNtCsbWCI0taggj7_7neo_j2k7encoder5tier117encode_all_passes>
+  157bfd:	lea    -0x16bc4(%rip),%rcx        # 141040 <_RNvNtNtCsbWCI0taggj7_7neo_j2k7encoder5tier16encode>
+  157c04:	testb  $0x1,0x80(%rsp)
+  157c0c:	cmovne %rax,%rcx
+  157c10:	mov    %rcx,0x68(%rsp)
+  157c15:	lea    0xab8(%rsp),%rdi
+  157c1d:	mov    $0x4000,%edx
+  157c22:	xor    %esi,%esi
+  157c24:	vzeroupper
+  157c27:	call   *0x16b3db(%rip)        # 2c3008 <memset@GLIBC_2.2.5>
+  157c2d:	cmpq   $0x0,0x28(%rsp)
+  157c33:	je     1584a3 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1eb3>
+  157c39:	mov    0x10(%rsp),%rax
+  157c3e:	mov    0x68(%rax),%rax
+  157c42:	mov    %rax,%rcx
+  157c45:	or     0x28(%rsp),%rax
+  157c4a:	shr    $0x20,%rax
+  157c4e:	je     157cdc <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x16ec>
+  157c54:	mov    %rcx,%rax
+  157c57:	xor    %edx,%edx
+  157c59:	divq   0x28(%rsp)
+  157c5e:	jmp    157ce4 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x16f4>
+  157c63:	mov    %rdx,0x30(%rsp)
+  157c68:	mov    0x60(%rcx),%rdx
+  157c6c:	lea    0xab8(%rsp),%rdi
+  157c74:	mov    $0x4,%r8d
+  157c7a:	mov    $0x4,%r9d
+  157c80:	mov    %r12,%r14
+  157c83:	mov    %r12,%rcx
+  157c86:	vzeroupper
+  157c89:	call   13ad40 <_RNvMs8_NtCs3BN1jqgSbDf_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsbWCI0taggj7_7neo_j2k>
+  157c8e:	cmpb   $0x0,0xab8(%rsp)
+  157c96:	je     157cb5 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x16c5>
+  157c98:	mov    $0xfffffff9,%eax
+  157c9d:	mov    $0xffffffffffffffff,%r12
+  157ca4:	lea    -0x133fcf(%rip),%r13        # 23cdc <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x130c>
+  157cab:	mov    $0x1c,%ecx
+  157cb0:	jmp    157be0 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x15f0>
+  157cb5:	mov    0xac0(%rsp),%r13
+  157cbd:	mov    0x10(%rsp),%rax
+  157cc2:	mov    %r13,0x60(%rax)
+  157cc6:	mov    %r14,%r12
+  157cc9:	mov    %r14,0x58(%rax)
+  157ccd:	mov    0x28(%rsp),%r14
+  157cd2:	mov    0x30(%rsp),%rdx
+  157cd7:	jmp    157503 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0xf13>
+  157cdc:	mov    %ecx,%eax
+  157cde:	xor    %edx,%edx
+  157ce0:	divl   0x28(%rsp)
+  157ce4:	sub    %rdx,%rcx
+  157ce7:	cmp    %rcx,0x28(%rsp)
+  157cec:	ja     1580e3 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1af3>
+  157cf2:	mov    %rcx,%rdx
+  157cf5:	cmpq   $0x0,0x50(%rsp)
+  157cfb:	je     1580d6 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1ae6>
+  157d01:	mov    0x10(%rsp),%rcx
+  157d06:	lea    0xb8(%rcx),%rax
+  157d0d:	mov    %rax,0xc0(%rsp)
+  157d15:	mov    0x20(%rcx),%rax
+  157d19:	lea    (%rax,%rax,2),%rax
+  157d1d:	add    $0xfffffffffffffffe,%rax
+  157d21:	mov    %rax,0x120(%rsp)
+  157d29:	mov    0x8(%rcx),%rax
+  157d2d:	mov    %rax,0x128(%rsp)
+  157d35:	mov    0x10(%rcx),%rax
+  157d39:	mov    %rax,0x98(%rsp)
+  157d41:	mov    0x38(%rcx),%rax
+  157d45:	mov    %rax,0x78(%rsp)
+  157d4a:	mov    0x30(%rcx),%rax
+  157d4e:	mov    %rax,0xb0(%rsp)
+  157d56:	mov    0x60(%rcx),%rax
+  157d5a:	mov    %rax,0x40(%rsp)
+  157d5f:	movq   $0x0,0x90(%rsp)
+  157d6b:	mov    0x28(%rsp),%rax
+  157d70:	movzbl 0xf(%rsp),%r14d
+  157d76:	mov    0x40(%rsp),%rcx
+  157d7b:	lea    (%rcx,%rax,4),%rcx
+  157d7f:	mov    %rcx,0x108(%rsp)
+  157d87:	sub    %rax,%rdx
+  157d8a:	mov    %rdx,0x110(%rsp)
+  157d92:	mov    0x90(%rsp),%rax
+  157d9a:	lea    0x1(%rax),%rcx
+  157d9e:	mov    %rcx,0x100(%rsp)
+  157da6:	imul   0x120(%rsp),%rax
+  157daf:	mov    %rax,0xc8(%rsp)
+  157db7:	xor    %edx,%edx
+  157db9:	test   %rdx,%rdx
+  157dbc:	je     157dfb <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x180b>
+  157dbe:	lea    (%rdx,%rdx,2),%rax
+  157dc2:	mov    0xc8(%rsp),%rcx
+  157dca:	lea    (%rcx,%rax,1),%rdi
+  157dce:	add    $0xfffffffffffffffe,%rdi
+  157dd2:	lea    (%rcx,%rax,1),%rsi
+  157dd6:	inc    %rsi
+  157dd9:	cmp    %rdi,%rsi
+  157ddc:	jb     15850c <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1f1c>
+  157de2:	mov    $0xf0,%eax
+  157de7:	mov    %rax,0x60(%rsp)
+  157dec:	cmp    0x98(%rsp),%rsi
+  157df4:	jbe    157e1e <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x182e>
+  157df6:	jmp    15850c <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1f1c>
+  157dfb:	mov    $0x50,%eax
+  157e00:	mov    %rax,0x60(%rsp)
+  157e05:	mov    0xc8(%rsp),%rax
+  157e0d:	mov    %rax,%rdi
+  157e10:	cmp    0x98(%rsp),%rax
+  157e18:	jae    1585d4 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1fe4>
+  157e1e:	lea    0x1(%rdx),%rax
+  157e22:	mov    %rax,0x118(%rsp)
+  157e2a:	not    %rdx
+  157e2d:	add    0x50(%rsp),%rdx
+  157e32:	mov    %rdx,0x80(%rsp)
+  157e3a:	lea    (%rdi,%rdi,4),%rax
+  157e3e:	shl    $0x4,%rax
+  157e42:	add    0x128(%rsp),%rax
+  157e4a:	mov    %rax,0x38(%rsp)
+  157e4f:	add    %rax,0x60(%rsp)
+  157e54:	jmp    157e6a <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x187a>
+  157e56:	add    $0x50,%rdx
+  157e5a:	mov    %rdx,0x38(%rsp)
+  157e5f:	cmp    0x60(%rsp),%rdx
+  157e64:	je     158062 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1a72>
+  157e6a:	mov    0x38(%rsp),%rax
+  157e6f:	mov    (%rax),%rdi
+  157e72:	mov    0x8(%rax),%rsi
+  157e76:	cmp    %rdi,%rsi
+  157e79:	jb     158492 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1ea2>
+  157e7f:	cmp    0x78(%rsp),%rsi
+  157e84:	ja     158492 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1ea2>
+  157e8a:	cmp    %rsi,%rdi
+  157e8d:	mov    0x38(%rsp),%rdx
+  157e92:	je     157e56 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1866>
+  157e94:	movzbl 0x48(%rdx),%eax
+  157e98:	mov    %al,0x88(%rsp)
+  157e9f:	vmovss 0x44(%rdx),%xmm0
+  157ea4:	vmovss %xmm0,0x48(%rsp)
+  157eaa:	imul   $0x38,%rdi,%rax
+  157eae:	mov    0xb0(%rsp),%rcx
+  157eb6:	lea    (%rcx,%rax,1),%r15
+  157eba:	imul   $0x38,%rsi,%rcx
+  157ebe:	sub    %rax,%rcx
+  157ec1:	mov    %rcx,0xb8(%rsp)
+  157ec9:	movq   $0x0,0x30(%rsp)
+  157ed2:	mov    0x10(%rdx),%rcx
+  157ed6:	test   %rcx,%rcx
+  157ed9:	je     158603 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2013>
+  157edf:	mov    0x30(%rsp),%rax
+  157ee4:	mov    %rax,%rdx
+  157ee7:	or     %rcx,%rdx
+  157eea:	shr    $0x20,%rdx
+  157eee:	je     157ef7 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1907>
+  157ef0:	xor    %edx,%edx
+  157ef2:	div    %rcx
+  157ef5:	jmp    157efb <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x190b>
+  157ef7:	xor    %edx,%edx
+  157ef9:	div    %ecx
+  157efb:	shl    $0x6,%rdx
+  157eff:	shl    $0x6,%rax
+  157f03:	mov    0x38(%rsp),%r9
+  157f08:	mov    0x28(%r9),%rcx
+  157f0c:	add    %rax,%rcx
+  157f0f:	mov    0x70(%rsp),%r8
+  157f14:	imul   %r8,%rcx
+  157f18:	mov    0x20(%r9),%rdi
+  157f1c:	add    %rdx,%rdi
+  157f1f:	add    %rcx,%rdi
+  157f22:	mov    0x28(%rsp),%rsi
+  157f27:	sub    %rdi,%rsi
+  157f2a:	jb     15840d <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1e1d>
+  157f30:	mov    0x30(%r9),%r12
+  157f34:	mov    0x38(%r9),%r13
+  157f38:	sub    %rdx,%r12
+  157f3b:	cmp    $0x40,%r12
+  157f3f:	mov    $0x40,%ecx
+  157f44:	cmovae %rcx,%r12
+  157f48:	sub    %rax,%r13
+  157f4b:	cmp    $0x40,%r13
+  157f4f:	cmovae %rcx,%r13
+  157f53:	mov    %r13,%rbp
+  157f56:	imul   %r12,%rbp
+  157f5a:	mov    0x40(%rsp),%rax
+  157f5f:	lea    (%rax,%rdi,4),%rdi
+  157f63:	movzbl %r14b,%r9d
+  157f67:	mov    %r8,%rdx
+  157f6a:	mov    %r12,%rcx
+  157f6d:	mov    %r13,%r8
+  157f70:	vmovss 0x48(%rsp),%xmm0
+  157f76:	push   %rbp
+  157f77:	lea    0xac0(%rsp),%rbx
+  157f7f:	push   %rbx
+  157f80:	call   141fc0 <_RNvNtCsbWCI0taggj7_7neo_j2k7encoder14gather_samples>
+  157f85:	add    $0x10,%rsp
+  157f89:	mov    %rbx,0x168(%rsp)
+  157f91:	mov    %rbp,0x170(%rsp)
+  157f99:	mov    %r12,0x178(%rsp)
+  157fa1:	mov    %r13,0x180(%rsp)
+  157fa9:	mov    0x80(%rsp),%rax
+  157fb1:	mov    %rax,0x150(%rsp)
+  157fb9:	mov    0x90(%rsp),%rax
+  157fc1:	mov    %rax,0x158(%rsp)
+  157fc9:	vmovd  0x48(%rsp),%xmm0
+  157fcf:	vmovd  %xmm0,0x160(%rsp)
+  157fd8:	movzbl 0x88(%rsp),%eax
+  157fe0:	mov    %al,0x164(%rsp)
+  157fe7:	mov    %r14b,0x165(%rsp)
+  157fef:	movzbl 0xe(%rsp),%eax
+  157ff4:	mov    %al,0x166(%rsp)
+  157ffb:	mov    %r15,0x188(%rsp)
+  158003:	lea    0x458(%rsp),%rdi
+  15800b:	mov    0xc0(%rsp),%rsi
+  158013:	mov    %rbx,%rdx
+  158016:	mov    %rbp,%rcx
+  158019:	mov    %r12,%r8
+  15801c:	mov    %r13,%r9
+  15801f:	push   %r15
+  158021:	lea    0x158(%rsp),%rax
+  158029:	push   %rax
+  15802a:	call   *0x78(%rsp)
+  15802e:	add    $0x10,%rsp
+  158032:	mov    0x458(%rsp),%r12
+  15803a:	cmp    $0xfffffffffffffffe,%r12
+  15803e:	jne    1580ad <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1abd>
+  158040:	add    $0x38,%r15
+  158044:	incq   0x30(%rsp)
+  158049:	addq   $0xffffffffffffffc8,0xb8(%rsp)
+  158052:	mov    0x38(%rsp),%rdx
+  158057:	jne    157ed2 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x18e2>
+  15805d:	jmp    157e56 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1866>
+  158062:	mov    0x118(%rsp),%rax
+  15806a:	mov    %rax,%rdx
+  15806d:	cmp    0x50(%rsp),%rax
+  158072:	jne    157db9 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x17c9>
+  158078:	mov    0x100(%rsp),%rax
+  158080:	mov    %rax,0x90(%rsp)
+  158088:	mov    0x108(%rsp),%rax
+  158090:	mov    %rax,0x40(%rsp)
+  158095:	mov    0x28(%rsp),%rax
+  15809a:	mov    0x110(%rsp),%rdx
+  1580a2:	cmp    %rdx,%rax
+  1580a5:	jbe    157d76 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1786>
+  1580ab:	jmp    1580e3 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1af3>
+  1580ad:	mov    0x460(%rsp),%r13
+  1580b5:	vmovups 0x468(%rsp),%xmm0
+  1580be:	jmp    157bee <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x15fe>
+  1580c3:	lea    0x165296(%rip),%rcx        # 2bd360 <__frame_dummy_init_array_entry+0x8540>
+  1580ca:	mov    $0x64,%edx
+  1580cf:	xor    %edi,%edi
+  1580d1:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  1580d6:	mov    0x28(%rsp),%rax
+  1580db:	sub    %rax,%rdx
+  1580de:	cmp    %rdx,%rax
+  1580e1:	jbe    1580db <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1aeb>
+  1580e3:	mov    0x10(%rsp),%rax
+  1580e8:	mov    0xb0(%rax),%rbp
+  1580ef:	mov    0x58(%rsp),%rax
+  1580f4:	lea    (%rax,%rbp,1),%r13
+  1580f8:	cmp    %rbp,%r13
+  1580fb:	jbe    158154 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1b64>
+  1580fd:	mov    0xa0(%rsp),%rax
+  158105:	mov    (%rax),%rax
+  158108:	sub    %rbp,%rax
+  15810b:	mov    %rbp,%rbx
+  15810e:	cmp    %rax,0x58(%rsp)
+  158113:	ja     1584bb <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1ecb>
+  158119:	mov    0x10(%rsp),%rax
+  15811e:	mov    0xa8(%rax),%r15
+  158125:	lea    (%r15,%rbx,1),%rdi
+  158129:	cmpq   $0x2,0x58(%rsp)
+  15812f:	jb     15814c <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1b5c>
+  158131:	mov    0x58(%rsp),%r14
+  158136:	lea    -0x1(%r14),%rdx
+  15813a:	xor    %esi,%esi
+  15813c:	call   *0x16aec6(%rip)        # 2c3008 <memset@GLIBC_2.2.5>
+  158142:	add    %r14,%rbx
+  158145:	dec    %rbx
+  158148:	lea    (%r15,%rbx,1),%rdi
+  15814c:	movb   $0x0,(%rdi)
+  15814f:	inc    %rbx
+  158152:	jmp    158163 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1b73>
+  158154:	mov    0x10(%rsp),%rax
+  158159:	mov    0xa8(%rax),%r15
+  158160:	mov    %r13,%rbx
+  158163:	mov    0x10(%rsp),%rax
+  158168:	mov    %rbx,0xb0(%rax)
+  15816f:	lea    0xe(%rbp),%rcx
+  158173:	add    $0xfffffffffffffffe,%r13
+  158177:	mov    %r13,%r14
+  15817a:	mov    %rcx,0x38(%rsp)
+  15817f:	sub    %rcx,%r14
+  158182:	jb     158460 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1e70>
+  158188:	cmp    %rbx,%r13
+  15818b:	ja     158460 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1e70>
+  158191:	cmpq   $0x65,0xa8(%rsp)
+  15819a:	jae    158477 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1e87>
+  1581a0:	mov    0x10(%rsp),%rdx
+  1581a5:	lea    0x148(%rdx),%rsi
+  1581ac:	mov    0x30(%rdx),%rcx
+  1581b0:	mov    0x38(%rdx),%r8
+  1581b4:	lea    0xe(%rbp),%rax
+  1581b8:	add    %r15,%rax
+  1581bb:	sub    $0x8,%rsp
+  1581bf:	lea    0xac0(%rsp),%rdi
+  1581c7:	lea    0x858(%rsp),%r9
+  1581cf:	push   %r14
+  1581d1:	push   %rax
+  1581d2:	push   0xc0(%rsp)
+  1581d9:	call   142cc0 <_RNvNtNtCsbWCI0taggj7_7neo_j2k7encoder5tier214encode_packets>
+  1581de:	add    $0x20,%rsp
+  1581e2:	mov    0xab8(%rsp),%r12
+  1581ea:	mov    0xac0(%rsp),%r13
+  1581f2:	cmp    $0xfffffffffffffffe,%r12
+  1581f6:	jne    15823a <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1c4a>
+  1581f8:	cmp    %r14,%r13
+  1581fb:	jbe    158248 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1c58>
+  1581fd:	mov    $0x13,%r12d
+  158203:	mov    $0x13,%edi
+  158208:	call   *0x16adc2(%rip)        # 2c2fd0 <malloc@GLIBC_2.2.5>
+  15820e:	test   %rax,%rax
+  158211:	je     15860f <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x201f>
+  158217:	mov    %rax,%r13
+  15821a:	vmovups -0x135294(%rip),%xmm0        # 22f8e <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x5be>
+  158222:	vmovups %xmm0,(%rax)
+  158226:	movl   $0xa656c69,0xf(%rax)
+  15822d:	vmovdqa -0x13f575(%rip),%xmm0        # 18cc0 <GCC_except_table1172+0x238c>
+  158235:	jmp    157bee <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x15fe>
+  15823a:	vmovdqu 0xac8(%rsp),%xmm0
+  158243:	jmp    157bee <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x15fe>
+  158248:	mov    %r13,%rax
+  15824b:	shr    $1,%rax
+  15824e:	mov    %r13,%rcx
+  158251:	shl    $0x20,%rcx
+  158255:	movabs $0xe00000200,%rdx
+  15825f:	add    %rcx,%rdx
+  158262:	cmp    $0x7ffffff9,%rax
+  158268:	mov    $0x201,%eax
+  15826d:	cmovb  %rdx,%rax
+  158271:	cmp    $0x1,%al
+  158273:	je     158520 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1f30>
+  158279:	lea    0x6(%rbp),%rsi
+  15827d:	cmp    %rbx,%rsi
+  158280:	ja     15854f <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1f5f>
+  158286:	movw   $0x0,0x4(%r15,%rbp,1)
+  15828e:	movl   $0xa0090ff,(%r15,%rbp,1)
+  158296:	add    $0xa,%rbp
+  15829a:	cmp    %rbx,%rbp
+  15829d:	ja     158561 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1f71>
+  1582a3:	shr    $0x20,%rax
+  1582a7:	movbe  %eax,(%r15,%rsi,1)
+  1582ad:	cmp    %rbx,0x38(%rsp)
+  1582b2:	ja     158576 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1f86>
+  1582b8:	movl   $0x93ff0100,(%r15,%rbp,1)
+  1582c0:	add    0x38(%rsp),%r13
+  1582c5:	cmp    %rbx,%r13
+  1582c8:	ja     1582d9 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1ce9>
+  1582ca:	mov    0x10(%rsp),%rax
+  1582cf:	mov    %r13,0xb0(%rax)
+  1582d6:	mov    %r13,%rbx
+  1582d9:	mov    0xa0(%rsp),%rax
+  1582e1:	mov    (%rax),%rax
+  1582e4:	sub    %rbx,%rax
+  1582e7:	cmp    $0x1,%rax
+  1582eb:	jbe    15858d <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1f9d>
+  1582f1:	movw   $0xd9ff,(%r15,%rbx,1)
+  1582f8:	lea    0x2(%rbx),%rdx
+  1582fc:	mov    0x10(%rsp),%rax
+  158301:	mov    %rdx,0xb0(%rax)
+  158308:	cmp    $0xfffffffffffffffd,%rbx
+  15830c:	ja     1584ec <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1efc>
+  158312:	mov    0x10(%rsp),%rax
+  158317:	jmp    1568fa <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x30a>
+  15831c:	mov    0x10(%rsp),%rax
+  158321:	mov    0x78(%rax),%rdx
+  158325:	lea    0xab8(%rsp),%rdi
+  15832d:	mov    $0x4,%r8d
+  158333:	mov    $0x4,%r9d
+  158339:	mov    0x40(%rsp),%rcx
+  15833e:	call   13ad40 <_RNvMs8_NtCs3BN1jqgSbDf_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsbWCI0taggj7_7neo_j2k>
+  158343:	cmpb   $0x0,0xab8(%rsp)
+  15834b:	jne    157c98 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x16a8>
+  158351:	mov    0xac0(%rsp),%rax
+  158359:	mov    0x10(%rsp),%rcx
+  15835e:	mov    %rax,0x78(%rcx)
+  158362:	mov    0x40(%rsp),%rdx
+  158367:	mov    %rdx,0x70(%rcx)
+  15836b:	jmp    15775a <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x116a>
+  158370:	mov    0x10(%rsp),%rax
+  158375:	mov    0xa8(%rax),%rdx
+  15837c:	lea    0xab8(%rsp),%rdi
+  158384:	mov    $0x1,%r8d
+  15838a:	mov    $0x1,%r9d
+  158390:	mov    %r13,%rcx
+  158393:	call   13ad40 <_RNvMs8_NtCs3BN1jqgSbDf_5alloc7raw_vecNtB5_11RawVecInner11finish_growCsbWCI0taggj7_7neo_j2k>
+  158398:	cmpb   $0x0,0xab8(%rsp)
+  1583a0:	jne    157c98 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x16a8>
+  1583a6:	mov    0xac0(%rsp),%rax
+  1583ae:	mov    0x10(%rsp),%rcx
+  1583b3:	mov    %rax,0xa8(%rcx)
+  1583ba:	mov    %r13,0xa0(%rcx)
+  1583c1:	jmp    1579e3 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x13f3>
+  1583c6:	lea    0x164f7b(%rip),%rcx        # 2bd348 <__frame_dummy_init_array_entry+0x8528>
+  1583cd:	mov    $0x64,%edx
+  1583d2:	xor    %edi,%edi
+  1583d4:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  1583d9:	lea    0x164f50(%rip),%rcx        # 2bd330 <__frame_dummy_init_array_entry+0x8510>
+  1583e0:	mov    $0x25,%edx
+  1583e5:	xor    %edi,%edi
+  1583e7:	mov    %r13,%rsi
+  1583ea:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  1583ef:	mov    $0x1,%edi
+  1583f4:	mov    $0x1d,%esi
+  1583f9:	call   66af7 <_RNvNtCs3BN1jqgSbDf_5alloc7raw_vec12handle_error>
+  1583fe:	mov    $0x1,%edi
+  158403:	mov    $0x23,%esi
+  158408:	call   66af7 <_RNvNtCs3BN1jqgSbDf_5alloc7raw_vec12handle_error>
+  15840d:	lea    0x164e2c(%rip),%rcx        # 2bd240 <__frame_dummy_init_array_entry+0x8420>
+  158414:	mov    0x28(%rsp),%rdx
+  158419:	mov    %rdx,%rsi
+  15841c:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  158421:	mov    $0x1,%edi
+  158426:	mov    $0x40,%esi
+  15842b:	call   66af7 <_RNvNtCs3BN1jqgSbDf_5alloc7raw_vec12handle_error>
+  158430:	lea    -0x1355fc(%rip),%rdi        # 22e3b <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x46b>
+  158437:	lea    0x164eda(%rip),%rdx        # 2bd318 <__frame_dummy_init_array_entry+0x84f8>
+  15843e:	mov    $0x37,%esi
+  158443:	call   67750 <_RNvNtCs8uuN1nrGffB_4core9panicking9panic_fmt>
+  158448:	lea    -0x135614(%rip),%rdi        # 22e3b <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x46b>
+  15844f:	lea    0x164eaa(%rip),%rdx        # 2bd300 <__frame_dummy_init_array_entry+0x84e0>
+  158456:	mov    $0x37,%esi
+  15845b:	call   67750 <_RNvNtCs8uuN1nrGffB_4core9panicking9panic_fmt>
+  158460:	lea    0x164e81(%rip),%rcx        # 2bd2e8 <__frame_dummy_init_array_entry+0x84c8>
+  158467:	mov    0x38(%rsp),%rdi
+  15846c:	mov    %r13,%rsi
+  15846f:	mov    %rbx,%rdx
+  158472:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  158477:	lea    0x164e52(%rip),%rcx        # 2bd2d0 <__frame_dummy_init_array_entry+0x84b0>
+  15847e:	mov    $0x64,%edx
+  158483:	xor    %edi,%edi
+  158485:	mov    0xa8(%rsp),%rsi
+  15848d:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  158492:	lea    0x164dbf(%rip),%rcx        # 2bd258 <__frame_dummy_init_array_entry+0x8438>
+  158499:	mov    0x78(%rsp),%rdx
+  15849e:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  1584a3:	lea    -0x13566f(%rip),%rdi        # 22e3b <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x46b>
+  1584aa:	lea    0x164d5f(%rip),%rdx        # 2bd210 <__frame_dummy_init_array_entry+0x83f0>
+  1584b1:	mov    $0x37,%esi
+  1584b6:	call   67750 <_RNvNtCs8uuN1nrGffB_4core9panicking9panic_fmt>
+  1584bb:	mov    $0x1,%ecx
+  1584c0:	mov    $0x1,%r8d
+  1584c6:	mov    0xa0(%rsp),%rdi
+  1584ce:	mov    %rbp,%rsi
+  1584d1:	mov    0x58(%rsp),%rdx
+  1584d6:	call   142c40 <_RINvNvMs5_NtCs3BN1jqgSbDf_5alloc7raw_vecINtB8_11RawVecInnerpE7reserve21do_reserve_and_handleNtNtBa_5alloc6GlobalECsbWCI0taggj7_7neo_j2k>
+  1584db:	mov    0x10(%rsp),%rax
+  1584e0:	mov    0xb0(%rax),%rbx
+  1584e7:	jmp    158119 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1b29>
+  1584ec:	lea    0x164ca5(%rip),%rcx        # 2bd198 <__frame_dummy_init_array_entry+0x8378>
+  1584f3:	xor    %edi,%edi
+  1584f5:	mov    %rbx,%rsi
+  1584f8:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  1584fd:	mov    $0x1,%edi
+  158502:	mov    $0x45,%esi
+  158507:	call   66af7 <_RNvNtCs3BN1jqgSbDf_5alloc7raw_vec12handle_error>
+  15850c:	lea    0x1667ed(%rip),%rcx        # 2bed00 <__frame_dummy_init_array_entry+0x9ee0>
+  158513:	mov    0x98(%rsp),%rdx
+  15851b:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  158520:	movb   $0x2,0xab8(%rsp)
+  158528:	lea    -0x1355c8(%rip),%rdi        # 22f67 <_RNvNtNtNtNtNtCs8uuN1nrGffB_4core3num3imp7flt2dec8strategy6dragon9POW5TO256+0x597>
+  15852f:	lea    0x165dd2(%rip),%rcx        # 2be308 <__frame_dummy_init_array_entry+0x94e8>
+  158536:	lea    0x164d33(%rip),%r8        # 2bd270 <__frame_dummy_init_array_entry+0x8450>
+  15853d:	lea    0xab8(%rsp),%rdx
+  158545:	mov    $0x27,%esi
+  15854a:	call   6a9c0 <_RNvNtCs8uuN1nrGffB_4core6result13unwrap_failed>
+  15854f:	lea    0x164d62(%rip),%rcx        # 2bd2b8 <__frame_dummy_init_array_entry+0x8498>
+  158556:	mov    %rbp,%rdi
+  158559:	mov    %rbx,%rdx
+  15855c:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  158561:	lea    0x164d38(%rip),%rcx        # 2bd2a0 <__frame_dummy_init_array_entry+0x8480>
+  158568:	mov    %rsi,%rdi
+  15856b:	mov    %rbp,%rsi
+  15856e:	mov    %rbx,%rdx
+  158571:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  158576:	lea    0x164d0b(%rip),%rcx        # 2bd288 <__frame_dummy_init_array_entry+0x8468>
+  15857d:	mov    %rbp,%rdi
+  158580:	mov    0x38(%rsp),%rsi
+  158585:	mov    %rbx,%rdx
+  158588:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  15858d:	mov    $0x2,%edx
+  158592:	mov    $0x1,%ecx
+  158597:	mov    $0x1,%r8d
+  15859d:	mov    0xa0(%rsp),%rdi
+  1585a5:	mov    %rbx,%rsi
+  1585a8:	call   142c40 <_RINvNvMs5_NtCs3BN1jqgSbDf_5alloc7raw_vecINtB8_11RawVecInnerpE7reserve21do_reserve_and_handleNtNtBa_5alloc6GlobalECsbWCI0taggj7_7neo_j2k>
+  1585ad:	mov    0x10(%rsp),%rax
+  1585b2:	mov    0xa8(%rax),%r15
+  1585b9:	mov    0xb0(%rax),%rbx
+  1585c0:	jmp    1582f1 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x1d01>
+  1585c5:	mov    $0x1,%edi
+  1585ca:	mov    $0x46,%esi
+  1585cf:	call   66af7 <_RNvNtCs3BN1jqgSbDf_5alloc7raw_vec12handle_error>
+  1585d4:	mov    0xc8(%rsp),%rdi
+  1585dc:	lea    0x1(%rdi),%rsi
+  1585e0:	lea    0x166701(%rip),%rcx        # 2bece8 <__frame_dummy_init_array_entry+0x9ec8>
+  1585e7:	mov    0x98(%rsp),%rdx
+  1585ef:	call   68df0 <_RNvNtNtCs8uuN1nrGffB_4core5slice5index16slice_index_fail>
+  1585f4:	mov    $0x1,%edi
+  1585f9:	mov    $0x3c,%esi
+  1585fe:	call   66af7 <_RNvNtCs3BN1jqgSbDf_5alloc7raw_vec12handle_error>
+  158603:	lea    0x164c1e(%rip),%rdi        # 2bd228 <__frame_dummy_init_array_entry+0x8408>
+  15860a:	call   6abc0 <_RNvNtNtCs8uuN1nrGffB_4core9panicking11panic_const23panic_const_rem_by_zero>
+  15860f:	mov    $0x1,%edi
+  158614:	mov    $0x13,%esi
+  158619:	call   66af7 <_RNvNtCs3BN1jqgSbDf_5alloc7raw_vec12handle_error>
+  15861e:	mov    %rax,%rbx
+  158621:	dec    %r15
+  158624:	cmp    $0xfffffffffffffffd,%r15
+  158628:	ja     158633 <_RNvMs0_NtCsbWCI0taggj7_7neo_j2k7encoderNtB5_7Encoder6encode+0x2043>
+  15862a:	mov    %r13,%rdi
+  15862d:	call   *0x16a995(%rip)        # 2c2fc8 <free@GLIBC_2.2.5>
+  158633:	mov    %rbx,%rdi
+  158636:	call   2b3680 <_Unwind_Resume@plt>

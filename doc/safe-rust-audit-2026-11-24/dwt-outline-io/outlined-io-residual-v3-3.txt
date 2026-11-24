@@ -1,0 +1,8 @@
+DIAGNOSTIC DWT: third slot is identical safe code before dense-row outlining, NOT unchanged original control; percent columns new/old_safe,new/reference,old_safe/reference
+decode|sl_64_rgb_97.j2k|r0|cutfalse|w1|55.3023|54.8671|56.1708|-0.880%|-0.294%|+1.636%|same
+decode|sl_128_rgba_97.j2k|r0|cutfalse|w1|118.3821|118.5875|119.1482|+1.429%|+1.402%|-0.271%|same
+decode|sl_128_rgba_97.j2k|r2|cutfalse|w1|60.1615|61.0976|61.4057|-1.571%|+2.373%|+2.011%|same
+packed|sl_128_rgba_97.j2k|r0|channels3|90.7858|91.7250|95.0539|-3.872%|+0.218%|+3.441%|same
+packed|sl_128_rgba_97.j2k|r0|channels4|127.6249|126.4396|129.2649|-1.646%|-0.099%|-1.951%|same
+encode|32|reversibletrue|131.3200|131.7092|129.3967|+2.019%|+1.058%|-0.692%|same
+encode|32|reversiblefalse|138.2651|139.5844|137.7063|+4.024%|+0.382%|-0.039%|same

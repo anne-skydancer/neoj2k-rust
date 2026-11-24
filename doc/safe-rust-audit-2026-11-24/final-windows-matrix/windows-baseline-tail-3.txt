@@ -1,0 +1,6 @@
+decode|p31_size_17x37_rgb_97.j2k|r0|cutfalse|w1|23.0094|22.1531|22.9219|-3.677%|+0.000%|same
+decode|p31_size_17x37_rgb_97.j2k|r1|cutfalse|w1|13.7219|13.4031|13.7219|-2.337%|+0.181%|same
+decode|p31_size_2x2_rgba_97.j2k|r0|cutfalse|w1|2.1719|2.2062|2.2094|+2.119%|+2.464%|same
+decode|p31_size_2x2_rgba_97.j2k|r1|cutfalse|w1|1.2937|1.3000|1.3125|+0.483%|+1.446%|same
+decode|p31_size_512x16_rgb_97_r5.j2k|r0|cutfalse|w1|138.0281|130.5687|138.3750|-5.001%|+1.587%|same
+decode|p31_size_512x16_rgb_97_r5.j2k|r1|cutfalse|w1|56.2563|54.1469|56.5781|-3.130%|+0.992%|same

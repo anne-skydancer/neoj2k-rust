@@ -1,0 +1,26 @@
+[
+  {
+    "test": "dwt::safe_rows_tests::avx2_dense_horizontal_matches_scalar_with_parities_odd_widths_and_padding",
+    "exit": 0,
+    "seconds": 7.73080719999416,
+    "log": "miri-dense-wide-packing-1.txt"
+  },
+  {
+    "test": "dwt::safe_rows_tests::avx2_dense_horizontal_nonfinite_samples_finish_as_scalar_does",
+    "exit": 0,
+    "seconds": 5.076084800006356,
+    "log": "miri-dense-wide-packing-2.txt"
+  },
+  {
+    "test": "simd::mct::tests::wide_finishing_matches_independent_rounding_and_integer_clamping",
+    "exit": 0,
+    "seconds": 1.8417525999975624,
+    "log": "miri-dense-wide-packing-3.txt"
+  },
+  {
+    "test": "simd::output::tests::avx2_packed_groups_preserve_limits_and_padding_at_wide_row_boundaries",
+    "exit": 0,
+    "seconds": 6.309650799994415,
+    "log": "miri-dense-wide-packing-4.txt"
+  }
+]

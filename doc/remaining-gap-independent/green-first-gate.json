@@ -1,0 +1,28 @@
+{
+  "result": "PRINCIPAL_ASM_GATE_PASS_KERNEL_NO_MATERIAL_UNSIGNED_TARGET_GAIN",
+  "reason": "All original loads precede firststore; unchanged8wide3FProunding; nohotspills/calls. Extra coefficientbroadcast measuredasrisk; kernel unsignedp31contiguousgainbelow1%andpaddedcasesregress.",
+  "current_helper_bytes": 708,
+  "green_helper_bytes": 692,
+  "vector_width": 8,
+  "all_three_inputs_loaded_before_green_store": true,
+  "hot_vector_spills": false,
+  "hot_helper_calls": false,
+  "kernel_or_correctness_executed": true,
+  "public_codec_executed": false,
+  "production_ported": false,
+  "current_control_typed_helper_merged": true,
+  "exe_sha256": "467f5cce6b1bde57bb61a1f0fb1adf02e06015a6ac791851136458b6e838a15e",
+  "green_broadcast_addresses": [
+    "0x113b2",
+    "0x113c4"
+  ],
+  "green_initial_loads": [
+    "0x113a0",
+    "0x113a6",
+    "0x113ac"
+  ],
+  "green_first_store": "0x113fd",
+  "exact_values_per_process": 715914,
+  "kernel_processes": 3,
+  "kernel_rows": 36
+}

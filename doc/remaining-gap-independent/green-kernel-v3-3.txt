@@ -1,0 +1,14 @@
+ADDR|current0x62fa00e1e680|green0x62fa00e1d280|control0x62fa00e1dc80
+EXACT_CURRENT_GREEN_CONTROL_VALUES=715914
+KERNEL|p24|signedfalse|gap0|current_ns298.219|green_ns296.031|control_ns299.555|green-0.913%|control+0.315%
+KERNEL|p24|signedfalse|gap32|current_ns303.469|green_ns307.305|control_ns299.477|green+1.490%|control-0.752%
+KERNEL|p24|signedfalse|gap64|current_ns299.938|green_ns303.156|control_ns295.250|green+1.123%|control-1.273%
+KERNEL|p24|signedtrue|gap0|current_ns297.281|green_ns295.008|control_ns296.812|green-0.787%|control+0.105%
+KERNEL|p24|signedtrue|gap32|current_ns303.234|green_ns306.359|control_ns303.078|green+1.234%|control-0.179%
+KERNEL|p24|signedtrue|gap64|current_ns299.078|green_ns296.969|control_ns294.469|green-0.393%|control-1.256%
+KERNEL|p31|signedfalse|gap0|current_ns298.609|green_ns294.617|control_ns294.312|green-1.154%|control-1.442%
+KERNEL|p31|signedfalse|gap32|current_ns303.703|green_ns307.375|control_ns299.086|green+1.263%|control-1.369%
+KERNEL|p31|signedfalse|gap64|current_ns298.930|green_ns302.211|control_ns295.008|green+0.806%|control-0.949%
+KERNEL|p31|signedtrue|gap0|current_ns296.734|green_ns290.789|control_ns293.523|green-1.850%|control-0.973%
+KERNEL|p31|signedtrue|gap32|current_ns302.445|green_ns301.742|control_ns298.297|green+0.235%|control-1.035%
+KERNEL|p31|signedtrue|gap64|current_ns298.844|green_ns297.359|control_ns294.617|green-0.395%|control-1.414%

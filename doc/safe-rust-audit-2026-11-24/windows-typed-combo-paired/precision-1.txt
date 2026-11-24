@@ -1,0 +1,7 @@
+DIAGNOSTIC: third slot is old-safe THREE-OP colour / f64 unary, NOT unchanged original control; percent columns new/old_safe,new/reference,old_safe/reference
+decode|p24_sl_64_rgb_97.j2k|r0|cutfalse|w1|51.5031|53.1031|53.5188|-1.983%|+1.147%|+1.323%|same
+decode|p24_sl_128_rgba_97.j2k|r0|cutfalse|w1|112.3031|112.2219|113.2594|-0.142%|-0.562%|+1.249%|same
+decode|p24_large_1024_rgb_97.j2k|r0|cutfalse|w1|3821.4500|3821.7000|3865.5500|-1.017%|-0.104%|+1.131%|same
+decode|p31_sl_64_rgb_97.j2k|r0|cutfalse|w1|52.2125|53.0406|53.5250|-0.759%|+0.513%|-0.337%|same
+decode|p31_sl_128_rgba_97.j2k|r0|cutfalse|w1|109.3000|112.4406|116.2750|-2.696%|+2.873%|+7.081%|same
+decode|p31_large_1024_rgb_97.j2k|r0|cutfalse|w1|3819.6000|3821.7000|3857.1500|-0.909%|-0.003%|+0.911%|same

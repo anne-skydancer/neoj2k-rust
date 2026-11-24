@@ -1,0 +1,8 @@
+DIAGNOSTIC: third slot is old-safe FOUR-OP rounding, NOT unchanged original control; percent columns new/old_safe,new/reference,old_safe/reference
+decode|sl_64_rgb_97.j2k|r0|cutfalse|w1|52.2125|52.5844|53.5063|-1.687%|-1.403%|-1.350%|same
+decode|sl_128_rgba_97.j2k|r0|cutfalse|w1|115.7406|112.9250|113.1219|-0.141%|-1.991%|-1.141%|same
+decode|sl_128_rgba_97.j2k|r2|cutfalse|w1|58.2531|57.9813|58.6250|-0.602%|-1.975%|-3.551%|same
+packed|sl_128_rgba_97.j2k|r0|channels3|85.7125|89.9688|90.2437|-0.090%|+2.625%|-1.525%|same
+packed|sl_128_rgba_97.j2k|r0|channels4|122.9813|121.2250|122.5687|-0.707%|+0.455%|+3.884%|same
+encode|32|reversibletrue|130.0094|130.4594|129.9938|+0.397%|+0.647%|-0.228%|same
+encode|32|reversiblefalse|139.3906|139.9563|138.7500|+0.869%|+1.114%|+0.443%|same

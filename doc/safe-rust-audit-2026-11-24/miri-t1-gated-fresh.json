@@ -1,0 +1,22 @@
+{
+  "command": [
+    "cargo",
+    "+nightly-2026-11-03",
+    "miri",
+    "test",
+    "-p",
+    "neo-j2k",
+    "--lib",
+    "--locked",
+    "--",
+    "avx2_stores_match_scalar"
+  ],
+  "target_dir": "target-audit-safe-miri-t1-gated",
+  "rustflags": "-C target-cpu=x86-64-v3",
+  "exit": 0,
+  "seconds": 16.34095089999755,
+  "source_sha256": {
+    "C:\\Users\\annes\\source\\repos\\neoj2k-rust-safe-simd\\neo-j2k\\src\\simd\\t1.rs": "d3f0bccadd6eb7d47391d5cec980b539dd2b6366d99a25aef43703e1b9c46613",
+    "C:\\Users\\annes\\source\\repos\\neoj2k-rust-safe-simd\\neo-j2k\\src\\t1.rs": "1c696f723c5a224981b9fbe5a8c55110328412e5c86d0f66210ef450bc303fce"
+  }
+}

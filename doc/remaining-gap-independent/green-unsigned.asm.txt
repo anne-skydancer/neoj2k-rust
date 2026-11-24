@@ -1,0 +1,155 @@
+
+/home/dev/safe-crate-audit/independent-green-first/probe-v3:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000112f0 <_RINvNtNtCscXYApnPx904_4main5green3mct29inverse_and_finish_typed_rowsKb0_EB6_>:
+   112f0:	cmp    %rcx,%rsi
+   112f3:	cmovb  %rsi,%rcx
+   112f7:	cmp    %r9,%rcx
+   112fa:	cmovae %r9,%rcx
+   112fe:	test   %rcx,%rcx
+   11301:	je     115a0 <_RINvNtNtCscXYApnPx904_4main5green3mct29inverse_and_finish_typed_rowsKb0_EB6_+0x2b0>
+   11307:	push   %rbx
+   11308:	mov    0x10(%rsp),%rsi
+   1130d:	mov    (%rsi),%eax
+   1130f:	mov    0x4(%rsi),%r9d
+   11313:	mov    0x8(%rsi),%esi
+   11316:	sub    %eax,%r9d
+   11319:	vcvtsi2ss %r9d,%xmm15,%xmm0
+   1131e:	mov    %esi,%r9d
+   11321:	sub    %eax,%r9d
+   11324:	vcvtsi2ss %r9d,%xmm15,%xmm1
+   11329:	add    $0x74c00000,%eax
+   1132e:	cmp    $0x8,%rcx
+   11332:	jae    1133c <_RINvNtNtCscXYApnPx904_4main5green3mct29inverse_and_finish_typed_rowsKb0_EB6_+0x4c>
+   11334:	xor    %r9d,%r9d
+   11337:	jmp    11483 <_RINvNtNtCscXYApnPx904_4main5green3mct29inverse_and_finish_typed_rowsKb0_EB6_+0x193>
+   1133c:	movabs $0x1ffffffffffffff8,%r9
+   11346:	and    %rcx,%r9
+   11349:	vbroadcastss %xmm0,%ymm2
+   1134e:	vbroadcastss %xmm1,%ymm3
+   11353:	vmovd  %eax,%xmm4
+   11357:	vpbroadcastd %xmm4,%ymm4
+   1135c:	vmovd  %esi,%xmm5
+   11360:	vpbroadcastd %xmm5,%ymm5
+   11365:	lea    0x0(,%rcx,4),%r10
+   1136d:	and    $0xffffffffffffffe0,%r10
+   11371:	xor    %r11d,%r11d
+   11374:	vbroadcastss -0xdf6d(%rip),%ymm8        # 3410 <__abi_tag+0x3114>
+   1137d:	vbroadcastss -0xdf86(%rip),%ymm9        # 3400 <__abi_tag+0x3104>
+   11386:	vbroadcastss -0xdf47(%rip),%ymm10        # 3448 <__abi_tag+0x314c>
+   1138f:	vbroadcastss -0xdf68(%rip),%ymm11        # 3430 <__abi_tag+0x3134>
+   11398:	nopl   0x0(%rax,%rax,1)
+   113a0:	vmovups (%rdi,%r11,1),%ymm12
+   113a6:	vmovups (%rdx,%r11,1),%ymm13
+   113ac:	vmovups (%r8,%r11,1),%ymm14
+   113b2:	vbroadcastss -0xdf43(%rip),%ymm6        # 3478 <__abi_tag+0x317c>
+   113bb:	vmulps %ymm6,%ymm13,%ymm15
+   113bf:	vaddps %ymm15,%ymm12,%ymm15
+   113c4:	vbroadcastss -0xdf99(%rip),%ymm6        # 3434 <__abi_tag+0x3138>
+   113cd:	vmulps %ymm6,%ymm14,%ymm6
+   113d1:	vaddps %ymm6,%ymm15,%ymm6
+   113d5:	vmaxps %ymm2,%ymm6,%ymm6
+   113d9:	vminps %ymm3,%ymm6,%ymm6
+   113dd:	vaddps %ymm6,%ymm8,%ymm15
+   113e1:	vsubps %ymm15,%ymm9,%ymm7
+   113e6:	vaddps %ymm7,%ymm6,%ymm6
+   113ea:	vpslld $0x8,%ymm15,%ymm7
+   113f0:	vpaddd %ymm4,%ymm7,%ymm7
+   113f4:	vpaddd %ymm6,%ymm7,%ymm6
+   113f8:	vpminud %ymm5,%ymm6,%ymm6
+   113fd:	vmovdqu %ymm6,(%rdx,%r11,1)
+   11403:	vmulps %ymm10,%ymm14,%ymm6
+   11408:	vaddps %ymm6,%ymm12,%ymm6
+   1140c:	vmaxps %ymm2,%ymm6,%ymm6
+   11410:	vminps %ymm3,%ymm6,%ymm6
+   11414:	vaddps %ymm6,%ymm8,%ymm7
+   11418:	vsubps %ymm7,%ymm9,%ymm14
+   1141c:	vaddps %ymm6,%ymm14,%ymm6
+   11420:	vpslld $0x8,%ymm7,%ymm7
+   11425:	vpaddd %ymm4,%ymm7,%ymm7
+   11429:	vpaddd %ymm6,%ymm7,%ymm6
+   1142d:	vpminud %ymm5,%ymm6,%ymm6
+   11432:	vmovdqu %ymm6,(%rdi,%r11,1)
+   11438:	vmulps %ymm11,%ymm13,%ymm6
+   1143d:	vaddps %ymm6,%ymm12,%ymm6
+   11441:	vmaxps %ymm2,%ymm6,%ymm6
+   11445:	vminps %ymm3,%ymm6,%ymm6
+   11449:	vaddps %ymm6,%ymm8,%ymm7
+   1144d:	vsubps %ymm7,%ymm9,%ymm12
+   11451:	vaddps %ymm6,%ymm12,%ymm6
+   11455:	vpslld $0x8,%ymm7,%ymm7
+   1145a:	vpaddd %ymm4,%ymm7,%ymm7
+   1145e:	vpaddd %ymm6,%ymm7,%ymm6
+   11462:	vpminud %ymm5,%ymm6,%ymm6
+   11467:	vmovdqu %ymm6,(%r8,%r11,1)
+   1146d:	add    $0x20,%r11
+   11471:	cmp    %r11,%r10
+   11474:	jne    113a0 <_RINvNtNtCscXYApnPx904_4main5green3mct29inverse_and_finish_typed_rowsKb0_EB6_+0xb0>
+   1147a:	cmp    %r9,%rcx
+   1147d:	je     1159f <_RINvNtNtCscXYApnPx904_4main5green3mct29inverse_and_finish_typed_rowsKb0_EB6_+0x2af>
+   11483:	vmovss -0xe013(%rip),%xmm2        # 3478 <__abi_tag+0x317c>
+   1148b:	vmovss -0xe05f(%rip),%xmm3        # 3434 <__abi_tag+0x3138>
+   11493:	vmovss -0xe08b(%rip),%xmm4        # 3410 <__abi_tag+0x3114>
+   1149b:	vmovss -0xe0a3(%rip),%xmm5        # 3400 <__abi_tag+0x3104>
+   114a3:	vmovss -0xe063(%rip),%xmm6        # 3448 <__abi_tag+0x314c>
+   114ab:	vmovss -0xe083(%rip),%xmm7        # 3430 <__abi_tag+0x3134>
+   114b3:	data16 data16 data16 cs nopw 0x0(%rax,%rax,1)
+   114c0:	vmovss (%rdi,%r9,4),%xmm8
+   114c6:	vmovss (%rdx,%r9,4),%xmm9
+   114cc:	vmovss (%r8,%r9,4),%xmm10
+   114d2:	vmulss %xmm2,%xmm9,%xmm11
+   114d6:	vaddss %xmm11,%xmm8,%xmm11
+   114db:	vmulss %xmm3,%xmm10,%xmm12
+   114df:	vaddss %xmm12,%xmm11,%xmm11
+   114e4:	vmaxss %xmm0,%xmm11,%xmm11
+   114e8:	vminss %xmm1,%xmm11,%xmm11
+   114ec:	vaddss %xmm4,%xmm11,%xmm12
+   114f0:	vsubss %xmm12,%xmm5,%xmm13
+   114f5:	vaddss %xmm13,%xmm11,%xmm11
+   114fa:	vmovd  %xmm12,%r11d
+   114ff:	shl    $0x8,%r11d
+   11503:	vmovd  %xmm11,%r10d
+   11508:	add    %eax,%r11d
+   1150b:	add    %r10d,%r11d
+   1150e:	cmp    %esi,%r11d
+   11511:	cmovae %esi,%r11d
+   11515:	vmulss %xmm6,%xmm10,%xmm10
+   11519:	vaddss %xmm10,%xmm8,%xmm10
+   1151e:	vmaxss %xmm0,%xmm10,%xmm10
+   11522:	vminss %xmm1,%xmm10,%xmm10
+   11526:	vaddss %xmm4,%xmm10,%xmm11
+   1152a:	vsubss %xmm11,%xmm5,%xmm12
+   1152f:	vaddss %xmm12,%xmm10,%xmm10
+   11534:	vmovd  %xmm11,%r10d
+   11539:	shl    $0x8,%r10d
+   1153d:	vmovd  %xmm10,%ebx
+   11541:	add    %eax,%r10d
+   11544:	add    %ebx,%r10d
+   11547:	cmp    %esi,%r10d
+   1154a:	cmovae %esi,%r10d
+   1154e:	mov    %r11d,(%rdx,%r9,4)
+   11552:	vmulss %xmm7,%xmm9,%xmm9
+   11556:	vaddss %xmm9,%xmm8,%xmm8
+   1155b:	vmaxss %xmm0,%xmm8,%xmm8
+   1155f:	vminss %xmm1,%xmm8,%xmm8
+   11563:	vaddss %xmm4,%xmm8,%xmm9
+   11567:	vsubss %xmm9,%xmm5,%xmm10
+   1156c:	vaddss %xmm10,%xmm8,%xmm8
+   11571:	vmovd  %xmm9,%r11d
+   11576:	shl    $0x8,%r11d
+   1157a:	vmovd  %xmm8,%ebx
+   1157e:	add    %eax,%r11d
+   11581:	add    %ebx,%r11d
+   11584:	cmp    %esi,%r11d
+   11587:	cmovae %esi,%r11d
+   1158b:	mov    %r10d,(%rdi,%r9,4)
+   1158f:	mov    %r11d,(%r8,%r9,4)
+   11593:	inc    %r9
+   11596:	cmp    %r9,%rcx
+   11599:	jne    114c0 <_RINvNtNtCscXYApnPx904_4main5green3mct29inverse_and_finish_typed_rowsKb0_EB6_+0x1d0>
+   1159f:	pop    %rbx
+   115a0:	vzeroupper
+   115a3:	ret

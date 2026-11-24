@@ -1,0 +1,13 @@
+WARNING: Ignoring `RUSTC_WRAPPER` environment variable, Miri does not support wrapping.
+   Compiling neo-j2k-oracle v0.1.3 (C:\Users\annes\source\repos\neoj2k-rust-safe-simd\neo-j2k-oracle)
+   Compiling neo-j2k-testkit v0.1.3 (C:\Users\annes\source\repos\neoj2k-rust-safe-simd\neo-j2k-testkit)
+   Compiling neo-j2k v0.1.3 (C:\Users\annes\source\repos\neoj2k-rust-safe-simd\neo-j2k)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.92s
+     Running unittests src\lib.rs (target-audit-safe-miri-scatter\miri\x86_64-pc-windows-msvc\debug\build\neo-j2k/4fd6a815eb3beb60\out\neo_j2k-4fd6a815eb3beb60.exe)
+
+running 2 tests
+test dwt::safe_rows_tests::avx2_dense_horizontal_matches_scalar_with_parities_odd_widths_and_padding ... ok
+test dwt::safe_rows_tests::avx2_dense_horizontal_nonfinite_samples_finish_as_scalar_does ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 77 filtered out; finished in 23.43s
+

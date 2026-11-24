@@ -1,180 +1,294 @@
 // SPDX-License-Identifier: BSD-2-Clause
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
-
-use core::arch::x86_64::*;
-
+use super::lanes::*;
 const LANES: usize = 8;
 type Block = [i32; LANES];
-
-#[target_feature(enable = "avx2")]
-fn read(block: &Block) -> __m256i {
-    // SAFETY: a block occupies 32 initialized bytes, and the load permits unaligned addresses.
-    unsafe { _mm256_loadu_si256(block.as_ptr().cast()) }
+#[inline(always)]
+fn inverse_reversible([y, u, v]: [Block; 3]) -> [Block; 3] {
+    let g = sub_i32(y, arithmetic_right::<2>(add_i32(u, v)));
+    [add_i32(v, g), g, add_i32(u, g)]
 }
-
-#[target_feature(enable = "avx2")]
-fn write(block: &mut Block, values: __m256i) {
-    // SAFETY: each block has 32 exclusive writable bytes, and the store permits unaligned addresses.
-    unsafe { _mm256_storeu_si256(block.as_mut_ptr().cast(), values) };
+#[inline(always)]
+fn inverse_irreversible([y, u, v]: [Block; 3]) -> [FloatLanes; 3] {
+    let [y, u, v] = [y, u, v].map(from_float_bits);
+    [
+        core::array::from_fn(|i| y[i] + v[i] * 1.402),
+        core::array::from_fn(|i| (y[i] - u[i] * 0.34413) - v[i] * 0.71414),
+        core::array::from_fn(|i| y[i] + u[i] * 1.772),
+    ]
 }
-
-#[target_feature(enable = "avx2")]
-fn inverse_reversible([a, b, c]: [&Block; 3]) -> [__m256i; 3] {
-    let [y, u, v] = [read(a), read(b), read(c)];
-    let g = _mm256_sub_epi32(y, _mm256_srai_epi32::<2>(_mm256_add_epi32(u, v)));
-    [_mm256_add_epi32(v, g), g, _mm256_add_epi32(u, g)]
+#[inline(always)]
+fn integer(value: Block, (shift, lo, hi): (i32, i32, i32)) -> Block {
+    value.map(|v| v.clamp(lo - shift, hi - shift) + shift)
 }
-
-struct Ict {
-    red: __m256,
-    green_u: __m256,
-    green_v: __m256,
-    blue: __m256,
+// The clamp-before-bias approach is also used by Aurora-Viewer's safe aurora-j2k
+// mct::shift_97_fast (1ea0749c798daf81ccb059de74557b862c9e2340), derived from neo-j2k.
+#[derive(Clone, Copy)]
+struct FastShift {
+    low: f32,
+    high: f32,
+    shift: i32,
 }
-
-impl Ict {
-    #[target_feature(enable = "avx2")]
-    fn new() -> Self {
-        Self {
-            red: _mm256_set1_ps(1.402),
-            green_u: _mm256_set1_ps(0.34413),
-            green_v: _mm256_set1_ps(0.71414),
-            blue: _mm256_set1_ps(1.772),
-        }
+impl FastShift {
+    fn new((shift, lo, hi): (i32, i32, i32)) -> Option<Self> {
+        let (low, high) = (lo - shift, hi - shift);
+        (low >= -4_194_304 && high <= 4_194_304).then_some(Self {
+            low: low as f32,
+            high: high as f32,
+            shift,
+        })
     }
-
-    #[target_feature(enable = "avx2")]
-    fn apply(&self, [a, b, c]: [&Block; 3]) -> [__m256; 3] {
-        let [y, u, v] = [a, b, c].map(|block| _mm256_castsi256_ps(read(block)));
-        [
-            _mm256_add_ps(y, _mm256_mul_ps(v, self.red)),
-            _mm256_sub_ps(
-                _mm256_sub_ps(y, _mm256_mul_ps(u, self.green_u)),
-                _mm256_mul_ps(v, self.green_v),
-            ),
-            _mm256_add_ps(y, _mm256_mul_ps(u, self.blue)),
-        ]
+    #[inline(always)]
+    fn apply(self, value: FloatLanes) -> Block {
+        // Ordered comparisons make NaN choose the lower endpoint. The integer bounds
+        // are exact floats, so clamping before nearest-even rounding preserves results.
+        let rounded = value.map(|v| {
+            let v = if v > self.low { v } else { self.low };
+            let v = if v < self.high { v } else { self.high };
+            v + 12_582_912.0
+        });
+        rounded.map(|v| v.to_bits().wrapping_sub(0x4b40_0000).cast_signed() + self.shift)
     }
 }
-
-struct LevelShift {
-    lower: __m256i,
-    upper: __m256i,
-    bias: __m256i,
-    max_sample: __m256i,
+#[inline(always)]
+#[allow(
+    clippy::cast_possible_truncation,
+    reason = "the low mantissa word encodes the signed integer"
+)]
+fn float_general(value: FloatLanes, (shift, lo, hi): (i32, i32, i32)) -> Block {
+    // Widening is exact, and every i32 endpoint is exact in f64. The bias has unit
+    // spacing throughout this range, so its low word holds the nearest-even signed
+    // integer. This avoids scalar saturating f32-to-i32 conversions in wider finishes.
+    let lower = f64::from(lo - shift);
+    let upper = f64::from(hi - shift);
+    value.map(|v| {
+        let v = f64::from(v);
+        let v = if v > lower { v } else { lower };
+        let v = if v < upper { v } else { upper };
+        ((v + 6_755_399_441_055_744.0).to_bits() as u32).cast_signed() + shift
+    })
 }
-
-impl LevelShift {
-    #[target_feature(enable = "avx2")]
-    fn new((shift, lo, hi): (i32, i32, i32)) -> Self {
-        Self {
-            lower: _mm256_set1_epi32(lo - shift),
-            upper: _mm256_set1_epi32(hi - shift),
-            bias: _mm256_set1_epi32(shift),
-            max_sample: _mm256_set1_epi32(hi),
-        }
-    }
-
-    #[target_feature(enable = "avx2")]
-    fn integer(&self, value: __m256i) -> __m256i {
-        _mm256_add_epi32(
-            _mm256_min_epi32(_mm256_max_epi32(value, self.lower), self.upper),
-            self.bias,
-        )
-    }
-
-    #[target_feature(enable = "avx2")]
-    fn float(&self, value: __m256) -> __m256i {
-        let rounded = _mm256_round_ps::<{ _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC }>(value);
-        // The integer conversion yields INT_MIN for NaN and both overflow signs. Preserve
-        // the positive overflow case separately, since that clamps to the other endpoint.
-        let integer = _mm256_cvttps_epi32(rounded);
-        let overflow = _mm256_set1_ps(2_147_483_648.0);
-        let high = _mm256_castps_si256(_mm256_cmp_ps::<_CMP_GE_OQ>(value, overflow));
-        _mm256_blendv_epi8(self.integer(integer), self.max_sample, high)
-    }
-}
-
-pub(crate) fn inverse(planes: [&mut [i32]; 3], reversible: bool) -> usize {
-    // SAFETY: the module is compiled only when the target enables AVX2.
-    unsafe { inverse_avx2(planes, reversible) }
-}
-
-#[target_feature(enable = "avx2")]
-fn inverse_avx2([y, u, v]: [&mut [i32]; 3], reversible: bool) -> usize {
+pub(crate) fn inverse([y, u, v]: [&mut [i32]; 3], reversible: bool) -> usize {
     let (ys, _) = y.as_chunks_mut::<LANES>();
     let (us, _) = u.as_chunks_mut::<LANES>();
     let (vs, _) = v.as_chunks_mut::<LANES>();
     let count = ys.len().min(us.len()).min(vs.len()) * LANES;
     if reversible {
         for ((a, b), c) in ys.iter_mut().zip(us).zip(vs) {
-            let [r, g, b_out] = inverse_reversible([a, b, c]);
-            write(a, r);
-            write(b, g);
-            write(c, b_out);
+            let [r, g, blue] = inverse_reversible([*a, *b, *c]);
+            *a = r;
+            *b = g;
+            *c = blue;
         }
     } else {
-        let ict = Ict::new();
         for ((a, b), c) in ys.iter_mut().zip(us).zip(vs) {
-            let [red, green, blue] = ict.apply([a, b, c]);
-            write(a, _mm256_castps_si256(red));
-            write(b, _mm256_castps_si256(green));
-            write(c, _mm256_castps_si256(blue));
+            let [r, g, blue] = inverse_irreversible([*a, *b, *c]);
+            *a = float_bits(r);
+            *b = float_bits(g);
+            *c = float_bits(blue);
         }
     }
     count
 }
-
-pub(crate) fn inverse_and_finish(planes: [&mut [i32]; 3], reversible: bool, finishes: [(i32, i32, i32); 3]) -> usize {
-    // SAFETY: the module is compiled only when the target enables AVX2.
-    unsafe { inverse_and_finish_avx2(planes, reversible, finishes) }
-}
-
-#[target_feature(enable = "avx2")]
-fn inverse_and_finish_avx2([y, u, v]: [&mut [i32]; 3], reversible: bool, finishes: [(i32, i32, i32); 3]) -> usize {
+pub(crate) fn inverse_and_finish(
+    [y, u, v]: [&mut [i32]; 3],
+    reversible: bool,
+    finishes: [(i32, i32, i32); 3],
+) -> usize {
     let (ys, _) = y.as_chunks_mut::<LANES>();
     let (us, _) = u.as_chunks_mut::<LANES>();
     let (vs, _) = v.as_chunks_mut::<LANES>();
     let count = ys.len().min(us.len()).min(vs.len()) * LANES;
-    let [red, green, blue] = finishes.map(|finish| LevelShift::new(finish));
     if reversible {
         for ((a, b), c) in ys.iter_mut().zip(us).zip(vs) {
-            let [r, g, b_out] = inverse_reversible([a, b, c]);
-            write(a, red.integer(r));
-            write(b, green.integer(g));
-            write(c, blue.integer(b_out));
+            let [r, g, blue] = inverse_reversible([*a, *b, *c]);
+            *a = integer(r, finishes[0]);
+            *b = integer(g, finishes[1]);
+            *c = integer(blue, finishes[2]);
         }
-    } else {
-        let ict = Ict::new();
+    } else if let [Some(red), Some(green), Some(blue)] = finishes.map(FastShift::new) {
         for ((a, b), c) in ys.iter_mut().zip(us).zip(vs) {
-            let [r, g, b_out] = ict.apply([a, b, c]);
-            write(a, red.float(r));
-            write(b, green.float(g));
-            write(c, blue.float(b_out));
+            let [r, g, b_out] = inverse_irreversible([*a, *b, *c]);
+            *a = red.apply(r);
+            *b = green.apply(g);
+            *c = blue.apply(b_out);
+        }
+    } else if cfg!(target_feature = "avx2") && finishes[0] == finishes[1] && finishes[1] == finishes[2] {
+        let finish = finishes[0];
+        inverse_and_finish_wide_rows(
+            ys.as_flattened_mut(),
+            us.as_flattened_mut(),
+            vs.as_flattened_mut(),
+            finish,
+        );
+    } else {
+        for ((a, b), c) in ys.iter_mut().zip(us).zip(vs) {
+            let [r, g, b_out] = inverse_irreversible([*a, *b, *c]);
+            *a = float_general(r, finishes[0]);
+            *b = float_general(g, finishes[1]);
+            *c = float_general(b_out, finishes[2]);
         }
     }
     count
 }
-
 pub(crate) fn level_shift(line: &mut [i32], shift: i32, lo: i32, hi: i32, reversible: bool) -> usize {
-    // SAFETY: the module is compiled only when the target enables AVX2.
-    unsafe { level_shift_avx2(line, shift, lo, hi, reversible) }
-}
-
-#[target_feature(enable = "avx2")]
-fn level_shift_avx2(line: &mut [i32], shift: i32, lo: i32, hi: i32, reversible: bool) -> usize {
     let (blocks, _) = line.as_chunks_mut::<LANES>();
     let count = blocks.len() * LANES;
-    let finish = LevelShift::new((shift, lo, hi));
     if reversible {
         for block in blocks {
-            write(block, finish.integer(read(block)));
+            *block = integer(*block, (shift, lo, hi));
+        }
+    } else if let Some(fast) = FastShift::new((shift, lo, hi)) {
+        for block in blocks {
+            *block = fast.apply(from_float_bits(*block));
+        }
+    } else if cfg!(target_feature = "avx2") {
+        if shift == 0 {
+            level_shift_typed::<true>(blocks.as_flattened_mut(), shift, lo, hi);
+        } else {
+            level_shift_typed::<false>(blocks.as_flattened_mut(), shift, lo, hi);
         }
     } else {
         for block in blocks {
-            let value = _mm256_castsi256_ps(read(block));
-            write(block, finish.float(value));
+            *block = float_general(from_float_bits(*block), (shift, lo, hi));
         }
     }
     count
 }
+#[inline(never)]
+fn level_shift_typed<const SIGNED: bool>(line: &mut [i32], given_shift: i32, lo: i32, hi: i32) {
+    let shift = if SIGNED { 0 } else { given_shift };
+    let lower = (lo - shift) as f32;
+    let upper = (hi - shift) as f32;
+    let offset = shift
+        .cast_unsigned()
+        .wrapping_sub(0x4b40_0000)
+        .wrapping_sub(0x4f40_0000 << 8);
+    for v in line {
+        *v = round_wide_lane::<SIGNED>(f32::from_bits(v.cast_unsigned()), lower, upper, offset, hi);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    #[allow(
+        clippy::cast_possible_truncation,
+        reason = "reference saturation follows nearest-even rounding"
+    )]
+    fn wide_finishing_matches_independent_rounding_and_integer_clamping() {
+        let specials = [
+            0,
+            0x8000_0000,
+            1,
+            0x8000_0001,
+            0x7fc0_0000,
+            0x7fa0_0001,
+            0xffc0_0001,
+            0x7f80_0000,
+            0xff80_0000,
+            0x4eff_ffff,
+            0x4f00_0000,
+            0xcf00_0000,
+            0x4aff_ffff,
+            0xcaff_ffff,
+            0x3f00_0000,
+            0xbf00_0000,
+        ];
+        let mut state = 0x3128_5678u32;
+        for precision in 1..=31 {
+            for signed in [false, true] {
+                let magnitude = 1_i32 << (precision - 1);
+                let shift = if signed { 0 } else { magnitude };
+                let (lo, hi) = if signed {
+                    (-magnitude, magnitude - 1)
+                } else {
+                    (0, 2 * (magnitude - 1) + 1)
+                };
+                for block in 0..if cfg!(miri) { 4 } else { 512 } {
+                    let values: FloatLanes = core::array::from_fn(|lane| {
+                        state ^= state << 13;
+                        state ^= state >> 17;
+                        state ^= state << 5;
+                        let index = block * LANES + lane;
+                        f32::from_bits(if index < specials.len() { specials[index] } else { state })
+                    });
+                    let expected = values.map(|v| {
+                        let n = if v.is_nan() {
+                            i32::MIN
+                        } else {
+                            v.round_ties_even() as i32
+                        };
+                        n.clamp(lo - shift, hi - shift) + shift
+                    });
+                    assert_eq!(float_general(values, (shift, lo, hi)), expected);
+                }
+            }
+        }
+    }
+}
+
+// Finish bounds normalize to [-2^(p-1),2^(p-1)-1], p<=31. The lower
+// endpoint is exact in f32; the upper may round up by one, corrected by the integer cap.
+// The high bias rounds to a multiple of256 and its exact residual is at most128.
+// Translating by an even multiple preserves nearest-even ties in the low bias.
+// The combined bias below is exactly the sum of the high and low biases. Its
+// difference from `high` is exact, so adding v rounds the same low residual
+// with one fewer floating-point operation.
+#[inline(always)]
+fn round_wide_lane<const SIGNED: bool>(v: f32, lower: f32, upper: f32, offset: u32, hi: i32) -> i32 {
+    let v = if v > lower { v } else { lower };
+    let v = if v < upper { v } else { upper };
+    let high = v + 3_221_225_472.0;
+    // BIG+SMALL is exact; this difference is exact by Sterbenz's lemma.
+    let low = v + (3_233_808_384.0 - high);
+    let encoded = (high.to_bits() << 8).wrapping_add(low.to_bits()).wrapping_add(offset);
+    // Signed normalized values lie within +/-2^30, so their encoded result fits
+    // i32. Unsigned values are capped before conversion, including the rounded-up
+    // f32 representation of a 31-bit upper endpoint.
+    if SIGNED {
+        encoded.cast_signed().min(hi)
+    } else {
+        encoded.min(hi.cast_unsigned()).cast_signed()
+    }
+}
+
+#[inline(always)]
+fn inverse_and_finish_wide_rows(y: &mut [i32], u: &mut [i32], v: &mut [i32], finish: (i32, i32, i32)) {
+    if finish.0 == 0 {
+        inverse_and_finish_typed_rows::<true>(y, u, v, finish);
+    } else {
+        inverse_and_finish_typed_rows::<false>(y, u, v, finish);
+    }
+}
+
+// Separate mutable rows preserve alias information. Iterating individual pixels lets
+// LLVM vectorize consecutive samples rather than widening eight strided lane streams.
+#[inline(never)]
+fn inverse_and_finish_typed_rows<const SIGNED: bool>(
+    ys: &mut [i32],
+    us: &mut [i32],
+    vs: &mut [i32],
+    (given_shift, lo, hi): (i32, i32, i32),
+) {
+    let shift = if SIGNED { 0 } else { given_shift };
+    let lower = (lo - shift) as f32;
+    let upper = (hi - shift) as f32;
+    let offset = shift
+        .cast_unsigned()
+        .wrapping_sub(0x4b40_0000)
+        .wrapping_sub(0x4f40_0000 << 8);
+    for ((a, b), c) in ys.iter_mut().zip(us).zip(vs) {
+        let y = f32::from_bits(a.cast_unsigned());
+        let u = f32::from_bits(b.cast_unsigned());
+        let v = f32::from_bits(c.cast_unsigned());
+        *a = round_wide_lane::<SIGNED>(y + v * 1.402, lower, upper, offset, hi);
+        *b = round_wide_lane::<SIGNED>((y - u * 0.34413) - v * 0.71414, lower, upper, offset, hi);
+        *c = round_wide_lane::<SIGNED>(y + u * 1.772, lower, upper, offset, hi);
+    }
+}
+
+#[cfg(test)]
+mod wide_tests;

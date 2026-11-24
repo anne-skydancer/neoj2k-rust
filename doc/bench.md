@@ -11,7 +11,7 @@ to Tier-1 is faster; it says nothing of whole-image speed (the README's performa
 
 | Piece | Where | What |
 |---|---|---|
-| Entry points | `neo-j2k/src/bench.rs`, `neo-j2k/src/encoder/bench.rs`, behind the feature `bench-internals` | `DecodeWorkspace::decode` and `EncodeWorkspace::encode`: thin calls of what the decoder and the encoder run, with the buffers kept by the caller. Off by default, hidden from the documentation, not API. The crate's `unsafe` stays in `src/simd/`. |
+| Entry points | `neo-j2k/src/bench.rs`, `neo-j2k/src/encoder/bench.rs`, behind the feature `bench-internals` | `DecodeWorkspace::decode` and `EncodeWorkspace::encode`: thin calls of what the decoder and the encoder run, with the buffers kept by the caller. Off by default, hidden from the documentation, not API. The codec crate forbids `unsafe` code. |
 | Measuring program | `neo-j2k-bench/` (an unpublished workspace crate, `publish = false`) | One run is one round of one build: it pins itself, times every set and prints one `RESULT` line each. Reads the TSC (`_rdtsc`) and sets the thread's affinity, so it is, besides the oracle and the fuzz crate, a crate that holds `unsafe`; it has no dependency but the codec and the test kit, and never the C++ oracle. |
 | Driver | `tools/bench_tier1.py` | Builds the base, the head and a copy of the base, runs the three alternately, prints the table. |
 

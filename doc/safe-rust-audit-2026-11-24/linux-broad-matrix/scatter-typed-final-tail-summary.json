@@ -1,0 +1,38 @@
+[
+  {
+    "cell": "baseline",
+    "run": 1,
+    "host_seconds": 0.5650256459994125,
+    "rows": 6
+  },
+  {
+    "cell": "baseline",
+    "run": 2,
+    "host_seconds": 0.5648423099992215,
+    "rows": 6
+  },
+  {
+    "cell": "baseline",
+    "run": 3,
+    "host_seconds": 0.5651780039988807,
+    "rows": 6
+  },
+  {
+    "cell": "v3",
+    "run": 1,
+    "host_seconds": 0.5150679889993626,
+    "rows": 6
+  },
+  {
+    "cell": "v3",
+    "run": 2,
+    "host_seconds": 0.5152787780025392,
+    "rows": 6
+  },
+  {
+    "cell": "v3",
+    "run": 3,
+    "host_seconds": 0.5150001680012792,
+    "rows": 6
+  }
+]

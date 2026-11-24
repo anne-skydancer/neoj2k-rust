@@ -7,7 +7,8 @@ A JPEG 2000 codec library written natively in Rust: Part 1 decoding of J2K, JP2 
 with lossless 5/3 and irreversible 9/7 wavelets. It is the Rust counterpart of the C++ library
 [neo-j2k](https://github.com/anne-skydancer/neo-j2k) and implements the same core codec. It is not a
 wrapper: the crate `neo-j2k` has no build script, no C or C++, no `-sys` crate and no FFI, in itself or in
-its dependency tree; it has no runtime dependency at all. `unsafe` is allowed only in its `simd` module.
+its dependency tree; it has no runtime dependency at all. The crate forbids `unsafe` code, including in
+its `simd` module; its lane kernels use safe Rust arrays and slices.
 The C++ library is the crate's oracle: the tests compare this crate's output against it, and the port
 targets the same samples, statuses, messages and encoded bytes for the same inputs, on every executor and
 at both CPU levels. The C++ appears only in the test-only crate `neo-j2k-oracle`, a dev-dependency that is
@@ -176,7 +177,7 @@ cargo build --release -p neo-j2k --no-default-features --features std
 |---|---|---|
 | `std` | yes | required in this version (reserved for a later `no_std` + `alloc` build) |
 | `encode` | yes | the native JPEG 2000 encoder, including borrowed-executor parallelism |
-| `simd` | yes | x86-64 instruction intrinsics, including the AVX2 kernels on AVX2 builds |
+| `simd` | yes | safe sample rounding and fixed-width lane kernels for x86-64 builds |
 | `opensim` | yes | the OpenSim limit profile, as the C++'s `NJ2K_PROFILE_OPENSIM` |
 | `bench-internals` | no | not API: the two Tier-1 entry points (decode a code-block, encode a code-block) that `neo-j2k-bench` times, hidden from the documentation; implies `encode` ([doc/bench.md](doc/bench.md)) |
 
@@ -189,8 +190,8 @@ The crate selects kernels at compile time, as in the C++ (decision D8).
 
 | Build | How | Kernels |
 |---|---|---|
-| baseline x86-64 | the default | scalar with SSE sample rounding |
-| x86-64-v3 (AVX2) | `RUSTFLAGS="-C target-cpu=x86-64-v3"`, or in the consumer's `.cargo/config.toml`: `[build] rustflags = ["-C", "target-cpu=x86-64-v3"]` | AVX2 in `mod simd` |
+| baseline x86-64 | the default | scalar with safe sample rounding |
+| x86-64-v3 (AVX2) | `RUSTFLAGS="-C target-cpu=x86-64-v3"`, or in the consumer's `.cargo/config.toml`: `[build] rustflags = ["-C", "target-cpu=x86-64-v3"]` | safe lane kernels in `mod simd`, optimized for the selected target |
 
 The parity suite runs at both CPU levels. The port preserves the C++ floating-point operation order.
 Calls into Rust, including jobs passed to a host executor, require the standard floating-point
@@ -397,7 +398,9 @@ dependency graph (dev-dependencies left out) holds no crate with a build script,
 `-sys` name or a C/C++ build or binding helper, and not the oracle crate; that the crate itself has
 no build script; that the package holds Rust sources, manifests, readme and licence files only; and
 that the crate's sources hold no FFI (`extern "C"`, `#[link]`, `#[no_mangle]`, `#[export_name]`), no
-`unsafe` outside `src/simd/`, no `static mut` and no `thread_local!`. `cargo deny check` (with
+`unsafe` anywhere in the crate's sources, no `static mut` and no `thread_local!`. The crate also
+enforces `#![forbid(unsafe_code)]`, so a module cannot relax the compiler's safety-code lint.
+`cargo deny check` (with
 `deny.toml`, cargo-deny 0.20.2 in CI) checks the licences, advisories and sources of the whole
 workspace's graph and bans the C/C++ helper crates outright.
 

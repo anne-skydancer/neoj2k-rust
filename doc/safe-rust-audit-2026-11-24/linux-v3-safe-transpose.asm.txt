@@ -1,0 +1,166 @@
+00000000000bcde0 0000000000000306 t neo_j2k::simd::dwt::transpose
+
+/home/dev/safe-crate-audit/target-v3/release/neo-j2k-versions:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000bcde0 <_RNvNtNtCscmlNaaSWqWF_7neo_j2k4simd3dwt9transpose>:
+   bcde0:	c5 fb 10 86 e0 00 00 	vmovsd xmm0,QWORD PTR [rsi+0xe0]
+   bcde7:	00 
+   bcde8:	c5 f8 10 8e a0 00 00 	vmovups xmm1,XMMWORD PTR [rsi+0xa0]
+   bcdef:	00 
+   bcdf0:	c5 f8 10 96 80 00 00 	vmovups xmm2,XMMWORD PTR [rsi+0x80]
+   bcdf7:	00 
+   bcdf8:	c5 e8 14 d9          	vunpcklps xmm3,xmm2,xmm1
+   bcdfc:	c4 e3 7d 18 db 01    	vinsertf128 ymm3,ymm0,xmm3,0x1
+   bce02:	c4 e2 79 18 e0       	vbroadcastss xmm4,xmm0
+   bce07:	c5 f8 10 ae c0 00 00 	vmovups xmm5,XMMWORD PTR [rsi+0xc0]
+   bce0e:	00 
+   bce0f:	c4 e2 79 18 f5       	vbroadcastss xmm6,xmm5
+   bce14:	c5 c8 14 e4          	vunpcklps xmm4,xmm6,xmm4
+   bce18:	c4 e3 7d 18 e4 01    	vinsertf128 ymm4,ymm0,xmm4,0x1
+   bce1e:	c4 e3 65 0c dc c0    	vblendps ymm3,ymm3,ymm4,0xc0
+   bce24:	c5 f8 10 26          	vmovups xmm4,XMMWORD PTR [rsi]
+   bce28:	c5 f8 10 76 20       	vmovups xmm6,XMMWORD PTR [rsi+0x20]
+   bce2d:	c5 f8 10 7e 40       	vmovups xmm7,XMMWORD PTR [rsi+0x40]
+   bce32:	c5 78 10 46 60       	vmovups xmm8,XMMWORD PTR [rsi+0x60]
+   bce37:	c4 42 79 18 c8       	vbroadcastss xmm9,xmm8
+   bce3c:	c4 62 79 18 d7       	vbroadcastss xmm10,xmm7
+   bce41:	c4 41 28 14 c9       	vunpcklps xmm9,xmm10,xmm9
+   bce46:	c5 58 14 d6          	vunpcklps xmm10,xmm4,xmm6
+   bce4a:	c4 43 29 0c c9 0c    	vblendps xmm9,xmm10,xmm9,0xc
+   bce50:	c4 c3 65 0c d9 0f    	vblendps ymm3,ymm3,ymm9,0xf
+   bce56:	c5 d0 14 c0          	vunpcklps xmm0,xmm5,xmm0
+   bce5a:	c4 e3 7d 18 c0 01    	vinsertf128 ymm0,ymm0,xmm0,0x1
+   bce60:	c5 e8 c6 d2 55       	vshufps xmm2,xmm2,xmm2,0x55
+   bce65:	c4 e3 69 0c c9 02    	vblendps xmm1,xmm2,xmm1,0x2
+   bce6b:	c4 e3 7d 18 c9 01    	vinsertf128 ymm1,ymm0,xmm1,0x1
+   bce71:	c4 e3 75 0c c0 c0    	vblendps ymm0,ymm1,ymm0,0xc0
+   bce77:	c5 d8 c6 cc 55       	vshufps xmm1,xmm4,xmm4,0x55
+   bce7c:	c4 e3 71 0c ce 02    	vblendps xmm1,xmm1,xmm6,0x2
+   bce82:	c4 c1 40 14 d0       	vunpcklps xmm2,xmm7,xmm8
+   bce87:	c4 e3 71 0c ca 0c    	vblendps xmm1,xmm1,xmm2,0xc
+   bce8d:	c4 e3 7d 0c c1 0f    	vblendps ymm0,ymm0,ymm1,0xf
+   bce93:	c5 fc 11 47 20       	vmovups YMMWORD PTR [rdi+0x20],ymm0
+   bce98:	c5 fc 11 1f          	vmovups YMMWORD PTR [rdi],ymm3
+   bce9c:	c5 fb 10 86 e8 00 00 	vmovsd xmm0,QWORD PTR [rsi+0xe8]
+   bcea3:	00 
+   bcea4:	c5 f8 10 8e a8 00 00 	vmovups xmm1,XMMWORD PTR [rsi+0xa8]
+   bceab:	00 
+   bceac:	c5 f8 10 96 88 00 00 	vmovups xmm2,XMMWORD PTR [rsi+0x88]
+   bceb3:	00 
+   bceb4:	c5 e8 14 d9          	vunpcklps xmm3,xmm2,xmm1
+   bceb8:	c4 e3 7d 18 db 01    	vinsertf128 ymm3,ymm0,xmm3,0x1
+   bcebe:	c4 e2 79 18 e0       	vbroadcastss xmm4,xmm0
+   bcec3:	c5 f8 10 ae c8 00 00 	vmovups xmm5,XMMWORD PTR [rsi+0xc8]
+   bceca:	00 
+   bcecb:	c4 e2 79 18 f5       	vbroadcastss xmm6,xmm5
+   bced0:	c5 c8 14 e4          	vunpcklps xmm4,xmm6,xmm4
+   bced4:	c4 e3 7d 18 e4 01    	vinsertf128 ymm4,ymm0,xmm4,0x1
+   bceda:	c4 e3 65 0c dc c0    	vblendps ymm3,ymm3,ymm4,0xc0
+   bcee0:	c5 f8 10 66 08       	vmovups xmm4,XMMWORD PTR [rsi+0x8]
+   bcee5:	c5 f8 10 76 28       	vmovups xmm6,XMMWORD PTR [rsi+0x28]
+   bceea:	c5 f8 10 7e 48       	vmovups xmm7,XMMWORD PTR [rsi+0x48]
+   bceef:	c5 78 10 46 68       	vmovups xmm8,XMMWORD PTR [rsi+0x68]
+   bcef4:	c4 42 79 18 c8       	vbroadcastss xmm9,xmm8
+   bcef9:	c4 62 79 18 d7       	vbroadcastss xmm10,xmm7
+   bcefe:	c4 41 28 14 c9       	vunpcklps xmm9,xmm10,xmm9
+   bcf03:	c5 58 14 d6          	vunpcklps xmm10,xmm4,xmm6
+   bcf07:	c4 43 29 0c c9 0c    	vblendps xmm9,xmm10,xmm9,0xc
+   bcf0d:	c4 c3 65 0c d9 0f    	vblendps ymm3,ymm3,ymm9,0xf
+   bcf13:	c5 d0 14 c0          	vunpcklps xmm0,xmm5,xmm0
+   bcf17:	c4 e3 7d 18 c0 01    	vinsertf128 ymm0,ymm0,xmm0,0x1
+   bcf1d:	c5 e8 c6 d2 55       	vshufps xmm2,xmm2,xmm2,0x55
+   bcf22:	c4 e3 69 0c c9 02    	vblendps xmm1,xmm2,xmm1,0x2
+   bcf28:	c4 e3 7d 18 c9 01    	vinsertf128 ymm1,ymm0,xmm1,0x1
+   bcf2e:	c4 e3 75 0c c0 c0    	vblendps ymm0,ymm1,ymm0,0xc0
+   bcf34:	c5 d8 c6 cc 55       	vshufps xmm1,xmm4,xmm4,0x55
+   bcf39:	c4 e3 71 0c ce 02    	vblendps xmm1,xmm1,xmm6,0x2
+   bcf3f:	c4 c1 40 14 d0       	vunpcklps xmm2,xmm7,xmm8
+   bcf44:	c4 e3 71 0c ca 0c    	vblendps xmm1,xmm1,xmm2,0xc
+   bcf4a:	c4 e3 7d 0c c1 0f    	vblendps ymm0,ymm0,ymm1,0xf
+   bcf50:	c5 fc 11 47 60       	vmovups YMMWORD PTR [rdi+0x60],ymm0
+   bcf55:	c5 fc 11 5f 40       	vmovups YMMWORD PTR [rdi+0x40],ymm3
+   bcf5a:	c5 fb 10 86 f0 00 00 	vmovsd xmm0,QWORD PTR [rsi+0xf0]
+   bcf61:	00 
+   bcf62:	c5 f8 10 8e b0 00 00 	vmovups xmm1,XMMWORD PTR [rsi+0xb0]
+   bcf69:	00 
+   bcf6a:	c5 f8 10 96 90 00 00 	vmovups xmm2,XMMWORD PTR [rsi+0x90]
+   bcf71:	00 
+   bcf72:	c5 e8 14 d9          	vunpcklps xmm3,xmm2,xmm1
+   bcf76:	c4 e3 7d 18 db 01    	vinsertf128 ymm3,ymm0,xmm3,0x1
+   bcf7c:	c4 e2 79 18 e0       	vbroadcastss xmm4,xmm0
+   bcf81:	c5 f8 10 ae d0 00 00 	vmovups xmm5,XMMWORD PTR [rsi+0xd0]
+   bcf88:	00 
+   bcf89:	c4 e2 79 18 f5       	vbroadcastss xmm6,xmm5
+   bcf8e:	c5 c8 14 e4          	vunpcklps xmm4,xmm6,xmm4
+   bcf92:	c4 e3 7d 18 e4 01    	vinsertf128 ymm4,ymm0,xmm4,0x1
+   bcf98:	c4 e3 65 0c dc c0    	vblendps ymm3,ymm3,ymm4,0xc0
+   bcf9e:	c5 f8 10 66 10       	vmovups xmm4,XMMWORD PTR [rsi+0x10]
+   bcfa3:	c5 f8 10 76 30       	vmovups xmm6,XMMWORD PTR [rsi+0x30]
+   bcfa8:	c5 f8 10 7e 50       	vmovups xmm7,XMMWORD PTR [rsi+0x50]
+   bcfad:	c5 78 10 46 70       	vmovups xmm8,XMMWORD PTR [rsi+0x70]
+   bcfb2:	c4 42 79 18 c8       	vbroadcastss xmm9,xmm8
+   bcfb7:	c4 62 79 18 d7       	vbroadcastss xmm10,xmm7
+   bcfbc:	c4 41 28 14 c9       	vunpcklps xmm9,xmm10,xmm9
+   bcfc1:	c5 58 14 d6          	vunpcklps xmm10,xmm4,xmm6
+   bcfc5:	c4 43 29 0c c9 0c    	vblendps xmm9,xmm10,xmm9,0xc
+   bcfcb:	c4 c3 65 0c d9 0f    	vblendps ymm3,ymm3,ymm9,0xf
+   bcfd1:	c5 d0 14 c0          	vunpcklps xmm0,xmm5,xmm0
+   bcfd5:	c4 e3 7d 18 c0 01    	vinsertf128 ymm0,ymm0,xmm0,0x1
+   bcfdb:	c5 e8 c6 d2 55       	vshufps xmm2,xmm2,xmm2,0x55
+   bcfe0:	c4 e3 69 0c c9 02    	vblendps xmm1,xmm2,xmm1,0x2
+   bcfe6:	c4 e3 7d 18 c9 01    	vinsertf128 ymm1,ymm0,xmm1,0x1
+   bcfec:	c4 e3 75 0c c0 c0    	vblendps ymm0,ymm1,ymm0,0xc0
+   bcff2:	c5 d8 c6 cc 55       	vshufps xmm1,xmm4,xmm4,0x55
+   bcff7:	c4 e3 71 0c ce 02    	vblendps xmm1,xmm1,xmm6,0x2
+   bcffd:	c4 c1 40 14 d0       	vunpcklps xmm2,xmm7,xmm8
+   bd002:	c4 e3 71 0c ca 0c    	vblendps xmm1,xmm1,xmm2,0xc
+   bd008:	c4 e3 7d 0c c1 0f    	vblendps ymm0,ymm0,ymm1,0xf
+   bd00e:	c5 fc 11 87 a0 00 00 	vmovups YMMWORD PTR [rdi+0xa0],ymm0
+   bd015:	00 
+   bd016:	c5 fc 11 9f 80 00 00 	vmovups YMMWORD PTR [rdi+0x80],ymm3
+   bd01d:	00 
+   bd01e:	c5 fb 10 86 f8 00 00 	vmovsd xmm0,QWORD PTR [rsi+0xf8]
+   bd025:	00 
+   bd026:	c5 f8 10 8e b8 00 00 	vmovups xmm1,XMMWORD PTR [rsi+0xb8]
+   bd02d:	00 
+   bd02e:	c5 f8 10 96 98 00 00 	vmovups xmm2,XMMWORD PTR [rsi+0x98]
+   bd035:	00 
+   bd036:	c5 e8 14 d9          	vunpcklps xmm3,xmm2,xmm1
+   bd03a:	c4 e3 7d 18 db 01    	vinsertf128 ymm3,ymm0,xmm3,0x1
+   bd040:	c4 e2 79 18 e0       	vbroadcastss xmm4,xmm0
+   bd045:	c5 f8 10 ae d8 00 00 	vmovups xmm5,XMMWORD PTR [rsi+0xd8]
+   bd04c:	00 
+   bd04d:	c4 e2 79 18 f5       	vbroadcastss xmm6,xmm5
+   bd052:	c5 c8 14 e4          	vunpcklps xmm4,xmm6,xmm4
+   bd056:	c4 e3 7d 18 e4 01    	vinsertf128 ymm4,ymm0,xmm4,0x1
+   bd05c:	c4 e3 65 0c dc c0    	vblendps ymm3,ymm3,ymm4,0xc0
+   bd062:	c5 f8 10 66 18       	vmovups xmm4,XMMWORD PTR [rsi+0x18]
+   bd067:	c5 f8 10 76 38       	vmovups xmm6,XMMWORD PTR [rsi+0x38]
+   bd06c:	c5 f8 10 7e 58       	vmovups xmm7,XMMWORD PTR [rsi+0x58]
+   bd071:	c5 78 10 46 78       	vmovups xmm8,XMMWORD PTR [rsi+0x78]
+   bd076:	c4 42 79 18 c8       	vbroadcastss xmm9,xmm8
+   bd07b:	c4 62 79 18 d7       	vbroadcastss xmm10,xmm7
+   bd080:	c4 41 28 14 c9       	vunpcklps xmm9,xmm10,xmm9
+   bd085:	c5 58 14 d6          	vunpcklps xmm10,xmm4,xmm6
+   bd089:	c4 43 29 0c c9 0c    	vblendps xmm9,xmm10,xmm9,0xc
+   bd08f:	c4 c3 65 0c d9 0f    	vblendps ymm3,ymm3,ymm9,0xf
+   bd095:	c5 d0 14 c0          	vunpcklps xmm0,xmm5,xmm0
+   bd099:	c4 e3 7d 18 c0 01    	vinsertf128 ymm0,ymm0,xmm0,0x1
+   bd09f:	c5 e8 c6 d2 55       	vshufps xmm2,xmm2,xmm2,0x55
+   bd0a4:	c4 e3 69 0c c9 02    	vblendps xmm1,xmm2,xmm1,0x2
+   bd0aa:	c4 e3 7d 18 c9 01    	vinsertf128 ymm1,ymm0,xmm1,0x1
+   bd0b0:	c4 e3 75 0c c0 c0    	vblendps ymm0,ymm1,ymm0,0xc0
+   bd0b6:	c5 d8 c6 cc 55       	vshufps xmm1,xmm4,xmm4,0x55
+   bd0bb:	c4 e3 71 0c ce 02    	vblendps xmm1,xmm1,xmm6,0x2
+   bd0c1:	c4 c1 40 14 d0       	vunpcklps xmm2,xmm7,xmm8
+   bd0c6:	c4 e3 71 0c ca 0c    	vblendps xmm1,xmm1,xmm2,0xc
+   bd0cc:	c4 e3 7d 0c c1 0f    	vblendps ymm0,ymm0,ymm1,0xf
+   bd0d2:	c5 fc 11 87 e0 00 00 	vmovups YMMWORD PTR [rdi+0xe0],ymm0
+   bd0d9:	00 
+   bd0da:	c5 fc 11 9f c0 00 00 	vmovups YMMWORD PTR [rdi+0xc0],ymm3
+   bd0e1:	00 
+   bd0e2:	c5 f8 77             	vzeroupper
+   bd0e5:	c3                   	ret

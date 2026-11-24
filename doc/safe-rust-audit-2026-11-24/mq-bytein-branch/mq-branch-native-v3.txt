@@ -1,0 +1,18 @@
+   Compiling neo-j2k-oracle v0.1.3 (/home/dev/safe-crate-audit/mq-branch-candidate/neo-j2k-oracle)
+   Compiling neo-j2k-testkit v0.1.3 (/home/dev/safe-crate-audit/mq-branch-candidate/neo-j2k-testkit)
+   Compiling neo-j2k v0.1.3 (/home/dev/safe-crate-audit/mq-branch-candidate/neo-j2k)
+    Finished `release` profile [optimized + debuginfo] target(s) in 15.12s
+     Running unittests src/lib.rs (../target-mq-branch-native-v3/release/build/neo-j2k/1229b097d389baa0/out/neo_j2k-1229b097d389baa0)
+
+running 8 tests
+test t1::mq::differential::nightly_mq_decoder_every_decision ... ignored, nightly: 443 million single decisions of the MQ decoder against the C++
+test t1::mq::tests::a_run_stops_at_the_first_column_that_is_not_empty ... ok
+test t1::mq::tests::no_run_when_the_mps_is_one_or_the_room_is_short ... ok
+test t1::mq::tests::chained_decisions_over_short_and_exhausted_input_equal_the_model ... ok
+test t1::mq::tests::the_select_decision_equals_the_standards_branches ... ok
+test t1::mq::differential::streams_decode_as_the_cpp_does ... ok
+test t1::mq::tests::a_run_of_aggregate_columns_equals_the_decisions_one_at_a_time ... ok
+test t1::mq::differential::single_decisions_decode_as_the_cpp_does ... ok
+
+test result: ok. 7 passed; 0 failed; 1 ignored; 0 measured; 107 filtered out; finished in 0.15s
+

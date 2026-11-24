@@ -1,0 +1,78 @@
+stage|p24_sl_64_rgb_97.j2k|r0|header|0.051760|0.052409|0.047301
+stage|p24_sl_64_rgb_97.j2k|r0|request checks|0.027429|0.025928|0.026643
+stage|p24_sl_64_rgb_97.j2k|r0|begin (budget, planes)|0.038307|0.036674|0.036610
+stage|p24_sl_64_rgb_97.j2k|r0|tile scan|0.071261|0.062032|0.071405
+stage|p24_sl_64_rgb_97.j2k|r0|tile setup|1.393948|1.412347|1.388478
+stage|p24_sl_64_rgb_97.j2k|r0|packet walk (Tier-2)|4.140995|4.067712|4.037476
+stage|p24_sl_64_rgb_97.j2k|r0|plane prep (zero)|0.057664|0.056706|0.059549
+stage|p24_sl_64_rgb_97.j2k|r0|Tier-1|40.757377|38.770639|37.954827
+stage|p24_sl_64_rgb_97.j2k|r0|wavelet|8.870662|9.048907|9.089359
+stage|p24_sl_64_rgb_97.j2k|r0|colour transform|1.013185|1.708664|0.984990
+stage|p24_sl_64_rgb_97.j2k|r0|finish (per component)|0.000000|0.000000|0.000000
+stage|p24_sl_64_rgb_97.j2k|r0|output copy|0.017709|0.017550|0.017483
+stage|p24_sl_64_rgb_97.j2k|r0|trim|0.171927|0.162853|0.167111
+stage|p24_sl_128_rgba_97.j2k|r0|header|0.060847|0.059511|0.060769
+stage|p24_sl_128_rgba_97.j2k|r0|request checks|0.030990|0.032624|0.030801
+stage|p24_sl_128_rgba_97.j2k|r0|begin (budget, planes)|0.046842|0.044920|0.045592
+stage|p24_sl_128_rgba_97.j2k|r0|tile scan|0.081546|0.081327|0.080378
+stage|p24_sl_128_rgba_97.j2k|r0|tile setup|1.829025|1.817113|1.843921
+stage|p24_sl_128_rgba_97.j2k|r0|packet walk (Tier-2)|4.507040|4.456070|4.444042
+stage|p24_sl_128_rgba_97.j2k|r0|plane prep (zero)|0.079446|0.079008|0.077560
+stage|p24_sl_128_rgba_97.j2k|r0|Tier-1|62.139760|61.252830|61.792495
+stage|p24_sl_128_rgba_97.j2k|r0|wavelet|41.104338|43.298158|41.531369
+stage|p24_sl_128_rgba_97.j2k|r0|colour transform|3.876259|6.718809|3.862614
+stage|p24_sl_128_rgba_97.j2k|r0|finish (per component)|0.843430|1.573249|0.833681
+stage|p24_sl_128_rgba_97.j2k|r0|output copy|0.017759|0.020333|0.017839
+stage|p24_sl_128_rgba_97.j2k|r0|trim|0.257761|0.252491|0.244883
+stage|p31_sl_64_rgb_97.j2k|r0|header|0.046753|0.050551|0.053435
+stage|p31_sl_64_rgb_97.j2k|r0|request checks|0.026479|0.026833|0.026637
+stage|p31_sl_64_rgb_97.j2k|r0|begin (budget, planes)|0.038355|0.037711|0.043785
+stage|p31_sl_64_rgb_97.j2k|r0|tile scan|0.068582|0.066699|0.071139
+stage|p31_sl_64_rgb_97.j2k|r0|tile setup|1.362257|1.458742|1.429426
+stage|p31_sl_64_rgb_97.j2k|r0|packet walk (Tier-2)|4.017227|4.190810|4.045207
+stage|p31_sl_64_rgb_97.j2k|r0|plane prep (zero)|0.056480|0.058608|0.056865
+stage|p31_sl_64_rgb_97.j2k|r0|Tier-1|37.874683|40.114046|37.968863
+stage|p31_sl_64_rgb_97.j2k|r0|wavelet|8.589667|9.287451|9.177160
+stage|p31_sl_64_rgb_97.j2k|r0|colour transform|0.993819|1.736663|0.986122
+stage|p31_sl_64_rgb_97.j2k|r0|finish (per component)|0.000000|0.000000|0.000000
+stage|p31_sl_64_rgb_97.j2k|r0|output copy|0.024570|0.018034|0.017445
+stage|p31_sl_64_rgb_97.j2k|r0|trim|0.164801|0.177411|0.171478
+stage|p31_sl_128_rgba_97.j2k|r0|header|0.061146|0.059859|0.060431
+stage|p31_sl_128_rgba_97.j2k|r0|request checks|0.030868|0.032877|0.031010
+stage|p31_sl_128_rgba_97.j2k|r0|begin (budget, planes)|0.047215|0.045043|0.045007
+stage|p31_sl_128_rgba_97.j2k|r0|tile scan|0.084143|0.081603|0.087295
+stage|p31_sl_128_rgba_97.j2k|r0|tile setup|1.852619|1.859747|1.829113
+stage|p31_sl_128_rgba_97.j2k|r0|packet walk (Tier-2)|4.522870|4.448594|4.433724
+stage|p31_sl_128_rgba_97.j2k|r0|plane prep (zero)|0.081374|0.080065|0.080272
+stage|p31_sl_128_rgba_97.j2k|r0|Tier-1|62.155677|61.392751|61.367135
+stage|p31_sl_128_rgba_97.j2k|r0|wavelet|41.334615|43.084424|41.484187
+stage|p31_sl_128_rgba_97.j2k|r0|colour transform|3.857233|6.655523|3.848244
+stage|p31_sl_128_rgba_97.j2k|r0|finish (per component)|0.833744|1.546864|0.835667
+stage|p31_sl_128_rgba_97.j2k|r0|output copy|0.017795|0.021312|0.017904
+stage|p31_sl_128_rgba_97.j2k|r0|trim|0.240222|0.246281|0.245726
+stage|p24_large_1024_rgb_97.j2k|r0|header|0.255521|0.266333|0.282958
+stage|p24_large_1024_rgb_97.j2k|r0|request checks|0.117958|0.116792|0.108708
+stage|p24_large_1024_rgb_97.j2k|r0|begin (budget, planes)|0.234604|0.225688|0.208917
+stage|p24_large_1024_rgb_97.j2k|r0|tile scan|0.320021|0.319250|0.304312
+stage|p24_large_1024_rgb_97.j2k|r0|tile setup|4.097208|4.073021|3.877146
+stage|p24_large_1024_rgb_97.j2k|r0|packet walk (Tier-2)|57.441375|56.403938|55.827625
+stage|p24_large_1024_rgb_97.j2k|r0|plane prep (zero)|0.169437|0.153875|0.145667
+stage|p24_large_1024_rgb_97.j2k|r0|Tier-1|2624.334792|2645.521750|2664.798542
+stage|p24_large_1024_rgb_97.j2k|r0|wavelet|1216.403875|1202.022271|1235.543896
+stage|p24_large_1024_rgb_97.j2k|r0|colour transform|251.679583|428.415167|243.299667
+stage|p24_large_1024_rgb_97.j2k|r0|finish (per component)|0.000000|0.000000|0.000000
+stage|p24_large_1024_rgb_97.j2k|r0|output copy|0.023167|0.021083|0.020000
+stage|p24_large_1024_rgb_97.j2k|r0|trim|1.552979|1.470000|1.403292
+stage|p31_large_1024_rgb_97.j2k|r0|header|0.276542|0.258562|0.285771
+stage|p31_large_1024_rgb_97.j2k|r0|request checks|0.122896|0.113333|0.116708
+stage|p31_large_1024_rgb_97.j2k|r0|begin (budget, planes)|0.255229|0.227917|0.213688
+stage|p31_large_1024_rgb_97.j2k|r0|tile scan|0.324187|0.324896|0.302917
+stage|p31_large_1024_rgb_97.j2k|r0|tile setup|4.364708|4.688583|3.927437
+stage|p31_large_1024_rgb_97.j2k|r0|packet walk (Tier-2)|60.411271|59.492542|56.659687
+stage|p31_large_1024_rgb_97.j2k|r0|plane prep (zero)|0.164125|0.132104|0.163250
+stage|p31_large_1024_rgb_97.j2k|r0|Tier-1|2694.662625|2658.597833|2645.365292
+stage|p31_large_1024_rgb_97.j2k|r0|wavelet|1226.677458|1294.418063|1266.503438
+stage|p31_large_1024_rgb_97.j2k|r0|colour transform|254.898521|455.291583|254.940896
+stage|p31_large_1024_rgb_97.j2k|r0|finish (per component)|0.000000|0.000000|0.000000
+stage|p31_large_1024_rgb_97.j2k|r0|output copy|0.022937|0.020896|0.020521
+stage|p31_large_1024_rgb_97.j2k|r0|trim|1.857208|1.604917|1.491854

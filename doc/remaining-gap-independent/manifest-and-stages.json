@@ -1,0 +1,660 @@
+{
+  "diagnostic_only": true,
+  "feature": "bench-internals",
+  "timing": "one pinned process, each fixture24 balanced-order rounds; batch128 small and2large; additive stage sums are means, not paired acceptance medians",
+  "exe": "/home/dev/safe-crate-audit/target-independent-stage-v3/release/neo-j2k-versions",
+  "exe_sha256": "52a30e815b45ef5063440a7165ec3d3bf1b1de3a533ed0fef261a1b80690adea",
+  "source": {
+    "neo-j2k/src/simd/mct.rs": {
+      "windows_sha256": "08ada46821f4e6f3383829c0359dbe0b18b05bfbba578bc84af4db5bb201dd61",
+      "linux_sha256": "08ada46821f4e6f3383829c0359dbe0b18b05bfbba578bc84af4db5bb201dd61",
+      "normalized_equal": true
+    },
+    "neo-j2k/src/simd/dwt.rs": {
+      "windows_sha256": "b421179a6388a7a95447b612658fada70ccf6e27e484093bb8c9fa6e80a7b6d4",
+      "linux_sha256": "1d139476ecd925aa3432a84f563b1594b006a17c1bf2ef7fc0396ffae070901a",
+      "normalized_equal": true
+    },
+    "neo-j2k/src/simd/t1.rs": {
+      "windows_sha256": "c86c219df92390df69540a19bab65a02488b3bdde0ab0beb10c31547aecd6071",
+      "linux_sha256": "c86c219df92390df69540a19bab65a02488b3bdde0ab0beb10c31547aecd6071",
+      "normalized_equal": true
+    },
+    "neo-j2k/src/t1/mq.rs": {
+      "windows_sha256": "2e3cef7a3c6d6d1b87207bbbec24d54f7e2b27f3be4ac589d99d10fffc905b2d",
+      "linux_sha256": "2e3cef7a3c6d6d1b87207bbbec24d54f7e2b27f3be4ac589d99d10fffc905b2d",
+      "normalized_equal": true
+    },
+    "neo-j2k/src/stage.rs": {
+      "windows_sha256": "3e9acee22dc2937306cc2d41f6f0f07d47c9ce3456152ea9d5fc093335882997",
+      "linux_sha256": "3e9acee22dc2937306cc2d41f6f0f07d47c9ce3456152ea9d5fc093335882997",
+      "normalized_equal": true
+    }
+  },
+  "stages": [
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "header",
+      "original_us": 0.046498,
+      "safe_us": 0.047469,
+      "control_us": 0.047188
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "request checks",
+      "original_us": 0.026012,
+      "safe_us": 0.02435,
+      "control_us": 0.026143
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "begin (budget, planes)",
+      "original_us": 0.053939,
+      "safe_us": 0.035498,
+      "control_us": 0.035567
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "tile scan",
+      "original_us": 0.063784,
+      "safe_us": 0.062703,
+      "control_us": 0.067905
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "tile setup",
+      "original_us": 1.354617,
+      "safe_us": 1.356295,
+      "control_us": 1.342715
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "packet walk (Tier-2)",
+      "original_us": 4.031631,
+      "safe_us": 3.982146,
+      "control_us": 3.992189
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "plane prep (zero)",
+      "original_us": 0.056034,
+      "safe_us": 0.05674,
+      "control_us": 0.056362
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "Tier-1",
+      "original_us": 37.975797,
+      "safe_us": 38.332698,
+      "control_us": 37.808174
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "wavelet",
+      "original_us": 8.5624,
+      "safe_us": 8.471343,
+      "control_us": 9.100495
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "colour transform",
+      "original_us": 1.027548,
+      "safe_us": 1.196252,
+      "control_us": 1.003269
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "finish (per component)",
+      "original_us": 0.0,
+      "safe_us": 0.0,
+      "control_us": 0.0
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "output copy",
+      "original_us": 0.017502,
+      "safe_us": 0.017368,
+      "control_us": 0.017478
+    },
+    {
+      "fixture": "p24_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "trim",
+      "original_us": 0.176123,
+      "safe_us": 0.160856,
+      "control_us": 0.168263
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "header",
+      "original_us": 0.05903,
+      "safe_us": 0.058651,
+      "control_us": 0.057171
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "request checks",
+      "original_us": 0.030338,
+      "safe_us": 0.031312,
+      "control_us": 0.030183
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "begin (budget, planes)",
+      "original_us": 0.045856,
+      "safe_us": 0.043109,
+      "control_us": 0.050337
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "tile scan",
+      "original_us": 0.081347,
+      "safe_us": 0.074974,
+      "control_us": 0.078356
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "tile setup",
+      "original_us": 1.79135,
+      "safe_us": 1.819393,
+      "control_us": 1.818546
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "packet walk (Tier-2)",
+      "original_us": 4.385407,
+      "safe_us": 4.471154,
+      "control_us": 4.595457
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "plane prep (zero)",
+      "original_us": 0.076668,
+      "safe_us": 0.077987,
+      "control_us": 0.076943
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "Tier-1",
+      "original_us": 60.822501,
+      "safe_us": 60.789476,
+      "control_us": 60.249469
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "wavelet",
+      "original_us": 40.628907,
+      "safe_us": 40.846521,
+      "control_us": 42.463629
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "colour transform",
+      "original_us": 3.825623,
+      "safe_us": 4.732065,
+      "control_us": 3.811909
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "finish (per component)",
+      "original_us": 0.825818,
+      "safe_us": 1.187867,
+      "control_us": 0.884889
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "output copy",
+      "original_us": 0.017533,
+      "safe_us": 0.017544,
+      "control_us": 0.017619
+    },
+    {
+      "fixture": "p24_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "trim",
+      "original_us": 0.244632,
+      "safe_us": 0.236777,
+      "control_us": 0.241201
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "header",
+      "original_us": 0.047817,
+      "safe_us": 0.047462,
+      "control_us": 0.046827
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "request checks",
+      "original_us": 0.026515,
+      "safe_us": 0.024374,
+      "control_us": 0.026084
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "begin (budget, planes)",
+      "original_us": 0.039362,
+      "safe_us": 0.03547,
+      "control_us": 0.035135
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "tile scan",
+      "original_us": 0.062156,
+      "safe_us": 0.063032,
+      "control_us": 0.070632
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "tile setup",
+      "original_us": 1.380652,
+      "safe_us": 1.361844,
+      "control_us": 1.350016
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "packet walk (Tier-2)",
+      "original_us": 4.196889,
+      "safe_us": 4.018523,
+      "control_us": 4.044384
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "plane prep (zero)",
+      "original_us": 0.057045,
+      "safe_us": 0.059032,
+      "control_us": 0.059456
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "Tier-1",
+      "original_us": 38.777902,
+      "safe_us": 38.639329,
+      "control_us": 37.6357
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "wavelet",
+      "original_us": 8.622863,
+      "safe_us": 8.499739,
+      "control_us": 9.166422
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "colour transform",
+      "original_us": 0.995683,
+      "safe_us": 1.191998,
+      "control_us": 0.977966
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "finish (per component)",
+      "original_us": 0.0,
+      "safe_us": 0.0,
+      "control_us": 0.0
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "output copy",
+      "original_us": 0.017784,
+      "safe_us": 0.020693,
+      "control_us": 0.023674
+    },
+    {
+      "fixture": "p31_sl_64_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "trim",
+      "original_us": 0.173043,
+      "safe_us": 0.172941,
+      "control_us": 0.169369
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "header",
+      "original_us": 0.058199,
+      "safe_us": 0.059414,
+      "control_us": 0.058003
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "request checks",
+      "original_us": 0.029904,
+      "safe_us": 0.031859,
+      "control_us": 0.030692
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "begin (budget, planes)",
+      "original_us": 0.044982,
+      "safe_us": 0.043535,
+      "control_us": 0.042464
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "tile scan",
+      "original_us": 0.076109,
+      "safe_us": 0.07546,
+      "control_us": 0.077837
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "tile setup",
+      "original_us": 1.792482,
+      "safe_us": 1.80675,
+      "control_us": 1.812812
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "packet walk (Tier-2)",
+      "original_us": 4.411397,
+      "safe_us": 4.442169,
+      "control_us": 4.371679
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "plane prep (zero)",
+      "original_us": 0.076689,
+      "safe_us": 0.077741,
+      "control_us": 0.080777
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "Tier-1",
+      "original_us": 60.521196,
+      "safe_us": 61.610277,
+      "control_us": 60.248676
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "wavelet",
+      "original_us": 41.885661,
+      "safe_us": 41.864344,
+      "control_us": 41.729906
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "colour transform",
+      "original_us": 3.805072,
+      "safe_us": 4.711566,
+      "control_us": 5.826801
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "finish (per component)",
+      "original_us": 0.827302,
+      "safe_us": 1.188302,
+      "control_us": 0.834398
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "output copy",
+      "original_us": 0.017507,
+      "safe_us": 0.01763,
+      "control_us": 0.017423
+    },
+    {
+      "fixture": "p31_sl_128_rgba_97.j2k",
+      "reduce": "r0",
+      "stage": "trim",
+      "original_us": 0.234119,
+      "safe_us": 0.251093,
+      "control_us": 0.257942
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "header",
+      "original_us": 0.276021,
+      "safe_us": 0.281042,
+      "control_us": 0.245313
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "request checks",
+      "original_us": 0.123104,
+      "safe_us": 0.115229,
+      "control_us": 0.114854
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "begin (budget, planes)",
+      "original_us": 0.275958,
+      "safe_us": 0.235958,
+      "control_us": 0.215958
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "tile scan",
+      "original_us": 0.366833,
+      "safe_us": 0.3335,
+      "control_us": 0.371208
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "tile setup",
+      "original_us": 4.424583,
+      "safe_us": 4.236146,
+      "control_us": 4.101333
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "packet walk (Tier-2)",
+      "original_us": 58.805146,
+      "safe_us": 57.1015,
+      "control_us": 56.594938
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "plane prep (zero)",
+      "original_us": 0.150271,
+      "safe_us": 0.166125,
+      "control_us": 0.140167
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "Tier-1",
+      "original_us": 2688.780917,
+      "safe_us": 2606.798604,
+      "control_us": 2657.82825
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "wavelet",
+      "original_us": 1249.089333,
+      "safe_us": 1260.359813,
+      "control_us": 1270.668146
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "colour transform",
+      "original_us": 251.867083,
+      "safe_us": 301.6845,
+      "control_us": 244.600313
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "finish (per component)",
+      "original_us": 0.0,
+      "safe_us": 0.0,
+      "control_us": 0.0
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "output copy",
+      "original_us": 0.021312,
+      "safe_us": 0.020021,
+      "control_us": 0.020625
+    },
+    {
+      "fixture": "p24_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "trim",
+      "original_us": 1.605896,
+      "safe_us": 1.510833,
+      "control_us": 1.418125
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "header",
+      "original_us": 0.23625,
+      "safe_us": 0.226021,
+      "control_us": 0.222917
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "request checks",
+      "original_us": 0.1155,
+      "safe_us": 0.106104,
+      "control_us": 0.109083
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "begin (budget, planes)",
+      "original_us": 0.253562,
+      "safe_us": 0.226854,
+      "control_us": 0.208
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "tile scan",
+      "original_us": 0.328958,
+      "safe_us": 0.303146,
+      "control_us": 0.346938
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "tile setup",
+      "original_us": 4.386958,
+      "safe_us": 4.217312,
+      "control_us": 4.048667
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "packet walk (Tier-2)",
+      "original_us": 61.172312,
+      "safe_us": 56.152146,
+      "control_us": 56.111792
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "plane prep (zero)",
+      "original_us": 0.135521,
+      "safe_us": 0.125729,
+      "control_us": 0.127479
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "Tier-1",
+      "original_us": 2638.667708,
+      "safe_us": 2607.118875,
+      "control_us": 2592.978229
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "wavelet",
+      "original_us": 1219.101437,
+      "safe_us": 1224.826333,
+      "control_us": 1230.15225
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "colour transform",
+      "original_us": 249.919896,
+      "safe_us": 305.678875,
+      "control_us": 248.804271
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "finish (per component)",
+      "original_us": 0.0,
+      "safe_us": 0.0,
+      "control_us": 0.0
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "output copy",
+      "original_us": 0.020833,
+      "safe_us": 0.020646,
+      "control_us": 0.021292
+    },
+    {
+      "fixture": "p31_large_1024_rgb_97.j2k",
+      "reduce": "r0",
+      "stage": "trim",
+      "original_us": 1.541729,
+      "safe_us": 1.5375,
+      "control_us": 1.339917
+    }
+  ]
+}

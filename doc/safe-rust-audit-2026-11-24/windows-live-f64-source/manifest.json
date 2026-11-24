@@ -1,0 +1,11 @@
+{
+  "purpose": "Frozen Windows v3 f64 candidate before cleaner f32 math experiment",
+  "rustflags": "-C target-cpu=x86-64-v3",
+  "profile": "release fat LTO one codegen unit, default features",
+  "harness": "C:/Users/annes/AppData/Local/Temp/codex-safe-simd-compare-dense-live/harness",
+  "sha256": {
+    "C:\\Users\\annes\\source\\repos\\neoj2k-rust-safe-simd\\target-audit-perf-win-v3-dense-live\\release\\neo-j2k-versions-f64.exe": "de9cd018c2e778d0ec1df25064fe1296935fd48fe40033c5653b5b59445e288c",
+    "C:\\Users\\annes\\source\\repos\\neoj2k-rust-safe-simd\\doc\\safe-rust-audit-2026-11-24\\windows-live-f64-source\\mct.rs": "910332803a0ef80ac2dfa9029d756ca7218135d3c8b19d0c9d2fdf85a9af8ec0",
+    "C:\\Users\\annes\\source\\repos\\neoj2k-rust-safe-simd\\doc\\safe-rust-audit-2026-11-24\\windows-live-f64-source\\lanes.rs": "061cb49ce176c183d717c9c5b2393302f01e6b11e4d9d19852d4e0b07c05e5a3"
+  }
+}
