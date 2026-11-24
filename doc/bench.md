@@ -337,8 +337,9 @@ The pair side `small` judges the nine `small/` sets, which are the nine rows of 
 `small_image_gates` (three corpus images, each whole, at reduce 2 and with the last two bytes cut): one whole decode through
 the public API into caller-owned planes with a decoder warmed beforehand, one decode a pass. The code-block sets do not show a step that changes
 how a whole small request is decoded, because most blocks of a reduced decode are at most four rows high. This side has no
-fixed gain to reach. Its summary table has one row per set, each with its noise band, which is the largest change the control
-(the byte copy of the base) showed in any round of that row. A row the step is meant to help (`small/sl_32_rgba_53_reduce2`) passes
+fixed gain to reach. Its summary table has one row per set, each with its noise band, which is 1.0 % (the control's tolerance), or
+the row's control median change when that is larger (the largest round of a control is not used: one stray round on a shared
+runner would set the band). A row the step is meant to help (`small/sl_32_rgba_53_reduce2`) passes
 when its output is identical, its control is within +-1.0 % and its head change is below minus the band; every other row passes
 when its head change is not above the band (no material regression). The reduce-2 rows of the 64 and 128 pixel images are
 therefore held to no regression, and their head figures are printed to read.

@@ -538,14 +538,15 @@ def parse_pair_table(text):
 
 
 def noise_band(row):
-    """The noise of one row in percent: the largest change the control (a byte copy of the base) showed in any round."""
-    return max(abs(v) for v in row["control_range"])
+    """The noise of one row in percent: the control's tolerance (CONTROL_BAND), or the control's own median change when
+    that is larger. The largest round of a control is not used: one stray round of a shared runner would set the band."""
+    return max(CONTROL_BAND, abs(row["control"]))
 
 
 def small_verdict(rows, mine):
     """The step gate of the whole small decodes. There is no fixed gain to reach. Per row: the outputs must be identical
     and the control within +-CONTROL_BAND; a row the step is meant to help (SMALL_TARGET_ROWS) must be faster than the
-    row's noise band (its head change below minus the control's largest round change), every other row must not be
+    row's noise band (its head change below minus the band), every other row must not be
     slower than it (its head change not above the band). Returns the summary lines: the verdict, then one table."""
     lines = []
     passed = 0
@@ -566,8 +567,8 @@ def small_verdict(rows, mine):
         "band, every other row no slower than it, control within +-%.1f %%, outputs identical)" % (
             "Yes" if passed == len(mine) else "No", passed, len(mine), CONTROL_BAND),
         "",
-        "The noise band of a row is the largest change its control (a byte copy of the base) showed in any round. Percent "
-        "changes against the base in the same round, minus is faster.",
+        "The noise band of a row is the control's tolerance (%.1f %%), or its control's median change when that is larger. Percent "
+        "changes against the base in the same round, minus is faster." % CONTROL_BAND,
         "",
         "| Row | Head vs base | Control vs base | Noise band | Judged as | Output identical | Control within +-%.1f %% | "
         "Faster than noise | Pass |" % CONTROL_BAND,
