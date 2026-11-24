@@ -255,7 +255,7 @@ jobs:
           ref: 00f273d502d211905adb756d2f75ef74321983d0 # neo-j2k v0.1.3 (the commit, not the tag object)
           persist-credentials: false
           path: cpp
-      - name: C++ toolchain (Linux, GCC 15)
+      - name: C++ toolchain (Linux, GCC 16)
         if: runner.os == 'Linux'
         env:
           ORACLE_PRESET: ${{ matrix.preset }}
@@ -263,16 +263,16 @@ jobs:
           set -euo pipefail
           {
             echo "NJ2K_ORACLE_PRESET=$ORACLE_PRESET"
-            echo "CC=gcc-15"
-            echo "CXX=g++-15"
+            echo "CC=gcc-16"
+            echo "CXX=g++-16"
           } >> "$GITHUB_ENV"
           apt_opts='-o Acquire::Retries=3 -o Acquire::http::Timeout=30'
           for attempt in 1 2 3; do
-            if sudo apt-get $apt_opts update -qq && sudo apt-get $apt_opts install -y -qq ninja-build g++-15; then break; fi
+            if sudo apt-get $apt_opts update -qq && sudo apt-get $apt_opts install -y -qq ninja-build g++-16; then break; fi
             [ "$attempt" = 3 ] && exit 1
             sleep $((attempt * 15))
           done
-          g++-15 --version | head -n 1
+          g++-16 --version | head -n 1
       - name: Runner CPU
         run: |
           set -euo pipefail
@@ -356,7 +356,7 @@ jobs:
           ref: 00f273d502d211905adb756d2f75ef74321983d0 # neo-j2k v0.1.3 (the commit, not the tag object)
           persist-credentials: false
           path: cpp
-      - name: C++ toolchain (Linux, GCC 15)
+      - name: C++ toolchain (Linux, GCC 16)
         if: runner.os == 'Linux'
         env:
           ORACLE_PRESET: ${{ matrix.preset }}
@@ -364,16 +364,16 @@ jobs:
           set -euo pipefail
           {
             echo "NJ2K_ORACLE_PRESET=$ORACLE_PRESET"
-            echo "CC=gcc-15"
-            echo "CXX=g++-15"
+            echo "CC=gcc-16"
+            echo "CXX=g++-16"
           } >> "$GITHUB_ENV"
           apt_opts='-o Acquire::Retries=3 -o Acquire::http::Timeout=30'
           for attempt in 1 2 3; do
-            if sudo apt-get $apt_opts update -qq && sudo apt-get $apt_opts install -y -qq ninja-build g++-15; then break; fi
+            if sudo apt-get $apt_opts update -qq && sudo apt-get $apt_opts install -y -qq ninja-build g++-16; then break; fi
             [ "$attempt" = 3 ] && exit 1
             sleep $((attempt * 15))
           done
-          g++-15 --version | head -n 1
+          g++-16 --version | head -n 1
       - name: Runner CPU
         run: |
           set -euo pipefail

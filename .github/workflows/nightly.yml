@@ -4,7 +4,7 @@
 # Nightly, on Linux: ten minutes of libFuzzer (cargo-fuzz, the nightly pinned in nightly-toolchain)
 # per fuzz target with AddressSanitizer, one job each. The two targets that need no C++ run on the
 # stock runner; the four that compare with the C++ oracle (differential, encode_options,
-# api_sequence, t1) check out the C++ repository and build the oracle with GCC 15, as oracle.yml does.
+# api_sequence, t1) check out the C++ repository and build the oracle with GCC 16, as oracle.yml does.
 # The tier1-sweeps job runs the long Tier-1 comparisons with the C++ (every single decision of the MQ
 # decoder and encoder, 443 million and 4.4 billion, and the long generated code-block draws), which
 # the normal test run trims to seconds.
@@ -89,11 +89,11 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ninja-build g++-15
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ninja-build g++-16
           {
             echo "NJ2K_CPP_SOURCE=$GITHUB_WORKSPACE/cpp"
-            echo "CC=gcc-15"
-            echo "CXX=g++-15"
+            echo "CC=gcc-16"
+            echo "CXX=g++-16"
           } >> "$GITHUB_ENV"
       - name: Toolchain
         run: |
@@ -196,8 +196,8 @@ jobs:
       NJ2K_ORACLE_NO_BUILD: "0"
       NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
       RUSTFLAGS: ${{ matrix.rustflags }}
-      CC: gcc-15
-      CXX: g++-15
+      CC: gcc-16
+      CXX: g++-16
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -212,7 +212,7 @@ jobs:
         run: |
           set -euo pipefail
           sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 update -qq
-          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ninja-build g++-15
+          sudo apt-get -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y -qq ninja-build g++-16
       - name: Toolchain
         run: rustup show
       - name: Build cache

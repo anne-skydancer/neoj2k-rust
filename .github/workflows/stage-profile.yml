@@ -47,8 +47,8 @@ jobs:
       NJ2K_CPP_SOURCE: ${{ github.workspace }}/cpp
       NJ2K_ORACLE_PRESET: ${{ matrix.preset }}
       RUSTFLAGS: ${{ matrix.rustflags }}
-      CC: gcc-15
-      CXX: g++-15
+      CC: gcc-16
+      CXX: g++-16
     defaults:
       run:
         shell: bash
@@ -62,12 +62,12 @@ jobs:
           ref: 00f273d502d211905adb756d2f75ef74321983d0 # neo-j2k v0.1.3 (the commit, not the tag object)
           persist-credentials: false
           path: cpp
-      - name: C++ toolchain (GCC 15)
+      - name: C++ toolchain (GCC 16)
         run: |
           set -euo pipefail
           apt_opts='-o Acquire::Retries=3 -o Acquire::http::Timeout=30'
           for attempt in 1 2 3; do
-            if sudo apt-get $apt_opts update -qq && sudo apt-get $apt_opts install -y -qq ninja-build g++-15; then break; fi
+            if sudo apt-get $apt_opts update -qq && sudo apt-get $apt_opts install -y -qq ninja-build g++-16; then break; fi
             [ "$attempt" = 3 ] && exit 1
             sleep $((attempt * 15))
           done
