@@ -92,6 +92,90 @@ Both versions through the public API they share (`decode_into_i32`, `Encoder::en
 | small encode 128² RGB, lossless 5/3 | - | -44.6 | -43.9 |
 | small encode 128² RGB, lossy 9/7 | - | -52.5 | -49.8 |
 
+
+## Second run: after the arithmetic decoder's scalar-return change (PR 21), 2026-11-24 17:16 to 17:19
+
+The same four runs, the same script, the same machine and the same compiler, on `main` 449f4b9 (the first run was 40ee9b4; the codec differs by PR 21 only: the cold byte-input helper of the arithmetic decoder returns its registers as two scalars in one 64-bit value instead of a struct in memory). The machine's CPU load, sampled by the Windows host, was 2 % to 13 % before the runs and 2 % to 6 % after, so this run was a little less quiet than the first (about 2 %). Raw output is in `~/bench-out/20261124-171646-cpp-baseline`, `...-171723-cpp-v3`, `...-171754-versions-baseline`, `...-171837-versions-v3` of the WSL.
+
+### What changed
+
+1. **Against C++ 0.1.3, Rust is at least level on 22 of 23 rows at baseline and on all 23 at x86-64-v3.** Rust is faster on 19 rows at baseline and 17 at x86-64-v3, within noise on 3 and 6, slower on 1 and 0 (first run: 17 / 3 / 3 and 15 / 5 / 3).
+2. **The three small reduce-2 decodes**, which were the only slower rows, moved as follows (percent change against C++, minus is faster, first run → second run):
+
+| Row | Baseline | x86-64-v3 |
+|---|---|---|
+| small decode 32² RGBA 5/3, reduce 2 | +2.9 ! → -0.2 = | +3.4 ! → -2.9 |
+| small decode 64² RGB 9/7, reduce 2 | +6.3 ! → +4.3 ! | +8.7 ! → -0.7 = |
+| small decode 128² RGBA 9/7, reduce 2 | +5.9 ! → -0.5 = | +0.7 = → -4.2 = |
+
+   The one that is still slower against C++ is the 64² reduce-2 decode at baseline (+4.3 %). The 1,024² RGB decode at 4 workers at x86-64-v3, which was +2.8 % in the first run, is +0.9 % (within noise) here, so that gap was not stable.
+3. **Against Rust 0.1.2,** the reduce-2 decodes (0.1.3 against 0.1.2, first run → second run):
+
+| Row | Baseline | x86-64-v3 |
+|---|---|---|
+| small decode 32² RGBA 5/3, reduce 2 | +9.6 ! → +6.3 ! | +8.2 ! → +4.4 ! |
+| small decode 64² RGB 9/7, reduce 2 | +3.9 = → +1.4 ! | +7.6 = → +2.8 ! |
+| small decode 128² RGBA 9/7, reduce 2 | -30.5 → -26.7 | -33.8 → -33.5 |
+
+   The 32² reduce-2 decode is still slower than 0.1.2 (+6.3 % baseline, +4.4 % x86-64-v3, down from +9.6 % and +8.2 %), and the 64² one is now marked slower at both levels (+1.4 % and +2.8 %, within noise in the first run at both). Encodes, small full decodes and the 128² reduce-2 decode remain much faster than 0.1.2. 0.1.3 faster / within noise / slower, of 23 rows: baseline 21 / 0 / 2, x86-64-v3 19 / 2 / 2.
+4. **What is left:** the 32² reduce-2 regression against 0.1.2, and the 64² reduce-2 decode at baseline against C++. The audit's next step is a stage profile of the current source (a CI run was started on this commit); the two earlier suspects (four-worker scheduling, the arithmetic decoder's interface) are no longer the first candidates.
+
+### Table 3: Rust against neo-j2k C++ 0.1.3, second run (percent change, minus = Rust faster)
+
+| Row | Workers | Baseline | x86-64-v3 |
+|---|---|---:|---:|
+| large decode 1,024² RGB 9/7 | w1 | -37.1 | -1.0 |
+| large decode 1,024² RGB 9/7 | w2 | -30.2 | -5.8 |
+| large decode 1,024² RGB 9/7 | w4 | -31.5 | +0.9 = |
+| large decode 1,024² RGB 9/7 | w8 | -22.9 | -1.9 |
+| large decode 4,096² gray 9/7 | w1 | -48.2 | -5.5 |
+| large decode 4,096² gray 9/7 | w2 | -41.0 | -4.1 |
+| large decode 4,096² gray 9/7 | w4 | -41.2 | -9.5 |
+| large decode 4,096² gray 9/7 | w8 | -31.1 | -2.4 |
+| small decode 32² RGBA 5/3, whole | - | -8.5 | -8.4 |
+| small decode 32² RGBA 5/3, reduce 2 | - | -0.2 = | -2.9 |
+| small decode 32² RGBA 5/3, missing EOC | - | -14.4 | -15.6 |
+| small decode 64² RGB 9/7, whole | - | -4.8 | -8.8 |
+| small decode 64² RGB 9/7, reduce 2 | - | +4.3 ! | -0.7 = |
+| small decode 64² RGB 9/7, missing EOC | - | -5.8 | -9.7 |
+| small decode 128² RGBA 9/7, whole | - | -24.3 | -1.0 = |
+| small decode 128² RGBA 9/7, reduce 2 | - | -0.5 = | -4.2 = |
+| small decode 128² RGBA 9/7, missing EOC | - | -26.1 | -2.3 |
+| small encode 32² RGB, lossless 5/3 | - | -1.6 | -0.3 = |
+| small encode 32² RGB, lossy 9/7 | - | -2.4 = | +0.6 = |
+| small encode 64² RGB, lossless 5/3 | - | -4.8 | -2.5 |
+| small encode 64² RGB, lossy 9/7 | - | -3.8 | -1.4 |
+| small encode 128² RGB, lossless 5/3 | - | -4.2 | -3.5 |
+| small encode 128² RGB, lossy 9/7 | - | -3.1 | -2.0 |
+
+### Table 4: Rust 0.1.3 (main 449f4b9) against Rust 0.1.2, second run
+
+| Row | Workers | Baseline | x86-64-v3 |
+|---|---|---:|---:|
+| large decode 1,024² RGB 9/7 | w1 | -12.6 | -18.5 |
+| large decode 1,024² RGB 9/7 | w2 | -8.8 | -12.3 |
+| large decode 1,024² RGB 9/7 | w4 | -5.4 | -4.6 |
+| large decode 1,024² RGB 9/7 | w8 | -1.6 | -1.2 = |
+| large decode 4,096² gray 9/7 | w1 | -3.1 | -6.6 |
+| large decode 4,096² gray 9/7 | w2 | -2.9 | -8.1 |
+| large decode 4,096² gray 9/7 | w4 | -4.1 | -6.6 |
+| large decode 4,096² gray 9/7 | w8 | -4.9 | +17.4 = |
+| small decode 32² RGBA 5/3, whole | - | -37.5 | -39.8 |
+| small decode 32² RGBA 5/3, reduce 2 | - | +6.3 ! | +4.4 ! |
+| small decode 32² RGBA 5/3, missing EOC | - | -37.5 | -40.5 |
+| small decode 64² RGB 9/7, whole | - | -10.2 | -11.1 |
+| small decode 64² RGB 9/7, reduce 2 | - | +1.4 ! | +2.8 ! |
+| small decode 64² RGB 9/7, missing EOC | - | -12.7 | -8.8 |
+| small decode 128² RGBA 9/7, whole | - | -24.0 | -33.7 |
+| small decode 128² RGBA 9/7, reduce 2 | - | -26.7 | -33.5 |
+| small decode 128² RGBA 9/7, missing EOC | - | -22.8 | -29.0 |
+| small encode 32² RGB, lossless 5/3 | - | -55.7 | -55.8 |
+| small encode 32² RGB, lossy 9/7 | - | -59.2 | -57.6 |
+| small encode 64² RGB, lossless 5/3 | - | -47.3 | -48.7 |
+| small encode 64² RGB, lossy 9/7 | - | -54.0 | -53.0 |
+| small encode 128² RGB, lossless 5/3 | - | -44.8 | -45.6 |
+| small encode 128² RGB, lossy 9/7 | - | -52.8 | -51.8 |
+
 ## Limits
 
 - Three repetitions per row, one machine, one session. The spread of every row is in the raw tables; rows marked `=` are inside it.
