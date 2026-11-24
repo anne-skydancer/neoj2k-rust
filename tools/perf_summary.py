@@ -52,6 +52,9 @@ QUICK_PAIR = "e3-only"
 QUICK_BENCH_ARGS = "--min-mcycles 2 --units 1"
 MIN_GAIN = 3.0  # percent faster, the driver's gate (tools/bench_tier1.py)
 CONTROL_BAND = 1.0  # percent
+# the pair side `small` (whole small decodes): no fixed floor of gain; the rows the step is meant to help must be
+# faster than the noise the control showed, every other row must not be slower than it (pair_verdict, small_verdict)
+SMALL_TARGET_ROWS = ("small/sl_32_rgba_53_reduce2",)
 NOISE_BAND = 1.0  # percent: a change below this is within noise whatever the spread
 # the rows of one complete repetition of the three suites: the large decodes (2 images x widths 1, 2, 4, 8), the small
 # decodes (3 images x 3 requests) and the small encodes (3 sizes x 2 modes)
@@ -94,8 +97,8 @@ def plan(env):
     custom = bool(base)
     if custom:
         side = (env.get("PAIR_SIDE_IN") or "").strip() or "decode"
-        if side not in ("decode", "encode", "image"):
-            raise SystemExit("perf_summary: pair_side is decode, encode or image, not %r" % side)
+        if side not in ("decode", "encode", "image", "small"):
+            raise SystemExit("perf_summary: pair_side is decode, encode, image or small, not %r" % side)
         name = (env.get("PAIR_NAME_IN") or "").strip() or "adhoc-" + side
         if not re.fullmatch(r"[A-Za-z0-9._-]+", name):
             raise SystemExit("perf_summary: pair_name may hold letters, digits, '.', '_' and '-' only, not %r" % name)
@@ -513,19 +516,70 @@ def table_command(args):
 
 
 def parse_pair_table(text):
-    """[{set, head, control, identical, gate}] from the driver's table text (one per set), percent figures as floats."""
+    """[{set, head, head_range, control, control_range, identical, gate}] from the driver's table text (one per set),
+    percent figures as floats."""
     rows = []
     for line in text.splitlines():
         cells = [c.strip() for c in line.strip().strip("|").split("|")]
-        if len(cells) != 8 or not re.match(r"^(decode|encode|image|rated)/", cells[0]):
+        if len(cells) != 8 or not re.match(r"^(decode|encode|image|rated|small)/", cells[0]):
             continue
         head = re.match(r"^([+-]\d+\.\d+) %$", cells[2])
         control = re.match(r"^([+-]\d+\.\d+) %$", cells[4])
         if not head or not control or cells[6] not in ("Yes", "No") or cells[7] not in ("Yes", "No"):
             raise SystemExit("perf_summary: cannot read the driver's row %r" % line)
+        ranges = [re.match(r"^([+-]\d+\.\d+) to ([+-]\d+\.\d+)$", cells[i]) for i in (3, 5)]
+        if not all(ranges):
+            raise SystemExit("perf_summary: cannot read the ranges of the driver's row %r" % line)
         rows.append({"set": cells[0], "head": float(head.group(1)), "control": float(control.group(1)),
+                     "head_range": tuple(float(v) for v in ranges[0].groups()),
+                     "control_range": tuple(float(v) for v in ranges[1].groups()),
                      "identical": cells[6] == "Yes", "gate": cells[7] == "Yes"})
     return rows
+
+
+def noise_band(row):
+    """The noise of one row in percent: the control's tolerance (CONTROL_BAND), or the control's own median change when
+    that is larger. The largest round of a control is not used: one stray round of a shared runner would set the band."""
+    return max(CONTROL_BAND, abs(row["control"]))
+
+
+def small_verdict(rows, mine):
+    """The step gate of the whole small decodes. There is no fixed gain to reach. Per row: the outputs must be identical
+    and the control within +-CONTROL_BAND; a row the step is meant to help (SMALL_TARGET_ROWS) must be faster than the
+    row's noise band (its head change below minus the band), every other row must not be
+    slower than it (its head change not above the band). Returns the summary lines: the verdict, then one table."""
+    lines = []
+    passed = 0
+    for r in mine:
+        band = noise_band(r)
+        target = r["set"] in SMALL_TARGET_ROWS
+        quiet = abs(r["control"]) <= CONTROL_BAND
+        better = r["head"] < -band
+        fine = better if target else r["head"] <= band
+        ok = r["identical"] and quiet and fine
+        passed += ok
+        lines.append("| %s | %+.2f %% | %+.2f %% | %.2f %% | %s | %s | %s | %s | %s |" % (
+            r["set"], r["head"], r["control"], band, "faster than noise" if target else "no slower than noise",
+            "Yes" if r["identical"] else "No", "Yes" if quiet else "No", "Yes" if better else "No",
+            "Yes" if ok else "No"))
+    head = [
+        "Step gate (small decode sets): %s (%d of %d rows; no fixed gain: the row the step helps faster than its noise "
+        "band, every other row no slower than it, control within +-%.1f %%, outputs identical)" % (
+            "Yes" if passed == len(mine) else "No", passed, len(mine), CONTROL_BAND),
+        "",
+        "The noise band of a row is the control's tolerance (%.1f %%), or its control's median change when that is larger. Percent "
+        "changes against the base in the same round, minus is faster." % CONTROL_BAND,
+        "",
+        "| Row | Head vs base | Control vs base | Noise band | Judged as | Output identical | Control within +-%.1f %% | "
+        "Faster than noise | Pass |" % CONTROL_BAND,
+        "|---|---:|---:|---:|---|:---:|:---:|:---:|:---:|",
+    ]
+    strayed = sum(1 for r in rows if abs(r["control"]) > CONTROL_BAND)
+    tail = ["", "Control outside +-%.1f %% in %d of %d sets (a noisy runner for those rows)" % (
+        CONTROL_BAND, strayed, len(rows)), "",
+        "The decode, encode, image and rated sets are not judged: this step does not change them (their rows show "
+        "layout and noise)."]
+    return head + lines + tail
 
 
 def pair_verdict(text, side):
@@ -535,6 +589,8 @@ def pair_verdict(text, side):
     mine = [r for r in rows if r["set"].startswith(side + "/")]
     if not mine:
         raise SystemExit("perf_summary: the driver's table has no %s sets" % side)
+    if side == "small":
+        return small_verdict(rows, mine)
     passed = sum(1 for r in mine if r["gate"])
     strayed = sum(1 for r in rows if abs(r["control"]) > CONTROL_BAND)
     other = {"decode": "encode", "encode": "decode", "image": "decode, encode and rated"}[side]
@@ -690,6 +746,17 @@ def selftest():
             "| rated/rgb128_lossy_cap | 13.79 | +0.27 % | -1.00 to +1.00 | -0.01 % | -0.50 to +0.40 | Yes | No |\n")
     img = pair_verdict(PAIR_GOLDEN + rows, "image")
     assert img[0].startswith("Step gate (image sets): Yes (1 of 1 sets"), img[0]
+    small = ("| small/sl_32_rgba_53_reduce2 | 0.05 | -6.50 % | -8.00 to -5.00 | -0.10 % | -0.60 to +0.40 | Yes | No |\n"
+             "| small/sl_32_rgba_53_whole | 0.05 | +0.30 % | -1.00 to +1.00 | +0.10 % | -0.60 to +0.40 | Yes | No |\n"
+             "| small/sl_128_rgba_97_reduce2 | 0.20 | +0.50 % | -1.00 to +1.00 | -0.20 % | -0.60 to +0.40 | Yes | No |\n")
+    sm = pair_verdict(PAIR_GOLDEN + small, "small")
+    assert sm[0].startswith("Step gate (small decode sets): Yes (3 of 3 rows"), sm[0]
+    slow = pair_verdict(PAIR_GOLDEN + small.replace("+0.50 %", "+1.20 %"), "small")  # 128 reduce 2 slower than its band
+    assert slow[0].startswith("Step gate (small decode sets): No (2 of 3 rows"), slow[0]
+    flat = pair_verdict(PAIR_GOLDEN + small.replace("-6.50 %", "-0.50 %"), "small")  # the target not above its noise
+    assert flat[0].startswith("Step gate (small decode sets): No (2 of 3 rows"), flat[0]
+    changed = pair_verdict(PAIR_GOLDEN + small.replace("+0.30 % | -1.00 to +1.00 | +0.10 % | -0.60 to +0.40 | Yes", "+0.30 % | -1.00 to +1.00 | +0.10 % | -0.60 to +0.40 | No"), "small")
+    assert changed[0].startswith("Step gate (small decode sets): No (2 of 3 rows"), changed[0]
     try:
         pair_verdict("no table", "decode")
     except SystemExit:
@@ -720,6 +787,7 @@ def selftest():
     assert len(gate) == 4 and {(g["name"], g["base"], g["head"], g["side"]) for g in gate} == {("mine", "aaa", "bbb", "decode")}
     assert plan(own)["cells_count"] == "0" and plan(dict(own, VS_CPP_IN="true"))["cells_count"] == "4"
     assert full["cells_count"] == "4"
+    assert plan(dict(own, PAIR_SIDE_IN="small"))["gate"]
     for bad in ({"PAIR_HEAD_IN": ""}, {"PAIR_SIDE_IN": "both"}, {"PAIR_NAME_IN": "a b"}):
         try:
             plan(dict(own, **bad))
@@ -838,7 +906,7 @@ def main():
     t.add_argument("--cpus", type=int, help="the runner's logical CPUs (default: this process's)")
     v = sub.add_parser("pair-verdict")
     v.add_argument("--file", required=True)
-    v.add_argument("--side", required=True, choices=["decode", "encode", "image"])
+    v.add_argument("--side", required=True, choices=["decode", "encode", "image", "small"])
     args = ap.parse_args()
     if args.command == "selftest":
         return selftest()

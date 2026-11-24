@@ -64,6 +64,9 @@ const RESET: u32 = 0x02;
 const VERTICAL_CAUSAL: u32 = 0x08;
 const SEGMENT_SYMBOL: u32 = 0x20;
 
+/// The tallest block of the short path: one stripe of four rows.
+const SHORT_HEIGHT: usize = 4;
+
 const MAX_SAMPLES: usize = 4096;
 const MAX_FLAGS: usize = 3078;
 
@@ -205,7 +208,12 @@ impl Scratch {
             orient: orient as usize,
             vertical_causal: cblksty & VERTICAL_CAUSAL != 0,
         };
-        decode_passes(&mut passes, block, bitplane, bytes);
+        // A block of one stripe takes the short path: its flag rows above and below do not exist.
+        if height <= SHORT_HEIGHT {
+            decode_passes::<true>(&mut passes, block, bitplane, bytes);
+        } else {
+            decode_passes::<false>(&mut passes, block, bitplane, bytes);
+        }
         store_coefficients::<true>(
             &mut self.data[..samples],
             &mut output[offset..last_end],
@@ -219,14 +227,14 @@ impl Scratch {
     }
 }
 
-fn decode_passes(passes: &mut Passes<'_>, block: Block<'_>, mut bitplane: i32, mut bytes: &[u8]) {
+fn decode_passes<const SHORT: bool>(passes: &mut Passes<'_>, block: Block<'_>, mut bitplane: i32, mut bytes: &[u8]) {
     let Block {
         numbps,
         cblksty,
         segments,
         ..
     } = block;
-    passes.initialize();
+    passes.initialize::<SHORT>();
 
     let mut decoder = Decoder::new();
     let mut pass = 2;
@@ -255,11 +263,11 @@ fn decode_passes(passes: &mut Passes<'_>, block: Block<'_>, mut bitplane: i32, m
             }
             let plane = u32::try_from(bitplane).expect("positive bit-plane index");
             match pass {
-                0 if raw => passes.significance::<true>(&mut decoder, plane),
-                0 => passes.significance::<false>(&mut decoder, plane),
-                1 if raw => passes.refinement::<true>(&mut decoder, plane),
-                1 => passes.refinement::<false>(&mut decoder, plane),
-                2 => passes.cleanup(&mut decoder, plane, segment_symbol),
+                0 if raw => passes.significance::<true, SHORT>(&mut decoder, plane),
+                0 => passes.significance::<false, SHORT>(&mut decoder, plane),
+                1 if raw => passes.refinement::<true, SHORT>(&mut decoder, plane),
+                1 => passes.refinement::<false, SHORT>(&mut decoder, plane),
+                2 => passes.cleanup::<SHORT>(&mut decoder, plane, segment_symbol),
                 _ => unreachable!("a code-block cycles through three coding passes"),
             }
             if reset && !raw {
@@ -550,6 +558,193 @@ mod tests {
             decode_lazy(&[(40, 10), (0, 2)], &bytes).unwrap(),
             decode_lazy(&[(40, 10)], &bytes).unwrap()
         );
+    }
+
+    /// The segments of a test block over `len` bytes: one for a plain block, the BYPASS pattern (ten passes, then
+    /// alternately two raw and one MQ) for a lazy one, each cut to the bytes that are there.
+    fn test_segments(cblksty: u32, numbps: u32, len: u32) -> Vec<Segment> {
+        let segment = |len, real_num_passes| Segment {
+            len,
+            real_num_passes,
+            ..Segment::default()
+        };
+        if cblksty & LAZY == 0 {
+            return vec![segment(len, 3 * numbps)];
+        }
+        let part = len / 5 + 1;
+        [10, 2, 1, 2, 1]
+            .into_iter()
+            .map(|passes| segment(part, passes))
+            .collect()
+    }
+
+    fn test_bytes(seed: u32, len: u32) -> Vec<u8> {
+        let mut state = 0x9e37_79b9 ^ seed.wrapping_mul(0x85eb_ca6b);
+        (0..len).map(|_| random_byte(&mut state)).collect()
+    }
+
+    /// The coefficients the passes leave in a block, on flag words that start as `garbage` (what an earlier block may
+    /// have left), through the short path or the general one.
+    fn pass_coefficients<const SHORT: bool>(block: Block<'_>, bytes: &[u8], garbage: u32) -> Vec<i32> {
+        let (width, height) = (block.width as usize, block.height as usize);
+        let mut data = vec![0x5a5a_5a5a; width * height];
+        let mut flags = vec![garbage; (width + 2) * (height.div_ceil(4) + 2)];
+        let mut passes = Passes {
+            data: &mut data,
+            flags: &mut flags,
+            width,
+            height,
+            orient: block.orient as usize,
+            vertical_causal: block.cblksty & VERTICAL_CAUSAL != 0,
+        };
+        let bitplane = bits_as_i32(block.numbps.wrapping_add(block.roishift));
+        decode_passes::<SHORT>(&mut passes, block, bitplane, bytes);
+        data
+    }
+
+    // A block of at most four rows takes the short path, which sets up only its own flag row and leaves the rows
+    // around it as they were. Its coefficients must be those of the general path, for any content of those rows, in
+    // every style, width and orientation.
+    #[test]
+    fn short_blocks_decode_as_the_general_path_does() {
+        let styles = [
+            0,
+            VERTICAL_CAUSAL,
+            RESET,
+            SEGMENT_SYMBOL,
+            LAZY,
+            LAZY | RESET | VERTICAL_CAUSAL | SEGMENT_SYMBOL,
+            RESET | VERTICAL_CAUSAL,
+            SEGMENT_SYMBOL | VERTICAL_CAUSAL,
+        ];
+        let mut blocks = 0;
+        let mut nonzero = 0;
+        // Miri keeps the narrow/partial/full-stripe cases and a wider block. Leave the maximum-width sweep
+        // to native tests: interpreting its repeated coding passes takes more than twenty minutes alone.
+        let widths: &[u32] = if cfg!(miri) {
+            &[1, 3, 9, 17]
+        } else {
+            &[1, 2, 3, 4, 5, 8, 9, 17, 64, 1_024]
+        };
+        let orients = if cfg!(miri) { 1..3 } else { 0..4 };
+        for &width in widths {
+            for height in 1..=4u32 {
+                for (index, &cblksty) in styles.iter().enumerate() {
+                    for orient in orients.clone() {
+                        let seed = width * 8 + height * 64 + orient + u32::try_from(index).unwrap();
+                        let numbps = 1 + seed % 7;
+                        let roishift = seed % 3;
+                        let len = (width * height).min(400) + seed % 16;
+                        let bytes = test_bytes(seed, len);
+                        let segments = test_segments(cblksty, numbps, len);
+                        let block = Block {
+                            width,
+                            height,
+                            numbps,
+                            orient,
+                            roishift,
+                            cblksty,
+                            segments: &segments,
+                        };
+                        let general = pass_coefficients::<false>(block, &bytes, 0);
+                        for garbage in [0, u32::MAX, 0x5555_5555, 0xaaaa_aaaa] {
+                            assert_eq!(
+                                pass_coefficients::<true>(block, &bytes, garbage),
+                                general,
+                                "{width} x {height}, style {cblksty:02x}, orientation {orient}, flags {garbage:08x}"
+                            );
+                        }
+                        blocks += 1;
+                        nonzero += usize::from(general.iter().any(|&sample| sample != 0));
+                    }
+                }
+            }
+        }
+        // Shorter random byte strings more often decode to zero; the small Miri subset still needs
+        // substantial nonzero coverage, alongside the unchanged majority check for the native sweep.
+        assert!(
+            nonzero > blocks / if cfg!(miri) { 3 } else { 2 },
+            "too few random blocks decode to nonzero samples ({nonzero}/{blocks})"
+        );
+    }
+
+    // One scratch decodes blocks of every height in turn, short and general ones, as a tile does; each must equal the
+    // general path's result on fresh flag words, and the one of a scratch that never decoded another block.
+    #[test]
+    fn a_retained_scratch_decodes_short_and_general_blocks_alike() {
+        let mut scratch = Scratch::default();
+        let mut diagnostics = Diagnostics::default();
+        let shapes = [
+            (64u32, 64u32),
+            (3, 2),
+            (5, 7),
+            (1, 1),
+            (8, 4),
+            (9, 5),
+            (2, 3),
+            (16, 12),
+            (4, 4),
+            (1, 9),
+            (7, 1),
+            (33, 4),
+            (1, 8),
+            (6, 3),
+            (64, 4),
+            (2, 6),
+        ];
+        let mut run = 0u32;
+        for round in 0..if cfg!(miri) { 1u32 } else { 3 } {
+            for &(width, height) in &shapes {
+                run += 1;
+                let cblksty = [0, RESET | SEGMENT_SYMBOL, VERTICAL_CAUSAL, LAZY][((run + round) % 4) as usize];
+                let numbps = 2 + run % 6;
+                let len = (width * height).min(300) + run % 11;
+                let bytes = test_bytes(run, len);
+                let segments = test_segments(cblksty, numbps, len);
+                let block = Block {
+                    width,
+                    height,
+                    numbps,
+                    orient: run % 4,
+                    roishift: 0,
+                    cblksty,
+                    segments: &segments,
+                };
+                let (reversible, stepsize) = (run.is_multiple_of(2), 1.3);
+                let size = (width * height) as usize;
+                let decode = |scratch: &mut Scratch, diagnostics: &mut Diagnostics| {
+                    let mut output = vec![-77; size];
+                    let destination = Destination {
+                        samples: &mut output,
+                        offset: 0,
+                        stride: width as usize,
+                        reversible,
+                        stepsize,
+                    };
+                    scratch
+                        .decode(block, [bytes.as_slice()], destination, diagnostics)
+                        .unwrap();
+                    output
+                };
+                let mut reference = pass_coefficients::<false>(block, &bytes, 0);
+                let mut expected = vec![0; size];
+                store_coefficients::<true>(
+                    &mut reference,
+                    &mut expected,
+                    width as usize,
+                    width as usize,
+                    0,
+                    reversible,
+                    stepsize,
+                );
+                assert_eq!(
+                    decode(&mut scratch, &mut diagnostics),
+                    expected,
+                    "{width} x {height}, run {run}"
+                );
+                assert_eq!(decode(&mut Scratch::default(), &mut diagnostics), expected);
+            }
+        }
     }
 
     #[test]

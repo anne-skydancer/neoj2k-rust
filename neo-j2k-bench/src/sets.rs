@@ -15,7 +15,11 @@ use std::hint::black_box;
 use std::path::Path;
 
 use neo_j2k::bench::{DecodeBlock, DecodeWorkspace, EncodeParams, EncodeWorkspace};
-use neo_j2k::{EncodeParams as ImageParams, Encoder, ImageSamples, ImageView};
+use neo_j2k::{
+    DecodeParams, DecodeTarget, Decoder, DecoderConfig, EncodeParams as ImageParams, Encoder, ImageSamples, ImageView,
+    OutputPlane, SampleType,
+};
+use neo_j2k_testkit::files::corpus_dir;
 use neo_j2k_testkit::fnv::Fnv64;
 use neo_j2k_testkit::mqng;
 
@@ -63,6 +67,79 @@ pub(crate) enum Set {
     /// One whole-image encode through the public API with a fresh encoder per pass, as the small-encoder rows of
     /// `small_image_gates` time it.
     Image(ImageSet),
+    /// One whole small-image decode through the public API into caller-owned planes with a warmed decoder, as the
+    /// small-decoder rows of `small_image_gates` time it.
+    Small(Box<SmallDecode>),
+}
+
+/// A whole-image decode request: a small corpus codestream, a resolution reduction, whether its last two bytes (the
+/// end-of-codestream marker) are cut, and the decoder and output planes that the request reuses from one pass to the next.
+pub(crate) struct SmallDecode {
+    name: String,
+    data: Vec<u8>,
+    decoder: Decoder,
+    params: DecodeParams<'static>,
+    bytes: Vec<u8>,
+    planes: Vec<OutputPlane>,
+}
+
+impl SmallDecode {
+    /// The request, with its decoder warmed and its output planes sized from one decode.
+    fn new(file: &str, tag: &str, reduce: u32, cut: bool) -> Result<Self, String> {
+        let path = corpus_dir().join(file);
+        let mut data = std::fs::read(&path).map_err(|e| format!("{}: {e}", path.display()))?;
+        if cut {
+            data.truncate(data.len() - 2);
+        }
+        let mut decoder = Decoder::new(DecoderConfig {
+            reduce,
+            ..DecoderConfig::default()
+        });
+        let params = DecodeParams::default();
+        let image = decoder
+            .decode(&data, params)
+            .map_err(|e| format!("{file}: {}", e.message().trim_end()))?;
+        if image.truncated != cut {
+            return Err(format!("{file}: truncated is {}, not {cut}", image.truncated));
+        }
+        let mut offset = 0;
+        let mut planes = Vec::new();
+        for (component, plane) in image.components.iter().enumerate() {
+            let row_stride = plane.info().width as usize * size_of::<i32>();
+            planes.push(OutputPlane {
+                component: u32::try_from(component).map_err(|_| "too many components".to_owned())?,
+                offset,
+                row_stride: isize::try_from(row_stride).map_err(|_| "a plane too wide".to_owned())?,
+                sample_stride: size_of::<i32>(),
+            });
+            offset += size_of_val(plane.samples());
+        }
+        let mut set = Self {
+            name: format!("{}_{tag}", file.trim_end_matches(".j2k")),
+            data,
+            decoder,
+            params,
+            bytes: vec![0; offset],
+            planes,
+        };
+        set.decode()?;
+        Ok(set)
+    }
+
+    /// One decode into the request's planes; whether the codestream was cut.
+    fn decode(&mut self) -> Result<bool, String> {
+        self.decoder
+            .decode_into(
+                black_box(&self.data),
+                self.params,
+                SampleType::I32,
+                &mut [DecodeTarget {
+                    bytes: &mut self.bytes,
+                    planes: &self.planes,
+                }],
+            )
+            .map_err(|e| format!("small {}: {}", self.name, e.message().trim_end()))
+    }
 }
 
 /// A whole-image encode request: the pixels of a square interleaved RGB image and the settings.
@@ -103,6 +180,7 @@ impl Set {
             Self::Decode { name, .. } => format!("decode/{name}"),
             Self::Encode { name, .. } => format!("encode/{name}"),
             Self::Image(set) => format!("{}/{}", set.group, set.name),
+            Self::Small(set) => format!("small/{}", set.name),
         }
     }
 
@@ -110,7 +188,7 @@ impl Set {
         match self {
             Self::Decode { blocks, .. } => blocks.len(),
             Self::Encode { blocks, .. } => blocks.len(),
-            Self::Image(_) => 1,
+            Self::Image(_) | Self::Small(_) => 1,
         }
     }
 
@@ -139,6 +217,10 @@ impl Set {
                     black_box(workspace.encode(&block.samples, 64, 64, &block.params(*reversible)));
                     black_box(workspace.block());
                 }
+            }
+            Self::Small(set) => {
+                black_box(set.decode().ok());
+                black_box(set.bytes.as_slice());
             }
             Self::Image(set) => {
                 let view = ImageView {
@@ -209,6 +291,10 @@ impl Set {
                 }
             }
             Self::Image(set) => hash.bytes(&set.encode()?),
+            Self::Small(set) => {
+                hash.bytes(&[u8::from(set.decode()?)]);
+                hash.bytes(&set.bytes);
+            }
         }
         Ok(hash.value())
     }
@@ -369,6 +455,22 @@ pub(crate) fn image_sets() -> Vec<Set> {
     sets
 }
 
+/// The whole small-decode sets: the nine rows of the small-decoder suite of `neo-j2k/tests/small_image_gates.rs` (three
+/// corpus images, each whole, at resolution reduction 2, and with the end-of-codestream marker cut). Reduced decodes of
+/// these images are mostly blocks of at most four rows, which the code-block sets do not show.
+///
+/// # Errors
+/// A corpus file that cannot be read or decoded.
+pub(crate) fn small_decode_sets() -> Result<Vec<Set>, String> {
+    let mut sets = Vec::new();
+    for file in ["sl_32_rgba_53.j2k", "sl_64_rgb_97.j2k", "sl_128_rgba_97.j2k"] {
+        for (tag, reduce, cut) in [("whole", 0, false), ("reduce2", 2, false), ("missing_eoc", 0, true)] {
+            sets.push(Set::Small(Box::new(SmallDecode::new(file, tag, reduce, cut)?)));
+        }
+    }
+    Ok(sets)
+}
+
 /// What one set measured.
 pub(crate) struct Measurement {
     /// The clock units of one pass over the set's blocks (the median of the timed units).
@@ -439,6 +541,24 @@ mod tests {
         }
         assert_eq!(one[0].name(), "image/rgb32_lossless");
         assert_eq!(one[8].name(), "rated/rgb128_lossy_cap");
+    }
+
+    #[test]
+    fn the_small_decode_sets_decode_and_are_the_same_every_time() {
+        let mut one = small_decode_sets().expect("the corpus images decode");
+        let mut two = small_decode_sets().expect("the corpus images decode");
+        assert_eq!(one.len(), 9);
+        for (a, b) in one.iter_mut().zip(&mut two) {
+            let digest = a.digest().expect("the small decode requests decode");
+            assert_eq!(Ok(digest), b.digest(), "{}", a.name());
+            a.pass();
+        }
+        assert_eq!(one[0].name(), "small/sl_32_rgba_53_whole");
+        assert_eq!(one[1].name(), "small/sl_32_rgba_53_reduce2");
+        assert_eq!(one[8].name(), "small/sl_128_rgba_97_missing_eoc");
+        // the reduction and the cut change what is decoded
+        let digests: Vec<_> = one.iter_mut().take(3).map(|s| s.digest().unwrap()).collect();
+        assert!(digests[0] != digests[1] && digests[0] != digests[2] && digests[1] != digests[2]);
     }
 
     #[test]
