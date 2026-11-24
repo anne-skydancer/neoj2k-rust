@@ -1,0 +1,39 @@
+--- a/neo-j2k/src/tile.rs
++++ b/neo-j2k/src/tile.rs
+@@ -40,7 +40,7 @@
+ 
+ impl CodeBlock {
+     fn reset(&mut self, rect: Rect) {
+-        self.segs.clear();
++        // Scratch audit: initialized segment storage is retained; init_segment resets each used slot.
+         self.chunks.clear();
+         self.rect = rect;
+         self.numbps = 0;
+--- a/neo-j2k/src/t2/packet.rs
++++ b/neo-j2k/src/t2/packet.rs
+@@ -375,16 +375,17 @@
+ }
+ 
+ fn init_segment(block: &mut CodeBlock, at: usize, cblksty: u8, budget: &mut WorkBudget) -> Result<(), Error> {
+-    if at >= block.segs.len() {
++    // The original per-request modeled growth occurs at 0,4,8,16,... .
++    // Storage may already exist from the previous request, but charges still occur.
++    if at == 0 || (at >= 4 && at.is_power_of_two()) {
+         const MESSAGE: &str = "";
+-        let old = block.segs.len();
+-        let new = next_capacity(old, MESSAGE)?;
++        let new = if at == 0 { 4 } else { next_capacity(at, MESSAGE)? };
+         budget.array(CType::Segment, new)?;
+-        block
+-            .segs
+-            .try_reserve_exact(new - old)
+-            .map_err(|_| Error::static_message(ErrorKind::NoMemory, MESSAGE))?;
+-        block.segs.resize(new, Segment::default());
++        if new > block.segs.len() {
++            block.segs.try_reserve_exact(new - block.segs.len())
++                .map_err(|_| Error::static_message(ErrorKind::NoMemory, MESSAGE))?;
++            block.segs.resize(new, Segment::default());
++        }
+     }
+     let maxpasses = if cblksty & TERMINATE_ALL != 0 {
+         1

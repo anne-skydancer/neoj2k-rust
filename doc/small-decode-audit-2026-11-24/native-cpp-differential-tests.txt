@@ -1,0 +1,15 @@
+
+running 10 tests
+test t1::differential::a_raw_segment_with_a_cleanup_pass_ends_there_as_in_the_cpp ... ok
+test t1::differential::bench_dumps_decode_as_the_cpp_does ... ok
+test t1::differential::committed_vectors_decode_as_the_cpp_does ... ok
+test t1::differential::generated_blocks_decode_as_the_cpp_does ... ok
+test t1::differential::nightly_tier1_decode_split ... ignored, nightly: the C++ test_split, extended: 5.8 million tiny blocks
+test t1::differential::nightly_tier1_decode_sweep ... ignored, nightly: the long generated Tier-1 decode sweep
+test t1::differential::overlong_segments_are_cut_as_the_cpp_cuts_them ... ok
+test t1::differential::stores_match_the_cpp_including_the_roi_threshold ... ok
+test t1::differential::the_full_dump_set_decodes_as_the_cpp_does_when_named ... ok
+test t1::differential::tiny_blocks_decode_as_the_cpp_does_in_every_orientation ... ok
+
+test result: ok. 8 passed; 0 failed; 2 ignored; 0 measured; 92 filtered out; finished in 2.25s
+

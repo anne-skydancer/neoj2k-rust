@@ -1,0 +1,2 @@
+use neo_j2k::{Decoder,DecoderConfig,DecodeParams};
+fn main(){for name in ["sl_32_rgba_53.j2k","sl_64_rgb_97.j2k","sl_128_rgba_97.j2k"]{let data=std::fs::read(format!("C:/Users/annes/source/repos/neoj2k-rust/corpus/generated/{name}")).unwrap();for reduce in [2,0]{eprintln!("BEGIN {name} {reduce}");let mut d=Decoder::new(DecoderConfig{reduce,..Default::default()});let image=d.decode(&data,DecodeParams::default()).unwrap();assert!(!image.truncated);eprintln!("END");}}}

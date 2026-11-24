@@ -1,0 +1,26 @@
+--- a/neo-j2k/src/t1/passes.rs
++++ b/neo-j2k/src/t1/passes.rs
+@@ -143,17 +143,17 @@
+     ) {
+         *sample = if sign != 0 { -magnitude } else { magnitude };
+         let shift = lane * 3;
+-        set_bits(&stripe.here.left[col], (1 << 5) << shift);
+-        set_bits(&stripe.here.right[col], (1 << 3) << shift);
++        if col != 0 { set_bits(&stripe.here.left[col], (1 << 5) << shift); }
++        if col + 1 < stripe.width { set_bits(&stripe.here.right[col], (1 << 3) << shift); }
+         if lane == 0 && !stripe.vertical_causal {
+             set_bits(&stripe.above.mid[col], (sign << 31) | (1 << 16));
+-            set_bits(&stripe.above.left[col], 1 << 17);
+-            set_bits(&stripe.above.right[col], 1 << 15);
++            if col != 0 { set_bits(&stripe.above.left[col], 1 << 17); }
++            if col + 1 < stripe.width { set_bits(&stripe.above.right[col], 1 << 15); }
+         }
+         if lane == 3 {
+             set_bits(&stripe.below.mid[col], (sign << 18) | (1 << 1));
+-            set_bits(&stripe.below.left[col], 1 << 2);
+-            set_bits(&stripe.below.right[col], 1);
++            if col != 0 { set_bits(&stripe.below.left[col], 1 << 2); }
++            if col + 1 < stripe.width { set_bits(&stripe.below.right[col], 1); }
+         }
+         column.flags |= SIGMA_THIS << shift;
+         column.chi |= (sign << CHI_THIS_BIT) << shift;

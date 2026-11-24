@@ -1,0 +1,17 @@
+[package]
+name="small-decode-boundary-probe"
+version="0.0.0"
+edition="2024"
+[dependencies]
+current={package="neo-j2k",path="C:/Users/annes/source/repos/neoj2k-rust/neo-j2k"}
+short={package="neo-j2k-current-short",path="../current-short"}
+control={package="neo-j2k-layout-control",path="../layout-control"}
+boundary={package="neo-j2k-boundary-store",path="../boundary-store"}
+init={package="neo-j2k-boundary-init",path="../boundary-init"}
+refine={package="neo-j2k-refine-view",path="../refine-view"}
+combined={package="neo-j2k-boundary-refine",path="../boundary-refine"}
+[profile.release]
+lto="fat"
+codegen-units=1
+panic="unwind"
+debug="line-tables-only"

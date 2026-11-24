@@ -1,0 +1,15 @@
+[package]
+name="encoder-engine-probe"
+version="0.0.0"
+edition="2024"
+[dependencies]
+current={package="neo-j2k",path="C:/Users/annes/source/repos/neoj2k-rust/neo-j2k"}
+control={package="neo-j2k-control",path="C:/Users/annes/AppData/Local/Temp/codex-encoder-engine-audit/control"}
+bound={package="neo-j2k-bound",path="C:/Users/annes/AppData/Local/Temp/codex-encoder-engine-audit/bound"}
+single={package="neo-j2k-single",path="C:/Users/annes/AppData/Local/Temp/codex-encoder-engine-audit/single"}
+combined={package="neo-j2k-combined",path="C:/Users/annes/AppData/Local/Temp/codex-encoder-engine-audit/combined"}
+[profile.release]
+lto="fat"
+codegen-units=1
+panic="unwind"
+debug="line-tables-only"

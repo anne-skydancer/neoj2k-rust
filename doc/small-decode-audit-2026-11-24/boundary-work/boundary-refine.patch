@@ -1,0 +1,93 @@
+--- a/neo-j2k/src/t1/passes.rs
++++ b/neo-j2k/src/t1/passes.rs
+@@ -48,6 +48,7 @@
+     width: usize,
+     rows: usize,
+     vertical_causal: bool,
++    below_real: bool,
+ }
+ 
+ /// A column while the lanes of its stripe are decoded: its flag word (the significance and visited bits that the next
+@@ -82,11 +83,9 @@
+ impl Passes<'_> {
+     pub(super) fn initialize(&mut self) {
+         self.data.fill(0);
+-        self.flags.fill(0);
+         let stride = self.width + 2;
+         let stripes = self.height.div_ceil(4);
+-        self.flags[..stride].fill(ALL_PI);
+-        self.flags[(stripes + 1) * stride..].fill(ALL_PI);
++        self.flags[stride..(stripes + 1) * stride].fill(0);
+         let rows = self.height % 4;
+         if rows != 0 {
+             let out_of_bounds = ALL_PI & (u32::MAX << (21 + rows * 3));
+@@ -100,7 +99,7 @@
+ 
+     /// The flag rows of stripe `index`, of `rows` lanes (4 but for the last stripe of a block).
+     #[inline(always)]
+-    fn stripe(flags: &mut [u32], width: usize, index: usize, rows: usize, vertical_causal: bool) -> Stripe<'_> {
++    fn stripe(flags: &mut [u32], width: usize, index: usize, rows: usize, vertical_causal: bool, below_real: bool) -> Stripe<'_> {
+         assert!(width <= MAX_WIDTH);
+         let stride = width + 2;
+         let cells = Cell::from_mut(&mut flags[index * stride..(index + 3) * stride]).as_slice_of_cells();
+@@ -110,7 +109,8 @@
+             below: Row::new(&cells[2 * stride..], width),
+             width,
+             rows,
+-            vertical_causal,
++            vertical_causal: vertical_causal || index == 0,
++            below_real,
+         }
+     }
+ 
+@@ -150,7 +150,7 @@
+             set_bits(&stripe.above.left[col], 1 << 17);
+             set_bits(&stripe.above.right[col], 1 << 15);
+         }
+-        if lane == 3 {
++        if lane == 3 && stripe.below_real {
+             set_bits(&stripe.below.mid[col], (sign << 18) | (1 << 1));
+             set_bits(&stripe.below.left[col], 1 << 2);
+             set_bits(&stripe.below.right[col], 1);
+@@ -290,7 +290,7 @@
+         let (width, height) = (self.width, self.height);
+         for index in 0..height.div_ceil(4) {
+             let rows = (height - index * 4).min(4);
+-            let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);
++            let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal, index + 1 < height.div_ceil(4));
+             let samples = &mut self.data[index * 4 * width..];
+             if rows == 4 {
+                 Self::significance_full::<RAW>(&mut mq, &stripe, &context, samples);
+@@ -306,11 +306,11 @@
+         let half = (1i32 << bitplane) >> 1;
+         let (width, height) = (self.width, self.height);
+         for index in 0..height.div_ceil(4) {
+-            let rows = (height - index * 4).min(4);
+-            let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);
++            let first = (index + 1) * (width + 2) + 1;
++            let flags = Cell::from_mut(&mut self.flags[first..first + width]).as_slice_of_cells();
+             let samples = &mut self.data[index * 4 * width..];
+             for col in 0..width {
+-                let column = stripe.here.mid[col].get();
++                let column = flags[col].get();
+                 // Only real samples can receive SIGMA_THIS. Any padding in the last stripe is skipped.
+                 let mut eligible = (column & !(column >> PI_TO_SIGMA)) & ALL_SIGMA;
+                 let mut refined = 0;
+@@ -333,7 +333,7 @@
+                     refined |= MU_THIS << shift;
+                     eligible &= eligible - 1;
+                 }
+-                stripe.here.mid[col].set(column | refined);
++                flags[col].set(column | refined);
+             }
+         }
+         mq.leave();
+@@ -431,7 +431,7 @@
+         let (width, height) = (self.width, self.height);
+         for index in 0..height.div_ceil(4) {
+             let rows = (height - index * 4).min(4);
+-            let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);
++            let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal, index + 1 < height.div_ceil(4));
+             let samples = &mut self.data[index * 4 * width..];
+             if rows == 4 {
+                 Self::cleanup_full(&mut mq, &stripe, &context, samples);

@@ -1,0 +1,13 @@
+[package]
+name="decode-bottleneck-packed-probe"
+version="0.0.0"
+edition="2024"
+[dependencies]
+codec={package="neo-j2k-bottleneck",path="../codec",features=["bench-internals"]}
+control={package="neo-j2k-bottleneck-control",path="../control",features=["bench-internals"]}
+packed={package="neo-j2k-bottleneck-packed",path="../packed",features=["bench-internals"]}
+[profile.release]
+lto="fat"
+codegen-units=1
+panic="unwind"
+debug="line-tables-only"

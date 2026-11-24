@@ -1,0 +1,88 @@
+
+/home/dev/target-baseline/release/build/neo-j2k/54c801e50f75e09e/out/small_image_gates-54c801e50f75e09e:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000d8910 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes>:
+   d8910:	89 c8                	mov    eax,ecx
+   d8912:	44 8b 5e 08          	mov    r11d,DWORD PTR [rsi+0x8]
+   d8916:	44 39 d9             	cmp    ecx,r11d
+   d8919:	0f 86 c8 00 00 00    	jbe    d89e7 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0xd7>
+   d891f:	55                   	push   rbp
+   d8920:	41 57                	push   r15
+   d8922:	41 56                	push   r14
+   d8924:	41 55                	push   r13
+   d8926:	41 54                	push   r12
+   d8928:	53                   	push   rbx
+   d8929:	4c 8b 32             	mov    r14,QWORD PTR [rdx]
+   d892c:	48 8b 5a 08          	mov    rbx,QWORD PTR [rdx+0x8]
+   d8930:	44 8b 56 04          	mov    r10d,DWORD PTR [rsi+0x4]
+   d8934:	44 8b 7a 10          	mov    r15d,DWORD PTR [rdx+0x10]
+   d8938:	41 89 c0             	mov    r8d,eax
+   d893b:	45 89 d9             	mov    r9d,r11d
+   d893e:	eb 2c                	jmp    d896c <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0x5c>
+   d8940:	41 81 c2 00 ff 00 00 	add    r10d,0xff00
+   d8947:	41 bb 08 00 00 00    	mov    r11d,0x8
+   d894d:	bd ff 00 00 00       	mov    ebp,0xff
+   d8952:	45 29 c8             	sub    r8d,r9d
+   d8955:	44 89 56 04          	mov    DWORD PTR [rsi+0x4],r10d
+   d8959:	44 89 5e 08          	mov    DWORD PTR [rsi+0x8],r11d
+   d895d:	41 89 ef             	mov    r15d,ebp
+   d8960:	45 89 d9             	mov    r9d,r11d
+   d8963:	45 39 d8             	cmp    r8d,r11d
+   d8966:	0f 86 84 00 00 00    	jbe    d89f0 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0xe0>
+   d896c:	44 89 c9             	mov    ecx,r9d
+   d896f:	41 d3 e2             	shl    r10d,cl
+   d8972:	44 89 56 04          	mov    DWORD PTR [rsi+0x4],r10d
+   d8976:	48 85 db             	test   rbx,rbx
+   d8979:	74 15                	je     d8990 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0x80>
+   d897b:	4d 8d 66 01          	lea    r12,[r14+0x1]
+   d897f:	4c 8d 6b ff          	lea    r13,[rbx-0x1]
+   d8983:	41 0f b6 2e          	movzx  ebp,BYTE PTR [r14]
+   d8987:	eb 12                	jmp    d899b <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0x8b>
+   d8989:	0f 1f 80 00 00 00 00 	nop    DWORD PTR [rax+0x0]
+   d8990:	bd ff 00 00 00       	mov    ebp,0xff
+   d8995:	4d 89 f4             	mov    r12,r14
+   d8998:	45 31 ed             	xor    r13d,r13d
+   d899b:	41 81 ff ff 00 00 00 	cmp    r15d,0xff
+   d89a2:	0f 94 c1             	sete   cl
+   d89a5:	81 fd 90 00 00 00    	cmp    ebp,0x90
+   d89ab:	41 0f 93 c3          	setae  r11b
+   d89af:	41 84 cb             	test   r11b,cl
+   d89b2:	75 8c                	jne    d8940 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0x30>
+   d89b4:	45 31 db             	xor    r11d,r11d
+   d89b7:	41 81 ff ff 00 00 00 	cmp    r15d,0xff
+   d89be:	4c 89 22             	mov    QWORD PTR [rdx],r12
+   d89c1:	4c 89 6a 08          	mov    QWORD PTR [rdx+0x8],r13
+   d89c5:	41 0f 95 c3          	setne  r11b
+   d89c9:	41 83 c3 07          	add    r11d,0x7
+   d89cd:	b1 10                	mov    cl,0x10
+   d89cf:	44 28 d9             	sub    cl,r11b
+   d89d2:	89 eb                	mov    ebx,ebp
+   d89d4:	d3 e3                	shl    ebx,cl
+   d89d6:	89 6a 10             	mov    DWORD PTR [rdx+0x10],ebp
+   d89d9:	41 01 da             	add    r10d,ebx
+   d89dc:	4c 89 eb             	mov    rbx,r13
+   d89df:	4d 89 e6             	mov    r14,r12
+   d89e2:	e9 6b ff ff ff       	jmp    d8952 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0x42>
+   d89e7:	44 8b 56 04          	mov    r10d,DWORD PTR [rsi+0x4]
+   d89eb:	41 89 c0             	mov    r8d,eax
+   d89ee:	eb 0a                	jmp    d89fa <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0xea>
+   d89f0:	5b                   	pop    rbx
+   d89f1:	41 5c                	pop    r12
+   d89f3:	41 5d                	pop    r13
+   d89f5:	41 5e                	pop    r14
+   d89f7:	41 5f                	pop    r15
+   d89f9:	5d                   	pop    rbp
+   d89fa:	89 c1                	mov    ecx,eax
+   d89fc:	d3 26                	shl    DWORD PTR [rsi],cl
+   d89fe:	44 89 c1             	mov    ecx,r8d
+   d8a01:	41 d3 e2             	shl    r10d,cl
+   d8a04:	44 89 56 04          	mov    DWORD PTR [rsi+0x4],r10d
+   d8a08:	45 29 c3             	sub    r11d,r8d
+   d8a0b:	44 89 5e 08          	mov    DWORD PTR [rsi+0x8],r11d
+   d8a0f:	44 89 5f 08          	mov    DWORD PTR [rdi+0x8],r11d
+   d8a13:	48 8b 06             	mov    rax,QWORD PTR [rsi]
+   d8a16:	48 89 07             	mov    QWORD PTR [rdi],rax
+   d8a19:	c3                   	ret

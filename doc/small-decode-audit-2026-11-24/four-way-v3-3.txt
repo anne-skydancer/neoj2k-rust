@@ -1,0 +1,6 @@
+sl_32_rgba_53.j2k reduce 2: current 18.013 us before_eaea 17.600 us old_general 18.347 us current_change +2.35% no_single_change +4.24% fast_mps 17.740 us fast_change -1.52%
+sl_32_rgba_53.j2k reduce 0: current 150.655 us before_eaea 185.058 us old_general 186.339 us current_change -18.59% no_single_change +0.69% fast_mps 257.706 us fast_change +71.06%
+sl_64_rgb_97.j2k reduce 2: current 22.489 us before_eaea 23.703 us old_general 23.606 us current_change -5.12% no_single_change -0.41% fast_mps 21.823 us fast_change -2.96%
+sl_64_rgb_97.j2k reduce 0: current 55.359 us before_eaea 57.938 us old_general 58.248 us current_change -4.45% no_single_change +0.54% fast_mps 52.252 us fast_change -5.61%
+sl_128_rgba_97.j2k reduce 2: current 60.234 us before_eaea 63.747 us old_general 63.201 us current_change -5.51% no_single_change -0.86% fast_mps 59.054 us fast_change -1.96%
+sl_128_rgba_97.j2k reduce 0: current 115.224 us before_eaea 121.210 us old_general 121.885 us current_change -4.94% no_single_change +0.56% fast_mps 115.009 us fast_change -0.19%

@@ -1,0 +1,8 @@
+Native instrumentation at current Rust 07ba441. Counts below are a transcription of the successful probe output, not a throughput measurement.
+Columns: active blocks, total chunks, zero-length chunks, blocks with exactly one nonzero chunk, blocks with multiple nonzero chunks, blocks with all-zero chunks.
+sl_32_rgba_53.j2k reduce 2: [39, 39, 0, 39, 0, 0]
+sl_32_rgba_53.j2k reduce 0: [63, 63, 0, 63, 0, 0]
+sl_64_rgb_97.j2k reduce 2: [30, 80, 0, 1, 29, 0]
+sl_64_rgb_97.j2k reduce 0: [44, 100, 0, 9, 35, 0]
+sl_128_rgba_97.j2k reduce 2: [38, 86, 0, 1, 37, 0]
+sl_128_rgba_97.j2k reduce 0: [46, 94, 0, 9, 37, 0]

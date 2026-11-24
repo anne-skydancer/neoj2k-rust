@@ -1,0 +1,44 @@
+Optimized library emission, not final downstream LTO executable. Static sites are not dynamic counts.
+_RNvMNtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier2NtB2_9Workspace5layer:
+source assembly lines 50195..50808; static instruction lines 271
+subq	$56, %rsp
+_RNvMNtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier2NtB2_9Workspace5write:
+source assembly lines 50816..54195; static instruction lines 1693
+subq	$1544, %rsp
+subq	$2, %rdx
+movl	$520, %r8d
+callq	memset
+divq	%rdi
+divl	%edi
+movl	$520, %r8d
+callq	memcpy
+movl	$520, %r8d
+callq	memset
+divq	%r13
+divl	%r13d
+movl	$520, %r8d
+callq	memcpy
+movl	$520, %r8d
+callq	memset
+divq	%r13
+movl	$520, %r8d
+callq	memset
+divq	%r13
+divl	%r13d
+movl	$520, %r8d
+callq	memcpy
+divl	%r13d
+movl	$520, %r8d
+callq	memcpy
+callq	memcpy
+_RNvMs_NtNtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier26codingNtB4_7TagTree9configure:
+source assembly lines 134441..134699; static instruction lines 94
+subq	$72, %rsp
+_RNvNtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier214encode_packets:
+source assembly lines 176282..177371; static instruction lines 506
+subq	$312, %rsp
+callq	memset
+callq	memset
+_RNvNtNtCsiZSYKlzvTZc_7neo_j2k7encoder5tier216takes_all_passes:
+source assembly lines 177380..178133; static instruction lines 318
+subq	$40, %rsp

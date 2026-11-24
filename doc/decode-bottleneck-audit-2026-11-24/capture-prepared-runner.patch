@@ -1,0 +1,208 @@
+--- a/neo-j2k/src/bench.rs
++++ b/neo-j2k/src/bench.rs
+@@ -146,3 +146,93 @@
+             .is_ok()
+     }
+ }
++
++// Scratch-only actual-block capture and matched prepared measurement entry points.
++use std::ops::Range;
++use std::sync::Mutex;
++#[derive(Clone, Debug)]
++pub struct AuditBlock {
++    pub meta: [u32; 10],
++    pub segments: Vec<(u32, u32)>,
++    pub chunk_lengths: Vec<u32>,
++    pub bytes: Vec<u8>,
++}
++static AUDIT_CAPTURE: Mutex<Option<Vec<AuditBlock>>> = Mutex::new(None);
++pub fn audit_capture_begin() { *AUDIT_CAPTURE.lock().unwrap() = Some(Vec::new()); }
++pub fn audit_capture_end() -> Vec<AuditBlock> { AUDIT_CAPTURE.lock().unwrap().take().unwrap() }
++pub(crate) fn audit_record_block<'a>(meta: [u32; 10], segments: &[Segment], chunks: impl Iterator<Item=&'a [u8]>) {
++    let mut guard = AUDIT_CAPTURE.lock().unwrap();
++    if let Some(blocks) = guard.as_mut() {
++        let mut bytes = Vec::new();
++        let mut chunk_lengths = Vec::new();
++        for chunk in chunks { chunk_lengths.push(chunk.len() as u32); bytes.extend_from_slice(chunk); }
++        blocks.push(AuditBlock { meta, segments: segments.iter().map(|s| (s.len,s.real_num_passes)).collect(), chunk_lengths, bytes });
++    }
++}
++#[derive(Debug)]
++struct AuditPreparedBlock {
++    spec: AuditBlock,
++    segments: Vec<Segment>,
++    ranges: Vec<Range<usize>>,
++    raw: Vec<i32>,
++    output: Vec<i32>,
++}
++#[derive(Debug)]
++pub struct AuditWorkspace {
++    scratch: Scratch,
++    diagnostics: Diagnostics,
++    blocks: Vec<AuditPreparedBlock>,
++}
++impl AuditWorkspace {
++    pub fn new(specs: Vec<AuditBlock>, contiguous: bool) -> Self {
++        let mut scratch = Scratch::default();
++        let mut diagnostics = Diagnostics::new(false);
++        let mut blocks = Vec::new();
++        for spec in specs {
++            assert!(spec.meta[0] > 0 && spec.meta[1] > 0);
++            let segments: Vec<_> = spec.segments.iter().map(|&(len, passes)| Segment { len, numpasses:passes, real_num_passes:passes, ..Segment::default() }).collect();
++            let mut at = 0;
++            let lengths: Vec<usize> = if contiguous {
++                if spec.bytes.is_empty() { vec![] } else { vec![spec.bytes.len()] }
++            } else { spec.chunk_lengths.iter().map(|&n| n as usize).collect() };
++            let ranges: Vec<_> = lengths.into_iter().map(|n| { let start=at; at+=n; start..at }).collect();
++            assert_eq!(at,spec.bytes.len());
++            let [w,h,numbps,orient,roi,style,rev,step,stride,offset] = spec.meta;
++            let last = offset as usize + (h as usize-1)*stride as usize+w as usize;
++            let mut output = vec![0x5a5a5a5a;last+3];
++            let block = Block {width:w,height:h,numbps,orient,roishift:roi,cblksty:style,segments:&segments};
++            let destination = Destination { samples:&mut output,offset:offset as usize,stride:stride as usize,reversible:rev!=0,stepsize:f32::from_bits(step) };
++            scratch.decode(block,ranges.iter().map(|r| &spec.bytes[r.clone()]),destination,&mut diagnostics).unwrap();
++            let raw = if spec.bytes.is_empty() {vec![0;(w*h) as usize]} else {scratch.audit_raw((w*h) as usize).to_vec()};
++            blocks.push(AuditPreparedBlock {spec,segments,ranges,raw,output});
++        }
++        Self {scratch,diagnostics,blocks}
++    }
++    pub fn count(&self)->usize {self.blocks.len()}
++    pub fn output(&self,index:usize)->&[i32] {&self.blocks[index].output}
++    pub fn run(&mut self, indices:&[usize], repeats:usize, mode:u32) {
++        match mode { 0=>self.run_impl::<0>(indices,repeats),1=>self.run_impl::<1>(indices,repeats),2=>self.run_impl::<2>(indices,repeats),_=>panic!("mode") }
++    }
++    #[inline(never)]
++    fn run_impl<const MODE:u32>(&mut self, indices:&[usize], repeats:usize) {
++        let Self { scratch,diagnostics,blocks } = self;
++        for _ in 0..repeats {for &index in indices {
++            let p=&mut blocks[index];
++            let [w,h,numbps,orient,roi,style,rev,step,stride,offset]=p.spec.meta;
++            if MODE==2 {
++                assert_eq!(roi,0);
++                if p.spec.chunk_lengths.is_empty() {
++                    for row in 0..h as usize { let first=offset as usize+row*stride as usize; p.output[first..first+w as usize].fill(0); }
++                    continue;
++                }
++                crate::t1::audit_store(&mut p.raw,&mut p.output[offset as usize..],w as usize,stride as usize,rev!=0,f32::from_bits(step));
++                continue;
++            }
++            let block=Block {width:w,height:h,numbps,orient,roishift:roi,cblksty:style,segments:&p.segments};
++            let dest=Destination {samples:&mut p.output,offset:offset as usize,stride:stride as usize,reversible:rev!=0,stepsize:f32::from_bits(step)};
++            let chunks=p.ranges.iter().map(|r| &p.spec.bytes[r.clone()]);
++            if MODE==0 { scratch.decode(block,chunks,dest,diagnostics).unwrap(); }
++            else { assert_eq!(MODE,1); scratch.audit_decode_only(block,chunks,dest,diagnostics).unwrap(); }
++        }}
++    }
++}
+--- a/neo-j2k/src/decode/blocks.rs
++++ b/neo-j2k/src/decode/blocks.rs
+@@ -97,6 +97,14 @@
+         diagnostics: &mut Diagnostics,
+     ) -> Result<(), Error> {
+         let code = block.code;
++        #[cfg(feature = "bench-internals")]
++        crate::bench::audit_record_block(
++            [code.rect.width(), code.rect.height(), code.numbps, block.band.bandno,
++             self.roishift, self.style, u32::from(self.reversible), block.band.stepsize.to_bits(),
++             self.stride as u32, ((block.y - origin) * self.stride + block.x) as u32],
++            &code.segs[..code.real_num_segs as usize],
++            code.chunks.iter().map(|chunk| &data[chunk.clone()]),
++        );
+         scratch.decode(
+             t1::Block {
+                 width: code.rect.width(),
+--- a/neo-j2k/src/t1.rs
++++ b/neo-j2k/src/t1.rs
+@@ -215,6 +215,83 @@
+             reversible,
+             stepsize,
+         );
++        Ok(())
++    }
++    pub(crate) fn audit_raw(&self, count: usize) -> &[i32] { &self.data[..count] }
++    pub(crate) fn audit_decode_only<'a>(
++        &mut self,
++        block: Block<'_>,
++        chunks: impl IntoIterator<Item = &'a [u8]>,
++        destination: Destination<'_>,
++        diagnostics: &mut Diagnostics,
++    ) -> Result<(), Error> {
++        let Block {
++            width,
++            height,
++            numbps,
++            orient,
++            roishift,
++            cblksty,
++            ..
++        } = block;
++        let bitplane = bits_as_i32(numbps.wrapping_add(roishift));
++        if bitplane >= 31 {
++            diagnostics.warn_fmt(format_args!(
++                "opj_t1_decode_cblk(): unsupported bpno_plus_one = {bitplane} >= 31\n"
++            ));
++            return Err(Error::static_message(ErrorKind::Data, "Tier-1 rejected a code-block\n"));
++        }
++        if width > 1024 || height > 1024 || orient > 3 {
++            return Err(invalid_dimensions());
++        }
++        let (width, height) = (width as usize, height as usize);
++        let samples = width * height;
++        let flag_count = (width + 2) * (height.div_ceil(4) + 2);
++        if samples > MAX_SAMPLES || flag_count > MAX_FLAGS {
++            return Err(invalid_dimensions());
++        }
++        if width == 0 || height == 0 {
++            return Ok(());
++        }
++        let Destination {
++            samples: output,
++            offset,
++            stride,
++            reversible,
++            stepsize,
++        } = destination;
++        let last_end = (height - 1)
++            .checked_mul(stride)
++            .and_then(|distance| distance.checked_add(offset))
++            .and_then(|last_start| last_start.checked_add(width))
++            .ok_or_else(invalid_output)?;
++        if stride < width || last_end > output.len() {
++            return Err(invalid_output());
++        }
++
++        let mut chunks = chunks.into_iter();
++        let Some(first) = chunks.next() else { return Ok(()); };
++        let bytes = if let Some(second) = chunks.next() {
++            self.coded.clear();
++            for chunk in [first, second].into_iter().chain(chunks) {
++                self.coded.try_reserve(chunk.len()).map_err(|_| no_memory())?;
++                self.coded.extend_from_slice(chunk);
++            }
++            self.coded.as_slice()
++        } else {
++            first
++        };
++        reserve_fixed(&mut self.data, MAX_SAMPLES)?;
++        reserve_fixed(&mut self.flags, MAX_FLAGS)?;
++        let mut passes = Passes {
++            data: &mut self.data[..samples],
++            flags: &mut self.flags[..flag_count],
++            width,
++            height,
++            orient: orient as usize,
++            vertical_causal: cblksty & VERTICAL_CAUSAL != 0,
++        };
++        decode_passes(&mut passes, block, bitplane, bytes);
+         Ok(())
+     }
+ }
+@@ -590,3 +667,8 @@
+         assert_eq!(diagnostics.entries().len(), 1);
+     }
+ }
++
++#[cfg(feature = "bench-internals")]
++pub(crate) fn audit_store(input: &mut [i32], output: &mut [i32], width: usize, stride: usize, reversible: bool, step: f32) {
++    store_coefficients::<true>(input, output, width, stride, 0, reversible, step);
++}

@@ -1,0 +1,30 @@
+
+running 25 tests
+test encoder::differential::corpus_images_reencode_byte_for_byte ... ok
+test encoder::differential::encoded_bytes_match_cpp_across_core_settings ... ok
+test encoder::differential::reused_encoder_matches_cpp_after_caps_and_refusals ... ok
+test encoder::tests::cap_lifts_layers_in_order_using_the_actual_main_header_size ... ok
+test encoder::tests::gather_matches_the_one_sample_at_a_time_gather ... ok
+test encoder::tests::prep_builds_striped_code_blocks_and_counts_the_tile_part ... ok
+test encoder::tests::reversible_wavelet_transforms_columns_then_rows ... ok
+test encoder::tests::supports_padded_interleaved_and_planar_rows_with_vertical_flip ... ok
+test encoder::tier1::differential::cleanup_blocks_encode_as_the_cpp_does ... ok
+test encoder::tier1::differential::generated_blocks_encode_as_the_cpp_does ... ok
+test encoder::tier1::differential::nightly_tier1_encode_sweep ... ignored, nightly: the long generated Tier-1 encode sweep
+test encoder::tier1::differential::refinement_blocks_encode_as_the_cpp_does ... ok
+test encoder::tier1::mq::differential::a_fresh_encoder_starts_where_the_cpp_does ... ok
+test encoder::tier1::mq::differential::flushes_encode_as_the_cpp_does_including_the_boundary ... ok
+test encoder::tier1::mq::differential::nightly_mq_encoder_every_decision ... ignored, nightly: 4.4 billion single decisions of the MQ encoder against the C++
+test encoder::tier1::mq::differential::nightly_mq_flush_every_low_word ... ignored, nightly: every low word of the MQ encoder's flush against the C++
+test encoder::tier1::mq::differential::single_decisions_encode_as_the_cpp_does ... ok
+test encoder::tier1::mq::differential::streams_encode_as_the_cpp_does ... ok
+test encoder::tier1::tests::all_passes_encoding_differs_from_the_full_one_only_in_the_distortion ... ok
+test encoder::tier1::tests::codeword_and_pass_distortion_match_the_cpp ... ok
+test encoder::tier1::tests::fractional_only_block_has_no_passes ... ok
+test encoder::tier2::coding::tests::writer_stuffs_after_ff_on_flush ... ok
+test encoder::tier2::tests::lossless_packet_and_later_empty_layer_match_the_packet_codes ... ok
+test encoder::tier2::tests::only_all_zero_rates_take_all_passes ... ok
+test encoder::tier2::tests::rate_search_rounds_up_the_byte_target_and_preserves_the_remaining_pass ... ok
+
+test result: ok. 22 passed; 0 failed; 3 ignored; 0 measured; 77 filtered out; finished in 4.88s
+

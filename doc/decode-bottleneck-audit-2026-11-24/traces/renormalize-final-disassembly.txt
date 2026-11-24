@@ -1,0 +1,89 @@
+
+C:\Users\annes\AppData\Local\Temp\codex-decode-bottleneck-audit\matched-v3-target\release\decode-bottleneck-probe.exe:	file format coff-x86-64
+
+Disassembly of section .text:
+
+000000014003f700 <nj2k_audit_run>:
+14004f620: 41 57                       	push	r15
+14004f622: 41 56                       	push	r14
+14004f624: 41 55                       	push	r13
+14004f626: 41 54                       	push	r12
+14004f628: 56                          	push	rsi
+14004f629: 57                          	push	rdi
+14004f62a: 55                          	push	rbp
+14004f62b: 53                          	push	rbx
+14004f62c: 48 89 c8                    	mov	rax, rcx
+14004f62f: 44 8b 5a 08                 	mov	r11d, dword ptr [rdx + 0x8]
+14004f633: 45 39 d9                    	cmp	r9d, r11d
+14004f636: 0f 86 ce 00 00 00           	jbe	0x14004f70a <nj2k_audit_run+0x1000a>
+14004f63c: 49 8b 38                    	mov	rdi, qword ptr [r8]
+14004f63f: 49 8b 70 08                 	mov	rsi, qword ptr [r8 + 0x8]
+14004f643: 8b 5a 04                    	mov	ebx, dword ptr [rdx + 0x4]
+14004f646: 45 8b 70 10                 	mov	r14d, dword ptr [r8 + 0x10]
+14004f64a: 45 89 ca                    	mov	r10d, r9d
+14004f64d: 44 89 d9                    	mov	ecx, r11d
+14004f650: eb 3c                       	jmp	0x14004f68e <nj2k_audit_run+0xff8e>
+14004f652: 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00   	nop	word ptr cs:[rax + rax]
+14004f660: 41 81 c7 00 ff 00 00        	add	r15d, 0xff00
+14004f667: 41 bb 08 00 00 00           	mov	r11d, 0x8
+14004f66d: bd ff 00 00 00              	mov	ebp, 0xff
+14004f672: 44 89 fb                    	mov	ebx, r15d
+14004f675: 41 29 ca                    	sub	r10d, ecx
+14004f678: 89 5a 04                    	mov	dword ptr [rdx + 0x4], ebx
+14004f67b: 44 89 5a 08                 	mov	dword ptr [rdx + 0x8], r11d
+14004f67f: 41 89 ee                    	mov	r14d, ebp
+14004f682: 44 89 d9                    	mov	ecx, r11d
+14004f685: 45 39 da                    	cmp	r10d, r11d
+14004f688: 0f 86 82 00 00 00           	jbe	0x14004f710 <nj2k_audit_run+0x10010>
+14004f68e: c4 62 71 f7 fb              	shlx	r15d, ebx, ecx
+14004f693: 44 89 7a 04                 	mov	dword ptr [rdx + 0x4], r15d
+14004f697: 48 85 f6                    	test	rsi, rsi
+14004f69a: 74 14                       	je	0x14004f6b0 <nj2k_audit_run+0xffb0>
+14004f69c: 4c 8d 67 01                 	lea	r12, [rdi + 0x1]
+14004f6a0: 4c 8d 6e ff                 	lea	r13, [rsi - 0x1]
+14004f6a4: 0f b6 2f                    	movzx	ebp, byte ptr [rdi]
+14004f6a7: eb 12                       	jmp	0x14004f6bb <nj2k_audit_run+0xffbb>
+14004f6a9: 0f 1f 80 00 00 00 00        	nop	dword ptr [rax]
+14004f6b0: bd ff 00 00 00              	mov	ebp, 0xff
+14004f6b5: 49 89 fc                    	mov	r12, rdi
+14004f6b8: 45 31 ed                    	xor	r13d, r13d
+14004f6bb: 41 81 fe ff 00 00 00        	cmp	r14d, 0xff
+14004f6c2: 41 0f 94 c3                 	sete	r11b
+14004f6c6: 81 fd 90 00 00 00           	cmp	ebp, 0x90
+14004f6cc: 0f 93 c3                    	setae	bl
+14004f6cf: 44 84 db                    	test	bl, r11b
+14004f6d2: 75 8c                       	jne	0x14004f660 <nj2k_audit_run+0xff60>
+14004f6d4: 45 31 db                    	xor	r11d, r11d
+14004f6d7: 41 81 fe ff 00 00 00        	cmp	r14d, 0xff
+14004f6de: 4d 89 20                    	mov	qword ptr [r8], r12
+14004f6e1: 4d 89 68 08                 	mov	qword ptr [r8 + 0x8], r13
+14004f6e5: 41 89 68 10                 	mov	dword ptr [r8 + 0x10], ebp
+14004f6e9: 41 0f 95 c3                 	setne	r11b
+14004f6ed: 41 83 c3 07                 	add	r11d, 0x7
+14004f6f1: 40 b6 10                    	mov	sil, 0x10
+14004f6f4: 44 28 de                    	sub	sil, r11b
+14004f6f7: c4 e2 49 f7 dd              	shlx	ebx, ebp, esi
+14004f6fc: 44 01 fb                    	add	ebx, r15d
+14004f6ff: 4c 89 ee                    	mov	rsi, r13
+14004f702: 4c 89 e7                    	mov	rdi, r12
+14004f705: e9 6b ff ff ff              	jmp	0x14004f675 <nj2k_audit_run+0xff75>
+14004f70a: 8b 5a 04                    	mov	ebx, dword ptr [rdx + 0x4]
+14004f70d: 45 89 ca                    	mov	r10d, r9d
+14004f710: 44 89 c9                    	mov	ecx, r9d
+14004f713: d3 22                       	shl	dword ptr [rdx], cl
+14004f715: c4 e2 29 f7 cb              	shlx	ecx, ebx, r10d
+14004f71a: 89 4a 04                    	mov	dword ptr [rdx + 0x4], ecx
+14004f71d: 45 29 d3                    	sub	r11d, r10d
+14004f720: 44 89 5a 08                 	mov	dword ptr [rdx + 0x8], r11d
+14004f724: 44 89 58 08                 	mov	dword ptr [rax + 0x8], r11d
+14004f728: 48 8b 0a                    	mov	rcx, qword ptr [rdx]
+14004f72b: 48 89 08                    	mov	qword ptr [rax], rcx
+14004f72e: 5b                          	pop	rbx
+14004f72f: 5d                          	pop	rbp
+14004f730: 5f                          	pop	rdi
+14004f731: 5e                          	pop	rsi
+14004f732: 41 5c                       	pop	r12
+14004f734: 41 5d                       	pop	r13
+14004f736: 41 5e                       	pop	r14
+14004f738: 41 5f                       	pop	r15
+14004f73a: c3                          	ret

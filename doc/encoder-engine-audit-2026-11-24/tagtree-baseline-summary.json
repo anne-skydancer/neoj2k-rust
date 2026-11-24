@@ -1,0 +1,602 @@
+{
+  "side=32 rev=true rates=[] cold=false": {
+    "control": {
+      "current": -0.235,
+      "range": [
+        -0.439,
+        -0.189
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -1.717,
+      "range": [
+        -1.948,
+        -1.624
+      ],
+      "control": -1.437,
+      "control_range": [
+        -1.717,
+        -1.284
+      ]
+    },
+    "single": {
+      "current": -1.248,
+      "range": [
+        -1.311,
+        -1.055
+      ],
+      "control": -0.867,
+      "control_range": [
+        -1.079,
+        -0.813
+      ]
+    },
+    "combined": {
+      "current": -2.175,
+      "range": [
+        -2.367,
+        -1.67
+      ],
+      "control": -1.937,
+      "control_range": [
+        -1.945,
+        -1.483
+      ]
+    }
+  },
+  "side=32 rev=true rates=[] cold=true": {
+    "control": {
+      "current": 0.086,
+      "range": [
+        -0.413,
+        0.628
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -1.794,
+      "range": [
+        -2.151,
+        -1.438
+      ],
+      "control": -1.878,
+      "control_range": [
+        -2.053,
+        -1.746
+      ]
+    },
+    "single": {
+      "current": -1.518,
+      "range": [
+        -1.629,
+        -1.256
+      ],
+      "control": -1.713,
+      "control_range": [
+        -1.873,
+        -1.11
+      ]
+    },
+    "combined": {
+      "current": -2.077,
+      "range": [
+        -2.164,
+        -0.848
+      ],
+      "control": -1.758,
+      "control_range": [
+        -2.161,
+        -1.467
+      ]
+    }
+  },
+  "side=128 rev=true rates=[] cold=false": {
+    "control": {
+      "current": 0.445,
+      "range": [
+        0.379,
+        0.702
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -0.273,
+      "range": [
+        -0.4,
+        -0.209
+      ],
+      "control": -0.777,
+      "control_range": [
+        -0.905,
+        -0.714
+      ]
+    },
+    "single": {
+      "current": 0.028,
+      "range": [
+        -0.063,
+        0.104
+      ],
+      "control": -0.35,
+      "control_range": [
+        -0.76,
+        -0.339
+      ]
+    },
+    "combined": {
+      "current": 0.112,
+      "range": [
+        -0.061,
+        0.138
+      ],
+      "control": -0.306,
+      "control_range": [
+        -0.758,
+        -0.266
+      ]
+    }
+  },
+  "side=128 rev=true rates=[] cold=true": {
+    "control": {
+      "current": 0.389,
+      "range": [
+        0.095,
+        0.611
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -0.283,
+      "range": [
+        -0.749,
+        -0.228
+      ],
+      "control": -0.844,
+      "control_range": [
+        -0.888,
+        -0.615
+      ]
+    },
+    "single": {
+      "current": 0.037,
+      "range": [
+        0.004,
+        0.187
+      ],
+      "control": -0.384,
+      "control_range": [
+        -0.57,
+        0.091
+      ]
+    },
+    "combined": {
+      "current": -0.015,
+      "range": [
+        -0.39,
+        0.012
+      ],
+      "control": -0.485,
+      "control_range": [
+        -0.621,
+        -0.376
+      ]
+    }
+  },
+  "side=128 rev=false rates=[] cold=false": {
+    "control": {
+      "current": -0.104,
+      "range": [
+        -0.162,
+        -0.016
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -0.18,
+      "range": [
+        -0.235,
+        -0.159
+      ],
+      "control": -0.131,
+      "control_range": [
+        -0.143,
+        -0.018
+      ]
+    },
+    "single": {
+      "current": -0.174,
+      "range": [
+        -0.188,
+        -0.076
+      ],
+      "control": -0.071,
+      "control_range": [
+        -0.172,
+        0.086
+      ]
+    },
+    "combined": {
+      "current": 0.319,
+      "range": [
+        0.229,
+        0.382
+      ],
+      "control": 0.398,
+      "control_range": [
+        0.392,
+        0.423
+      ]
+    }
+  },
+  "side=128 rev=false rates=[] cold=true": {
+    "control": {
+      "current": 0.043,
+      "range": [
+        -0.029,
+        0.054
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -0.163,
+      "range": [
+        -0.281,
+        0.172
+      ],
+      "control": -0.217,
+      "control_range": [
+        -0.323,
+        0.201
+      ]
+    },
+    "single": {
+      "current": -0.072,
+      "range": [
+        -0.099,
+        -0.014
+      ],
+      "control": -0.07,
+      "control_range": [
+        -0.126,
+        -0.056
+      ]
+    },
+    "combined": {
+      "current": 0.515,
+      "range": [
+        0.24,
+        0.557
+      ],
+      "control": 0.503,
+      "control_range": [
+        0.197,
+        0.544
+      ]
+    }
+  },
+  "side=128 rev=false rates=[30.0, 10.0, 0.0] cold=false": {
+    "control": {
+      "current": -1.329,
+      "range": [
+        -1.372,
+        -1.229
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -2.002,
+      "range": [
+        -2.178,
+        -1.896
+      ],
+      "control": -0.682,
+      "control_range": [
+        -0.816,
+        -0.675
+      ]
+    },
+    "single": {
+      "current": -2.216,
+      "range": [
+        -2.308,
+        -2.202
+      ],
+      "control": -0.899,
+      "control_range": [
+        -1.092,
+        -0.841
+      ]
+    },
+    "combined": {
+      "current": -2.194,
+      "range": [
+        -2.235,
+        -1.88
+      ],
+      "control": -0.919,
+      "control_range": [
+        -0.977,
+        -0.515
+      ]
+    }
+  },
+  "side=128 rev=false rates=[30.0, 10.0, 0.0] cold=true": {
+    "control": {
+      "current": -1.17,
+      "range": [
+        -1.291,
+        -0.936
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -1.972,
+      "range": [
+        -2.129,
+        -1.965
+      ],
+      "control": -0.849,
+      "control_range": [
+        -1.038,
+        -0.812
+      ]
+    },
+    "single": {
+      "current": -2.164,
+      "range": [
+        -2.347,
+        -1.925
+      ],
+      "control": -0.998,
+      "control_range": [
+        -1.191,
+        -0.884
+      ]
+    },
+    "combined": {
+      "current": -1.978,
+      "range": [
+        -2.286,
+        -1.923
+      ],
+      "control": -0.996,
+      "control_range": [
+        -1.129,
+        -0.696
+      ]
+    }
+  },
+  "side=128 rev=true rates=[3.0, 1.5] cold=false": {
+    "control": {
+      "current": -0.684,
+      "range": [
+        -0.686,
+        -0.359
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -2.443,
+      "range": [
+        -2.524,
+        -2.327
+      ],
+      "control": -1.852,
+      "control_range": [
+        -1.975,
+        -1.77
+      ]
+    },
+    "single": {
+      "current": -2.405,
+      "range": [
+        -2.44,
+        -2.168
+      ],
+      "control": -1.768,
+      "control_range": [
+        -1.815,
+        -1.731
+      ]
+    },
+    "combined": {
+      "current": -2.666,
+      "range": [
+        -2.685,
+        -2.586
+      ],
+      "control": -2.014,
+      "control_range": [
+        -2.235,
+        -1.994
+      ]
+    }
+  },
+  "side=128 rev=true rates=[3.0, 1.5] cold=true": {
+    "control": {
+      "current": -0.822,
+      "range": [
+        -0.929,
+        -0.369
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -2.712,
+      "range": [
+        -2.758,
+        -2.38
+      ],
+      "control": -1.905,
+      "control_range": [
+        -2.019,
+        -1.846
+      ]
+    },
+    "single": {
+      "current": -2.484,
+      "range": [
+        -2.614,
+        -2.35
+      ],
+      "control": -1.701,
+      "control_range": [
+        -1.989,
+        -1.675
+      ]
+    },
+    "combined": {
+      "current": -2.691,
+      "range": [
+        -2.745,
+        -2.602
+      ],
+      "control": -1.833,
+      "control_range": [
+        -2.331,
+        -1.795
+      ]
+    }
+  },
+  "side=256 rev=false rates=[30.0, 10.0, 0.0] cold=false": {
+    "control": {
+      "current": -1.467,
+      "range": [
+        -1.498,
+        -1.293
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -1.18,
+      "range": [
+        -1.297,
+        -1.044
+      ],
+      "control": 0.252,
+      "control_range": [
+        0.204,
+        0.292
+      ]
+    },
+    "single": {
+      "current": -0.711,
+      "range": [
+        -0.766,
+        -0.574
+      ],
+      "control": 0.743,
+      "control_range": [
+        0.728,
+        0.768
+      ]
+    },
+    "combined": {
+      "current": -1.145,
+      "range": [
+        -1.178,
+        -0.88
+      ],
+      "control": 0.327,
+      "control_range": [
+        0.325,
+        0.418
+      ]
+    }
+  },
+  "side=512 rev=false rates=[] cold=false": {
+    "control": {
+      "current": -0.064,
+      "range": [
+        -0.112,
+        -0.029
+      ],
+      "control": 0.0,
+      "control_range": [
+        0.0,
+        0.0
+      ]
+    },
+    "bound": {
+      "current": -0.124,
+      "range": [
+        -0.129,
+        -0.122
+      ],
+      "control": -0.06,
+      "control_range": [
+        -0.093,
+        -0.017
+      ]
+    },
+    "single": {
+      "current": -0.177,
+      "range": [
+        -0.183,
+        -0.075
+      ],
+      "control": -0.072,
+      "control_range": [
+        -0.149,
+        -0.011
+      ]
+    },
+    "combined": {
+      "current": 0.344,
+      "range": [
+        0.34,
+        0.417
+      ],
+      "control": 0.446,
+      "control_range": [
+        0.408,
+        0.452
+      ]
+    }
+  }
+}

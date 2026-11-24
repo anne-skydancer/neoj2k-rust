@@ -1,0 +1,50 @@
+--- a/neo-j2k/src/t1/mq.rs
++++ b/neo-j2k/src/t1/mq.rs
+@@ -90,17 +90,16 @@
+ /// registers go in and out by value, so that the decision's own copies stay in machine registers (no address escapes).
+ #[cold]
+ #[inline(never)]
+-fn renormalize_with_bytes(mut r: Registers, source: &mut Source<'_>, total: u32) -> Registers {
++fn renormalize_with_bytes(mut c: u32, mut bits: u32, source: &mut Source<'_>, total: u32) -> u64 {
+     let mut shifts = total;
+-    while shifts > r.bits {
+-        r.c <<= r.bits;
+-        shifts -= r.bits;
+-        (r.c, r.bits) = source.byte_in(r.c);
+-    }
+-    r.a <<= total;
+-    r.c <<= shifts;
+-    r.bits -= shifts;
+-    r
++    while shifts > bits {
++        c <<= bits;
++        shifts -= bits;
++        (c, bits) = source.byte_in(c);
++    }
++    c <<= shifts;
++    bits -= shifts;
++    u64::from(c) | (u64::from(bits) << 32)
+ }
+ 
+ /// One code-block's arithmetic state, reused across its codeword segments: the registers, the byte source and the
+@@ -234,16 +233,10 @@
+             self.c <<= total;
+             self.bits -= total;
+         } else {
+-            let r = renormalize_with_bytes(
+-                Registers {
+-                    a,
+-                    c: self.c,
+-                    bits: self.bits,
+-                },
+-                self.source,
+-                total,
+-            );
+-            (self.a, self.c, self.bits) = (r.a, r.c, r.bits);
++            let cb = renormalize_with_bytes(self.c, self.bits, self.source, total);
++            self.a = a << total;
++            self.c = cb as u32;
++            self.bits = (cb >> 32) as u32;
+         }
+         bit
+     }

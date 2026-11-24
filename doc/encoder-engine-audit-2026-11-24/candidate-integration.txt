@@ -1,0 +1,23 @@
+
+running 2 tests
+test small_encode_stays_serial ... ok
+test threaded_encode_is_byte_identical_at_every_width ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+
+running 4 tests
+test extra_options_keep_default_bytes_and_refuse_before_writing ... ok
+test full_4096_byte_buffers_and_the_final_remainder_match_cpp ... ok
+test refuses_failed_writes_in_each_phase_and_accepts_a_new_request ... ok
+test writes_match_cpp_across_buffer_and_short_write_sizes ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+
+running 2 tests
+test setup_writebacks_and_reuse_match_cpp ... ok
+test writer_failure_preserves_accepted_setup_updates ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

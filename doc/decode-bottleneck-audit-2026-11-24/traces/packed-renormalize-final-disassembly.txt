@@ -1,0 +1,69 @@
+
+C:\Users\annes\AppData\Local\Temp\codex-decode-bottleneck-audit\packed-v3-target\release\decode-bottleneck-packed-probe.exe:	file format coff-x86-64
+
+Disassembly of section .text:
+
+0000000140049d00 <nj2k_audit_run>:
+140059f10: 41 56                       	push	r14
+140059f12: 56                          	push	rsi
+140059f13: 57                          	push	rdi
+140059f14: 55                          	push	rbp
+140059f15: 53                          	push	rbx
+140059f16: 41 39 d1                    	cmp	r9d, edx
+140059f19: 0f 86 a3 00 00 00           	jbe	0x140059fc2 <nj2k_audit_run+0x102c2>
+140059f1f: 4d 8b 18                    	mov	r11, qword ptr [r8]
+140059f22: 4d 8b 50 08                 	mov	r10, qword ptr [r8 + 0x8]
+140059f26: 41 8b 78 10                 	mov	edi, dword ptr [r8 + 0x10]
+140059f2a: eb 22                       	jmp	0x140059f4e <nj2k_audit_run+0x1024e>
+140059f2c: 0f 1f 40 00                 	nop	dword ptr [rax]
+140059f30: 81 c5 00 ff 00 00           	add	ebp, 0xff00
+140059f36: b8 08 00 00 00              	mov	eax, 0x8
+140059f3b: be ff 00 00 00              	mov	esi, 0xff
+140059f40: 89 e9                       	mov	ecx, ebp
+140059f42: 41 29 d1                    	sub	r9d, edx
+140059f45: 89 f7                       	mov	edi, esi
+140059f47: 89 c2                       	mov	edx, eax
+140059f49: 41 39 c1                    	cmp	r9d, eax
+140059f4c: 76 76                       	jbe	0x140059fc4 <nj2k_audit_run+0x102c4>
+140059f4e: 4d 85 d2                    	test	r10, r10
+140059f51: 74 1d                       	je	0x140059f70 <nj2k_audit_run+0x10270>
+140059f53: 49 8d 5b 01                 	lea	rbx, [r11 + 0x1]
+140059f57: 4d 8d 72 ff                 	lea	r14, [r10 - 0x1]
+140059f5b: 41 0f b6 33                 	movzx	esi, byte ptr [r11]
+140059f5f: eb 1a                       	jmp	0x140059f7b <nj2k_audit_run+0x1027b>
+140059f61: 66 66 66 66 66 66 2e 0f 1f 84 00 00 00 00 00	nop	word ptr cs:[rax + rax]
+140059f70: be ff 00 00 00              	mov	esi, 0xff
+140059f75: 4c 89 db                    	mov	rbx, r11
+140059f78: 45 31 f6                    	xor	r14d, r14d
+140059f7b: c4 e2 69 f7 e9              	shlx	ebp, ecx, edx
+140059f80: 81 ff ff 00 00 00           	cmp	edi, 0xff
+140059f86: 0f 94 c0                    	sete	al
+140059f89: 81 fe 90 00 00 00           	cmp	esi, 0x90
+140059f8f: 0f 93 c1                    	setae	cl
+140059f92: 84 c1                       	test	cl, al
+140059f94: 75 9a                       	jne	0x140059f30 <nj2k_audit_run+0x10230>
+140059f96: 31 c0                       	xor	eax, eax
+140059f98: 81 ff ff 00 00 00           	cmp	edi, 0xff
+140059f9e: 49 89 18                    	mov	qword ptr [r8], rbx
+140059fa1: 4d 89 70 08                 	mov	qword ptr [r8 + 0x8], r14
+140059fa5: 41 89 70 10                 	mov	dword ptr [r8 + 0x10], esi
+140059fa9: 0f 95 c0                    	setne	al
+140059fac: 83 c0 07                    	add	eax, 0x7
+140059faf: b1 10                       	mov	cl, 0x10
+140059fb1: 28 c1                       	sub	cl, al
+140059fb3: c4 e2 71 f7 ce              	shlx	ecx, esi, ecx
+140059fb8: 01 e9                       	add	ecx, ebp
+140059fba: 4d 89 f2                    	mov	r10, r14
+140059fbd: 49 89 db                    	mov	r11, rbx
+140059fc0: eb 80                       	jmp	0x140059f42 <nj2k_audit_run+0x10242>
+140059fc2: 89 d0                       	mov	eax, edx
+140059fc4: c4 e2 31 f7 c9              	shlx	ecx, ecx, r9d
+140059fc9: 44 29 c8                    	sub	eax, r9d
+140059fcc: 48 c1 e0 20                 	shl	rax, 0x20
+140059fd0: 48 09 c8                    	or	rax, rcx
+140059fd3: 5b                          	pop	rbx
+140059fd4: 5d                          	pop	rbp
+140059fd5: 5f                          	pop	rdi
+140059fd6: 5e                          	pop	rsi
+140059fd7: 41 5e                       	pop	r14
+140059fd9: c3                          	ret

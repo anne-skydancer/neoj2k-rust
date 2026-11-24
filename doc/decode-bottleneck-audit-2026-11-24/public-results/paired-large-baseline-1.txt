@@ -1,0 +1,8 @@
+large_1024_rgb_97.j2k workers1 current6.8104ms packed6.7973ms control6.7505ms packed_change-0.19% control_change-0.88%
+large_1024_rgb_97.j2k workers2 current3.8965ms packed3.9201ms control3.8639ms packed_change+0.61% control_change-0.84%
+large_1024_rgb_97.j2k workers4 current2.2579ms packed2.2162ms control2.2173ms packed_change-1.85% control_change-1.80%
+large_1024_rgb_97.j2k workers8 current1.5740ms packed1.5593ms control1.5747ms packed_change-0.93% control_change+0.04%
+large_4096_g_97.j2k workers1 current22.7218ms packed22.4352ms control22.4196ms packed_change-1.26% control_change-1.33%
+large_4096_g_97.j2k workers2 current12.0816ms packed11.9831ms control11.8942ms packed_change-0.81% control_change-1.55%
+large_4096_g_97.j2k workers4 current6.9525ms packed6.7867ms control6.7320ms packed_change-2.38% control_change-3.17%
+large_4096_g_97.j2k workers8 current4.3876ms packed4.1964ms control4.3125ms packed_change-4.36% control_change-1.71%

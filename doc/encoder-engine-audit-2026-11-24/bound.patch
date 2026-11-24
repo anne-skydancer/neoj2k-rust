@@ -1,0 +1,13 @@
+--- a/neo-j2k/src/encoder/tier2/coding.rs
++++ b/neo-j2k/src/encoder/tier2/coding.rs
+@@ -87,7 +87,9 @@
+     low: 0,
+     known: false,
+ };
+-const MAX_PATH: usize = usize::BITS as usize + 1;
++// Scratch audit: a4096-side tile with64-side blocks has at most64 leaves per axis;
++// seven root-to-leaf nodes cover that domain, including the1-resolution case.
++const MAX_PATH: usize = 7;
+ 
+ #[derive(Debug, Default)]
+ pub(super) struct TagTree {

@@ -1,0 +1,24 @@
+{
+  "inspected_utc": "2026-11-24T15:56:56.543373+00:00",
+  "warning": "Hashes recorded during audit, not contemporaneous benchmark-run hashes; retained executable identity with original timed runs is not cryptographically established.",
+  "binaries": [
+    {
+      "cpu": "baseline",
+      "path": "/home/dev/target-baseline/release/build/neo-j2k/54c801e50f75e09e/out/small_image_gates-54c801e50f75e09e",
+      "sha256": "0c2b6088c929e30f9f354793444421da9dc29230ec3ac1a7d3089688833a0d05",
+      "stat": "size=16479512 mtime=2026-11-24 15:42:12.738019781 +0000",
+      "symbol": "00000000000d8910 000000000000010a t neo_j2k::t1::mq::renormalize_with_bytes",
+      "start": "0xd8910",
+      "stop": "0xd8a1a"
+    },
+    {
+      "cpu": "v3",
+      "path": "/home/dev/target-v3/release/build/neo-j2k/db7bb5db37027340/out/small_image_gates-db7bb5db37027340",
+      "sha256": "a371c043fcb3306ac964bf51a158db028ba28df20d310797392cdd3abf47cc67",
+      "stat": "size=16441320 mtime=2026-11-24 15:42:46.682020891 +0000",
+      "symbol": "00000000000e13a0 0000000000000104 t neo_j2k::t1::mq::renormalize_with_bytes",
+      "start": "0xe13a0",
+      "stop": "0xe14a4"
+    }
+  ]
+}

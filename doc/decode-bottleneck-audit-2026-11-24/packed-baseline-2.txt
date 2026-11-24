@@ -1,0 +1,54 @@
+ALLOC_PACKED sl_32_rgba_53.j2k original 0
+PACKED sl_32_rgba_53.j2k original all mode0 Rust 12.0398 Cpp 12.1078 Control 12.1023 Packed 11.4328 packed_change -5.04% packed_vs_cpp -5.57% control +0.52%
+PACKED sl_32_rgba_53.j2k original all mode1 Rust 11.8992 Cpp 11.9187 Control 11.8742 Packed 11.3844 packed_change -4.33% packed_vs_cpp -4.48% control -0.21%
+PACKED sl_32_rgba_53.j2k original 1x1 mode0 Rust 1.1961 Cpp 1.2102 Control 1.1875 Packed 1.1719 packed_change -2.02% packed_vs_cpp -3.16% control -0.72%
+PACKED sl_32_rgba_53.j2k original 1x1 mode1 Rust 1.1492 Cpp 1.1672 Control 1.1531 Packed 1.1305 packed_change -1.63% packed_vs_cpp -3.15% control +0.34%
+PACKED sl_32_rgba_53.j2k original 2x2 mode0 Rust 2.8781 Cpp 3.4102 Control 2.8648 Packed 2.8555 packed_change -0.79% packed_vs_cpp -16.27% control -0.46%
+PACKED sl_32_rgba_53.j2k original 2x2 mode1 Rust 2.8555 Cpp 3.3609 Control 2.8133 Packed 2.8406 packed_change -0.52% packed_vs_cpp -15.48% control -1.48%
+PACKED sl_32_rgba_53.j2k original 4x4 mode0 Rust 7.9156 Cpp 7.1555 Control 7.8938 Packed 7.3359 packed_change -7.32% packed_vs_cpp +2.52% control -0.28%
+PACKED sl_32_rgba_53.j2k original 4x4 mode1 Rust 7.8367 Cpp 7.0570 Control 7.7477 Packed 7.2609 packed_change -7.35% packed_vs_cpp +2.89% control -1.14%
+ALLOC_PACKED sl_32_rgba_53.j2k joined 0
+PACKED sl_32_rgba_53.j2k joined all mode0 Rust 12.0992 Cpp 12.0820 Control 12.0469 Packed 11.4523 packed_change -5.35% packed_vs_cpp -5.21% control -0.43%
+PACKED sl_32_rgba_53.j2k joined all mode1 Rust 11.8859 Cpp 11.8914 Control 11.8617 Packed 11.3656 packed_change -4.38% packed_vs_cpp -4.42% control -0.20%
+PACKED sl_32_rgba_53.j2k joined 1x1 mode0 Rust 1.2016 Cpp 1.2109 Control 1.1820 Packed 1.1719 packed_change -2.47% packed_vs_cpp -3.23% control -1.63%
+PACKED sl_32_rgba_53.j2k joined 1x1 mode1 Rust 1.1617 Cpp 1.1687 Control 1.1406 Packed 1.1328 packed_change -2.49% packed_vs_cpp -3.07% control -1.82%
+PACKED sl_32_rgba_53.j2k joined 2x2 mode0 Rust 2.8820 Cpp 3.4109 Control 2.8617 Packed 2.8758 packed_change -0.22% packed_vs_cpp -15.69% control -0.70%
+PACKED sl_32_rgba_53.j2k joined 2x2 mode1 Rust 2.8289 Cpp 3.3555 Control 2.8250 Packed 2.8234 packed_change -0.19% packed_vs_cpp -15.86% control -0.14%
+PACKED sl_32_rgba_53.j2k joined 4x4 mode0 Rust 7.9000 Cpp 7.1719 Control 7.8703 Packed 7.3187 packed_change -7.36% packed_vs_cpp +2.05% control -0.38%
+PACKED sl_32_rgba_53.j2k joined 4x4 mode1 Rust 7.8180 Cpp 7.0414 Control 7.7570 Packed 7.3359 packed_change -6.17% packed_vs_cpp +4.18% control -0.78%
+ALLOC_PACKED sl_64_rgb_97.j2k original 0
+PACKED sl_64_rgb_97.j2k original all mode0 Rust 15.0039 Cpp 14.6906 Control 15.0422 Packed 14.0148 packed_change -6.59% packed_vs_cpp -4.60% control +0.26%
+PACKED sl_64_rgb_97.j2k original all mode1 Rust 14.8125 Cpp 14.3211 Control 14.7758 Packed 13.9719 packed_change -5.68% packed_vs_cpp -2.44% control -0.25%
+PACKED sl_64_rgb_97.j2k original 2x2 mode0 Rust 2.1000 Cpp 2.5187 Control 2.0992 Packed 2.1352 packed_change +1.67% packed_vs_cpp -15.23% control -0.04%
+PACKED sl_64_rgb_97.j2k original 2x2 mode1 Rust 2.0766 Cpp 2.4766 Control 2.0758 Packed 2.1047 packed_change +1.35% packed_vs_cpp -15.02% control -0.04%
+PACKED sl_64_rgb_97.j2k original 4x4 mode0 Rust 4.3172 Cpp 3.8930 Control 4.3227 Packed 4.0422 packed_change -6.37% packed_vs_cpp +3.83% control +0.13%
+PACKED sl_64_rgb_97.j2k original 4x4 mode1 Rust 4.2945 Cpp 3.8086 Control 4.2227 Packed 4.0523 packed_change -5.64% packed_vs_cpp +6.40% control -1.67%
+PACKED sl_64_rgb_97.j2k original 8x8 mode0 Rust 8.3516 Cpp 7.8297 Control 8.3664 Packed 7.6437 packed_change -8.48% packed_vs_cpp -2.37% control +0.18%
+PACKED sl_64_rgb_97.j2k original 8x8 mode1 Rust 8.2234 Cpp 7.6281 Control 8.2445 Packed 7.6461 packed_change -7.02% packed_vs_cpp +0.24% control +0.26%
+ALLOC_PACKED sl_64_rgb_97.j2k joined 0
+PACKED sl_64_rgb_97.j2k joined all mode0 Rust 14.8750 Cpp 14.3945 Control 14.8266 Packed 13.9766 packed_change -6.04% packed_vs_cpp -2.90% control -0.33%
+PACKED sl_64_rgb_97.j2k joined all mode1 Rust 14.5586 Cpp 13.9203 Control 14.5195 Packed 13.9102 packed_change -4.45% packed_vs_cpp -0.07% control -0.27%
+PACKED sl_64_rgb_97.j2k joined 2x2 mode0 Rust 2.0898 Cpp 2.4273 Control 2.0586 Packed 2.1000 packed_change +0.49% packed_vs_cpp -13.49% control -1.50%
+PACKED sl_64_rgb_97.j2k joined 2x2 mode1 Rust 2.0312 Cpp 2.3820 Control 2.0930 Packed 2.1727 packed_change +6.96% packed_vs_cpp -8.79% control +3.04%
+PACKED sl_64_rgb_97.j2k joined 4x4 mode0 Rust 4.2727 Cpp 3.8781 Control 4.2633 Packed 4.0219 packed_change -5.87% packed_vs_cpp +3.71% control -0.22%
+PACKED sl_64_rgb_97.j2k joined 4x4 mode1 Rust 4.1938 Cpp 3.7969 Control 4.2344 Packed 4.0461 packed_change -3.52% packed_vs_cpp +6.56% control +0.97%
+PACKED sl_64_rgb_97.j2k joined 8x8 mode0 Rust 8.2687 Cpp 7.5969 Control 8.2539 Packed 7.5875 packed_change -8.24% packed_vs_cpp -0.12% control -0.18%
+PACKED sl_64_rgb_97.j2k joined 8x8 mode1 Rust 8.1656 Cpp 7.3438 Control 8.1617 Packed 7.5578 packed_change -7.44% packed_vs_cpp +2.91% control -0.05%
+ALLOC_PACKED sl_128_rgba_97.j2k original 0
+PACKED sl_128_rgba_97.j2k original all mode0 Rust 48.7617 Cpp 46.4359 Control 48.3703 Packed 44.6805 packed_change -8.37% packed_vs_cpp -3.78% control -0.80%
+PACKED sl_128_rgba_97.j2k original all mode1 Rust 47.5211 Cpp 45.0047 Control 47.5984 Packed 44.5758 packed_change -6.20% packed_vs_cpp -0.95% control +0.16%
+PACKED sl_128_rgba_97.j2k original 4x4 mode0 Rust 8.6320 Cpp 7.7930 Control 8.6516 Packed 8.1937 packed_change -5.08% packed_vs_cpp +5.14% control +0.23%
+PACKED sl_128_rgba_97.j2k original 4x4 mode1 Rust 8.4492 Cpp 7.6359 Control 8.4836 Packed 8.1117 packed_change -3.99% packed_vs_cpp +6.23% control +0.41%
+PACKED sl_128_rgba_97.j2k original 8x8 mode0 Rust 13.7797 Cpp 12.8422 Control 13.7375 Packed 12.7047 packed_change -7.80% packed_vs_cpp -1.07% control -0.31%
+PACKED sl_128_rgba_97.j2k original 8x8 mode1 Rust 13.5789 Cpp 12.5406 Control 13.5570 Packed 12.7633 packed_change -6.01% packed_vs_cpp +1.78% control -0.16%
+PACKED sl_128_rgba_97.j2k original 16x16 mode0 Rust 25.1070 Cpp 22.9734 Control 25.0039 Packed 22.8672 packed_change -8.92% packed_vs_cpp -0.46% control -0.41%
+PACKED sl_128_rgba_97.j2k original 16x16 mode1 Rust 24.6266 Cpp 22.1031 Control 24.5828 Packed 22.7172 packed_change -7.75% packed_vs_cpp +2.78% control -0.18%
+ALLOC_PACKED sl_128_rgba_97.j2k joined 0
+PACKED sl_128_rgba_97.j2k joined all mode0 Rust 47.8969 Cpp 46.3094 Control 47.9961 Packed 44.6164 packed_change -6.85% packed_vs_cpp -3.66% control +0.21%
+PACKED sl_128_rgba_97.j2k joined all mode1 Rust 47.1625 Cpp 44.8086 Control 47.1273 Packed 44.6703 packed_change -5.28% packed_vs_cpp -0.31% control -0.07%
+PACKED sl_128_rgba_97.j2k joined 4x4 mode0 Rust 8.5336 Cpp 7.7195 Control 8.5430 Packed 8.0078 packed_change -6.16% packed_vs_cpp +3.73% control +0.11%
+PACKED sl_128_rgba_97.j2k joined 4x4 mode1 Rust 8.4180 Cpp 7.5477 Control 8.4375 Packed 7.9937 packed_change -5.04% packed_vs_cpp +5.91% control +0.23%
+PACKED sl_128_rgba_97.j2k joined 8x8 mode0 Rust 13.7453 Cpp 12.8563 Control 13.7508 Packed 12.7688 packed_change -7.10% packed_vs_cpp -0.68% control +0.04%
+PACKED sl_128_rgba_97.j2k joined 8x8 mode1 Rust 13.5664 Cpp 12.4398 Control 13.4797 Packed 12.7484 packed_change -6.03% packed_vs_cpp +2.48% control -0.64%
+PACKED sl_128_rgba_97.j2k joined 16x16 mode0 Rust 24.8141 Cpp 22.9383 Control 24.8750 Packed 22.7781 packed_change -8.20% packed_vs_cpp -0.70% control +0.25%
+PACKED sl_128_rgba_97.j2k joined 16x16 mode1 Rust 24.5078 Cpp 22.0703 Control 24.4937 Packed 22.7508 packed_change -7.17% packed_vs_cpp +3.08% control -0.06%

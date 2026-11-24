@@ -1,0 +1,6 @@
+sl_32_rgba_53.j2k reduce 2: current 18.095 us control 17.940 us trim 17.966 us control_change -0.86% trim_change -0.72%
+sl_32_rgba_53.j2k reduce 0: current 150.189 us control 148.705 us trim 147.170 us control_change -0.99% trim_change -2.01%
+sl_64_rgb_97.j2k reduce 2: current 22.497 us control 22.659 us trim 22.472 us control_change +0.72% trim_change -0.11%
+sl_64_rgb_97.j2k reduce 0: current 54.770 us control 54.957 us trim 54.973 us control_change +0.34% trim_change +0.37%
+sl_128_rgba_97.j2k reduce 2: current 59.053 us control 58.791 us trim 58.341 us control_change -0.44% trim_change -1.21%
+sl_128_rgba_97.j2k reduce 0: current 116.633 us control 116.330 us trim 116.347 us control_change -0.26% trim_change -0.25%

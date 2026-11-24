@@ -1,0 +1,6 @@
+sl_32_rgba_53.j2k reduce 2: current 18.128 us packed 17.604 us short_change -2.89%
+sl_32_rgba_53.j2k reduce 0: current 152.091 us packed 146.434 us short_change -3.72%
+sl_64_rgb_97.j2k reduce 2: current 24.033 us packed 22.934 us short_change -4.57%
+sl_64_rgb_97.j2k reduce 0: current 70.010 us packed 67.027 us short_change -4.26%
+sl_128_rgba_97.j2k reduce 2: current 64.509 us packed 60.913 us short_change -5.57%
+sl_128_rgba_97.j2k reduce 0: current 171.874 us packed 168.020 us short_change -2.24%

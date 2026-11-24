@@ -1,0 +1,107 @@
+{
+  "rust": {
+    "total": 6698,
+    "functions": [
+      {
+        "name": "neo_j2k::t1::decode_passes",
+        "samples": 5410,
+        "percent": 80.77037921767692
+      },
+      {
+        "name": "neo_j2k::t1::mq::renormalize_with_bytes",
+        "samples": 1127,
+        "percent": 16.825918184532696
+      },
+      {
+        "name": "neo_j2k::t1::store_coefficients<true>",
+        "samples": 64,
+        "percent": 0.955509107196178
+      },
+      {
+        "name": "neo_j2k::bench::AuditWorkspace::run_impl<0>",
+        "samples": 55,
+        "percent": 0.8211406389967154
+      },
+      {
+        "name": "_NLG_Return2",
+        "samples": 21,
+        "percent": 0.3135264257987459
+      },
+      {
+        "name": "memmove",
+        "samples": 19,
+        "percent": 0.2836667661988653
+      },
+      {
+        "name": "memset",
+        "samples": 2,
+        "percent": 0.029859659599880562
+      }
+    ]
+  },
+  "cpp": {
+    "total": 6720,
+    "functions": [
+      {
+        "name": "nj2k::detail::`anonymous namespace'::opj_t1_dec_sigpass_mqc_generic_novsc",
+        "samples": 2728,
+        "percent": 40.595238095238095
+      },
+      {
+        "name": "nj2k::detail::`anonymous namespace'::opj_t1_dec_clnpass_generic_novsc",
+        "samples": 2336,
+        "percent": 34.76190476190476
+      },
+      {
+        "name": "nj2k::detail::`anonymous namespace'::opj_t1_dec_refpass_mqc_generic",
+        "samples": 1370,
+        "percent": 20.386904761904763
+      },
+      {
+        "name": "nj2k::detail::t1_decode_cblk",
+        "samples": 139,
+        "percent": 2.068452380952381
+      },
+      {
+        "name": "nj2k::detail::t1_store",
+        "samples": 83,
+        "percent": 1.2351190476190477
+      },
+      {
+        "name": "memmove",
+        "samples": 20,
+        "percent": 0.2976190476190476
+      },
+      {
+        "name": "_NLG_Return2",
+        "samples": 17,
+        "percent": 0.25297619047619047
+      },
+      {
+        "name": "nj2k_audit_run",
+        "samples": 12,
+        "percent": 0.17857142857142858
+      },
+      {
+        "name": "nj2k::detail::`anonymous namespace'::opj_t1_dec_clnpass_check_segsym",
+        "samples": 9,
+        "percent": 0.13392857142857142
+      },
+      {
+        "name": "memset",
+        "samples": 4,
+        "percent": 0.05952380952380952
+      },
+      {
+        "name": "memcpy",
+        "samples": 1,
+        "percent": 0.01488095238095238
+      },
+      {
+        "name": "NtDeviceIoControlFile",
+        "samples": 1,
+        "percent": 0.01488095238095238
+      }
+    ]
+  }
+}

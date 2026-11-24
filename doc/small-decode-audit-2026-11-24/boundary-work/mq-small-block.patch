@@ -1,0 +1,266 @@
+--- a/neo-j2k/src/t1.rs
++++ b/neo-j2k/src/t1.rs
+@@ -56,7 +56,7 @@
+ use crate::tile::Segment;
+ use crate::{Error, ErrorKind};
+ 
+-use mq::Decoder;
++
+ use passes::Passes;
+ 
+ const LAZY: u32 = 0x01;
+@@ -205,7 +205,7 @@
+             orient: orient as usize,
+             vertical_causal: cblksty & VERTICAL_CAUSAL != 0,
+         };
+-        decode_passes(&mut passes, block, bitplane, bytes);
++        if reversible || width > 8 || height > 8 { decode_passes::<false>(&mut passes, block, bitplane, bytes); } else { decode_passes::<true>(&mut passes, block, bitplane, bytes); }
+         store_coefficients::<true>(
+             &mut self.data[..samples],
+             &mut output[offset..last_end],
+@@ -219,7 +219,7 @@
+     }
+ }
+ 
+-fn decode_passes(passes: &mut Passes<'_>, block: Block<'_>, mut bitplane: i32, mut bytes: &[u8]) {
++fn decode_passes<const FAST: bool>(passes: &mut Passes<'_>, block: Block<'_>, mut bitplane: i32, mut bytes: &[u8]) {
+     let Block {
+         numbps,
+         cblksty,
+@@ -228,7 +228,7 @@
+     } = block;
+     passes.initialize();
+ 
+-    let mut decoder = Decoder::new();
++    let mut decoder = mq::DecoderImpl::<FAST>::new();
+     let mut pass = 2;
+     let lazy = cblksty & LAZY != 0;
+     let reset = cblksty & RESET != 0;
+@@ -255,10 +255,10 @@
+             }
+             let plane = u32::try_from(bitplane).expect("positive bit-plane index");
+             match pass {
+-                0 if raw => passes.significance::<true>(&mut decoder, plane),
+-                0 => passes.significance::<false>(&mut decoder, plane),
+-                1 if raw => passes.refinement::<true>(&mut decoder, plane),
+-                1 => passes.refinement::<false>(&mut decoder, plane),
++                0 if raw => passes.significance::<true, FAST>(&mut decoder, plane),
++                0 => passes.significance::<false, FAST>(&mut decoder, plane),
++                1 if raw => passes.refinement::<true, FAST>(&mut decoder, plane),
++                1 => passes.refinement::<false, FAST>(&mut decoder, plane),
+                 2 => passes.cleanup(&mut decoder, plane, segment_symbol),
+                 _ => unreachable!("a code-block cycles through three coding passes"),
+             }
+--- a/neo-j2k/src/t1/mq.rs
++++ b/neo-j2k/src/t1/mq.rs
+@@ -106,7 +106,7 @@
+ /// One code-block's arithmetic state, reused across its codeword segments: the registers, the byte source and the
+ /// contexts, in three fields that a pass takes apart (`enter`), so that the registers are plain locals of the pass.
+ #[derive(Clone, Copy, Debug)]
+-pub(super) struct Decoder<'a> {
++pub(super) struct DecoderImpl<'a, const FAST: bool> {
+     source: Source<'a>,
+     registers: Registers,
+     contexts: [u32; CONTEXT_SLOTS],
+@@ -116,7 +116,7 @@
+ /// never indexed or addressed, and the context array is a separate object they do not share a block with), and the
+ /// byte source and the contexts by reference. `leave` writes the registers back.
+ #[derive(Debug)]
+-pub(super) struct Mq<'d, 'a> {
++pub(super) struct Mq<'d, 'a, const FAST: bool = false> {
+     a: u32,
+     c: u32,
+     bits: u32,
+@@ -125,7 +125,10 @@
+     home: &'d mut Registers,
+ }
+ 
+-impl<'a> Decoder<'a> {
++#[cfg(test)]
++type Decoder<'a> = DecoderImpl<'a, true>;
++
++impl<'a, const FAST: bool> DecoderImpl<'a, FAST> {
+     pub(super) fn new() -> Self {
+         Self {
+             source: Source { data: &[], current: 0 },
+@@ -160,7 +163,7 @@
+ 
+     /// Takes the registers into locals for a pass; the pass ends with `Mq::leave`.
+     #[inline(always)]
+-    pub(super) fn enter(&mut self) -> Mq<'_, 'a> {
++    pub(super) fn enter(&mut self) -> Mq<'_, 'a, FAST> {
+         let Self {
+             source,
+             registers,
+@@ -193,7 +196,7 @@
+     }
+ }
+ 
+-impl Mq<'_, '_> {
++impl<const FAST: bool> Mq<'_, '_, FAST> {
+     #[inline(always)]
+     pub(super) fn leave(self) {
+         *self.home = Registers {
+@@ -217,6 +220,11 @@
+         let word = self.contexts[slot];
+         let qeval = word & 0xffff;
+         let a = self.a - qeval;
++        if FAST && a >= 0x8000 && self.c >> 16 >= qeval {
++            self.a = a;
++            self.c -= qeval << 16;
++            return (word >> MPS_BIT) & 1;
++        }
+         let lps = self.c >> 16 < qeval;
+         let flip = lps ^ (a < qeval);
+         let bit = ((word >> MPS_BIT) & 1) ^ u32::from(flip);
+--- a/neo-j2k/src/t1/passes.rs
++++ b/neo-j2k/src/t1/passes.rs
+@@ -4,7 +4,7 @@
+ 
+ use core::cell::Cell;
+ 
+-use super::mq::{CONTEXT_AGGREGATE, CONTEXT_UNIFORM, Decoder, Mq};
++use super::mq::{CONTEXT_AGGREGATE, CONTEXT_UNIFORM, DecoderImpl, Mq};
+ use super::tables::{SIGN_CONTEXT, SIGN_PREDICTION, ZERO_CONTEXT};
+ 
+ const SIGMA_THIS: u32 = 1 << 4;
+@@ -115,7 +115,7 @@
+     }
+ 
+     #[inline(always)]
+-    fn sign(mq: &mut Mq<'_, '_>, stripe: &Stripe<'_>, col: usize, lane: usize, flags: u32) -> u32 {
++    fn sign<const FAST: bool>(mq: &mut Mq<'_, '_, FAST>, stripe: &Stripe<'_>, col: usize, lane: usize, flags: u32) -> u32 {
+         let shift = lane * 3;
+         let mut lu = (flags >> shift) & 0x00aa;
+         lu |= (stripe.here.left[col].get() >> (19 + shift)) & 1;
+@@ -161,8 +161,8 @@
+ 
+     /// Decode the sign of the sample at `lane` of the column and record it.
+     #[inline(always)]
+-    fn mark_sample(
+-        mq: &mut Mq<'_, '_>,
++    fn mark_sample<const FAST: bool>(
++        mq: &mut Mq<'_, '_, FAST>,
+         stripe: &Stripe<'_>,
+         col: usize,
+         column: &mut Column,
+@@ -175,8 +175,8 @@
+     }
+ 
+     #[inline(always)]
+-    fn significance_step<const RAW: bool>(
+-        mq: &mut Mq<'_, '_>,
++    fn significance_step<const RAW: bool, const FAST: bool>(
++        mq: &mut Mq<'_, '_, FAST>,
+         stripe: &Stripe<'_>,
+         context: &Context<'_>,
+         col: usize,
+@@ -206,8 +206,8 @@
+     }
+ 
+     #[inline(always)]
+-    fn cleanup_step(
+-        mq: &mut Mq<'_, '_>,
++    fn cleanup_step<const FAST: bool>(
++        mq: &mut Mq<'_, '_, FAST>,
+         stripe: &Stripe<'_>,
+         context: &Context<'_>,
+         col: usize,
+@@ -227,8 +227,8 @@
+     /// shifts are immediates, the tests of the first and the last lane (the neighbours above and below) are resolved
+     /// at compile time, and the four sample rows are exactly `width` long.
+     #[inline(always)]
+-    fn significance_full<const RAW: bool>(
+-        mq: &mut Mq<'_, '_>,
++    fn significance_full<const RAW: bool, const FAST: bool>(
++        mq: &mut Mq<'_, '_, FAST>,
+         stripe: &Stripe<'_>,
+         context: &Context<'_>,
+         samples: &mut [i32],
+@@ -246,18 +246,18 @@
+             if column.flags == 0 || (column.flags | (column.flags >> PI_TO_SIGMA)) & ALL_SIGMA == ALL_SIGMA {
+                 continue;
+             }
+-            Self::significance_step::<RAW>(mq, stripe, context, col, &mut column, 0, &mut d0[col]);
+-            Self::significance_step::<RAW>(mq, stripe, context, col, &mut column, 1, &mut d1[col]);
+-            Self::significance_step::<RAW>(mq, stripe, context, col, &mut column, 2, &mut d2[col]);
+-            Self::significance_step::<RAW>(mq, stripe, context, col, &mut column, 3, &mut d3[col]);
++            Self::significance_step::<RAW, FAST>(mq, stripe, context, col, &mut column, 0, &mut d0[col]);
++            Self::significance_step::<RAW, FAST>(mq, stripe, context, col, &mut column, 1, &mut d1[col]);
++            Self::significance_step::<RAW, FAST>(mq, stripe, context, col, &mut column, 2, &mut d2[col]);
++            Self::significance_step::<RAW, FAST>(mq, stripe, context, col, &mut column, 3, &mut d3[col]);
+             stripe.here.mid[col].set(column.flags | column.chi);
+         }
+     }
+ 
+     /// The columns of the last stripe of a block, of fewer than four lanes.
+     #[inline(always)]
+-    fn significance_partial<const RAW: bool>(
+-        mq: &mut Mq<'_, '_>,
++    fn significance_partial<const RAW: bool, const FAST: bool>(
++        mq: &mut Mq<'_, '_, FAST>,
+         stripe: &Stripe<'_>,
+         context: &Context<'_>,
+         samples: &mut [i32],
+@@ -273,13 +273,13 @@
+             }
+             for lane in 0..stripe.rows {
+                 let sample = &mut samples[lane * width + col];
+-                Self::significance_step::<RAW>(mq, stripe, context, col, &mut column, lane, sample);
++                Self::significance_step::<RAW, FAST>(mq, stripe, context, col, &mut column, lane, sample);
+             }
+             stripe.here.mid[col].set(column.flags | column.chi);
+         }
+     }
+ 
+-    pub(super) fn significance<const RAW: bool>(&mut self, state: &mut Decoder<'_>, bitplane: u32) {
++    pub(super) fn significance<const RAW: bool, const FAST: bool>(&mut self, state: &mut DecoderImpl<'_, FAST>, bitplane: u32) {
+         // The MQ registers live in locals for the length of the pass.
+         let mut mq = state.enter();
+         let one = 1i32 << bitplane;
+@@ -293,15 +293,15 @@
+             let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);
+             let samples = &mut self.data[index * 4 * width..];
+             if rows == 4 {
+-                Self::significance_full::<RAW>(&mut mq, &stripe, &context, samples);
++                Self::significance_full::<RAW, FAST>(&mut mq, &stripe, &context, samples);
+             } else {
+-                Self::significance_partial::<RAW>(&mut mq, &stripe, &context, samples);
++                Self::significance_partial::<RAW, FAST>(&mut mq, &stripe, &context, samples);
+             }
+         }
+         mq.leave();
+     }
+ 
+-    pub(super) fn refinement<const RAW: bool>(&mut self, state: &mut Decoder<'_>, bitplane: u32) {
++    pub(super) fn refinement<const RAW: bool, const FAST: bool>(&mut self, state: &mut DecoderImpl<'_, FAST>, bitplane: u32) {
+         let mut mq = state.enter();
+         let half = (1i32 << bitplane) >> 1;
+         let (width, height) = (self.width, self.height);
+@@ -343,7 +343,7 @@
+     /// such a stripe takes the run of empty columns and the AGG decision. The AGG decision may have settled the
+     /// lanes up to `start - 1` of its column.
+     #[inline(always)]
+-    fn cleanup_full(mq: &mut Mq<'_, '_>, stripe: &Stripe<'_>, context: &Context<'_>, samples: &mut [i32]) {
++    fn cleanup_full<const FAST: bool>(mq: &mut Mq<'_, '_, FAST>, stripe: &Stripe<'_>, context: &Context<'_>, samples: &mut [i32]) {
+         let width = stripe.width;
+         let (d0, rest) = samples[..4 * width].split_at_mut(width);
+         let (d1, rest) = rest.split_at_mut(width);
+@@ -402,7 +402,7 @@
+ 
+     /// The columns of the last stripe of a block, of fewer than four lanes (no run and no AGG decision).
+     #[inline(always)]
+-    fn cleanup_partial(mq: &mut Mq<'_, '_>, stripe: &Stripe<'_>, context: &Context<'_>, samples: &mut [i32]) {
++    fn cleanup_partial<const FAST: bool>(mq: &mut Mq<'_, '_, FAST>, stripe: &Stripe<'_>, context: &Context<'_>, samples: &mut [i32]) {
+         let width = stripe.width;
+         for col in 0..width {
+             let mut column = Column {
+@@ -421,7 +421,7 @@
+         }
+     }
+ 
+-    pub(super) fn cleanup(&mut self, state: &mut Decoder<'_>, bitplane: u32, segment_symbol: bool) {
++    pub(super) fn cleanup<const FAST: bool>(&mut self, state: &mut DecoderImpl<'_, FAST>, bitplane: u32, segment_symbol: bool) {
+         let mut mq = state.enter();
+         let one = 1i32 << bitplane;
+         let context = Context {

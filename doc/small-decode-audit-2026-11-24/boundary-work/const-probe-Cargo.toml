@@ -1,0 +1,17 @@
+[package]
+name="small-decode-const-boundary-probe"
+version="0.0.0"
+edition="2024"
+[dependencies]
+current={package="neo-j2k",path="C:/Users/annes/source/repos/neoj2k-rust/neo-j2k"}
+control={package="neo-j2k-layout-control",path="../layout-control"}
+short={package="neo-j2k-current-short",path="../current-short"}
+boundary={package="neo-j2k-boundary-const",path="../boundary-const"}
+init={package="neo-j2k-boundary-const-init",path="../boundary-const-init"}
+sides={package="neo-j2k-boundary-sides",path="../boundary-sides"}
+combined={package="neo-j2k-boundary-const-sides",path="../boundary-const-sides"}
+[profile.release]
+lto="fat"
+codegen-units=1
+panic="unwind"
+debug="line-tables-only"

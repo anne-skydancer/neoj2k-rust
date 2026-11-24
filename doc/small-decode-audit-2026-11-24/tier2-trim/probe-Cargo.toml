@@ -1,0 +1,13 @@
+[package]
+name = "small-tier2-trim-probe"
+version = "0.0.0"
+edition = "2024"
+[dependencies]
+current = { package = "neo-j2k", path = "C:/Users/annes/source/repos/neoj2k-rust/neo-j2k" }
+control = { package = "neo-j2k-control", path = "C:/Users/annes/AppData/Local/Temp/codex-small-tier2-trim/control" }
+trim = { package = "neo-j2k-trim", path = "C:/Users/annes/AppData/Local/Temp/codex-small-tier2-trim/trim" }
+[profile.release]
+lto = "fat"
+codegen-units = 1
+panic = "unwind"
+debug = "line-tables-only"

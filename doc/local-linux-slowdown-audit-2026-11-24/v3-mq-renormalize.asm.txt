@@ -1,0 +1,84 @@
+
+/home/dev/target-v3/release/build/neo-j2k/db7bb5db37027340/out/small_image_gates-db7bb5db37027340:     file format elf64-x86-64
+
+
+Disassembly of section .text:
+
+00000000000e13a0 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes>:
+   e13a0:	55                   	push   rbp
+   e13a1:	41 57                	push   r15
+   e13a3:	41 56                	push   r14
+   e13a5:	41 55                	push   r13
+   e13a7:	41 54                	push   r12
+   e13a9:	53                   	push   rbx
+   e13aa:	44 8b 46 08          	mov    r8d,DWORD PTR [rsi+0x8]
+   e13ae:	44 39 c1             	cmp    ecx,r8d
+   e13b1:	0f 86 c2 00 00 00    	jbe    e1479 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0xd9>
+   e13b7:	4c 8b 1a             	mov    r11,QWORD PTR [rdx]
+   e13ba:	4c 8b 52 08          	mov    r10,QWORD PTR [rdx+0x8]
+   e13be:	8b 5e 04             	mov    ebx,DWORD PTR [rsi+0x4]
+   e13c1:	44 8b 72 10          	mov    r14d,DWORD PTR [rdx+0x10]
+   e13c5:	89 c8                	mov    eax,ecx
+   e13c7:	45 89 c1             	mov    r9d,r8d
+   e13ca:	eb 32                	jmp    e13fe <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0x5e>
+   e13cc:	0f 1f 40 00          	nop    DWORD PTR [rax+0x0]
+   e13d0:	41 81 c7 00 ff 00 00 	add    r15d,0xff00
+   e13d7:	41 b8 08 00 00 00    	mov    r8d,0x8
+   e13dd:	bd ff 00 00 00       	mov    ebp,0xff
+   e13e2:	44 89 fb             	mov    ebx,r15d
+   e13e5:	44 29 c8             	sub    eax,r9d
+   e13e8:	89 5e 04             	mov    DWORD PTR [rsi+0x4],ebx
+   e13eb:	44 89 46 08          	mov    DWORD PTR [rsi+0x8],r8d
+   e13ef:	41 89 ee             	mov    r14d,ebp
+   e13f2:	45 89 c1             	mov    r9d,r8d
+   e13f5:	44 39 c0             	cmp    eax,r8d
+   e13f8:	0f 86 80 00 00 00    	jbe    e147e <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0xde>
+   e13fe:	c4 62 31 f7 fb       	shlx   r15d,ebx,r9d
+   e1403:	44 89 7e 04          	mov    DWORD PTR [rsi+0x4],r15d
+   e1407:	4d 85 d2             	test   r10,r10
+   e140a:	74 14                	je     e1420 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0x80>
+   e140c:	4d 8d 63 01          	lea    r12,[r11+0x1]
+   e1410:	4d 8d 6a ff          	lea    r13,[r10-0x1]
+   e1414:	41 0f b6 2b          	movzx  ebp,BYTE PTR [r11]
+   e1418:	eb 11                	jmp    e142b <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0x8b>
+   e141a:	66 0f 1f 44 00 00    	nop    WORD PTR [rax+rax*1+0x0]
+   e1420:	bd ff 00 00 00       	mov    ebp,0xff
+   e1425:	4d 89 dc             	mov    r12,r11
+   e1428:	45 31 ed             	xor    r13d,r13d
+   e142b:	41 81 fe ff 00 00 00 	cmp    r14d,0xff
+   e1432:	41 0f 94 c0          	sete   r8b
+   e1436:	81 fd 90 00 00 00    	cmp    ebp,0x90
+   e143c:	0f 93 c3             	setae  bl
+   e143f:	44 84 c3             	test   bl,r8b
+   e1442:	75 8c                	jne    e13d0 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0x30>
+   e1444:	45 31 c0             	xor    r8d,r8d
+   e1447:	41 81 fe ff 00 00 00 	cmp    r14d,0xff
+   e144e:	4c 89 22             	mov    QWORD PTR [rdx],r12
+   e1451:	4c 89 6a 08          	mov    QWORD PTR [rdx+0x8],r13
+   e1455:	89 6a 10             	mov    DWORD PTR [rdx+0x10],ebp
+   e1458:	41 0f 95 c0          	setne  r8b
+   e145c:	41 83 c0 07          	add    r8d,0x7
+   e1460:	41 b2 10             	mov    r10b,0x10
+   e1463:	45 28 c2             	sub    r10b,r8b
+   e1466:	c4 e2 29 f7 dd       	shlx   ebx,ebp,r10d
+   e146b:	44 01 fb             	add    ebx,r15d
+   e146e:	4d 89 ea             	mov    r10,r13
+   e1471:	4d 89 e3             	mov    r11,r12
+   e1474:	e9 6c ff ff ff       	jmp    e13e5 <_RNvNtNtCs1EYBqwEFQKe_7neo_j2k2t12mq22renormalize_with_bytes+0x45>
+   e1479:	8b 5e 04             	mov    ebx,DWORD PTR [rsi+0x4]
+   e147c:	89 c8                	mov    eax,ecx
+   e147e:	d3 26                	shl    DWORD PTR [rsi],cl
+   e1480:	c4 e2 79 f7 cb       	shlx   ecx,ebx,eax
+   e1485:	89 4e 04             	mov    DWORD PTR [rsi+0x4],ecx
+   e1488:	41 29 c0             	sub    r8d,eax
+   e148b:	44 89 46 08          	mov    DWORD PTR [rsi+0x8],r8d
+   e148f:	44 89 47 08          	mov    DWORD PTR [rdi+0x8],r8d
+   e1493:	48 8b 06             	mov    rax,QWORD PTR [rsi]
+   e1496:	48 89 07             	mov    QWORD PTR [rdi],rax
+   e1499:	5b                   	pop    rbx
+   e149a:	41 5c                	pop    r12
+   e149c:	41 5d                	pop    r13
+   e149e:	41 5e                	pop    r14
+   e14a0:	41 5f                	pop    r15
+   e14a2:	5d                   	pop    rbp
+   e14a3:	c3                   	ret

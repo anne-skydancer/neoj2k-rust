@@ -1,0 +1,14 @@
+--- a/neo-j2k/src/t1/mq.rs
++++ b/neo-j2k/src/t1/mq.rs
+@@ -217,6 +217,11 @@
+         let word = self.contexts[slot];
+         let qeval = word & 0xffff;
+         let a = self.a - qeval;
++        if a >= 0x8000 && self.c >> 16 >= qeval {
++            self.a = a;
++            self.c -= qeval << 16;
++            return (word >> MPS_BIT) & 1;
++        }
+         let lps = self.c >> 16 < qeval;
+         let flip = lps ^ (a < qeval);
+         let bit = ((word >> MPS_BIT) & 1) ^ u32::from(flip);

@@ -1,0 +1,13 @@
+  272812 | S_INLINESITE_END [size = 4]
+  272816 | S_INLINESITE_END [size = 4]
+  272820 | S_END [size = 4]
+  272824 | S_LPROC32 [size = 80] `neo_j2k::t1::mq::renormalize_with_bytes`
+           parent = 0, end = 273176, addr = 0001:321056, code size = 283
+           type = `0x1001 (void ())`, debug start = 0, debug end = 0, flags = noinline | opt debuginfo
+  272904 | S_FRAMEPROC [size = 32]
+           size = 0, padding size = 0, offset to padding = 0
+           bytes of callee saved registers = 64, exception handler addr = 0000:0000
+           local fp reg = RSP, param fp reg = RSP
+           flags = has eh | safe buffers | opt speed
+  272936 | S_INLINEES [size = 12]
+---

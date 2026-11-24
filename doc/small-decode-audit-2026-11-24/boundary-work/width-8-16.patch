@@ -1,0 +1,87 @@
+--- a/neo-j2k/src/t1.rs
++++ b/neo-j2k/src/t1.rs
+@@ -205,7 +205,7 @@
+             orient: orient as usize,
+             vertical_causal: cblksty & VERTICAL_CAUSAL != 0,
+         };
+-        decode_passes(&mut passes, block, bitplane, bytes);
++        match width { 8 => decode_passes::<8>(&mut passes, block, bitplane, bytes), 16 => decode_passes::<16>(&mut passes, block, bitplane, bytes), _ => decode_passes::<0>(&mut passes, block, bitplane, bytes) }
+         store_coefficients::<true>(
+             &mut self.data[..samples],
+             &mut output[offset..last_end],
+@@ -219,7 +219,7 @@
+     }
+ }
+ 
+-fn decode_passes(passes: &mut Passes<'_>, block: Block<'_>, mut bitplane: i32, mut bytes: &[u8]) {
++fn decode_passes<const WIDTH: usize>(passes: &mut Passes<'_>, block: Block<'_>, mut bitplane: i32, mut bytes: &[u8]) {
+     let Block {
+         numbps,
+         cblksty,
+@@ -255,11 +255,11 @@
+             }
+             let plane = u32::try_from(bitplane).expect("positive bit-plane index");
+             match pass {
+-                0 if raw => passes.significance::<true>(&mut decoder, plane),
+-                0 => passes.significance::<false>(&mut decoder, plane),
+-                1 if raw => passes.refinement::<true>(&mut decoder, plane),
+-                1 => passes.refinement::<false>(&mut decoder, plane),
+-                2 => passes.cleanup(&mut decoder, plane, segment_symbol),
++                0 if raw => passes.significance::<true, WIDTH>(&mut decoder, plane),
++                0 => passes.significance::<false, WIDTH>(&mut decoder, plane),
++                1 if raw => passes.refinement::<true, WIDTH>(&mut decoder, plane),
++                1 => passes.refinement::<false, WIDTH>(&mut decoder, plane),
++                2 => passes.cleanup::<WIDTH>(&mut decoder, plane, segment_symbol),
+                 _ => unreachable!("a code-block cycles through three coding passes"),
+             }
+             if reset && !raw {
+--- a/neo-j2k/src/t1/passes.rs
++++ b/neo-j2k/src/t1/passes.rs
+@@ -279,7 +279,7 @@
+         }
+     }
+ 
+-    pub(super) fn significance<const RAW: bool>(&mut self, state: &mut Decoder<'_>, bitplane: u32) {
++    pub(super) fn significance<const RAW: bool, const WIDTH: usize>(&mut self, state: &mut Decoder<'_>, bitplane: u32) {
+         // The MQ registers live in locals for the length of the pass.
+         let mut mq = state.enter();
+         let one = 1i32 << bitplane;
+@@ -287,7 +287,7 @@
+             zero_context: &ZERO_CONTEXT.as_chunks::<512>().0[self.orient],
+             magnitude: one | (one >> 1),
+         };
+-        let (width, height) = (self.width, self.height);
++        let (width, height) = (if WIDTH == 0 { self.width } else { WIDTH }, self.height);
+         for index in 0..height.div_ceil(4) {
+             let rows = (height - index * 4).min(4);
+             let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);
+@@ -301,10 +301,10 @@
+         mq.leave();
+     }
+ 
+-    pub(super) fn refinement<const RAW: bool>(&mut self, state: &mut Decoder<'_>, bitplane: u32) {
++    pub(super) fn refinement<const RAW: bool, const WIDTH: usize>(&mut self, state: &mut Decoder<'_>, bitplane: u32) {
+         let mut mq = state.enter();
+         let half = (1i32 << bitplane) >> 1;
+-        let (width, height) = (self.width, self.height);
++        let (width, height) = (if WIDTH == 0 { self.width } else { WIDTH }, self.height);
+         for index in 0..height.div_ceil(4) {
+             let rows = (height - index * 4).min(4);
+             let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);
+@@ -421,14 +421,14 @@
+         }
+     }
+ 
+-    pub(super) fn cleanup(&mut self, state: &mut Decoder<'_>, bitplane: u32, segment_symbol: bool) {
++    pub(super) fn cleanup<const WIDTH: usize>(&mut self, state: &mut Decoder<'_>, bitplane: u32, segment_symbol: bool) {
+         let mut mq = state.enter();
+         let one = 1i32 << bitplane;
+         let context = Context {
+             zero_context: &ZERO_CONTEXT.as_chunks::<512>().0[self.orient],
+             magnitude: one | (one >> 1),
+         };
+-        let (width, height) = (self.width, self.height);
++        let (width, height) = (if WIDTH == 0 { self.width } else { WIDTH }, self.height);
+         for index in 0..height.div_ceil(4) {
+             let rows = (height - index * 4).min(4);
+             let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);

@@ -1,0 +1,14 @@
+[package]
+name="small-decode-transform-mq-probe"
+version="0.0.0"
+edition="2024"
+[dependencies]
+current={package="neo-j2k",path="C:/Users/annes/source/repos/neoj2k-rust/neo-j2k"}
+control={package="neo-j2k-layout-control",path="../layout-control"}
+short={package="neo-j2k-current-short",path="../current-short"}
+transform={package="neo-j2k-mq-transform",path="../mq-transform"}
+[profile.release]
+lto="fat"
+codegen-units=1
+panic="unwind"
+debug="line-tables-only"

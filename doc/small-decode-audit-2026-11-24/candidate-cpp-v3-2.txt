@@ -1,0 +1,18 @@
+
+running 1 test
+Decode uses caller-owned native-endian planar I32 on both sides.
+The C++ shim builds plane descriptors per call.
+Request                                            Rust µs    C++ µs Rust/C++
+sl_32_rgba_53.j2k / reduce 0 / whole                206.97    279.97    0.739
+sl_32_rgba_53.j2k / reduce 2 / whole                 16.81     17.34    0.969
+sl_32_rgba_53.j2k / reduce 0 / missing EOC          200.39    275.98    0.726
+sl_64_rgb_97.j2k / reduce 0 / whole                  55.35     56.84    0.974
+sl_64_rgb_97.j2k / reduce 2 / whole                  22.21     21.23    1.046
+sl_64_rgb_97.j2k / reduce 0 / missing EOC            55.34     57.06    0.970
+sl_128_rgba_97.j2k / reduce 0 / whole               126.87    135.56    0.936
+sl_128_rgba_97.j2k / reduce 2 / whole                61.37     58.88    1.042
+sl_128_rgba_97.j2k / reduce 0 / missing EOC         121.66    135.03    0.901
+test small_image_median_latency ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 3 filtered out; finished in 0.81s
+

@@ -1,0 +1,12 @@
+side=32 rev=true rates=[] cold=false current=165.250 control=164.525 bound=162.412 single=163.188 combined=161.338
+side=32 rev=true rates=[] cold=true current=187.700 control=186.925 bound=183.662 single=184.850 combined=183.638
+side=128 rev=true rates=[] cold=false current=2360.100 control=2369.050 bound=2350.650 single=2360.750 combined=2362.750
+side=128 rev=true rates=[] cold=true current=2413.850 control=2423.250 bound=2408.350 single=2413.950 combined=2414.150
+side=128 rev=false rates=[] cold=false current=2553.100 control=2550.450 bound=2547.100 single=2548.650 combined=2561.250
+side=128 rev=false rates=[] cold=true current=2584.100 control=2585.500 bound=2579.900 single=2582.250 combined=2598.500
+side=128 rev=false rates=[30.0, 10.0, 0.0] cold=false current=2855.600 control=2820.500 bound=2801.450 single=2789.700 combined=2792.950
+side=128 rev=false rates=[30.0, 10.0, 0.0] cold=true current=2881.000 control=2843.800 bound=2819.650 single=2818.650 combined=2824.000
+side=128 rev=true rates=[3.0, 1.5] cold=false current=2761.900 control=2743.000 bound=2692.200 single=2694.500 combined=2687.750
+side=128 rev=true rates=[3.0, 1.5] cold=true current=2781.100 control=2770.850 bound=2714.900 single=2715.750 combined=2706.250
+side=256 rev=false rates=[30.0, 10.0, 0.0] cold=false current=10427.600 control=10271.400 bound=10292.400 single=10347.700 combined=10304.800
+side=512 rev=false rates=[] cold=false current=35247.700 control=35237.600 bound=35204.800 single=35185.200 combined=35394.700

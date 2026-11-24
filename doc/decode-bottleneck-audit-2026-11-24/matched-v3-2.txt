@@ -1,0 +1,79 @@
+rounds24 repeats128; Rust modes/full noalloc; C++prepared decode+store; source/control exactbyteparity
+ALLOC sl_32_rgba_53.j2k original 0
+RESULT sl_32_rgba_53.j2k original all mode0 blocks40 Rust 11.8461 Cpp 11.2852 Control 11.8891 change +4.97% control +0.36%
+RESULT sl_32_rgba_53.j2k original all mode1 blocks40 Rust 11.8445 Cpp 11.1898 Control 11.7344 change +5.85% control -0.93%
+RESULT sl_32_rgba_53.j2k original all mode2 blocks40 Rust 0.1781 Cpp 0.2297 Control 0.1766 change -22.45% control -0.88%
+RESULT sl_32_rgba_53.j2k original 1x1 mode0 blocks15 Rust 1.1938 Cpp 1.1961 Control 1.2055 change -0.20% control +0.98%
+RESULT sl_32_rgba_53.j2k original 1x1 mode1 blocks15 Rust 1.1398 Cpp 1.1242 Control 1.1367 change +1.39% control -0.27%
+RESULT sl_32_rgba_53.j2k original 1x1 mode2 blocks15 Rust 0.0594 Cpp 0.0547 Control 0.0586 change +8.57% control -1.32%
+RESULT sl_32_rgba_53.j2k original 2x2 mode0 blocks12 Rust 2.8336 Cpp 3.0422 Control 2.8219 change -6.86% control -0.41%
+RESULT sl_32_rgba_53.j2k original 2x2 mode1 blocks12 Rust 2.7930 Cpp 2.9250 Control 2.7891 change -4.51% control -0.14%
+RESULT sl_32_rgba_53.j2k original 2x2 mode2 blocks12 Rust 0.0578 Cpp 0.0625 Control 0.0586 change -7.50% control +1.35%
+RESULT sl_32_rgba_53.j2k original 4x4 mode0 blocks12 Rust 7.7266 Cpp 7.0016 Control 7.7609 change +10.35% control +0.44%
+RESULT sl_32_rgba_53.j2k original 4x4 mode1 blocks12 Rust 7.6820 Cpp 6.8898 Control 7.7320 change +11.50% control +0.65%
+RESULT sl_32_rgba_53.j2k original 4x4 mode2 blocks12 Rust 0.0664 Cpp 0.1109 Control 0.0664 change -40.14% control +0.00%
+ALLOC sl_32_rgba_53.j2k joined 0
+RESULT sl_32_rgba_53.j2k joined all mode0 blocks40 Rust 12.4742 Cpp 11.2016 Control 11.9305 change +11.36% control -4.36%
+RESULT sl_32_rgba_53.j2k joined all mode1 blocks40 Rust 12.1312 Cpp 10.9883 Control 11.7906 change +10.40% control -2.81%
+RESULT sl_32_rgba_53.j2k joined all mode2 blocks40 Rust 0.1789 Cpp 0.2281 Control 0.1813 change -21.58% control +1.31%
+RESULT sl_32_rgba_53.j2k joined 1x1 mode0 blocks15 Rust 1.2375 Cpp 1.1344 Control 1.1906 change +9.09% control -3.79%
+RESULT sl_32_rgba_53.j2k joined 1x1 mode1 blocks15 Rust 1.1492 Cpp 1.0828 Control 1.1438 change +6.13% control -0.48%
+RESULT sl_32_rgba_53.j2k joined 1x1 mode2 blocks15 Rust 0.0586 Cpp 0.0547 Control 0.0594 change +7.14% control +1.33%
+RESULT sl_32_rgba_53.j2k joined 2x2 mode0 blocks12 Rust 3.0539 Cpp 2.9703 Control 2.8352 change +2.81% control -7.16%
+RESULT sl_32_rgba_53.j2k joined 2x2 mode1 blocks12 Rust 2.8375 Cpp 2.9156 Control 2.8414 change -2.68% control +0.14%
+RESULT sl_32_rgba_53.j2k joined 2x2 mode2 blocks12 Rust 0.0586 Cpp 0.0625 Control 0.0602 change -6.25% control +2.67%
+RESULT sl_32_rgba_53.j2k joined 4x4 mode0 blocks12 Rust 7.9844 Cpp 6.9609 Control 7.7516 change +14.70% control -2.92%
+RESULT sl_32_rgba_53.j2k joined 4x4 mode1 blocks12 Rust 7.9563 Cpp 6.9094 Control 7.7258 change +15.15% control -2.90%
+RESULT sl_32_rgba_53.j2k joined 4x4 mode2 blocks12 Rust 0.0672 Cpp 0.1117 Control 0.0672 change -39.86% control +0.00%
+ALLOC sl_64_rgb_97.j2k original 0
+RESULT sl_64_rgb_97.j2k original all mode0 blocks30 Rust 14.5758 Cpp 13.7055 Control 14.6773 change +6.35% control +0.70%
+RESULT sl_64_rgb_97.j2k original all mode1 blocks30 Rust 14.4977 Cpp 13.4273 Control 14.4266 change +7.97% control -0.49%
+RESULT sl_64_rgb_97.j2k original all mode2 blocks30 Rust 0.1789 Cpp 0.1805 Control 0.1820 change -0.87% control +1.75%
+RESULT sl_64_rgb_97.j2k original 2x2 mode0 blocks12 Rust 2.1477 Cpp 2.3461 Control 2.0883 change -8.46% control -2.76%
+RESULT sl_64_rgb_97.j2k original 2x2 mode1 blocks12 Rust 2.0539 Cpp 2.2977 Control 2.0430 change -10.61% control -0.53%
+RESULT sl_64_rgb_97.j2k original 2x2 mode2 blocks12 Rust 0.0531 Cpp 0.0539 Control 0.0555 change -1.45% control +4.41%
+RESULT sl_64_rgb_97.j2k original 4x4 mode0 blocks9 Rust 4.2055 Cpp 3.7812 Control 4.2320 change +11.22% control +0.63%
+RESULT sl_64_rgb_97.j2k original 4x4 mode1 blocks9 Rust 4.1898 Cpp 3.7062 Control 4.2062 change +13.05% control +0.39%
+RESULT sl_64_rgb_97.j2k original 4x4 mode2 blocks9 Rust 0.0500 Cpp 0.0719 Control 0.0508 change -30.43% control +1.56%
+RESULT sl_64_rgb_97.j2k original 8x8 mode0 blocks9 Rust 8.0938 Cpp 7.3500 Control 8.2172 change +10.12% control +1.53%
+RESULT sl_64_rgb_97.j2k original 8x8 mode1 blocks9 Rust 8.0469 Cpp 7.1781 Control 8.1055 change +12.10% control +0.73%
+RESULT sl_64_rgb_97.j2k original 8x8 mode2 blocks9 Rust 0.0891 Cpp 0.0641 Control 0.0859 change +39.02% control -3.51%
+ALLOC sl_64_rgb_97.j2k joined 0
+RESULT sl_64_rgb_97.j2k joined all mode0 blocks30 Rust 14.4055 Cpp 13.6734 Control 14.4469 change +5.35% control +0.29%
+RESULT sl_64_rgb_97.j2k joined all mode1 blocks30 Rust 14.3086 Cpp 13.4773 Control 14.2023 change +6.17% control -0.74%
+RESULT sl_64_rgb_97.j2k joined all mode2 blocks30 Rust 0.1820 Cpp 0.1797 Control 0.1828 change +1.30% control +0.43%
+RESULT sl_64_rgb_97.j2k joined 2x2 mode0 blocks12 Rust 2.0477 Cpp 2.3898 Control 2.0477 change -14.32% control +0.00%
+RESULT sl_64_rgb_97.j2k joined 2x2 mode1 blocks12 Rust 2.0461 Cpp 2.2898 Control 1.9992 change -10.64% control -2.29%
+RESULT sl_64_rgb_97.j2k joined 2x2 mode2 blocks12 Rust 0.0531 Cpp 0.0539 Control 0.0547 change -1.45% control +2.94%
+RESULT sl_64_rgb_97.j2k joined 4x4 mode0 blocks9 Rust 4.2352 Cpp 3.7609 Control 4.1312 change +12.61% control -2.45%
+RESULT sl_64_rgb_97.j2k joined 4x4 mode1 blocks9 Rust 4.1672 Cpp 3.6906 Control 4.1102 change +12.91% control -1.37%
+RESULT sl_64_rgb_97.j2k joined 4x4 mode2 blocks9 Rust 0.0500 Cpp 0.0711 Control 0.0500 change -29.67% control +0.00%
+RESULT sl_64_rgb_97.j2k joined 8x8 mode0 blocks9 Rust 8.0438 Cpp 7.2828 Control 8.1406 change +10.45% control +1.20%
+RESULT sl_64_rgb_97.j2k joined 8x8 mode1 blocks9 Rust 7.9664 Cpp 7.2141 Control 8.0367 change +10.43% control +0.88%
+RESULT sl_64_rgb_97.j2k joined 8x8 mode2 blocks9 Rust 0.0875 Cpp 0.0625 Control 0.0859 change +40.00% control -1.79%
+ALLOC sl_128_rgba_97.j2k original 0
+RESULT sl_128_rgba_97.j2k original all mode0 blocks40 Rust 47.5336 Cpp 43.8891 Control 47.8227 change +8.30% control +0.61%
+RESULT sl_128_rgba_97.j2k original all mode1 blocks40 Rust 47.3367 Cpp 43.3219 Control 47.4109 change +9.27% control +0.16%
+RESULT sl_128_rgba_97.j2k original all mode2 blocks40 Rust 0.4664 Cpp 0.4734 Control 0.5008 change -1.49% control +7.37%
+RESULT sl_128_rgba_97.j2k original 4x4 mode0 blocks16 Rust 8.4297 Cpp 7.4875 Control 8.5625 change +12.58% control +1.58%
+RESULT sl_128_rgba_97.j2k original 4x4 mode1 blocks16 Rust 8.4313 Cpp 7.3422 Control 8.5617 change +14.83% control +1.55%
+RESULT sl_128_rgba_97.j2k original 4x4 mode2 blocks16 Rust 0.0828 Cpp 0.1227 Control 0.0844 change -32.48% control +1.89%
+RESULT sl_128_rgba_97.j2k original 8x8 mode0 blocks12 Rust 13.4844 Cpp 12.2016 Control 13.5633 change +10.51% control +0.59%
+RESULT sl_128_rgba_97.j2k original 8x8 mode1 blocks12 Rust 13.3664 Cpp 12.0594 Control 13.5211 change +10.84% control +1.16%
+RESULT sl_128_rgba_97.j2k original 8x8 mode2 blocks12 Rust 0.1203 Cpp 0.0828 Control 0.1125 change +45.28% control -6.49%
+RESULT sl_128_rgba_97.j2k original 16x16 mode0 blocks10 Rust 24.5047 Cpp 22.0016 Control 24.5867 change +11.38% control +0.33%
+RESULT sl_128_rgba_97.j2k original 16x16 mode1 blocks10 Rust 24.3047 Cpp 21.6609 Control 24.3687 change +12.21% control +0.26%
+RESULT sl_128_rgba_97.j2k original 16x16 mode2 blocks10 Rust 0.1750 Cpp 0.1398 Control 0.1703 change +25.14% control -2.68%
+ALLOC sl_128_rgba_97.j2k joined 0
+RESULT sl_128_rgba_97.j2k joined all mode0 blocks40 Rust 47.1102 Cpp 43.7898 Control 47.2297 change +7.58% control +0.25%
+RESULT sl_128_rgba_97.j2k joined all mode1 blocks40 Rust 46.5469 Cpp 43.0070 Control 46.6727 change +8.23% control +0.27%
+RESULT sl_128_rgba_97.j2k joined all mode2 blocks40 Rust 0.4703 Cpp 0.4563 Control 0.5016 change +3.08% control +6.64%
+RESULT sl_128_rgba_97.j2k joined 4x4 mode0 blocks16 Rust 8.3688 Cpp 7.4734 Control 8.3844 change +11.98% control +0.19%
+RESULT sl_128_rgba_97.j2k joined 4x4 mode1 blocks16 Rust 8.2523 Cpp 7.3461 Control 8.3352 change +12.34% control +1.00%
+RESULT sl_128_rgba_97.j2k joined 4x4 mode2 blocks16 Rust 0.0844 Cpp 0.1227 Control 0.0836 change -31.21% control -0.93%
+RESULT sl_128_rgba_97.j2k joined 8x8 mode0 blocks12 Rust 13.3500 Cpp 12.2117 Control 13.3766 change +9.32% control +0.20%
+RESULT sl_128_rgba_97.j2k joined 8x8 mode1 blocks12 Rust 13.2211 Cpp 11.9781 Control 13.2977 change +10.38% control +0.58%
+RESULT sl_128_rgba_97.j2k joined 8x8 mode2 blocks12 Rust 0.1172 Cpp 0.0836 Control 0.1164 change +40.19% control -0.67%
+RESULT sl_128_rgba_97.j2k joined 16x16 mode0 blocks10 Rust 24.4297 Cpp 21.9469 Control 24.5070 change +11.31% control +0.32%
+RESULT sl_128_rgba_97.j2k joined 16x16 mode1 blocks10 Rust 24.1828 Cpp 21.6336 Control 24.1773 change +11.78% control -0.02%
+RESULT sl_128_rgba_97.j2k joined 16x16 mode2 blocks10 Rust 0.1664 Cpp 0.1547 Control 0.1859 change +7.58% control +11.74%

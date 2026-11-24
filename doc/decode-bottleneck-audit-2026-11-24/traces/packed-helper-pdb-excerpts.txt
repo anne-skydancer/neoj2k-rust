@@ -1,0 +1,26 @@
+  339208 | S_INLINESITE_END [size = 4]
+  339212 | S_INLINESITE_END [size = 4]
+  339216 | S_END [size = 4]
+  339220 | S_LPROC32 [size = 80] `neo_j2k::t1::mq::renormalize_with_bytes`
+           parent = 0, end = 339572, addr = 0001:363520, code size = 283
+           type = `0x1001 (void ())`, debug start = 0, debug end = 0, flags = noinline | opt debuginfo
+  339300 | S_FRAMEPROC [size = 32]
+           size = 0, padding size = 0, offset to padding = 0
+           bytes of callee saved registers = 64, exception handler addr = 0000:0000
+           local fp reg = RSP, param fp reg = RSP
+           flags = has eh | safe buffers | opt speed
+  339332 | S_INLINEES [size = 12]
+---
+  455520 | S_INLINESITE_END [size = 4]
+  455524 | S_INLINESITE_END [size = 4]
+  455528 | S_END [size = 4]
+  455532 | S_LPROC32 [size = 80] `neo_j2k::t1::mq::renormalize_with_bytes`
+           parent = 0, end = 455880, addr = 0001:364304, code size = 202
+           type = `0x1001 (void ())`, debug start = 0, debug end = 0, flags = noinline | opt debuginfo
+  455612 | S_FRAMEPROC [size = 32]
+           size = 0, padding size = 0, offset to padding = 0
+           bytes of callee saved registers = 40, exception handler addr = 0000:0000
+           local fp reg = RSP, param fp reg = RSP
+           flags = has eh | safe buffers | opt speed
+  455644 | S_INLINEES [size = 12]
+---

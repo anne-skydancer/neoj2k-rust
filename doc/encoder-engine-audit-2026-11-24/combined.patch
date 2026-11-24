@@ -1,0 +1,45 @@
+--- a/neo-j2k/src/encoder/tier2/coding.rs
++++ b/neo-j2k/src/encoder/tier2/coding.rs
+@@ -87,7 +87,9 @@
+     low: 0,
+     known: false,
+ };
+-const MAX_PATH: usize = usize::BITS as usize + 1;
++// Scratch audit: a4096-side tile with64-side blocks has at most64 leaves per axis;
++// seven root-to-leaf nodes cover that domain, including the1-resolution case.
++const MAX_PATH: usize = 7;
+ 
+ #[derive(Debug, Default)]
+ pub(super) struct TagTree {
+@@ -140,6 +142,11 @@
+     }
+ 
+     pub(super) fn set_value(&mut self, leaf: usize, value: i32) {
++        if let [node] = self.nodes.as_mut_slice() {
++            debug_assert_eq!(leaf, 0);
++            node.value = node.value.min(value);
++            return;
++        }
+         let (path, depth) = self.path(leaf);
+         for index in &path[..depth] {
+             let node = &mut self.nodes[*index];
+@@ -151,6 +158,19 @@
+     }
+ 
+     pub(super) fn write(&mut self, bio: &mut Bio<'_>, leaf: usize, threshold: i32) {
++        if let [node] = self.nodes.as_mut_slice() {
++            debug_assert_eq!(leaf, 0);
++            let mut low = 0.max(node.low);
++            while low < threshold {
++                if low >= node.value {
++                    if !node.known { bio.put(true); node.known = true; }
++                    break;
++                }
++                bio.put(false); low += 1;
++            }
++            node.low = low;
++            return;
++        }
+         let (path, depth) = self.path(leaf);
+         let mut low = 0;
+         for index in path[..depth].iter().rev() {

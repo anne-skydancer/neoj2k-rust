@@ -1,0 +1,37 @@
+--- a/neo-j2k/src/t1.rs
++++ b/neo-j2k/src/t1.rs
+@@ -177,7 +177,9 @@
+             return Err(invalid_output());
+         }
+ 
+-        let mut chunks = chunks.into_iter();
++        let audit_n = core::cell::Cell::new(0usize);
++        let audit_zero = core::cell::Cell::new(0usize);
++        let mut chunks = chunks.into_iter().inspect(|chunk| {audit_n.set(audit_n.get()+1);audit_zero.set(audit_zero.get()+usize::from(chunk.is_empty()));});
+         let Some(first) = chunks.next() else {
+             for row in 0..height {
+                 let start = offset + row * stride;
+@@ -195,6 +197,8 @@
+         } else {
+             first
+         };
++        let n = audit_n.get(); let z = audit_zero.get();
++        for (slot,value) in AUDIT_CHUNKS.iter().zip([1,n,z,usize::from(n-z==1),usize::from(n-z>1),usize::from(n==z)]) {slot.fetch_add(value,core::sync::atomic::Ordering::Relaxed);}
+         reserve_fixed(&mut self.data, MAX_SAMPLES)?;
+         reserve_fixed(&mut self.flags, MAX_FLAGS)?;
+         let mut passes = Passes {
+@@ -590,3 +594,6 @@
+         assert_eq!(diagnostics.entries().len(), 1);
+     }
+ }
++
++static AUDIT_CHUNKS:[core::sync::atomic::AtomicUsize;6]=[const {core::sync::atomic::AtomicUsize::new(0)};6];
++pub(crate) fn audit_chunk_stats()->[usize;6] {std::array::from_fn(|i|AUDIT_CHUNKS[i].swap(0,core::sync::atomic::Ordering::Relaxed))}
+--- a/neo-j2k/src/lib.rs
++++ b/neo-j2k/src/lib.rs
+@@ -73,3 +73,5 @@
+         env!("CARGO_PKG_VERSION_MINOR")
+     )
+ }
++
++pub fn audit_chunk_stats()->[usize;6] {t1::audit_chunk_stats()}

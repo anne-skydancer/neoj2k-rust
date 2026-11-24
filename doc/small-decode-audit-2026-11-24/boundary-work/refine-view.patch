@@ -1,0 +1,26 @@
+--- a/neo-j2k/src/t1/passes.rs
++++ b/neo-j2k/src/t1/passes.rs
+@@ -306,11 +306,11 @@
+         let half = (1i32 << bitplane) >> 1;
+         let (width, height) = (self.width, self.height);
+         for index in 0..height.div_ceil(4) {
+-            let rows = (height - index * 4).min(4);
+-            let stripe = Self::stripe(self.flags, width, index, rows, self.vertical_causal);
++            let first = (index + 1) * (width + 2) + 1;
++            let flags = Cell::from_mut(&mut self.flags[first..first + width]).as_slice_of_cells();
+             let samples = &mut self.data[index * 4 * width..];
+             for col in 0..width {
+-                let column = stripe.here.mid[col].get();
++                let column = flags[col].get();
+                 // Only real samples can receive SIGMA_THIS. Any padding in the last stripe is skipped.
+                 let mut eligible = (column & !(column >> PI_TO_SIGMA)) & ALL_SIGMA;
+                 let mut refined = 0;
+@@ -333,7 +333,7 @@
+                     refined |= MU_THIS << shift;
+                     eligible &= eligible - 1;
+                 }
+-                stripe.here.mid[col].set(column | refined);
++                flags[col].set(column | refined);
+             }
+         }
+         mq.leave();

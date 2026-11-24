@@ -1,0 +1,16 @@
+[package]
+name="small-decode-width-probe"
+version="0.0.0"
+edition="2024"
+[dependencies]
+current={package="neo-j2k",path="C:/Users/annes/source/repos/neoj2k-rust/neo-j2k"}
+control={package="neo-j2k-layout-control",path="../layout-control"}
+short={package="neo-j2k-current-short",path="../current-short"}
+w8={package="neo-j2k-width-8",path="../width-8"}
+w16={package="neo-j2k-width-16",path="../width-16"}
+both={package="neo-j2k-width-8-16",path="../width-8-16"}
+[profile.release]
+lto="fat"
+codegen-units=1
+panic="unwind"
+debug="line-tables-only"

@@ -1,0 +1,6 @@
+sl_32_rgba_53.j2k reduce 2: current 18.349 us current_short 17.019 us short_change -7.25%
+sl_32_rgba_53.j2k reduce 0: current 152.495 us current_short 149.054 us short_change -2.26%
+sl_64_rgb_97.j2k reduce 2: current 23.941 us current_short 23.645 us short_change -1.24%
+sl_64_rgb_97.j2k reduce 0: current 69.451 us current_short 68.740 us short_change -1.02%
+sl_128_rgba_97.j2k reduce 2: current 64.602 us current_short 64.428 us short_change -0.27%
+sl_128_rgba_97.j2k reduce 0: current 172.134 us current_short 170.916 us short_change -0.71%

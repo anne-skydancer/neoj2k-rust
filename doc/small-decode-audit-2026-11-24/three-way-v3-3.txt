@@ -1,0 +1,6 @@
+sl_32_rgba_53.j2k reduce 2: current 18.280 us before_eaea 17.366 us old_general 18.251 us current_change +5.26% no_single_change +5.10%
+sl_32_rgba_53.j2k reduce 0: current 150.577 us before_eaea 188.251 us old_general 187.546 us current_change -20.01% no_single_change -0.37%
+sl_64_rgb_97.j2k reduce 2: current 22.673 us before_eaea 23.255 us old_general 23.393 us current_change -2.50% no_single_change +0.59%
+sl_64_rgb_97.j2k reduce 0: current 55.140 us before_eaea 57.527 us old_general 57.281 us current_change -4.15% no_single_change -0.43%
+sl_128_rgba_97.j2k reduce 2: current 59.859 us before_eaea 63.474 us old_general 63.059 us current_change -5.69% no_single_change -0.65%
+sl_128_rgba_97.j2k reduce 0: current 116.018 us before_eaea 120.591 us old_general 120.876 us current_change -3.79% no_single_change +0.24%
