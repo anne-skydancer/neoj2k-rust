@@ -160,6 +160,106 @@ Tier-1 kernel, Mcycles a pass (TSC, median of 24 rounds for Rust and of 3 runs f
 
 What the baseline says: against C++ 0.1.3 the Rust twin is about level or faster on large baseline-CPU decodes (the C++ scalar wavelet is slow), slower on `x86-64-v3` 1,024² decodes (+4.5 % to +19.4 %) and on the small RGBA decodes, and 30 % to 73 % slower on every small encode in both builds. The Tier-1 kernel is the cause of most of the encode gap (Tier-1 is 86 % to 95 % of an encode). The port of the C++ steps is staged to close it, each stage gated at 3.0 % faster than before; the README's Rust-against-C++ tables are re-measured after it.
 
+## After the Tier-1 and encoder steps: three comparisons (2026-11-24, CI)
+
+The Rust codec at `main` a061fbc (the decoder's Tier-1 rewrite, the encoder's distortion skip and four-row gather, the stage timers) against three other builds, timed in GitHub Actions. The change is Rust's time against the other build's, minus is faster; "Yes", "No" and "Within noise" are the verdicts of "Measuring in CI". The hosted runners have 4 logical CPUs and their CPU model differs by cell and by run (listed below), so numbers compare only inside one cell of one run. This section is not comparable with the baseline section above, which was measured on a Ryzen 9 9950X3D. A width of 8 is more workers than the runners have CPUs and is not counted. On every row the decoded samples or encoded bytes were identical on both sides. Marks in the tables: `=` within noise, `!` Rust (or 0.1.3) slower, `o` not counted.
+
+### Rust against neo-j2k C++ 0.1.3
+
+[Run 45297083962](https://github.com/anne-skydancer/neoj2k-rust/actions/runs/45297083962), three repetitions per cell, Rust and the C++ oracle timed in one process, alternately. Machines: Linux baseline AMD EPYC 9V74, Linux x86-64-v3 AMD EPYC 7763, both Windows cells AMD EPYC 7763. The Windows baseline column (marked `*`) compares baseline Rust with an AVX2 C++ oracle: it is not like for like and is not counted below.
+
+| Row | Workers | Linux baseline | Linux v3 | Windows v3 | Windows baseline* |
+|---|---|---:|---:|---:|---:|
+| large decode 1,024² RGB 9/7 | 1 | -39.3 | -3.3 | -4.3 | +52.9 |
+| large decode 1,024² RGB 9/7 | 2 | -37.2 | +5.7 ! | -2.9 | +37.8 |
+| large decode 1,024² RGB 9/7 | 4 | -36.9 | -9.7 | -6.1 | +41.2 |
+| large decode 1,024² RGB 9/7 | 8 | -34.9 o | +7.0 o | -3.1 o | +52.3 o |
+| large decode 4,096² gray 9/7 | 1 | -62.8 | -1.5 | -3.7 | +70.2 |
+| large decode 4,096² gray 9/7 | 2 | -62.1 | -1.6 | -4.0 | +46.1 |
+| large decode 4,096² gray 9/7 | 4 | -59.0 | -1.2 | -0.8 = | +50.8 |
+| large decode 4,096² gray 9/7 | 8 | -58.5 o | -0.2 o = | -0.2 o = | +61.9 o |
+| small decode 32² RGBA 5/3, whole | - | +2.2 = | -4.3 | -21.8 | -13.0 |
+| small decode 32² RGBA 5/3, reduce 2 | - | +7.0 ! | +2.6 ! | +0.6 = | +4.9 |
+| small decode 32² RGBA 5/3, missing EOC | - | -2.2 = | -6.4 | -21.9 | -13.2 |
+| small decode 64² RGB 9/7, whole | - | +1.4 ! | -7.4 | -2.4 | +21.0 |
+| small decode 64² RGB 9/7, reduce 2 | - | +14.2 ! | +3.1 ! | +2.3 ! | +13.1 |
+| small decode 64² RGB 9/7, missing EOC | - | +1.0 = | -7.5 | -4.1 | +21.9 |
+| small decode 128² RGBA 9/7, whole | - | -24.0 | -1.4 = | -9.1 | +29.4 |
+| small decode 128² RGBA 9/7, reduce 2 | - | +13.7 ! | -1.7 | -5.6 | +9.4 |
+| small decode 128² RGBA 9/7, missing EOC | - | -24.4 | -4.0 | -10.3 | +26.9 |
+| small encode 32² RGB, lossless 5/3 | - | -1.7 | -4.8 | -20.5 | -13.1 |
+| small encode 32² RGB, lossy 9/7 | - | -5.1 | -3.1 | -16.4 | -8.8 |
+| small encode 64² RGB, lossless 5/3 | - | -0.4 = | -3.3 | -19.2 | -11.4 |
+| small encode 64² RGB, lossy 9/7 | - | -1.3 | -2.4 | -14.7 | -6.6 |
+| small encode 128² RGB, lossless 5/3 | - | -1.6 | -4.2 | -17.6 | -9.6 |
+| small encode 128² RGB, lossy 9/7 | - | -3.1 | -3.9 | -15.5 | -7.0 |
+
+Rows of the 21 counted, Rust faster / within noise / slower: Linux baseline 13 / 4 / 4, Linux x86-64-v3 17 / 1 / 3, Windows x86-64-v3 18 / 2 / 1 (Windows baseline, not like for like: 8 / 0 / 13).
+
+What it says: every small encode is at least level with C++ in every like-for-like cell. What is still slower than C++ is mostly the small decodes at reduce 2 (+2.3 % to +14.2 %) and the 1,024² decode at 2 workers on Linux x86-64-v3 (+5.7 %). The small reduce-2 rows are not settled: an earlier run on `main` at e383f8c (before the encoder steps, other machines: Linux baseline an AMD EPYC 7763) gave +0.6 %, +2.9 % and -0.2 % for the three reduce-2 rows on Linux baseline where this run, on an AMD EPYC 9V74, gives +7.0 %, +14.2 % and +13.7 %. The stage profile of these rows (PR 17) puts 67 % to 86 % of a call in Tier-1 and 8 % to 22 % in header, tile setup and packet walk.
+
+### Rust against OpenJPEG 2.5.4
+
+[Run 45296325934](https://github.com/anne-skydancer/neoj2k-rust/actions/runs/45296325934), three repetitions per cell, the harness of PR 18. Machines: Linux baseline Intel Xeon 8573C, Linux x86-64-v3 AMD EPYC 7763, Windows baseline AMD EPYC 7763, Windows x86-64-v3 AMD EPYC 9V45. The two APIs differ and the table follows each side's own: Rust keeps one `Decoder` across calls and decodes into caller-owned I32 planes, with threads from the host's executor; OpenJPEG makes and destroys a codec and a memory stream on every call, allocates its planes itself, and uses its own thread pool (`opj_codec_set_threads`, made on every call, none at width 1). For encoding, Rust uses `Encoder::new().encode`, OpenJPEG copies the pixels in and encodes into a growing memory buffer. OpenJPEG at the oracle's pin is always built with AVX2, so the two baseline cells are not like for like. Rust is faster in every row of every cell; the single-worker large decodes are the cleanest rows (no threads on either side).
+
+| Row | Workers | Linux baseline | Linux v3 | Windows baseline | Windows v3 |
+|---|---|---:|---:|---:|---:|
+| large decode 1,024² RGB 9/7 | 1 | -47.7 | -70.5 | -53.1 | -73.9 |
+| large decode 1,024² RGB 9/7 | 2 | -57.5 | -77.2 | -64.2 | -76.2 |
+| large decode 1,024² RGB 9/7 | 4 | -60.3 | -77.9 | -66.0 | -79.6 |
+| large decode 1,024² RGB 9/7 | 8 | -55.9 o | -76.0 o | -64.6 o | -79.6 o |
+| large decode 4,096² gray 9/7 | 1 | -66.0 | -71.4 | -62.9 | -81.4 |
+| large decode 4,096² gray 9/7 | 2 | -75.8 | -79.7 | -73.0 | -80.9 |
+| large decode 4,096² gray 9/7 | 4 | -77.4 | -84.0 | -73.2 | -83.3 |
+| large decode 4,096² gray 9/7 | 8 | -74.2 o | -82.0 o | -73.6 o | -81.9 o |
+| small decode 32² RGBA 5/3, whole | - | -33.0 | -34.2 | -31.9 | -45.8 |
+| small decode 32² RGBA 5/3, reduce 2 | - | -41.6 | -38.2 | -48.1 | -49.4 |
+| small decode 32² RGBA 5/3, missing EOC | - | -33.0 | -35.4 | -32.2 | -45.0 |
+| small decode 64² RGB 9/7, whole | - | -42.5 | -41.5 | -30.0 | -42.8 |
+| small decode 64² RGB 9/7, reduce 2 | - | -48.0 | -33.6 | -42.1 | -44.1 |
+| small decode 64² RGB 9/7, missing EOC | - | -42.7 | -43.6 | -30.9 | -42.5 |
+| small decode 128² RGBA 9/7, whole | - | -40.4 | -63.0 | -39.5 | -58.0 |
+| small decode 128² RGBA 9/7, reduce 2 | - | -44.3 | -46.5 | -42.3 | -55.9 |
+| small decode 128² RGBA 9/7, missing EOC | - | -40.1 | -63.2 | -38.4 | -58.0 |
+| small encode 32² RGB, lossless 5/3 | - | -40.4 | -42.3 | -38.9 | -54.0 |
+| small encode 32² RGB, lossy 9/7 | - | -41.6 | -44.3 | -37.1 | -50.0 |
+| small encode 64² RGB, lossless 5/3 | - | -30.9 | -33.2 | -24.9 | -37.3 |
+| small encode 64² RGB, lossy 9/7 | - | -37.0 | -37.9 | -28.4 | -40.7 |
+| small encode 128² RGB, lossless 5/3 | - | -26.8 | -27.4 | -17.6 | -31.1 |
+| small encode 128² RGB, lossy 9/7 | - | -36.0 | -35.5 | -24.5 | -38.1 |
+
+### Rust 0.1.3 against Rust 0.1.2
+
+The same run as the OpenJPEG table (45296325934). A small program (`tools/rust-versions` of PR 18) links the crate at the tag v0.1.2 and the current checkout side by side and times both in one process through the public API they share (`decode_into_i32` and `Encoder::encode`). Its own scheduler (scoped threads, started on every call for width 1 as for the others) serves both versions, so the large-decode figures include that start-up cost on both sides. Machines: Linux baseline Intel Xeon 6975P-C, Linux x86-64-v3 AMD EPYC 7763, Windows baseline Intel Xeon 8370C, Windows x86-64-v3 AMD EPYC 7763. The decoded samples and encoded bytes of 0.1.3 are identical to 0.1.2 on every row. Marks: `!` 0.1.3 slower, `*` within noise, `o` not counted.
+
+| Row | Workers | Linux baseline | Linux v3 | Windows baseline | Windows v3 |
+|---|---|---:|---:|---:|---:|
+| large decode 1,024² RGB 9/7 | 1 | -11.6 | -17.6 | -10.6 | -17.1 |
+| large decode 1,024² RGB 9/7 | 2 | -8.7 | -13.7 | -9.3 | -8.3 |
+| large decode 1,024² RGB 9/7 | 4 | -8.7 | -10.3 | -6.2 | -6.0 |
+| large decode 1,024² RGB 9/7 | 8 | -7.2 o | -7.1 o | -3.6 o | -4.6 o |
+| large decode 4,096² gray 9/7 | 1 | +4.4 ! | -1.9 | -2.2 | -1.5 |
+| large decode 4,096² gray 9/7 | 2 | +2.1 * | -4.3 | -2.4 | -5.7 |
+| large decode 4,096² gray 9/7 | 4 | +0.1 * | -1.8 | -0.7 * | -1.0 * |
+| large decode 4,096² gray 9/7 | 8 | -2.1 o | -0.3 o * | +0.2 o * | -0.1 o * |
+| small decode 32² RGBA 5/3, whole | - | -32.3 | -32.6 | -31.3 | -32.5 |
+| small decode 32² RGBA 5/3, reduce 2 | - | +19.7 ! | +14.8 ! | +18.8 ! | +18.3 ! |
+| small decode 32² RGBA 5/3, missing EOC | - | -32.5 | -33.6 | -31.8 | -32.1 |
+| small decode 64² RGB 9/7, whole | - | -25.4 | -8.5 | -24.3 | -7.8 |
+| small decode 64² RGB 9/7, reduce 2 | - | -9.8 | +5.4 ! | -5.0 | +3.4 ! |
+| small decode 64² RGB 9/7, missing EOC | - | -25.3 | -7.0 | -24.9 | -5.9 |
+| small decode 128² RGBA 9/7, whole | - | -17.6 | -27.1 | -17.9 | -23.9 |
+| small decode 128² RGBA 9/7, reduce 2 | - | -28.5 | -28.4 | -30.2 | -26.2 |
+| small decode 128² RGBA 9/7, missing EOC | - | -18.0 | -28.4 | -17.9 | -24.2 |
+| small encode 32² RGB, lossless 5/3 | - | -45.6 | -48.5 | -45.2 | -46.1 |
+| small encode 32² RGB, lossy 9/7 | - | -49.6 | -50.1 | -47.0 | -48.3 |
+| small encode 64² RGB, lossless 5/3 | - | -41.9 | -43.1 | -41.9 | -41.7 |
+| small encode 64² RGB, lossy 9/7 | - | -49.4 | -46.8 | -47.8 | -45.6 |
+| small encode 128² RGB, lossless 5/3 | - | -41.6 | -40.8 | -42.9 | -40.2 |
+| small encode 128² RGB, lossy 9/7 | - | -49.8 | -46.6 | -47.9 | -46.3 |
+
+What it says: 0.1.3 is faster than 0.1.2 on the 1,024² decodes, the small whole and missing-EOC decodes and every encode (40 % to 50 % faster); the 4,096² gray decode is about level. It is slower on the smallest reduce-2 decodes: the 32² row is +14.8 % to +19.7 % in all four cells and the 64² row +3.4 % and +5.4 % at x86-64-v3. These calls take 25 to 45 microseconds. The cause is not yet known.
+
 ## Verifying a Tier-1 change in CI
 
 `.github/workflows/tier1-verify.yml` runs on a pull request that touches the Tier-1 files (`neo-j2k/src/t1*`,
