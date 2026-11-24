@@ -333,6 +333,16 @@ runs unpinned (the table's environment line says `pinned, CPU n` or `UNPINNED`, 
 leaves the job red with a message instead of an empty table; a gate of No does not fail the job: the job measures, the
 reader decides.
 
+The pair side `small` judges the nine `small/` sets, which are the nine rows of the small-decoder suite of
+`small_image_gates` (three corpus images, each whole, at reduce 2 and with the last two bytes cut): one whole decode through
+the public API into caller-owned planes with a decoder warmed beforehand, one decode a pass. The code-block sets do not show a step that changes
+how a whole small request is decoded, because most blocks of a reduced decode are at most four rows high. This side has no
+fixed gain to reach. Its summary table has one row per set, each with its noise band, which is the largest change the control
+(the byte copy of the base) showed in any round of that row. A row the step is meant to help (`small/sl_32_rgba_53_reduce2`) passes
+when its output is identical, its control is within +-1.0 % and its head change is below minus the band; every other row passes
+when its head change is not above the band (no material regression). The reduce-2 rows of the 64 and 128 pixel images are
+therefore held to no regression, and their head figures are printed to read.
+
 How to read the Rust-versus-C++ table: the C++ side is the oracle built with the repository's usual flags: GCC 15 on
 Linux, MSVC on Windows. MSVC is the compiler the C++ numbers of the baseline above were measured with; GCC 15 is not.
 The Change column is the median of the repetitions' own changes, not the percent of the two median columns, and the
