@@ -426,20 +426,23 @@ Linux/WSL2, one thread pinned to one logical CPU, and AVX2 (`x86-64-v3`) builds.
 Inputs are the repository's generated 8-bit fixtures. **Latencies are in milliseconds;
 lower is faster.** Each value is the median of three process medians.
 
-| Operation and input | neo-j2k C++ | neoj2k-rust | OpenJPEG 2.5.4 oracle |
-|---|---:|---:|---:|
-| Decode 32 × 32 RGBA, 5/3 | 0.166 | 0.149 | 0.375 |
-| Decode 64 × 64 RGB, 9/7 | 0.0515 | 0.0565 | 0.105 |
-| Decode 128 × 128 RGBA, 9/7 | 0.11 | 0.115 | 0.374 |
-| Decode 64 × 64 RGB, 9/7 → 16 × 16 | 0.0208 | 0.0264 | 0.0316 |
-| Decode 1,024 × 1,024 RGB, 9/7 | 4.27 | 4.01 | 14.1 |
-| Decode 4,096 × 4,096 grayscale, 9/7 | 11.8 | 11 | 82.6 |
-| Encode 32 × 32 RGB, lossless 5/3 | 0.11 | 0.113 | 0.282 |
-| Encode 32 × 32 RGB, lossy 9/7 | 0.114 | 0.11 | 0.322 |
-| Encode 64 × 64 RGB, lossless 5/3 | 0.606 | 0.617 | 0.995 |
-| Encode 64 × 64 RGB, lossy 9/7 | 0.639 | 0.662 | 1.19 |
-| Encode 128 × 128 RGB, lossless 5/3 | 2.31 | 2.35 | 3.41 |
-| Encode 128 × 128 RGB, lossy 9/7 | 2.41 | 2.57 | 4.29 |
+| Operation and input | neo-j2k C++ | neoj2k-rust | OpenJPEG 2.5.4 oracle | Rust speedup vs OpenJPEG |
+|---|---:|---:|---:|---:|
+| Decode 32 × 32 RGBA, 5/3 | 0.166 | 0.149 | 0.375 | 2.52× |
+| Decode 64 × 64 RGB, 9/7 | 0.0515 | 0.0565 | 0.105 | 1.86× |
+| Decode 128 × 128 RGBA, 9/7 | 0.11 | 0.115 | 0.374 | 3.26× |
+| Decode 64 × 64 RGB, 9/7 → 16 × 16 | 0.0208 | 0.0264 | 0.0316 | 1.20× |
+| Decode 1,024 × 1,024 RGB, 9/7 | 4.27 | 4.01 | 14.1 | 3.52× |
+| Decode 4,096 × 4,096 grayscale, 9/7 | 11.8 | 11 | 82.6 | 7.53× |
+| Encode 32 × 32 RGB, lossless 5/3 | 0.11 | 0.113 | 0.282 | 2.51× |
+| Encode 32 × 32 RGB, lossy 9/7 | 0.114 | 0.11 | 0.322 | 2.93× |
+| Encode 64 × 64 RGB, lossless 5/3 | 0.606 | 0.617 | 0.995 | 1.61× |
+| Encode 64 × 64 RGB, lossy 9/7 | 0.639 | 0.662 | 1.19 | 1.80× |
+| Encode 128 × 128 RGB, lossless 5/3 | 2.31 | 2.35 | 3.41 | 1.45× |
+| Encode 128 × 128 RGB, lossy 9/7 | 2.41 | 2.57 | 4.29 | 1.67× |
+
+Rust speedup is **OpenJPEG time ÷ Rust time**, calculated from the unrounded matched medians.
+A value above 1× means Rust completed the same request faster.
 
 Sources: Rust `28d96e9` (the safe implementation, crate version 0.1.3), neo-j2k C++
 0.1.3 at `81407c2`, and the repository's pinned OpenJPEG 2.5.4 fork at `66b16561`.
