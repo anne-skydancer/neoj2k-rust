@@ -23,6 +23,15 @@ encodes four. Three fresh processes rotate the starting order and caller output-
 allocation. Published values are the median of the three process medians. Raw values and
 process ranges are retained rather than declaring near-equal values a universal win.
 
+## Measurement attribution
+
+The `neoj2k-rust` result records come from `rust_decode` and the Rust encoder closure in
+`tools/bench_three_way/src/main.rs`, which invoke this crate's public APIs. The `openjpeg`
+records come from `opj_decode` and `openjpeg::encode_u8`, which invoke OpenJPEG's API.
+The `neo-j2k` records separately measure the C++ codec. Both the three-way README table
+and its dedicated Rust/OpenJPEG table use these direct measurements. No Rust latency
+is calculated from a C++-versus-OpenJPEG ratio or copied from a C++ viewer/upload result.
+
 ## What is timed
 
 All decoders use fresh codec instances on every call, including header parsing, allocation

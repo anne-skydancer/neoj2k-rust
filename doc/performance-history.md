@@ -18,7 +18,12 @@ the change is the time of the named build against its stated baseline (minus is 
 produces identical decoded samples or encoded bytes. No pass/fail gate is stated for these numbers, so the
 tables have no gate column.
 
-### neo-j2k C++ versus OpenJPEG 2.5.4
+### C++ context only: neo-j2k C++ versus OpenJPEG 2.5.4
+
+**These numbers measure C++ neo-j2k, not neoj2k-rust.** They were copied from the C++
+repository for context and cannot support a Rust-versus-OpenJPEG performance claim.
+The [current Rust/OpenJPEG table](../README.md#neoj2k-rust-versus-openjpeg-254) uses
+directly measured Rust and OpenJPEG calls instead.
 
 Whole-image decode and encode, measured by the C++ repository's suites. The baseline is OpenJPEG.
 
