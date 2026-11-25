@@ -1,0 +1,16 @@
+[package]
+name = "neo-j2k-three-way"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+neo-j2k = { path = "../../neo-j2k" }
+neo-j2k-oracle = { path = "../../neo-j2k-oracle" }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+debug = "line-tables-only"
