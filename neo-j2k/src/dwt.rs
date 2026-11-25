@@ -761,7 +761,10 @@ impl Level {
 
 fn row_wise(width: usize, height: usize, reversible: bool) -> bool {
     let area = if reversible { ROW_WISE_AREA_53 } else { ROW_WISE_AREA_97 };
-    width >= 32 && height > 1 && width * height >= area
+    // Wide, short 5/3 planes also favour contiguous row lifts: column batches repeatedly
+    // cross the large row stride even when the plane falls below the square-image area gate.
+    let wide_53 = reversible && width >= 256 && height <= width / 4;
+    width >= 32 && height > 1 && (width * height >= area || wide_53)
 }
 
 fn inverse_line(data: &mut [i32], stride: usize, parity: usize, reversible: bool, full_group: bool, line: &mut [i32]) {
@@ -1151,6 +1154,62 @@ mod tests {
                     );
                     if let Some(output) = row_wise {
                         assert_eq!(output, serial, "row-wise {width}x{height}, parity {parity}");
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn wide_reversible_levels_match_column_reference_with_parities_overflow_and_padding() {
+        // Include both sides of the width/aspect gates, odd tails and the benchmark geometry.
+        let shapes: &[(usize, usize)] = if cfg!(miri) {
+            &[(256, 2), (257, 3)]
+        } else {
+            &[
+                (255, 63),
+                (256, 2),
+                (256, 64),
+                (256, 65),
+                (257, 65),
+                (2048, 64),
+                (2049, 65),
+            ]
+        };
+        for &(width, height) in shapes {
+            let stride = width + 3;
+            let input: Vec<i32> = (0..stride * height)
+                .map(|i| i32::try_from(i).unwrap().wrapping_mul(1_645_103_939))
+                .collect();
+            for x_parity in 0..=1 {
+                for y_parity in 0..=1 {
+                    let level = Level {
+                        width,
+                        height,
+                        stride,
+                        x_parity,
+                        y_parity,
+                        reversible: true,
+                    };
+                    let mut expected = input.clone();
+                    let mut actual = input.clone();
+                    let mut line = vec![0; (width + height) * COLUMN_BATCH_97];
+                    level.rows::<false>(&mut expected, height, &mut line);
+                    for col in 0..width {
+                        inverse_line(
+                            &mut expected[col..],
+                            stride,
+                            y_parity,
+                            true,
+                            col < width / GROUP_WIDTH_53 * GROUP_WIDTH_53,
+                            &mut line[..height],
+                        );
+                    }
+                    level.rows::<true>(&mut actual, height, &mut line);
+                    level.columns::<true>(&mut actual, &mut line, false);
+                    assert_eq!(actual, expected, "{width}x{height}, parity {x_parity},{y_parity}");
+                    for (before, after) in input.chunks(stride).zip(actual.chunks(stride)) {
+                        assert_eq!(&before[width..], &after[width..]);
                     }
                 }
             }
