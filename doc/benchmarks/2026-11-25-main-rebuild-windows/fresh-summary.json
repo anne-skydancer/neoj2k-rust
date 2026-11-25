@@ -1,0 +1,314 @@
+{
+  "decode/sl_32_rgba_53.j2k/reduce0": {
+    "neo-j2k": {
+      "median_us": 265.7875,
+      "process_us": [
+        264.24375,
+        269.70625,
+        265.7875
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 156.85625,
+      "process_us": [
+        157.63125,
+        153.14375,
+        156.85625
+      ]
+    },
+    "openjpeg": {
+      "median_us": 377.975,
+      "process_us": [
+        377.30625,
+        380.05,
+        377.975
+      ]
+    }
+  },
+  "decode/sl_64_rgb_97.j2k/reduce0": {
+    "neo-j2k": {
+      "median_us": 57.64375,
+      "process_us": [
+        58.20625,
+        57.64375,
+        57.11875
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 60.275,
+      "process_us": [
+        60.275,
+        60.49375,
+        60.275
+      ]
+    },
+    "openjpeg": {
+      "median_us": 88.23125,
+      "process_us": [
+        89.01875,
+        88.23125,
+        87.95625
+      ]
+    }
+  },
+  "decode/sl_128_rgba_97.j2k/reduce0": {
+    "neo-j2k": {
+      "median_us": 114.1625,
+      "process_us": [
+        110.80625,
+        118.53125,
+        114.1625
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 116.75,
+      "process_us": [
+        117.34375,
+        116.75,
+        113.975
+      ]
+    },
+    "openjpeg": {
+      "median_us": 323.2625,
+      "process_us": [
+        341.21875,
+        323.2625,
+        317.40625
+      ]
+    }
+  },
+  "decode/sl_64_rgb_97.j2k/reduce2": {
+    "neo-j2k": {
+      "median_us": 23.38125,
+      "process_us": [
+        23.38125,
+        22.6625,
+        23.425
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 31.1125,
+      "process_us": [
+        36.2875,
+        31.1125,
+        30.85625
+      ]
+    },
+    "openjpeg": {
+      "median_us": 40.79375,
+      "process_us": [
+        44.2,
+        40.79375,
+        40.71875
+      ]
+    }
+  },
+  "decode/large_1024_rgb_97.j2k/reduce0": {
+    "neo-j2k": {
+      "median_us": 4273.1,
+      "process_us": [
+        4286.5,
+        4257.3,
+        4273.1
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 3897.7,
+      "process_us": [
+        3950.7,
+        3897.7,
+        3820.15
+      ]
+    },
+    "openjpeg": {
+      "median_us": 15939.25,
+      "process_us": [
+        16020.55,
+        15939.25,
+        15787.6
+      ]
+    }
+  },
+  "decode/large_4096_g_97.j2k/reduce0": {
+    "neo-j2k": {
+      "median_us": 10089.1,
+      "process_us": [
+        9912.45,
+        10089.1,
+        10099.3
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 9164.75,
+      "process_us": [
+        9164.75,
+        9222.05,
+        8994.9
+      ]
+    },
+    "openjpeg": {
+      "median_us": 82358.1,
+      "process_us": [
+        81796.8,
+        82464.6,
+        82358.1
+      ]
+    }
+  },
+  "encode/32x32/53": {
+    "neo-j2k": {
+      "median_us": 128.1875,
+      "process_us": [
+        128.45,
+        128.1875,
+        128.1625
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 112.9875,
+      "process_us": [
+        114.525,
+        112.9875,
+        112.9125
+      ]
+    },
+    "openjpeg": {
+      "median_us": 268.825,
+      "process_us": [
+        267.6625,
+        268.825,
+        278.15
+      ]
+    }
+  },
+  "encode/32x32/97": {
+    "neo-j2k": {
+      "median_us": 131.225,
+      "process_us": [
+        131.225,
+        131.3625,
+        131.2125
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 112.825,
+      "process_us": [
+        114.4875,
+        112.825,
+        112.25
+      ]
+    },
+    "openjpeg": {
+      "median_us": 307.425,
+      "process_us": [
+        305.5625,
+        308.0625,
+        307.425
+      ]
+    }
+  },
+  "encode/64x64/53": {
+    "neo-j2k": {
+      "median_us": 684.6,
+      "process_us": [
+        708.0125,
+        684.6,
+        681.975
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 625.6875,
+      "process_us": [
+        625.6875,
+        613.2875,
+        638.125
+      ]
+    },
+    "openjpeg": {
+      "median_us": 1034.975,
+      "process_us": [
+        1034.975,
+        997.8625,
+        1047.0
+      ]
+    }
+  },
+  "encode/64x64/97": {
+    "neo-j2k": {
+      "median_us": 747.9375,
+      "process_us": [
+        747.9375,
+        732.85,
+        764.5125
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 679.2,
+      "process_us": [
+        679.2,
+        671.3625,
+        704.2375
+      ]
+    },
+    "openjpeg": {
+      "median_us": 1179.6875,
+      "process_us": [
+        1179.6875,
+        1158.7,
+        1190.975
+      ]
+    }
+  },
+  "encode/128x128/53": {
+    "neo-j2k": {
+      "median_us": 2645.25,
+      "process_us": [
+        2645.25,
+        2585.9,
+        2680.9875
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 2409.45,
+      "process_us": [
+        2409.45,
+        2376.925,
+        2453.825
+      ]
+    },
+    "openjpeg": {
+      "median_us": 3522.3625,
+      "process_us": [
+        3553.05,
+        3440.7375,
+        3522.3625
+      ]
+    }
+  },
+  "encode/128x128/97": {
+    "neo-j2k": {
+      "median_us": 2860.2,
+      "process_us": [
+        2860.2,
+        2832.8625,
+        2904.4375
+      ]
+    },
+    "neoj2k-rust": {
+      "median_us": 2620.8375,
+      "process_us": [
+        2620.8375,
+        2593.4875,
+        2640.8625
+      ]
+    },
+    "openjpeg": {
+      "median_us": 4226.025,
+      "process_us": [
+        4226.025,
+        4174.2125,
+        4278.0125
+      ]
+    }
+  }
+}

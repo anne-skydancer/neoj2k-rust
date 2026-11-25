@@ -1,0 +1,374 @@
+[
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DNJ2K_REQUIRE_X86_64_V3 -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c11 -fPIC -fvisibility=hidden -march=x86-64 -mtune=generic -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -fcf-protection=full -o src/CMakeFiles/neoj2k_cpu_check_static.dir/cpu_check.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/cpu_check.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/cpu_check.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_cpu_check_static.dir/cpu_check.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/version.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/version.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/version.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/version.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/image.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/image.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/image.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/image.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/defaults.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/defaults.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/defaults.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/defaults.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/not_yet.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/not_yet.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/not_yet.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/not_yet.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/memory.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/memory.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/memory.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/memory.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/arena.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/arena.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/arena.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/arena.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/messages.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/messages.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/messages.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/messages.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/stream.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/stream.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/stream.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/stream.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/limit_profiles.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/limit_profiles.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/limit_profiles.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/limit_profiles.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/header.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/header.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/header.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/header.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/jp2.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/jp2.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/jp2.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/jp2.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/codec.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/codec.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/codec.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/codec.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/work_arena.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/work_arena.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/work_arena.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/work_arena.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/decode.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/decode.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/decode.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/decode.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/tile.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/tile.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/tile.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/tile.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/t2.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/t2.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/t2.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/t2.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/t1.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/t1.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/t1.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/t1.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/dwt.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/dwt.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/dwt.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/dwt.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/mct.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/mct.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/mct.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/mct.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/output.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/output.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/output.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/output.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/encode.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/encode.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/encode.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/encode.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/enc_t1.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/enc_t1.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/enc_t1.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/enc_t1.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/enc_dwt.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/enc_dwt.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/enc_dwt.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/enc_dwt.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/enc_t2.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/enc_t2.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/enc_t2.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/enc_t2.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -D_FORTIFY_SOURCE=2 -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -fvisibility=hidden -fvisibility-inlines-hidden -Wall -Wextra -Wpedantic -Wshadow -ffp-contract=off -fno-fast-math -march=x86-64-v3 -fno-exceptions -fno-rtti -fno-sanitize=vptr -fcf-protection=full -o src/CMakeFiles/neoj2k_static.dir/limit_profile_opensim.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/src/limit_profile_opensim.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/src/limit_profile_opensim.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/src/CMakeFiles/neoj2k_static.dir/limit_profile_opensim.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/thread.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/thread.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/thread.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/thread.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/bio.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/bio.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/bio.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/bio.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/cio.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/cio.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/cio.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/cio.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/dwt.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/dwt.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/dwt.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/dwt.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/event.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/event.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/event.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/event.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/ht_dec.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/ht_dec.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/ht_dec.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/ht_dec.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/image.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/image.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/image.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/image.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/invert.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/invert.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/invert.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/invert.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/j2k.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/j2k.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/j2k.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/j2k.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/jp2.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/jp2.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/jp2.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/jp2.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/mct.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/mct.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/mct.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/mct.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/mqc.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/mqc.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/mqc.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/mqc.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/openjpeg.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/openjpeg.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/openjpeg.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/openjpeg.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/opj_clock.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/opj_clock.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/opj_clock.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/opj_clock.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/pi.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/pi.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/pi.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/pi.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/t1.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/t1.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/t1.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/t1.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/t2.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/t2.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/t2.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/t2.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/tcd.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/tcd.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/tcd.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/tcd.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/tgt.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/tgt.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/tgt.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/tgt.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/function_list.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/function_list.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/function_list.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/function_list.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/sparse_array.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/sparse_array.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/sparse_array.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/sparse_array.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/cc -DMUTEX_pthread -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -march=x86-64-v3 -O3 -DNDEBUG -std=gnu99 -fPIC -w -mavx2 -ffp-contract=off -fno-fast-math -O3 -o oracle/CMakeFiles/nj2k_oracle.dir/openjp2/opj_malloc.c.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/opj_malloc.c",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2/opj_malloc.c",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/CMakeFiles/nj2k_oracle.dir/openjp2/opj_malloc.c.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -ffp-contract=off -fno-fast-math -Wall -Wextra -o tests/common/CMakeFiles/nj2k_test_common.dir/common.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/common.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/common.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/tests/common/CMakeFiles/nj2k_test_common.dir/common.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -ffp-contract=off -fno-fast-math -Wall -Wextra -o tests/common/CMakeFiles/nj2k_test_common.dir/generated.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/generated.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/generated.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/tests/common/CMakeFiles/nj2k_test_common.dir/generated.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -ffp-contract=off -fno-fast-math -Wall -Wextra -o tests/common/CMakeFiles/nj2k_test_common.dir/j2k_scan.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/j2k_scan.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/j2k_scan.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/tests/common/CMakeFiles/nj2k_test_common.dir/j2k_scan.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -ffp-contract=off -fno-fast-math -Wall -Wextra -o tests/common/CMakeFiles/nj2k_test_common.dir/pgx.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/pgx.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/pgx.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/tests/common/CMakeFiles/nj2k_test_common.dir/pgx.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -ffp-contract=off -fno-fast-math -Wall -Wextra -o tests/common/CMakeFiles/nj2k_test_common.dir/load.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/load.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/load.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/tests/common/CMakeFiles/nj2k_test_common.dir/load.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -ffp-contract=off -fno-fast-math -Wall -Wextra -o tests/common/CMakeFiles/nj2k_test_common.dir/viewer.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/viewer.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/viewer.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/tests/common/CMakeFiles/nj2k_test_common.dir/viewer.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -ffp-contract=off -fno-fast-math -Wall -Wextra -o tests/common/CMakeFiles/nj2k_test_common.dir/header_facts.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/header_facts.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/header_facts.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/tests/common/CMakeFiles/nj2k_test_common.dir/header_facts.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -ffp-contract=off -fno-fast-math -Wall -Wextra -o tests/common/CMakeFiles/nj2k_test_common.dir/backend_openjpeg.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/backend_openjpeg.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/backend_openjpeg.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/tests/common/CMakeFiles/nj2k_test_common.dir/backend_openjpeg.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -ffp-contract=off -fno-fast-math -Wall -Wextra -o tests/common/CMakeFiles/nj2k_test_common.dir/backend_neoj2k.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/backend_neoj2k.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common/backend_neoj2k.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/tests/common/CMakeFiles/nj2k_test_common.dir/backend_neoj2k.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim -I/tmp/neoj2k-main-rebuild-20261125/cpp/src -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -ffp-contract=off -fno-fast-math -march=x86-64-v3 -Wall -Wextra -Wpedantic -Wshadow -o rust-shim/CMakeFiles/nj2k_rust_shim.dir/shim.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim/shim.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim/shim.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/rust-shim/CMakeFiles/nj2k_rust_shim.dir/shim.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim -I/tmp/neoj2k-main-rebuild-20261125/cpp/src -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -ffp-contract=off -fno-fast-math -march=x86-64-v3 -Wall -Wextra -Wpedantic -Wshadow -o rust-shim/CMakeFiles/nj2k_rust_shim.dir/shim_opj.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim/shim_opj.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim/shim_opj.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/rust-shim/CMakeFiles/nj2k_rust_shim.dir/shim_opj.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim -I/tmp/neoj2k-main-rebuild-20261125/cpp/src -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -ffp-contract=off -fno-fast-math -march=x86-64-v3 -Wall -Wextra -Wpedantic -Wshadow -o rust-shim/CMakeFiles/nj2k_rust_shim.dir/shim_t1.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim/shim_t1.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim/shim_t1.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/rust-shim/CMakeFiles/nj2k_rust_shim.dir/shim_t1.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim -I/tmp/neoj2k-main-rebuild-20261125/cpp/src -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -ffp-contract=off -fno-fast-math -march=x86-64-v3 -Wall -Wextra -Wpedantic -Wshadow -o rust-shim/CMakeFiles/nj2k_rust_shim.dir/layout_decoder.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim/layout_decoder.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim/layout_decoder.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/rust-shim/CMakeFiles/nj2k_rust_shim.dir/layout_decoder.cpp.o"
+},
+{
+  "directory": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release",
+  "command": "/usr/sbin/c++ -DNJ2K_STATIC -DOPJ_STATIC -I/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim -I/tmp/neoj2k-main-rebuild-20261125/cpp/src -I/tmp/neoj2k-main-rebuild-20261125/cpp/tests/common -I/tmp/neoj2k-main-rebuild-20261125/cpp/oracle/openjp2 -I/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/oracle/include -I/tmp/neoj2k-main-rebuild-20261125/cpp/include -march=x86-64-v3 -O3 -DNDEBUG -std=c++20 -fPIC -ffp-contract=off -fno-fast-math -march=x86-64-v3 -Wall -Wextra -Wpedantic -Wshadow -o rust-shim/CMakeFiles/nj2k_rust_shim.dir/layout_encoder.cpp.o -c /tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim/layout_encoder.cpp",
+  "file": "/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k-oracle/shim/layout_encoder.cpp",
+  "output": "/tmp/neoj2k-main-rebuild-20261125/results/cpp-release/rust-shim/CMakeFiles/nj2k_rust_shim.dir/layout_encoder.cpp.o"
+}
+]

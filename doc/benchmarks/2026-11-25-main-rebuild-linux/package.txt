@@ -1,0 +1,24 @@
+   Packaging neo-j2k v0.1.3 (/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k)
+warning: ignoring test `cpp_release` as `tests/cpp_release.rs` is not included in the published package
+warning: ignoring test `decode_executor` as `tests/decode_executor.rs` is not included in the published package
+warning: ignoring test `decode_options` as `tests/decode_options.rs` is not included in the published package
+warning: ignoring test `decode_parity` as `tests/decode_parity.rs` is not included in the published package
+warning: ignoring test `decode_stream` as `tests/decode_stream.rs` is not included in the published package
+warning: ignoring test `direct_i32` as `tests/direct_i32.rs` is not included in the published package
+warning: ignoring test `encode_executor` as `tests/encode_executor.rs` is not included in the published package
+warning: ignoring test `encode_stream` as `tests/encode_stream.rs` is not included in the published package
+warning: ignoring test `encode_updates` as `tests/encode_updates.rs` is not included in the published package
+warning: ignoring test `generated_feature_parity` as `tests/generated_feature_parity.rs` is not included in the published package
+warning: ignoring test `generated_matrix` as `tests/generated_matrix.rs` is not included in the published package
+warning: ignoring test `header_parity` as `tests/header_parity.rs` is not included in the published package
+warning: ignoring test `ledger_parity` as `tests/ledger_parity.rs` is not included in the published package
+warning: ignoring test `memory_limits` as `tests/memory_limits.rs` is not included in the published package
+warning: ignoring test `miri_decode` as `tests/miri_decode.rs` is not included in the published package
+warning: ignoring test `reference_replay` as `tests/reference_replay.rs` is not included in the published package
+warning: ignoring test `small_image_gates` as `tests/small_image_gates.rs` is not included in the published package
+warning: ignoring test `stage_profile` as `tests/stage_profile.rs` is not included in the published package
+warning: ignoring test `vs_openjpeg` as `tests/vs_openjpeg.rs` is not included in the published package
+    Packaged 64 files, 825.3KiB (204.3KiB compressed)
+   Verifying neo-j2k v0.1.3 (/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k)
+   Compiling neo-j2k v0.1.3 (/tmp/neoj2k-main-rebuild-20261125/rust/target/package/neo-j2k-0.1.3)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.59s

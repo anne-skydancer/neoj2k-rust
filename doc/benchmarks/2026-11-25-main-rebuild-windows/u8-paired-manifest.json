@@ -1,0 +1,9 @@
+{
+  "binary_sha256": {
+    "C:\\Users\\annes\\Documents\\Codex\\2026-11-25\\in\\work\\worker-baseline.exe": "b87a22f86d99388f194a33b1f99a7bd37ecf9df62d49902bc6751c82d6e858e4",
+    "C:\\Users\\annes\\source\\repos\\neoj2k-rust\\target-kdu-bench\\rust-v3\\release\\worker.exe": "467d8125dd272efb08c5a80abf38bf6f06b07f9f6d3b4780cc3b0e877041f2ae",
+    "C:\\Users\\annes\\source\\repos\\neoj2k-rust\\target-kdu-bench\\Release\\kdu_compare_native.exe": "04748fab6b32e535c778ee238b64013794eb436b8267962294490549cd83dd44"
+  },
+  "diff": "",
+  "protocol": "3 fresh process trials, 6 actor orders, one actor at a time on logical CPU 0, same Worker protocol as compare.py; byte and guard validation before/after every batch"
+}

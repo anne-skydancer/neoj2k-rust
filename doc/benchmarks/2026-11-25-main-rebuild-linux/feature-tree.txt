@@ -1,0 +1,12 @@
+neo-j2k v0.1.3 (/tmp/neoj2k-main-rebuild-20261125/rust/neo-j2k)
+├── neo-j2k feature "default"
+│   └── neo-j2k-three-way v0.0.0 (/tmp/neoj2k-main-rebuild-20261125/rust/tools/bench_three_way)
+│       └── neo-j2k-three-way feature "default" (command-line)
+├── neo-j2k feature "encode"
+│   └── neo-j2k feature "default" (*)
+├── neo-j2k feature "opensim"
+│   └── neo-j2k feature "default" (*)
+├── neo-j2k feature "simd"
+│   └── neo-j2k feature "default" (*)
+└── neo-j2k feature "std"
+    └── neo-j2k feature "default" (*)

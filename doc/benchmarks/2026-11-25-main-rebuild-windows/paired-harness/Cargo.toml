@@ -1,0 +1,10 @@
+[package]
+name="main-regression"
+version="0.0.0"
+edition="2024"
+[dependencies]
+neo_j2k_old={package="neo-j2k-reference",path="baseline-reference"}
+neo_j2k_new={package="neo-j2k",path="C:/Users/annes/source/repos/neoj2k-rust/neo-j2k"}
+[profile.release]
+lto="fat"
+codegen-units=1

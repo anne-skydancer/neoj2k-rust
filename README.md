@@ -423,83 +423,109 @@ NJ2K_ORACLE_NO_BUILD=1 RUSTFLAGS="-C target-feature=+avx2" CARGO_TARGET_DIR=targ
 
 ### Matched three-way comparison
 
-Matched three-way measurements on **2026-11-25**, using an AMD Ryzen 9 9950X3D under
-Linux/WSL2, one thread pinned to one logical CPU, and AVX2 (`x86-64-v3`) builds.
-Inputs are the repository's generated 8-bit fixtures. **Latencies are in milliseconds;
-lower is faster.** Each value is the median of three process medians.
+Latest rebuilt-main measurements on **2026-11-25**, using an AMD Ryzen 9 9950X3D
+under **Linux/WSL2**, one thread pinned to one logical CPU, and AVX2 (`x86-64-v3`)
+builds. Rust source is **`b4240d6`**, including the merged wide-image reconstruction
+improvement; crate version 0.1.3. Inputs are generated 8-bit fixtures.
+**Latencies are milliseconds; lower is faster.** Each value is the median of three
+process medians.
 
 | Operation and input | neo-j2k C++ | neoj2k-rust | OpenJPEG 2.5.4 oracle | Rust speedup vs OpenJPEG |
 |---|---:|---:|---:|---:|
-| Decode 32 × 32 RGBA, 5/3 | 0.166 | 0.149 | 0.375 | 2.52× |
-| Decode 64 × 64 RGB, 9/7 | 0.0515 | 0.0565 | 0.105 | 1.86× |
-| Decode 128 × 128 RGBA, 9/7 | 0.11 | 0.115 | 0.374 | 3.26× |
-| Decode 64 × 64 RGB, 9/7 → 16 × 16 | 0.0208 | 0.0264 | 0.0316 | 1.20× |
-| Decode 1,024 × 1,024 RGB, 9/7 | 4.27 | 4.01 | 14.1 | 3.52× |
-| Decode 4,096 × 4,096 grayscale, 9/7 | 11.8 | 11 | 82.6 | 7.53× |
-| Encode 32 × 32 RGB, lossless 5/3 | 0.11 | 0.113 | 0.282 | 2.51× |
-| Encode 32 × 32 RGB, lossy 9/7 | 0.114 | 0.11 | 0.322 | 2.93× |
-| Encode 64 × 64 RGB, lossless 5/3 | 0.606 | 0.617 | 0.995 | 1.61× |
-| Encode 64 × 64 RGB, lossy 9/7 | 0.639 | 0.662 | 1.19 | 1.80× |
-| Encode 128 × 128 RGB, lossless 5/3 | 2.31 | 2.35 | 3.41 | 1.45× |
-| Encode 128 × 128 RGB, lossy 9/7 | 2.41 | 2.57 | 4.29 | 1.67× |
+| Decode 32 × 32 RGBA, 5/3 | 0.1714 | 0.1593 | 0.3825 | 2.40× |
+| Decode 64 × 64 RGB, 9/7 | 0.0502 | 0.0575 | 0.1020 | 1.78× |
+| Decode 128 × 128 RGBA, 9/7 | 0.1107 | 0.1194 | 0.3840 | 3.22× |
+| Decode 64 × 64 RGB, 9/7 → 16 × 16 | 0.0206 | 0.0265 | 0.0303 | 1.14× |
+| Decode 1,024 × 1,024 RGB, 9/7 | 4.2961 | 4.0680 | 13.6651 | 3.36× |
+| Decode 4,096 × 4,096 grayscale, 9/7 | 11.9264 | 11.2747 | 83.6997 | 7.42× |
+| Encode 32 × 32 RGB, lossless 5/3 | 0.1186 | 0.1133 | 0.2907 | 2.56× |
+| Encode 32 × 32 RGB, lossy 9/7 | 0.1144 | 0.1158 | 0.3266 | 2.82× |
+| Encode 64 × 64 RGB, lossless 5/3 | 0.6131 | 0.6132 | 1.0000 | 1.63× |
+| Encode 64 × 64 RGB, lossy 9/7 | 0.6393 | 0.6824 | 1.2012 | 1.76× |
+| Encode 128 × 128 RGB, lossless 5/3 | 2.3638 | 2.3659 | 3.4421 | 1.45× |
+| Encode 128 × 128 RGB, lossy 9/7 | 2.4027 | 2.5432 | 4.3509 | 1.71× |
 
-Rust speedup is **OpenJPEG time ÷ Rust time**, calculated from the unrounded matched medians.
-A value above 1× means Rust completed the same request faster.
 
-Sources: Rust `28d96e9` (the safe implementation, crate version 0.1.3), neo-j2k C++
-0.1.3 at `81407c2`, and the repository's pinned OpenJPEG 2.5.4 fork at `66b16561`.
-All three were built from source; Rust uses Release with fat LTO and one codegen unit,
-and the native libraries use GCC Release/O3 with strict floating-point settings.
+Rust speedup is **OpenJPEG time ÷ Rust time**, calculated from unrounded matched
+medians. These are direct Rust API and OpenJPEG API measurements.
 
-Every decode creates and destroys a fresh codec, including header setup, and writes
-caller-owned I32 output. OpenJPEG allocates internal planes and copies them to that output;
-Rust and C++ can reconstruct directly into it. Input loading and caller-buffer allocation
-are outside timing. Every encode creates a fresh codec and returns an owned codestream;
-input conversion, allocation, output copying and teardown are included. The 9/7 encodes
-keep every coding pass, with no target rate. Decoded samples and encoded bytes matched
-across all three libraries before and after every workload in all three repetitions.
+All three libraries were rebuilt from source: Rust 1.100.0, Release, fat LTO and one
+codegen unit; neo-j2k C++ 0.1.3 at `81407c2`, GCC/G++ 16.2.1 Release/O3, strict floating
+point and no IPO; OpenJPEG is the pinned 2.5.4 fork at `66b16561`.
 
-The same executable runs all codecs with balanced order and 32 preconditioning calls
-before each timed batch. The [measurement report](doc/benchmarks/2026-11-25-three-way/README.md)
-contains process ranges, source/build hashes and raw results. These figures describe the
-listed single-thread API workloads; they do not establish a universal ranking.
+Every decode creates/destroys a fresh codec and writes caller-owned I32 output.
+OpenJPEG allocates internal planes and copies out; Rust and C++ can reconstruct
+directly into caller planes. Every encode creates a fresh codec and returns owned
+bytes; conversion, allocation, copying and teardown are timed. Input loading and
+caller output allocation are excluded. The 9/7 encodes keep every pass with no target
+rate. All sample/encoded-byte comparisons passed before and after each workload in
+all three processes (36 three-way case checks).
+
+The same executable runs all actors in balanced order, with 32 preconditioning calls
+before each timed batch. The [rebuilt-main report](doc/benchmarks/2026-11-25-main-rebuild-linux/README.md)
+retains process ranges, raw rounds, source/build hashes and the independent 23-request
+before/after audit. The [earlier Linux table](doc/benchmarks/2026-11-25-three-way/README.md)
+remains historical evidence; differences between separate runs are not causal estimates.
+The separate Linux retained-decoder I32 check of 2048 × 64 RGBA improves from
+1.863 to 1.265 ms (32.1% less time).
 
 ### neoj2k-rust versus OpenJPEG 2.5.4
 
-These are **direct Rust and OpenJPEG measurements** from the same run, in milliseconds.
-The [benchmark driver](tools/bench_three_way/src/main.rs) calls the native Rust decoder
-and encoder and OpenJPEG's own API separately. The Rust times are not inferred from
-neo-j2k C++ timings or from the C++ viewer/upload benchmarks.
+Direct measurements from the **same rebuilt Linux run**, in milliseconds. The
+[benchmark driver](tools/bench_three_way/src/main.rs) invokes each implementation's
+own APIs; Rust timings are not inferred from C++ results.
 
-| Operation and input | neoj2k-rust | OpenJPEG 2.5.4 oracle | Rust speedup |
+| Operation and input | neoj2k-rust | OpenJPEG 2.5.4 oracle | Rust speedup vs OpenJPEG |
 |---|---:|---:|---:|
-| Decode 32 × 32 RGBA, 5/3 | 0.149 | 0.375 | 2.52× |
-| Decode 64 × 64 RGB, 9/7 | 0.0565 | 0.105 | 1.86× |
-| Decode 128 × 128 RGBA, 9/7 | 0.115 | 0.374 | 3.26× |
-| Decode 64 × 64 RGB, 9/7 → 16 × 16 | 0.0264 | 0.0316 | 1.20× |
-| Decode 1,024 × 1,024 RGB, 9/7 | 4.01 | 14.1 | 3.52× |
-| Decode 4,096 × 4,096 grayscale, 9/7 | 11 | 82.6 | 7.53× |
-| Encode 32 × 32 RGB, lossless 5/3 | 0.113 | 0.282 | 2.51× |
-| Encode 32 × 32 RGB, lossy 9/7 | 0.11 | 0.322 | 2.93× |
-| Encode 64 × 64 RGB, lossless 5/3 | 0.617 | 0.995 | 1.61× |
-| Encode 64 × 64 RGB, lossy 9/7 | 0.662 | 1.19 | 1.80× |
-| Encode 128 × 128 RGB, lossless 5/3 | 2.35 | 3.41 | 1.45× |
-| Encode 128 × 128 RGB, lossy 9/7 | 2.57 | 4.29 | 1.67× |
+| Decode 32 × 32 RGBA, 5/3 | 0.1593 | 0.3825 | 2.40× |
+| Decode 64 × 64 RGB, 9/7 | 0.0575 | 0.1020 | 1.78× |
+| Decode 128 × 128 RGBA, 9/7 | 0.1194 | 0.3840 | 3.22× |
+| Decode 64 × 64 RGB, 9/7 → 16 × 16 | 0.0265 | 0.0303 | 1.14× |
+| Decode 1,024 × 1,024 RGB, 9/7 | 4.0680 | 13.6651 | 3.36× |
+| Decode 4,096 × 4,096 grayscale, 9/7 | 11.2747 | 83.6997 | 7.42× |
+| Encode 32 × 32 RGB, lossless 5/3 | 0.1133 | 0.2907 | 2.56× |
+| Encode 32 × 32 RGB, lossy 9/7 | 0.1158 | 0.3266 | 2.82× |
+| Encode 64 × 64 RGB, lossless 5/3 | 0.6132 | 1.0000 | 1.63× |
+| Encode 64 × 64 RGB, lossy 9/7 | 0.6824 | 1.2012 | 1.76× |
+| Encode 128 × 128 RGB, lossless 5/3 | 2.3659 | 3.4421 | 1.45× |
+| Encode 128 × 128 RGB, lossy 9/7 | 2.5432 | 4.3509 | 1.71× |
 
-The OpenJPEG build is the pinned fork identified above. The same fresh-codec lifecycle,
-output-copy costs, validation and hardware settings apply to this table. The older
-[C++ versus OpenJPEG results](doc/performance-history.md#c-context-only-neo-j2k-c-versus-openjpeg-254)
-are historical C++ evidence, not measurements of this Rust crate.
 
-Reproduce on Linux with the [three-way benchmark](tools/bench_three_way/README.md):
+The same fresh-codec lifecycle, output costs, validation and hardware settings apply.
+The [historical C++ comparisons](doc/performance-history.md#c-context-only-neo-j2k-c-versus-openjpeg-254)
+remain separate evidence. Reproduce the Linux table with:
 
 ```sh
-python3 tools/bench_three_way/run.py --cpp-source ../neo-j2k --out /tmp/neoj2k-three-way
+python3 tools/bench_three_way/run.py --cpp-source ../neo-j2k --out /tmp/neoj2k-three-way-rebuilt
 ```
 
-Earlier measurements, including parallel scaling and viewer-specific suites, are retained
-in [historical performance tables](doc/performance-history.md). Other CI comparisons and
-the Tier-1 benchmark are documented in [doc/bench.md](doc/bench.md).
+### Matched Windows U8 comparison with Kakadu
+
+Separate rebuilt-main measurements on **Windows**, using caller-owned interleaved U8
+output, fresh serial decoders and one pinned logical CPU. **Milliseconds; lower is
+faster.** All five fixtures use reversible 5/3 and pass byte/guard checks. The C++ build
+uses MSVC Release AVX2; Rust uses release x86-64-v3/fat LTO. Kakadu is Firestorm's
+prebuilt 8.6.1 tile-output path with `set_fast`.
+
+| Lossless input | Kakadu 8.6.1 | neo-j2k C++ | neoj2k-rust | Rust speedup vs Kakadu |
+|---|---:|---:|---:|---:|
+| 32 × 32 RGB | 0.3257 | 0.1252 | 0.1237 | 2.63× |
+| 128 × 128 RGB | 3.3399 | 2.6387 | 2.4812 | 1.35× |
+| 512 × 512 RGB | 44.4164 | 32.3438 | 31.9581 | 1.39× |
+| 1024 × 1024 RGB | 165.3375 | 115.4335 | 114.7301 | 1.44× |
+| 2048 × 64 RGBA | 1.9504 | 1.7060 | 1.6008 | 1.22× |
+
+
+These Windows U8 numbers cannot be combined with the Linux I32 table. They describe
+this recovered viewer path, not every Kakadu SDK configuration. The separate
+before/after U8 run finds **24.4% less time on 2048 × 64 RGBA**, with **4.2% more time
+on 32 × 32 RGB**; other square rows differ by less than 1%.
+The [Windows rebuild/regression report](doc/benchmarks/2026-11-25-main-rebuild-windows/README.md)
+retains both matched runs, trial/round values, hashes and the external-harness scope.
+
+Earlier measurements and viewer-specific suites are retained in
+[historical performance tables](doc/performance-history.md); other CI comparisons
+and the Tier-1 benchmark are documented in [doc/bench.md](doc/bench.md).
 
 ## Example implementations
 

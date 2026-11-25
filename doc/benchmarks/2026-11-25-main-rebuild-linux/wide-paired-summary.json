@@ -1,0 +1,23 @@
+{
+  "case": "large_2048x64_rgba_53.j2k; retained decoder; I32 planes; serial CPU 0",
+  "old_us": 1863.412,
+  "new_us": 1264.682,
+  "change_percent": -32.13084384988397,
+  "processes": [
+    {
+      "new_us": 1272.442,
+      "old_us": 1851.358
+    },
+    {
+      "new_us": 1251.017,
+      "old_us": 1868.855
+    },
+    {
+      "new_us": 1264.682,
+      "old_us": 1863.412
+    }
+  ],
+  "same": true,
+  "exe_sha256": "bc7659eb64267a13880dd5da5126941ed30772573d6ae05ab15bbdbea1e264f4",
+  "harness_sha256": "e01bef1cea6d4850772b060724b097a8cdd2b364543c1ad763f7fbea38bf0289"
+}

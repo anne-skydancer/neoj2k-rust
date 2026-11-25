@@ -1,0 +1,22 @@
+ROUND request=0 round=0 new_ns=1332764 old_ns=1851534
+ROUND request=0 round=1 new_ns=1315704 old_ns=1851358
+ROUND request=0 round=2 new_ns=1270494 old_ns=1922702
+ROUND request=0 round=3 new_ns=1299907 old_ns=1839359
+ROUND request=0 round=4 new_ns=1239991 old_ns=1860841
+ROUND request=0 round=5 new_ns=1290200 old_ns=1885191
+ROUND request=0 round=6 new_ns=1289853 old_ns=1839647
+ROUND request=0 round=7 new_ns=1242615 old_ns=1840913
+ROUND request=0 round=8 new_ns=1249653 old_ns=1839035
+ROUND request=0 round=9 new_ns=1337461 old_ns=1928048
+ROUND request=0 round=10 new_ns=1250675 old_ns=1898574
+ROUND request=0 round=11 new_ns=1292982 old_ns=1888494
+ROUND request=0 round=12 new_ns=1272442 old_ns=1842583
+ROUND request=0 round=13 new_ns=1303225 old_ns=1827746
+ROUND request=0 round=14 new_ns=1239086 old_ns=1879492
+ROUND request=0 round=15 new_ns=1292120 old_ns=1836624
+ROUND request=0 round=16 new_ns=1246847 old_ns=1837644
+ROUND request=0 round=17 new_ns=1289348 old_ns=1831298
+ROUND request=0 round=18 new_ns=1233911 old_ns=1917031
+ROUND request=0 round=19 new_ns=1242679 old_ns=1851344
+ROUND request=0 round=20 new_ns=1238552 old_ns=1888039
+wide retained I32 1272.442 1851.358 same
