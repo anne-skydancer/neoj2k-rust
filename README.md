@@ -170,6 +170,11 @@ header again under the new limits and can reuse its working buffers.
 `Decoder::retained_work_bytes` to read their live capacity. A host can lend its executor through
 `DecodeParams::executor` for large tiles. Small requests stay serial.
 
+`DecodeParams::default()` uses non-strict decoding for partial texture downloads. A cut
+packet contribution discards the affected code-block's earlier contributions and those of
+subsequent code-blocks in that packet, matching upstream OpenJPEG's partial reconstruction.
+Set `DecodeParams::strict` to `true` when incomplete codestreams must be rejected.
+
 `Limits` fields set to zero are unlimited, and `Limits::default()` has no limit. The crate also provides
 named limit profiles; see [Example implementations](#example-implementations).
 

@@ -35,6 +35,7 @@ const CLEAR_BYTE_FLOOR: usize = if cfg!(miri) { size_of::<i32>() } else { 1 << 2
 #[derive(Clone, Copy, Default)]
 pub struct DecodeParams<'a> {
     pub max_layers: u32,
+    /// Reject truncated codestreams. Defaults to `false` for partial texture downloads.
     pub strict: bool,
     /// Original component indices. Supplying a selection disables the colour transform.
     pub components: Option<&'a [u32]>,
