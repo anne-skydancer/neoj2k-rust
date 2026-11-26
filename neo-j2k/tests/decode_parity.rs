@@ -18,7 +18,7 @@ fn codecs(reduce: u32) -> (Decoder, Codec) {
     )
 }
 
-fn compare(rust: &mut Decoder, cpp: &mut Codec, input: &[u8], label: &str) {
+fn compare(rust: &mut Decoder, cpp: &mut Codec, input: &[u8], label: &str) -> i32 {
     let (status, samples) = cpp.decode_i32(input);
     match rust.decode(input, DecodeParams::default()) {
         Ok(image) => {
@@ -42,6 +42,7 @@ fn compare(rust: &mut Decoder, cpp: &mut Codec, input: &[u8], label: &str) {
             );
         }
     }
+    status
 }
 
 #[test]
@@ -138,6 +139,8 @@ fn small_codestream_prefixes_match_cpp() {
     let files = expand_inputs(&corpus_dir(), false);
     for reduce in [0, 2, 5] {
         let (mut rust, mut cpp) = codecs(reduce);
+        let mut decoded_truncations = 0;
+        let mut refusals = 0;
         for path in &files {
             let data = std::fs::read(path).expect("a generated codestream");
             if data.len() > 4096 {
@@ -145,16 +148,27 @@ fn small_codestream_prefixes_match_cpp() {
             }
             let name = base_name(path);
             for prefix in 0..data.len() {
-                if reduce != 0 && prefix % 7 != 0 {
+                // At the deepest tested reduction, cover every byte around packet and
+                // tile-part boundaries as well as headers that refuse the exact reduce factor.
+                if reduce == 2 && prefix % 7 != 0 {
                     continue;
                 }
-                compare(
+                let status = compare(
                     &mut rust,
                     &mut cpp,
                     &data[..prefix],
                     &format!("{name}, reduce {reduce}, first {prefix} bytes"),
                 );
+                decoded_truncations += usize::from(status == 1);
+                refusals += usize::from(status < 0);
             }
+        }
+        if reduce == 5 {
+            assert!(
+                decoded_truncations > 0,
+                "reduce 5 must exercise successful truncated decodes"
+            );
+            assert!(refusals > 0, "reduce 5 must exercise refused prefixes");
         }
     }
 }
