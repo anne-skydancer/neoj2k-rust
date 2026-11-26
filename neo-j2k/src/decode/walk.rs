@@ -29,6 +29,7 @@ enum Position {
     Header,
     Cut,
     Eoc,
+    PrematureEof,
 }
 
 #[derive(Debug, Default)]
@@ -573,7 +574,12 @@ impl<'data> Walk<'_, 'data> {
         if read != length {
             self.cut = true;
             parts.cut = true;
-            self.position = Position::Cut;
+            // Keep EOF before the declared end distinct from an accurately sized prefix.
+            self.position = if read < remaining {
+                Position::PrematureEof
+            } else {
+                Position::Cut
+            };
         } else {
             self.position = Position::Sot;
         }

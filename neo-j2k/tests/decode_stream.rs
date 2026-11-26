@@ -383,6 +383,40 @@ fn early_eof_is_distinct_from_a_short_advertised_length() {
 }
 
 #[test]
+fn early_eof_after_tile_does_not_end_a_multitile_stream_cleanly() {
+    let input = fixture("psot0_tiles_97.j2k");
+    let prefix = &input[..136];
+    let mut decoder = Decoder::new(DecoderConfig {
+        reduce: 5,
+        reduce_policy: neo_j2k::ReducePolicy::Clamp,
+        ..DecoderConfig::default()
+    });
+    let image = decoder
+        .decode_from(
+            &mut &prefix[..],
+            DecodeParams::default(),
+            StreamOptions {
+                length: Some(prefix.len() as u64),
+                seekable: false,
+            },
+        )
+        .unwrap();
+    assert!(image.truncated);
+    let error = decoder
+        .decode_from(
+            &mut &prefix[..],
+            DecodeParams::default(),
+            StreamOptions {
+                length: Some(input.len() as u64),
+                seekable: false,
+            },
+        )
+        .unwrap_err();
+    assert_eq!(error.kind(), ErrorKind::Data);
+    assert_eq!(error.message(), "The codestream ended before its next tile-part\n");
+}
+
+#[test]
 fn hard_read_errors_leave_the_decoder_available_for_a_fresh_reader() {
     let input = fixture("sl_64_rgb_97.j2k");
     let mut decoder = Decoder::new(DecoderConfig::default());
