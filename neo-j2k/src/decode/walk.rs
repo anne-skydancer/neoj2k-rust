@@ -216,7 +216,8 @@ impl<'data> Walk<'_, 'data> {
     }
 
     pub(super) fn past_cut(&self) -> bool {
-        self.position == Position::Cut && self.pos == self.data.len()
+        // A short read can exhaust the buffer before reaching the stream's declared end.
+        self.position == Position::Cut && self.bytes_left() == 0
     }
 
     pub(super) fn saw_cut(&self) -> bool {
