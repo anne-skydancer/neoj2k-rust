@@ -3,19 +3,46 @@
 
 #![cfg(not(miri))]
 
-use neo_j2k::{DecodeParams, DecodeTarget, Decoder, DecoderConfig, ErrorKind, Limits, OutputPlane, SampleType};
-use neo_j2k_oracle::{Codec, Format};
+use neo_j2k::{
+    DecodeParams, DecodeTarget, Decoder, DecoderConfig, ErrorKind, Format, Limits, OutputPlane, ReducePolicy,
+    SampleType,
+};
+use neo_j2k_oracle::{Codec, Format as OracleFormat, Limits as OracleLimits, ReducePolicy as OracleReducePolicy};
 use neo_j2k_testkit::files::{base_name, corpus_dir, expand_inputs, testdata_dir};
 
 fn codecs(reduce: u32) -> (Decoder, Codec) {
-    (
-        Decoder::new(DecoderConfig {
-            reduce,
-            capture_diagnostics: true,
-            ..DecoderConfig::default()
-        }),
-        Codec::new(Format::J2k, reduce, 0).expect("a C++ decoder"),
+    codec_pair(DecoderConfig {
+        reduce,
+        reduce_policy: ReducePolicy::Exact,
+        ..DecoderConfig::default()
+    })
+}
+
+fn codec_pair(mut config: DecoderConfig) -> (Decoder, Codec) {
+    let format = match config.format {
+        Format::J2k => OracleFormat::J2k,
+        Format::Jp2 => OracleFormat::Jp2,
+    };
+    let policy = match config.reduce_policy {
+        ReducePolicy::Exact => OracleReducePolicy::Exact,
+        ReducePolicy::Clamp => OracleReducePolicy::Clamp,
+    };
+    let limits = config.limits;
+    let cpp = Codec::with_limits(
+        format,
+        config.reduce,
+        policy,
+        OracleLimits {
+            max_tiles: limits.max_tiles,
+            max_components: limits.max_components,
+            max_layers: limits.max_layers,
+            max_decoded_side: limits.max_decoded_side,
+            max_memory: limits.max_memory,
+        },
     )
+    .expect("a C++ decoder");
+    config.capture_diagnostics = true;
+    (Decoder::new(config), cpp)
 }
 
 fn compare(rust: &mut Decoder, cpp: &mut Codec, input: &[u8], label: &str) -> i32 {
@@ -91,21 +118,16 @@ fn compare_openjpeg_files(directory: &std::path::Path) {
             .is_some_and(|ext| ext.eq_ignore_ascii_case("jp2") || ext.eq_ignore_ascii_case("jph"));
         let input = std::fs::read(&path).expect("a conformance file");
         for reduce in 0..=5 {
-            let mut rust = Decoder::new(DecoderConfig {
-                format: if jp2 {
-                    neo_j2k::Format::Jp2
-                } else {
-                    neo_j2k::Format::J2k
-                },
+            let (mut rust, mut cpp) = codec_pair(DecoderConfig {
+                format: if jp2 { Format::Jp2 } else { Format::J2k },
                 reduce,
+                reduce_policy: ReducePolicy::Exact,
                 limits: Limits {
                     max_memory: memory,
                     ..Limits::default()
                 },
-                capture_diagnostics: true,
                 ..DecoderConfig::default()
             });
-            let mut cpp = Codec::new(if jp2 { Format::Jp2 } else { Format::J2k }, reduce, memory).unwrap();
             compare(
                 &mut rust,
                 &mut cpp,
@@ -137,8 +159,17 @@ fn selected_cut_memory_decodes_match_cpp() {
 #[test]
 fn small_codestream_prefixes_match_cpp() {
     let files = expand_inputs(&corpus_dir(), false);
-    for reduce in [0, 2, 5] {
-        let (mut rust, mut cpp) = codecs(reduce);
+    for (reduce, reduce_policy, step) in [
+        (0, ReducePolicy::Exact, 1),
+        (2, ReducePolicy::Exact, 7),
+        (5, ReducePolicy::Exact, 1),
+        (5, ReducePolicy::Clamp, 1),
+    ] {
+        let (mut rust, mut cpp) = codec_pair(DecoderConfig {
+            reduce,
+            reduce_policy,
+            ..DecoderConfig::default()
+        });
         let mut decoded_truncations = 0;
         let mut refusals = 0;
         for path in &files {
@@ -147,17 +178,12 @@ fn small_codestream_prefixes_match_cpp() {
                 continue;
             }
             let name = base_name(path);
-            for prefix in 0..data.len() {
-                // At the deepest tested reduction, cover every byte around packet and
-                // tile-part boundaries as well as headers that refuse the exact reduce factor.
-                if reduce == 2 && prefix % 7 != 0 {
-                    continue;
-                }
+            for prefix in (0..data.len()).step_by(step) {
                 let status = compare(
                     &mut rust,
                     &mut cpp,
                     &data[..prefix],
-                    &format!("{name}, reduce {reduce}, first {prefix} bytes"),
+                    &format!("{name}, reduce {reduce} ({reduce_policy:?}), first {prefix} bytes"),
                 );
                 decoded_truncations += usize::from(status == 1);
                 refusals += usize::from(status < 0);
@@ -171,6 +197,35 @@ fn small_codestream_prefixes_match_cpp() {
             assert!(refusals > 0, "reduce 5 must exercise refused prefixes");
         }
     }
+}
+
+#[test]
+fn reduce_five_policies_match_cpp_on_five_resolution_prefix() {
+    let data = std::fs::read(corpus_dir().join("psot0_tiles_97.j2k")).unwrap();
+    let prefix = &data[..136];
+    let (mut rust, mut cpp) = codecs(4);
+    assert_eq!(rust.read_header(prefix).unwrap().min_resolutions, 5);
+    assert_eq!(cpp.read_header(prefix).unwrap().min_resolutions, 5);
+    assert_eq!(compare(&mut rust, &mut cpp, prefix, "reduce 4 Exact"), 1);
+
+    let (mut rust, mut cpp) = codecs(5);
+    assert_eq!(
+        compare(&mut rust, &mut cpp, prefix, "reduce 5 Exact"),
+        ErrorKind::Limit as i32
+    );
+
+    let (mut rust, mut cpp) = codec_pair(DecoderConfig {
+        reduce: 5,
+        reduce_policy: ReducePolicy::Clamp,
+        ..DecoderConfig::default()
+    });
+    assert_eq!(compare(&mut rust, &mut cpp, prefix, "reduce 5 Clamp"), 1);
+    let rust_header = rust.read_header(prefix).unwrap();
+    let cpp_header = cpp.read_header(prefix).unwrap();
+    assert!(!rust_header.components.is_empty());
+    assert_eq!(rust_header.components.len(), cpp_header.components.len());
+    assert!(rust_header.components.iter().all(|c| c.reduce == 4));
+    assert!(cpp_header.components.iter().all(|c| c.factor == 4));
 }
 
 #[test]

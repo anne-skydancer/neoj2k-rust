@@ -101,6 +101,13 @@ The decoder reads up to the first tile-part and caches the validated header pref
 `Format::Jp2` for JP2 and JPH containers. An incomplete header reports `ErrorKind::NeedData`
 so the caller can retry with more bytes.
 
+When comparing Rust and C++ decodes, set the same reduction policy on both sides.
+`ReducePolicy::Exact` is the default and returns a limit error if the requested
+factor is unavailable. Use `ReducePolicy::Clamp` on both sides for viewer-style
+requests that may use the coarsest available resolution. Record the requested
+factor from your configuration and the effective factor from the decoded
+component's `ComponentInfo::reduce` (C++ `nj2k_image_comp_t::factor`).
+
 For a `Read` input, use `Decoder::read_header_from` with `StreamOptions` to obtain a
 `DecodeStream`. It keeps the reader positioned after the header and lets the caller inspect
 dimensions or choose a reduce factor before decoding. Supply the byte length for a complete
