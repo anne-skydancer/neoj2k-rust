@@ -29,6 +29,7 @@ enum Position {
     Header,
     Cut,
     Eoc,
+    PrematureEof,
 }
 
 #[derive(Debug, Default)]
@@ -216,8 +217,7 @@ impl<'data> Walk<'_, 'data> {
     }
 
     pub(super) fn past_cut(&self) -> bool {
-        // A short read can exhaust the buffer before reaching the stream's declared end.
-        self.position == Position::Cut && self.bytes_left() == 0
+        self.position == Position::Cut && self.pos == self.data.len()
     }
 
     pub(super) fn saw_cut(&self) -> bool {
@@ -574,7 +574,12 @@ impl<'data> Walk<'_, 'data> {
         if read != length {
             self.cut = true;
             parts.cut = true;
-            self.position = Position::Cut;
+            // Keep EOF before the declared end distinct from an accurately sized prefix.
+            self.position = if read < remaining {
+                Position::PrematureEof
+            } else {
+                Position::Cut
+            };
         } else {
             self.position = Position::Sot;
         }
