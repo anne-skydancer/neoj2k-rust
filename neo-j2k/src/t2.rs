@@ -93,7 +93,7 @@ impl Workspace {
     }
 }
 
-/// Reads one tile's packets, preserving every complete codeword contribution.
+/// Reads one tile's packets using upstream OpenJPEG's cut-contribution discard policy.
 /// The result is each component's highest decoded resolution index.
 pub(crate) fn read_packets<'work>(
     workspace: &'work mut Workspace,

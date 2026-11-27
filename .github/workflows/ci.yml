@@ -215,7 +215,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: anne-skydancer/neo-j2k
-          ref: 27a7fba3b5a7b9c6d5e9cfa38cc0cc1194e4a339 # upstream-compatible partial decoding
+          ref: 649201f8c5a6ddb0683b165a5616c56fdf18d3c3 # upstream-compatible partial decoding
           persist-credentials: false
           path: cpp
       - name: Conformance data (cache)
@@ -272,7 +272,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: anne-skydancer/neo-j2k
-          ref: 27a7fba3b5a7b9c6d5e9cfa38cc0cc1194e4a339 # upstream-compatible partial decoding
+          ref: 649201f8c5a6ddb0683b165a5616c56fdf18d3c3 # upstream-compatible partial decoding
           persist-credentials: false
           path: cpp
       - name: C++ toolchain
@@ -363,7 +363,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: anne-skydancer/neo-j2k
-          ref: 27a7fba3b5a7b9c6d5e9cfa38cc0cc1194e4a339 # upstream-compatible partial decoding
+          ref: 649201f8c5a6ddb0683b165a5616c56fdf18d3c3 # upstream-compatible partial decoding
           persist-credentials: false
           path: cpp
       - name: Rust (rust-toolchain.toml)
