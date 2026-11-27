@@ -1,12 +1,19 @@
 name: Release crate
 
 on:
+  workflow_dispatch:
+    inputs:
+      source_ref:
+        description: Tested source commit to package and publish over its existing version's crate
+        required: true
+        type: string
   push:
     tags:
       - "v*"
 
 permissions:
   contents: write
+  actions: read
 
 env:
   CARGO_INCREMENTAL: "0"
@@ -21,6 +28,16 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+          ref: ${{ inputs.source_ref || github.ref }}
+      - name: Require successful main CI for manual replacement
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          revision=$(git rev-parse HEAD)
+          gh api "repos/$GITHUB_REPOSITORY/actions/workflows/ci.yml/runs?branch=main&per_page=100" > "$RUNNER_TEMP/ci-runs.json"
+          python -c 'import json,sys; runs=json.load(open(sys.argv[1]))["workflow_runs"]; assert any(r["head_sha"] == sys.argv[2] and r["conclusion"] == "success" for r in runs), "Source commit needs successful main CI"' "$RUNNER_TEMP/ci-runs.json" "$revision"
       - name: Toolchain
         run: rustup show
       - name: Verify tag and package
@@ -28,11 +45,42 @@ jobs:
         run: |
           set -euo pipefail
           version=$(cargo metadata --no-deps --format-version 1 | python -c 'import json,sys; print(next(p["version"] for p in json.load(sys.stdin)["packages"] if p["name"] == "neo-j2k"))')
-          test "v$version" = "$GITHUB_REF_NAME"
+          if [ "$GITHUB_EVENT_NAME" != workflow_dispatch ]; then
+            test "v$version" = "$GITHUB_REF_NAME"
+          fi
+          echo "CRATE_TAG=v$version" >> "$GITHUB_ENV"
           python -I tools/check_rust_native.py
           cargo package -p neo-j2k --locked
           test -f "target/package/neo-j2k-$version.crate"
       - name: Publish GitHub release
+        if: github.event_name != 'workflow_dispatch'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create "$GITHUB_REF_NAME" target/package/neo-j2k-*.crate --verify-tag --generate-notes --title "neo-j2k $GITHUB_REF_NAME"
+      - name: Save verified CI-built crate
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verified-release-crate
+          path: target/package/neo-j2k-*.crate
+          if-no-files-found: error
+      - name: Replace existing release crate and verify download
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          crate=$(find target/package -maxdepth 1 -name 'neo-j2k-*.crate' -print)
+          test -f "$crate"
+          name=$(basename "$crate")
+          revision=$(git rev-parse HEAD)
+          tar -xOf "$crate" "${name%.crate}/.cargo_vcs_info.json" > "$RUNNER_TEMP/crate-source.json"
+          python -c 'import json,sys; assert json.load(open(sys.argv[1]))["git"]["sha1"] == sys.argv[2]' "$RUNNER_TEMP/crate-source.json" "$revision"
+          gh release view "$CRATE_TAG" --json body > "$RUNNER_TEMP/old-release.json"
+          mkdir "$RUNNER_TEMP/previous-crate" "$RUNNER_TEMP/verified-crate"
+          gh release download "$CRATE_TAG" --pattern "$name" --dir "$RUNNER_TEMP/previous-crate"
+          gh release upload "$CRATE_TAG" "$crate" --clobber
+          gh release download "$CRATE_TAG" --pattern "$name" --dir "$RUNNER_TEMP/verified-crate"
+          cmp "$crate" "$RUNNER_TEMP/verified-crate/$name"
+          python -c 'import json,sys; body=json.load(open(sys.argv[1]))["body"]; open(sys.argv[2],"w").write(body+"\n\nCrate rebuilt by GitHub Actions from merged source `"+sys.argv[3]+"`. Build and verification https://github.com/"+sys.argv[4]+"/actions/runs/"+sys.argv[5]+".\n")' "$RUNNER_TEMP/old-release.json" "$RUNNER_TEMP/release-notes.md" "$revision" "$GITHUB_REPOSITORY" "$GITHUB_RUN_ID"
+          gh release edit "$CRATE_TAG" --notes-file "$RUNNER_TEMP/release-notes.md"
+          sha256sum "$crate"
