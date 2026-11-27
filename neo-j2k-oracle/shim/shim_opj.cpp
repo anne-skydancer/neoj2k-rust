@@ -114,6 +114,7 @@ OPJ_BOOL grow_seek(OPJ_OFF_T to, void* user)
 struct nj2k_opj_decoder {
     uint32_t reduce = 0;
     uint32_t threads = 0;
+    bool strict = false;
 };
 
 struct nj2k_opj_bytes {
@@ -137,6 +138,13 @@ nj2k_opj_decoder_t* nj2k_opj_decoder_new(uint32_t reduce, uint32_t threads)
 void nj2k_opj_decoder_free(nj2k_opj_decoder_t* decoder)
 {
     delete decoder;
+}
+
+void nj2k_opj_decoder_set_strict(nj2k_opj_decoder_t* decoder, uint32_t strict)
+{
+    if (decoder) {
+        decoder->strict = strict != 0;
+    }
 }
 
 int32_t nj2k_opj_decode(nj2k_opj_decoder_t* decoder, const uint8_t* data, uint64_t size, int32_t* out, uint64_t cap,
@@ -179,7 +187,7 @@ int32_t nj2k_opj_decode(nj2k_opj_decoder_t* decoder, const uint8_t* data, uint64
         opj_stream_set_write_function(stream, mem_write);
         opj_stream_set_skip_function(stream, mem_skip);
         opj_stream_set_seek_function(stream, mem_seek);
-        opj_decoder_set_strict_mode(codec, OPJ_FALSE);
+        opj_decoder_set_strict_mode(codec, decoder->strict ? OPJ_TRUE : OPJ_FALSE);
         if (!opj_read_header(stream, codec, &image)) {
             status = 2;
             break;

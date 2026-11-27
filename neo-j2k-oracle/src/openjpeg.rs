@@ -32,11 +32,11 @@ pub fn version() -> String {
     unsafe { CStr::from_ptr(text) }.to_string_lossy().into_owned()
 }
 
-/// The settings of OpenJPEG's J2K decodes: the reduce factor and the thread count.
+/// The settings of OpenJPEG's J2K decodes, including partial-codestream strictness.
 #[derive(Debug)]
 pub struct Decoder(NonNull<ffi::OpjDecoder>);
 
-// SAFETY: the handle holds two integers and no thread affinity; `&mut self` serves one call at a time.
+// SAFETY: the handle holds settings and no thread affinity; `&mut self` serves one call at a time.
 unsafe impl Send for Decoder {}
 
 impl Decoder {
@@ -49,7 +49,16 @@ impl Decoder {
         NonNull::new(unsafe { ffi::nj2k_opj_decoder_new(reduce, threads) }).map(Self)
     }
 
-    /// One decode in non-strict mode, nothing copied out: the samples the image holds (all components),
+    /// A decoder with explicit partial-codestream strictness.
+    #[must_use]
+    pub fn with_strict(reduce: u32, threads: u32, strict: bool) -> Option<Self> {
+        let decoder = Self::new(reduce, threads)?;
+        // SAFETY: the live handle belongs to this decoder and the shim retains no borrow.
+        unsafe { ffi::nj2k_opj_decoder_set_strict(decoder.0.as_ptr(), u32::from(strict)) };
+        Some(decoder)
+    }
+
+    /// One decode with the configured strictness, nothing copied out: the samples the image holds (all components),
     /// or OpenJPEG's status. The image is destroyed before the call returns.
     pub fn decode(&mut self, data: &[u8]) -> Result<u64, Status> {
         self.run(data, None)

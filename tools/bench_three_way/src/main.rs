@@ -2,7 +2,9 @@
 // Copyright (c) 2026, Anne Skydancer (neo-j2k)
 //! Single-thread, fresh-codec API latency, identical inputs and owned/caller-owned outputs.
 #![forbid(unsafe_code)]
-use neo_j2k::{DecodeParams, Decoder, DecoderConfig, EncodeParams, Encoder, I32Plane, ImageSamples, ImageView};
+use neo_j2k::{
+    DecodeParams, Decoder, DecoderConfig, EncodeParams, Encoder, I32Plane, ImageSamples, ImageView, ReducePolicy,
+};
 use neo_j2k_oracle::{self as oracle, openjpeg};
 use std::{hint::black_box, path::PathBuf, time::Instant};
 
@@ -40,9 +42,10 @@ fn measure(label: &str, batch: usize, shift: usize, calls: &mut [&mut dyn FnMut(
     }
 }
 
-fn rust_decode(data: &[u8], sizes: &[usize], reduce: u32, output: &mut [i32]) -> usize {
+fn rust_decode(data: &[u8], sizes: &[usize], reduce: u32, strict: bool, output: &mut [i32]) -> usize {
     let mut codec = Decoder::new(DecoderConfig {
         reduce,
+        reduce_policy: ReducePolicy::Clamp,
         ..DecoderConfig::default()
     });
     codec.read_header(data).expect("Rust header");
@@ -56,33 +59,76 @@ fn rust_decode(data: &[u8], sizes: &[usize], reduce: u32, output: &mut [i32]) ->
             samples,
         });
     }
-    assert!(
-        !codec
-            .decode_into_i32(black_box(data), DecodeParams::default(), &mut planes)
-            .expect("Rust decode")
-    );
+    codec
+        .decode_into_i32(
+            black_box(data),
+            DecodeParams {
+                strict,
+                ..DecodeParams::default()
+            },
+            &mut planes,
+        )
+        .expect("Rust decode");
     black_box(planes.as_slice());
     sizes.iter().sum()
 }
-fn cpp_decode(data: &[u8], reduce: u32, output: &mut [i32]) -> usize {
-    let mut codec = oracle::Codec::new(oracle::Format::J2k, reduce, 0).expect("C++ codec");
+fn cpp_decode(data: &[u8], reduce: u32, strict: bool, output: &mut [i32]) -> usize {
+    let mut codec = oracle::Codec::with_options(
+        oracle::Format::J2k,
+        reduce,
+        oracle::ReducePolicy::Clamp,
+        oracle::Limits::default(),
+        0,
+        strict,
+    )
+    .expect("C++ codec");
     let mut prepared = codec.prepare_i32(data);
     let (status, count) = prepared.decode_into(output);
-    assert_eq!(status, 0, "C++ status");
+    assert!((0..=1).contains(&status), "C++ status {status}");
     assert_eq!(count as usize, output.len(), "C++ descriptor capacity");
     count as usize
 }
-fn opj_decode(data: &[u8], reduce: u32, output: &mut [i32]) -> usize {
-    let mut codec = openjpeg::Decoder::new(reduce, 1).expect("OpenJPEG wrapper");
+fn opj_decode(data: &[u8], reduce: u32, strict: bool, output: &mut [i32]) -> usize {
+    let mut codec = openjpeg::Decoder::with_strict(reduce, 1, strict).expect("OpenJPEG wrapper");
     let count = codec.decode_into(data, output).expect("OpenJPEG decode");
     assert_eq!(count as usize, output.len());
     count as usize
 }
-fn decode(name: &str, reduce: u32, shift: usize) {
+fn fixture(name: &str) -> Vec<u8> {
+    if name == "generated_1024_rgb_97.j2k" {
+        let samples = pixels(1024);
+        let view = ImageView {
+            width: 1024,
+            height: 1024,
+            flip_vertical: false,
+            samples: ImageSamples::Interleaved {
+                samples: &samples,
+                components: 3,
+                row_stride: 3072,
+            },
+        };
+        let mut params = EncodeParams::default();
+        params.reversible = false;
+        params.mct = true;
+        params.resolutions = Some(6);
+        let data = Encoder::new().encode(&view, &params).unwrap().to_vec();
+        let folder = PathBuf::from(std::env::var_os("NJ2K_THREE_WAY_GENERATED").expect("generated fixture directory"));
+        std::fs::create_dir_all(&folder).unwrap();
+        std::fs::write(folder.join(name), &data).unwrap();
+        return data;
+    }
     let corpus = PathBuf::from(std::env::var_os("NJ2K_THREE_WAY_CORPUS").expect("corpus directory"));
-    let data = std::fs::read(corpus.join(name)).expect("fixture");
+    std::fs::read(corpus.join(name)).expect("fixture")
+}
+fn decode(name: &str, reduce: u32, strict: bool, cut: Option<usize>, shift: usize) {
+    let mut data = fixture(name);
+    if let Some(bytes) = cut {
+        assert!(data.len() > bytes);
+        data.truncate(bytes);
+    }
     let mut header = Decoder::new(DecoderConfig {
         reduce,
+        reduce_policy: ReducePolicy::Clamp,
         ..DecoderConfig::default()
     });
     header.read_header(&data).unwrap();
@@ -97,17 +143,17 @@ fn decode(name: &str, reduce: u32, shift: usize) {
     let mut buffers: [Vec<i32>; 3] = std::array::from_fn(|_| vec![i32::MIN; total]);
     buffers.rotate_left(shift % 3);
     let [mut cpp, mut rust, mut opj] = buffers;
-    cpp_decode(&data, reduce, &mut cpp);
-    rust_decode(&data, &sizes, reduce, &mut rust);
-    opj_decode(&data, reduce, &mut opj);
+    cpp_decode(&data, reduce, strict, &mut cpp);
+    rust_decode(&data, &sizes, reduce, strict, &mut rust);
+    opj_decode(&data, reduce, strict, &mut opj);
     assert_eq!(cpp, rust, "C++/Rust samples");
     assert_eq!(cpp, opj, "C++/OpenJPEG samples");
     let expected = cpp.clone();
-    let label = format!("decode/{name}/reduce{reduce}");
+    let label = format!("decode/{name}/reduce{reduce}/strict{strict}/cut{}", cut.unwrap_or(0));
     {
-        let mut c = || cpp_decode(&data, reduce, &mut cpp);
-        let mut r = || rust_decode(&data, &sizes, reduce, &mut rust);
-        let mut o = || opj_decode(&data, reduce, &mut opj);
+        let mut c = || cpp_decode(&data, reduce, strict, &mut cpp);
+        let mut r = || rust_decode(&data, &sizes, reduce, strict, &mut rust);
+        let mut o = || opj_decode(&data, reduce, strict, &mut opj);
         measure(
             &label,
             if total > 1_000_000 { 1 } else { 8 },
@@ -119,9 +165,9 @@ fn decode(name: &str, reduce: u32, shift: usize) {
     cpp.fill(i32::MIN);
     rust.fill(i32::MIN);
     opj.fill(i32::MIN);
-    cpp_decode(&data, reduce, &mut cpp);
-    rust_decode(&data, &sizes, reduce, &mut rust);
-    opj_decode(&data, reduce, &mut opj);
+    cpp_decode(&data, reduce, strict, &mut cpp);
+    rust_decode(&data, &sizes, reduce, strict, &mut rust);
+    opj_decode(&data, reduce, strict, &mut opj);
     assert_eq!(cpp, expected);
     assert_eq!(rust, expected);
     assert_eq!(opj, expected);
@@ -136,6 +182,39 @@ fn pixels(side: usize) -> Vec<u8> {
             (3 * x + 5 * y + 13 * (x ^ y) + 23 * c) as u8
         })
         .collect()
+}
+
+fn check_strict_partial_rejection() {
+    let data = fixture("generated_1024_rgb_97.j2k");
+    let prefix = &data[..32768];
+    let mut rust = Decoder::new(DecoderConfig {
+        reduce: 5,
+        reduce_policy: ReducePolicy::Clamp,
+        ..DecoderConfig::default()
+    });
+    assert!(
+        rust.decode(
+            prefix,
+            DecodeParams {
+                strict: true,
+                ..DecodeParams::default()
+            }
+        )
+        .is_err()
+    );
+    let mut cpp = oracle::Codec::with_options(
+        oracle::Format::J2k,
+        5,
+        oracle::ReducePolicy::Clamp,
+        oracle::Limits::default(),
+        0,
+        true,
+    )
+    .expect("C++ codec");
+    assert!(cpp.decode_i32(prefix).0 < 0);
+    let mut opj = openjpeg::Decoder::with_strict(5, 1, true).expect("OpenJPEG wrapper");
+    assert!(opj.decode(prefix).is_err());
+    println!("{{\"type\":\"strict-cut-check\",\"cut_bytes\":32768,\"reduce\":5,\"all_rejected\":true}}");
 }
 fn encode(side: usize, reversible: bool, shift: usize) {
     let pixels = pixels(side);
@@ -225,9 +304,14 @@ fn main() {
         ("sl_64_rgb_97.j2k", 2),
         ("large_1024_rgb_97.j2k", 0),
         ("large_4096_g_97.j2k", 0),
+        ("large_2048x64_rgba_53.j2k", 0),
     ] {
-        decode(file, reduce, shift);
+        for strict in [false, true] {
+            decode(file, reduce, strict, None, shift);
+        }
     }
+    check_strict_partial_rejection();
+    decode("generated_1024_rgb_97.j2k", 5, false, Some(32768), shift);
     for side in [32, 64, 128] {
         for reversible in [true, false] {
             encode(side, reversible, shift);

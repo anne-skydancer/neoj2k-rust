@@ -1,0 +1,361 @@
+{
+  "date_utc": "2026-11-27",
+  "rust_commit": "0cb2f3f07a06aae7fa73a2cbabb738df05923a64",
+  "cpp_commit": "0535cc9b9c68909c6244dca95db3ec9123f20d06",
+  "openjpeg_pin": "# SPDX-License-Identifier: BSD-2-Clause\n# Copyright (c) 2026, Anne Skydancer (neo-j2k)\n#\n# The test oracle: OpenJPEG's library sources from the fork at this commit, plus the patches listed\n# (oracle/patches/, applied in order), vendored under oracle/openjp2/ by tools/oracle_sync.py, which\n# also verifies the copy in CI. What the commit is and why it is the pin: doc/oracle.md.\nrepo=https://github.com/anne-skydancer/openjpeg.git\ncommit=66b1656192fc621a4b26aa86d05b6a00514a7cee\npatches=upstream-partial-blocks.patch\n",
+  "rust_compiler": "rustc 1.100.0 (0ef1bc386 2026-11-09)\nbinary: rustc\ncommit-hash: 0ef1bc386059596dada8fb65b50425aab2ea637a\ncommit-date: 2026-11-09\nhost: x86_64-unknown-linux-gnu\nrelease: 1.100.0\nLLVM version: 23.1.5",
+  "c_compiler": "cc (GCC) 16.2.1 20260810\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+  "cpp_compiler": "c++ (GCC) 16.2.1 20260810\nCopyright (C) 2026 Free Software Foundation, Inc.\nThis is free software; see the source for copying conditions.  There is NO\nwarranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.",
+  "system": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.44",
+  "lscpu": {
+    "lscpu": [
+      {
+        "field": "Architecture:",
+        "data": "x86_64"
+      },
+      {
+        "field": "CPU op-mode(s):",
+        "data": "32-bit, 64-bit"
+      },
+      {
+        "field": "Address sizes:",
+        "data": "48 bits physical, 48 bits virtual"
+      },
+      {
+        "field": "Byte Order:",
+        "data": "Little Endian"
+      },
+      {
+        "field": "CPU(s):",
+        "data": "8"
+      },
+      {
+        "field": "On-line CPU(s) list:",
+        "data": "0-7"
+      },
+      {
+        "field": "Vendor ID:",
+        "data": "AuthenticAMD"
+      },
+      {
+        "field": "Model name:",
+        "data": "AMD Ryzen 9 9950X3D 16-Core Processor"
+      },
+      {
+        "field": "CPU family:",
+        "data": "26"
+      },
+      {
+        "field": "Model:",
+        "data": "68"
+      },
+      {
+        "field": "Thread(s) per core:",
+        "data": "1"
+      },
+      {
+        "field": "Core(s) per socket:",
+        "data": "8"
+      },
+      {
+        "field": "Socket(s):",
+        "data": "1"
+      },
+      {
+        "field": "Stepping:",
+        "data": "0"
+      },
+      {
+        "field": "Microcode version:",
+        "data": "0xffffffff"
+      },
+      {
+        "field": "BogoMIPS:",
+        "data": "8583.70"
+      },
+      {
+        "field": "Flags:",
+        "data": "fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good nopl xtopology tsc_reliable nonstop_tsc cpuid extd_apicid tsc_known_freq pni pclmulqdq ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand hypervisor lahf_lm cmp_legacy svm cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw topoext perfctr_core ssbd ibrs ibpb stibp vmmcall fsgsbase bmi1 avx2 smep bmi2 erms invpcid avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves avx_vnni avx512_bf16 clzero xsaveerptr arat npt nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload avx512vbmi umip avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid fsrm avx512_vp2intersect"
+      },
+      {
+        "field": "Virtualization:",
+        "data": "AMD-V"
+      },
+      {
+        "field": "Hypervisor vendor:",
+        "data": "Microsoft"
+      },
+      {
+        "field": "Virtualization type:",
+        "data": "full"
+      },
+      {
+        "field": "L1d cache:",
+        "data": "384 KiB (8 instances)"
+      },
+      {
+        "field": "L1i cache:",
+        "data": "256 KiB (8 instances)"
+      },
+      {
+        "field": "L2 cache:",
+        "data": "8 MiB (8 instances)"
+      },
+      {
+        "field": "L3 cache:",
+        "data": "96 MiB (1 instance)"
+      },
+      {
+        "field": "NUMA node(s):",
+        "data": "1"
+      },
+      {
+        "field": "NUMA node0 CPU(s):",
+        "data": "0-7"
+      },
+      {
+        "field": "Vulnerability Gather data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Ghostwrite:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Indirect target selection:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Itlb multihit:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability L1tf:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Meltdown:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Mmio stale data:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Old microcode:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Reg file data sampling:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Retbleed:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Spec rstack overflow:",
+        "data": "Vulnerable: Safe RET, no microcode"
+      },
+      {
+        "field": "Vulnerability Spec store bypass:",
+        "data": "Mitigation; Speculative Store Bypass disabled via prctl"
+      },
+      {
+        "field": "Vulnerability Spectre v1:",
+        "data": "Mitigation; usercopy/swapgs barriers and __user pointer sanitization"
+      },
+      {
+        "field": "Vulnerability Spectre v2:",
+        "data": "Mitigation; Retpolines; IBPB conditional; IBRS_FW; STIBP disabled; RSB filling; PBRSB-eIBRS Not affected; BHI Not affected"
+      },
+      {
+        "field": "Vulnerability Srbds:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsa:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Tsx async abort:",
+        "data": "Not affected"
+      },
+      {
+        "field": "Vulnerability Vmscape:",
+        "data": "Not affected"
+      }
+    ]
+  },
+  "cpu_affinity": 0,
+  "protocol": {
+    "rounds": 12,
+    "prewarm_per_actor_batch": 32,
+    "repetitions": 3,
+    "single_thread": true,
+    "fresh_codecs": true,
+    "actor_order": "all6 permutations twice per process, shifted by repetition; output buffer allocation rotated"
+  },
+  "exe_sha256": "eb68654f572cfa19ffcb5b82a3c17233b9ee98181e21bde040d02bc1352b804a",
+  "source_sha256": {
+    "neo-j2k/src/bench.rs": "951d9825241c6b2d66f959645cfb1899d388b6ee90c0a44c750911dd3bd9e2f5",
+    "neo-j2k/src/decode/blocks.rs": "cde3377fe8ade00cc6fe6650e6b1adc3bf32fc7582720fc77fecc8e48f915c0e",
+    "neo-j2k/src/decode/output.rs": "105f0bc6570a35db681b24c3a5cee922c5dc34199aa0537d6a4a2eb7d49736bb",
+    "neo-j2k/src/decode/walk.rs": "711cb73c35de644c1e677d7ab74be93e3bd73211dc3da567d37522da8c4c8611",
+    "neo-j2k/src/decode.rs": "420219d6f1d5547d243f4968995fc60a7b1d38f8a5aec72847643bab77c1a3c5",
+    "neo-j2k/src/decoder.rs": "979b0e9124170371036c0ae6fae319e1df252c89dab837f8efa1ee8f11712c96",
+    "neo-j2k/src/dwt/lifting97.rs": "1004cb1ab6fab316b012f37dfacd98dca0eb1855b4609ca889b43c6317301c6b",
+    "neo-j2k/src/dwt/safe_rows_tests.rs": "44b5954004bfc1c98deaedf7026e6504c01918f0e65671323b96ca08532ebf71",
+    "neo-j2k/src/dwt.rs": "e163600873741873bdb9d689835bd9e88bf3016aca457d355f77f2aa3158beb6",
+    "neo-j2k/src/encoder/bench.rs": "ae44f48e7bd278adc3b6e23d594467505fef2d095c362f7bff097117b0757516",
+    "neo-j2k/src/encoder/differential.rs": "c8c5e1f18133a342bdb58fd06cf8a29863d50e2dc4cefd3e2dd3d3f6a413749e",
+    "neo-j2k/src/encoder/quantize_tests.rs": "d2b1d7af04320cdeeeb8c4fa291ee7daf4a0b0f344c34378c52b9b5b22baa7c5",
+    "neo-j2k/src/encoder/tier1/differential.rs": "fd81ceb741beb4d71edab8c77ee053fd719fe4991d8ca736617b69e03c52a837",
+    "neo-j2k/src/encoder/tier1/distortion.rs": "f059080365ae12a67fef55e7381b46fd7f84c59079da53a73c045b2fa9377fdb",
+    "neo-j2k/src/encoder/tier1/mq/differential.rs": "71236f0593f82d06d558c99301c91df4d9b70fe4a238aa85b63a0a9c51037f0a",
+    "neo-j2k/src/encoder/tier1/mq.rs": "3a8f4c85b1f007bc42dec9f86eeb1c9840e546245195ada7456538ace0b7de80",
+    "neo-j2k/src/encoder/tier1.rs": "2a82b6ab430ede30b8e493791efa2cbb07adae2ea66683956490ae2a681442c7",
+    "neo-j2k/src/encoder/tier2/coding.rs": "c21ac7d31caca2a7aa1c42e05e7ae7ca47759e03dd2da5c353290e26ecdd8a88",
+    "neo-j2k/src/encoder/tier2.rs": "c414632c45382bad1fe77d4a5ecccb7ed24d50889792299fd701b3b6efa61394",
+    "neo-j2k/src/encoder/wavelet.rs": "1a6304f368e8ee273ed993d8cf9e56f94028db047f40582a0ebc32c6b2c2ac88",
+    "neo-j2k/src/encoder.rs": "c1010753026f9287baa2bb27f015516bae3fd2f6272169b64850b6025ae2d39e",
+    "neo-j2k/src/error.rs": "9cbb61b91493469bdd635a97b2e95f74dd95a68d96cc13f978382fadb217b208",
+    "neo-j2k/src/executor.rs": "e88f8616de4c2f49c2d800513e3c81ef1d6253f7e4ae9d9a0d54568531a55012",
+    "neo-j2k/src/geometry.rs": "cd285408abc62dcde879306b468ecd1f939891ea6515fe919afb85aa32cfbb68",
+    "neo-j2k/src/header/coding.rs": "49a2fb97314b62997cd255f5286b86233728ce73be1ef946e6bfbff2be6c5d20",
+    "neo-j2k/src/header/tile.rs": "56f83245839e1de4c11dc1c9aa85dfb1de46eba9ec19b3d0151e659e5e4b1980",
+    "neo-j2k/src/header.rs": "dad5c63b7885039cab160aa8337a5813d27db4bb04604f3d3d02d12ac08d89b4",
+    "neo-j2k/src/jp2.rs": "aea9834cd11796c994fd24cd9fe683672492b6d5634784acec026f0c74631d66",
+    "neo-j2k/src/lib.rs": "167cc6808f84c6095c43180a049fd0eb9262bb6db2ff537a22dd2bb6b9481194",
+    "neo-j2k/src/limits.rs": "02a458b08a2b5a127654259510f50143deb3c71974c04d94615ac20f15ffdf4b",
+    "neo-j2k/src/mct.rs": "a91086e5a9d0a1c63bcd57645f843c83cfe08539eb48917f4081872f6fe23a1f",
+    "neo-j2k/src/mem/header.rs": "31be2007a7e1ff39b903a59540650389b2a0005c2aa66490a51352af0370b076",
+    "neo-j2k/src/mem/layout.rs": "1c18631f1afa59d803619b60ebb492f97969645efa714650278cd0bef4fea1a4",
+    "neo-j2k/src/mem/mod.rs": "70b8fa0d0a244e59144eb644f7a684a140ed5bfbf5ca80bf5b3d225144474be9",
+    "neo-j2k/src/mem/work.rs": "c67fb71b48da85452459ff50b43ca73a46055c4730de5805b703e376c188b2ef",
+    "neo-j2k/src/simd/dwt.rs": "1d139476ecd925aa3432a84f563b1594b006a17c1bf2ef7fc0396ffae070901a",
+    "neo-j2k/src/simd/lanes.rs": "061cb49ce176c183d717c9c5b2393302f01e6b11e4d9d19852d4e0b07c05e5a3",
+    "neo-j2k/src/simd/mct/wide_tests.rs": "e424d629d0acc90b2415b603fd0a65d72c48fa6e1c414d997bf2716f3a043216",
+    "neo-j2k/src/simd/mct.rs": "08ada46821f4e6f3383829c0359dbe0b18b05bfbba578bc84af4db5bb201dd61",
+    "neo-j2k/src/simd/mod.rs": "e8c66c4fa8695c316a2a5d816e6e10a508ded7d4e192066c69bf92388fcff314",
+    "neo-j2k/src/simd/output.rs": "2cd6c00cf54058d7303f7392b7c0f3b9567cbf35d036c8192dd53614ac3c9aff",
+    "neo-j2k/src/simd/round_tests.rs": "564b57bb210d4c2ce50b68956f561bccda1fef343af3ea6663005076fa1b3988",
+    "neo-j2k/src/simd/t1.rs": "5299af60ed390e8246890c390387aa79b651cbc490a8ea3845e169127e46e830",
+    "neo-j2k/src/stage.rs": "affcedc3cec237a9b3bb53d7e3e3e702713302874d309747f9ebc99c28c477e1",
+    "neo-j2k/src/stream.rs": "e6ec5b69811f540eaf1a87e30adb2a1df3709e2372bb228ee70f30dbf59cf5c2",
+    "neo-j2k/src/t1/differential.rs": "3c68992feb3d7cd9a3a3a917e2164c1e31bbfcd67bf0eba69bdf9db9bbcf628a",
+    "neo-j2k/src/t1/mq/differential.rs": "4bebd3d65b541be358cff68774948dba6a9f7885e3ec53fb4b59a05134ac789d",
+    "neo-j2k/src/t1/mq/tests.rs": "8bf3429b4c25f9a26337812f379dd472ff9631320abd99cd4067e85de0304670",
+    "neo-j2k/src/t1/mq.rs": "662bdba6ed3b616b2bfc7639733653e88a6be4b6cbafd5750425600a2933d39c",
+    "neo-j2k/src/t1/passes.rs": "d5e0351a498937492b27638664e1cc0822e5c66550497a8c1a18acde40639ce9",
+    "neo-j2k/src/t1/tables.rs": "6020c0d8d81919fb9859d3301663e89b14e161c8af85757b5bde24be79a1f038",
+    "neo-j2k/src/t1.rs": "1c696f723c5a224981b9fbe5a8c55110328412e5c86d0f66210ef450bc303fce",
+    "neo-j2k/src/t2/packet.rs": "6f6f5c9e3235a9d2ae7803afd21574165b78bee5213128260189edbbd9d31a89",
+    "neo-j2k/src/t2/progression.rs": "b713144d6a5c1e8aed462615020110f038d06d2507c6415e9f5d6a7fcd1f5996",
+    "neo-j2k/src/t2.rs": "d8494ea9cea711492f05b905a5b698d387b4fa005e610d2f2906526850bd5093",
+    "neo-j2k/src/tile.rs": "b3fb87c2bdbe4fb2b585e459b89c6a813ce724bde04d4e023ad0d47c4b246f46"
+  },
+  "driver_sha256": {
+    "Cargo.toml": "566cb7a2f9097d3c83d9971801d6ac132fb574da39551c2ac383a5a5e1a3a650",
+    "Cargo.lock": "013e49820ef1d78b8e66f5bd3131cf840515bcd2553c03f69bb971968534046a",
+    "src/main.rs": "530b299893b2b0b07fe4a1c9b2f6bfb92c8bb56975b118130529e97426b57b80",
+    "run.py": "8155e5f2d4d563ec3466dbf6173908df14f9a608c6eb2993c7a0735f26bfd0f7"
+  },
+  "fixture_sha256": {
+    "cblk_4x4.j2k": "f71f5207de2b31a83926f26778d16396f0218b1cf8dc92ef5e78e95704078396",
+    "psot0_tiles_noeoc_97.j2k": "c9ff662eb1f7b8432129004121f9f62c92ca9109aba1452822c152707aa5e8e1",
+    "mark_eph.j2k": "3070a7a7cbdf8cab982146f59720061d51ad7bcb371036de9b57b2c602b46cec",
+    "prog_cprl.j2k": "f5a915a119d56b276bd68238b83a14eb0cab8448e10e8085a5e3b3b859ec08b9",
+    "size_1x64_g.j2k": "711734ad170b8231717cf23ad025a4ad4fd33194e907193080c288b90a758007",
+    "psot0_tiles_97.j2k": "2d59beef5a7863a4db253a3838456ad0da100423b073b1953ec7ca3c81e8d6b6",
+    "mark_plt_tlm_97.j2k": "cd5b8678a5467b4109f03d8c444a78b7b3daa103da2d9094efa5c603ac1afe36",
+    "layers_2_97.j2k": "5e49be800160090da6ee37de36064968264f7ad3a49254b620ba15dfcec2c929",
+    "sl_64_rgb_97.j2k": "873b796af73e6b8c9b2dbaab6301a736b825bfff3476d0d098a0eef00cc8f238",
+    "large_4096x8_rgb_97.j2k": "16354e0ef391041b4c0cef1eb31d9bea6dc603379c537b4b862e2c579216cd5a",
+    "edge_ppt_empty_tiles_97.j2k": "9bf6846e81c34b031156a44b67f1f726f5edf9dc17d4aeab0813702b91ddab55",
+    "poc_lrcp_rlcp.j2k": "fa3519240ef3ceabed05f984dd0ffd84c044a20574caaefe17416cc49a764646",
+    "sl_32_rgb_97.j2k": "bb355c38b96dec61f12f6c20cf9dbcb5851f70b2ba54eefe3e39bcfe25750a13",
+    "large_1024_rgb_97.j2k": "929fb5fcb60cf69504adbc41ef0344d0efb433dc8da5b2f3f2c6c5460ae00baf",
+    "packed_ppm_sop_eph_97.j2k": "b0da8b40c64a76e66d08175ad97be772ff1a234daa8a3cb399cc17f66119aa5d",
+    "size_1x1_rgb.j2k": "9638bd44507ae07d37a25ad0a0c2e3be0793ee01d6dc8692c2e66bf97c35a9a0",
+    "size_512x16_rgb_97_r5.j2k": "651e75dd90e09e4de124e3ed62c3823066435661f50cb1c0ec36042864510f2f",
+    "mark_sop.j2k": "4610dcdc66afaaf63ebd7ae07d8f431e5d1e71b47858eb0faa39b1f2f038f82c",
+    "psot0_sop_97.j2k": "77e116d9616eb1236f3625126b9469ffd896bd41810ec329ffa059db87ce7df1",
+    "packed_ppm.j2k": "3f7b58ac6c1878e384f7abd4c6025ddc8ca47ab66cfc29879a94129e2c6ff840",
+    "mode_bypass_termall.j2k": "319514ae13819aee7271f15ee0a57388b57e82a22c3c2ebc99330002e8aa587a",
+    "sl_32_rgba_53.j2k": "32bcf80425f429ea4807670d7e530ac4423c2eacf231286a48ef5e6f6e5e51f6",
+    "prog_pcrl.j2k": "5074630e33b999245a8a481c1e676f0a60ab482b9533ca3d23b1f8bbd7ccd91e",
+    "size_64x1_g.j2k": "a2b6b3be792a7b2ca8c86c4db2b761c949ccd23d28859796eddadc5be141714a",
+    "size_17x37_rgb_97.j2k": "e8904aafd8d059402279b5bbe79ce1a38fc8d61d477d9e22834f39bd08a213be",
+    "mode_segmark_vsc.j2k": "f224d6c464370d8dfb7a9b05e3833235c8ea4327ad5e1385377670c086e38a22",
+    "cblk_32x16_97.j2k": "1786386cb90b2ec5a9e3e7ada976bfed74004b730d83927ce51bb80481035e9d",
+    "layers_8_97.j2k": "b85c431b56420972d7c02abc4474584a6f33d1ae7b0bbd877a0042f902a14273",
+    "sgnd8_rgb.j2k": "d1183b2dce2387a89720d850a90f9e27b020806f043dd7e7030112197a2d7bf6",
+    "size_3x5_g.j2k": "c9e6a08d9d60e83a74b7853677ee42299cd61c1bbd14f8627e9644d408eb1810",
+    "prec12_g.j2k": "ca281526566660ea8601146db1823537150ebef83925d7d4d1e45cd5a63330ff",
+    "large_4096_g_97.j2k": "7472ffc895f15a8034927496cf56fdf1ac4edb69f6cb8740558e19e84046515c",
+    "sub_420.j2k": "3a771b4dc5bcd4b53c70c398d0b50212611597eb07c009b1dfcb888a2d168aed",
+    "layers_4_53.j2k": "b3305980cdb85fa1003855bc136c61a7244774f56fa887f2db6dd715ce86f8bd",
+    "mode_termall.j2k": "f66bb37bf01f0d06220e676210aa54a48502cc141a48973b88a1311240881dbe",
+    "packed_ppt.j2k": "e577294d4c364d6c286492a68437fed68eb8fc3a77b62e69577fcc292692d44c",
+    "size_16x16_rgb_r5.j2k": "256ddbdab53ad65df3c4559411b82b73875d2a99a6f94b367aec15108b388c6c",
+    "mode_all_97.j2k": "df1c8b4c12d111db4e91420bbdce25369e696e3f87d9c0fd06616677cf030f7c",
+    "mix_odd_sub420_signed12_97.j2k": "419609cdec6db068edcff2c0f43a6548b50e5f1bbb0589557ea7bbe1de988d76",
+    "tile_64_of_16.j2k": "4e71172464926fb568d7cdd494463164177a82ed1391033c9dcc8563d4ffadb5",
+    "large_2048x64_rgba_53.j2k": "c785d3486de4bf0223b4d97edb1cfe23739e3db381ba99cfe3b0862ac5a9a56d",
+    "prec16_g_97.j2k": "e4b76c48a2cb56b5ed3936db1474497162e666085ba7745172075ead612229f2",
+    "size_1x1_g.j2k": "57866c41246eb8ed2a72d98ce1d22e8702c8bdd691cda32b2af4e639849478a1",
+    "poc_sop_97.j2k": "b2dba84bb8d45c564a34c47155daf8fc8a19d3fddee49f4a10db644953a0e744",
+    "tile_origin_odd_97.j2k": "331b976cbf5d7622d08298b2d63b7b5093db1a413202ef65e7d43e6c724add74",
+    "packed_ppt_tiles.j2k": "82b3ac278a6da053c2c8d4953554f9e7b5514adf516c3c26e5970d9556da5dfb",
+    "mark_sop_eph_97.j2k": "223a1e467a61d26b580af0360001a17fded0276d530c990d7e198ae0bbe8c854",
+    "prog_rlcp.j2k": "733694e1da8a6afefa2c2dfbfefac27f9e482089a60afa8aa476b1f4e21ee49d",
+    "size_2x2_rgba_97.j2k": "5ea6219e348625fc79d6519f1a18d4640eef27335e8fafbd66f65819bb4b322d",
+    "mix_odd_sub420_signed12_53.j2k": "181748559bdd32184be3c1a5680213d76b13a7ba288e8001c62c5ead069f81ae",
+    "tile_origin_61x47.j2k": "000ba0c7c827834e4d94e43f0e8cf7a1b5dd061e473da154768f314265e9ad3d",
+    "packed_ppm_tiles_97.j2k": "bbdc36ecad983d236e934292bcce944a3ed1d6f87520228fa935b428fd88d04a",
+    "prog_rpcl.j2k": "514b78489baa31a3048e8eca96c4e7a757e88283ce43471faaa41a880dbbae7d",
+    "mark_tlm_tiles.j2k": "d829c56ee91f552df4201f40ec900c24d20253013201b0ac188f60277328a7d7",
+    "psot0_sop_noeoc_97.j2k": "9d2fc06a25c4fcd3ae93b91299e0602fe5400f09294fd273921388f50a6d2a74",
+    "size_4x4_rgb_r3.j2k": "0a37c49856b65739e4b6ee136b6eec854f88426fb32d2a79b96720f7e2158d2a",
+    "size_7x9_rgb_r1.j2k": "e69027ab3c7b82d2ae2a43922d0ad8c8204d08451c56cbe914ea1f14d15fe0c8",
+    "prog_lrcp.j2k": "a5377b8d0b0e0e8e28049b5053defa63e8d7868c70f35af5845c96b368f3d038",
+    "mark_plt.j2k": "3a56ee4960dda3acc21f71d61ede7081c01867c497a95005a49e2016f00416d6",
+    "sl_64_bake5_97.j2k": "02365420dd4f7c4faf91a42e4dc20ca873d475107f0b15d396bcb7e01d895e8b",
+    "tile_100x80_t64_97.j2k": "5a8b4b5b2c7b93149210521f91fdcf4d1a9c19afd257a8d886b179d68507cdd7",
+    "sl_128_rgba_97.j2k": "e543f0f4fa691aff3454b45e3f57c4e3e92eda6acb10eebe324ec66e569922b5",
+    "mode_reset_pterm.j2k": "d725c108b807078c940891c44929d63cc540bf7fdbfc9be2796adc654c710d8a",
+    "mode_bypass.j2k": "c6e8efb69c98dcae7ef1a96c94444bebdb905db9b94451b033ef9ff6f8d9878e",
+    "layers_1_97.j2k": "3434e5ec857642054ea198b80848f8365ee1ad6f0c3bd3fa025574a50be975b9"
+  },
+  "compile_commands_sha256": "69ea226ddc84db85925129f48ef559cc13271786235d6012ee0c1413dfd1b4fa",
+  "library_sha256": {
+    "oracle/libnj2k_oracle.a": "6d00cb1b2959c878761a807c975d5f71041e87c309c80fda8afd2ab4ddf033d8",
+    "rust-shim/libnj2k_rust_shim.a": "f1731a0f91679c1ca5c564216aae7a1c1d1c4e31f522efe581acad54d014e0fe",
+    "src/libneoj2k.a": "702be3af0b4826d7be7b31aa8a5932ede57bc46725ad43719cc48b11ed3f48d4",
+    "tests/common/libnj2k_test_common.a": "87c135800e5785b4dd6f5d5c1ac0f943ca9bd1e9fa9925d9b6e1ae15177e84b9"
+  },
+  "elapsed_s": 365.9070861680084,
+  "timed_openjpeg": {
+    "repository": "https://github.com/uclouvain/openjpeg",
+    "commit": "6c4a29b00211eb0430fa0e5e890f1ce5c80f409f",
+    "version": "2.5.4",
+    "library_sha256": "ee52f4f5b438727813d28557b7580e88792be6f6c10a1e85ee1d598f4462777f",
+    "adapter_sha256": "1f98f1d586d30c6ac5d10b842199869802b5b67443f92fb59bdd1b6a5d5dfccb",
+    "symbol_map_sha256": "f433ea4b93465eff3f75c3c8a7dfe1e8826d6fd8540500028138da7ad2fd3550",
+    "strictness": "explicit per decode; encode has no strictness setting"
+  },
+  "generated_fixture_sha256": {
+    "generated_1024_rgb_97.j2k": "3553b8e15820d8d9777d41d3c845c8bb5a7eea823e74d29dcb0afedfdfa0df42"
+  },
+  "test_adapter_source_sha256": {
+    "neo-j2k-oracle/shim/shim_opj.cpp": "340692fd9870dbebcdce79914e27cad8c3a810d213f71d4297042932956b41cd",
+    "neo-j2k-oracle/shim/opj_shim.h": "43797714d27408437df018963be170d65e22be45d73327c5844c26641da4b33a",
+    "neo-j2k-oracle/src/openjpeg.rs": "9266857cdd54cee892d5ce78dfb7152590ec331dc27a04b14a384fdbe753e934",
+    "neo-j2k-oracle/src/ffi.rs": "2687d5ac574382e03d08c922e7881d7a46e88e645bbe4893628fa45dfa1ad0f6"
+  }
+}

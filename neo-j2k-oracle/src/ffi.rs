@@ -206,6 +206,7 @@ pub(crate) const CODEC_JP2: u32 = 2;
 
 unsafe extern "C" {
     pub(crate) fn nj2k_opj_decoder_new(reduce: u32, threads: u32) -> *mut OpjDecoder;
+    pub(crate) fn nj2k_opj_decoder_set_strict(decoder: *mut OpjDecoder, strict: u32);
     pub(crate) fn nj2k_opj_decoder_free(decoder: *mut OpjDecoder);
     pub(crate) fn nj2k_opj_decode(
         decoder: *mut OpjDecoder,
