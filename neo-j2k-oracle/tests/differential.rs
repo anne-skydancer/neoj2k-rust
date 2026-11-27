@@ -24,6 +24,20 @@ fn corpus_file(name: &str) -> Vec<u8> {
     std::fs::read(corpus_dir().join(name)).unwrap_or_else(|e| panic!("{name}: {e}"))
 }
 
+#[test]
+fn openjpeg_strictness_controls_partial_downloads() {
+    let data = corpus_file("sl_32_rgba_53.j2k");
+    let prefix = &data[..data.len() - 16];
+    let mut strict = neo_j2k_oracle::openjpeg::Decoder::with_strict(0, 1, true).unwrap();
+    let mut partial = neo_j2k_oracle::openjpeg::Decoder::with_strict(0, 1, false).unwrap();
+    let mut default = neo_j2k_oracle::openjpeg::Decoder::new(0, 1).unwrap();
+    assert!(strict.decode(&data).is_ok());
+    assert!(partial.decode(&data).is_ok());
+    assert!(strict.decode(prefix).is_err());
+    assert!(partial.decode(prefix).is_ok());
+    assert!(default.decode(prefix).is_ok());
+}
+
 /// The R0 gate: three lines of `oracle-reference.tsv`, each recomputed from the oracle's planes by
 /// the test kit's digests (a whole file in plain mode, the same in viewer mode, a cut digest).
 #[test]

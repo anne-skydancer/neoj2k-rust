@@ -16,14 +16,16 @@
 extern "C" {
 #endif
 
-/* The settings of OpenJPEG decodes: OpenJPEG keeps no codec between decodes, so this holds the reduce factor and the
- * thread count only, and every nj2k_opj_decode makes (and destroys) its own codec and memory stream. */
+/* OpenJPEG keeps no codec between decodes. This holds the reduce factor, thread count and strictness;
+ * every nj2k_opj_decode makes (and destroys) its own codec and memory stream. */
 typedef struct nj2k_opj_decoder nj2k_opj_decoder_t;
 /* threads 0 or 1: no opj_codec_set_threads (OpenJPEG's serial path); more: opj_codec_set_threads(threads), which makes
  * that many worker threads in every decode (OpenJPEG's own pool, per codec). */
 nj2k_opj_decoder_t *nj2k_opj_decoder_new(uint32_t reduce, uint32_t threads);
+/* The wrapper starts in non-strict mode. Nonzero strict rejects partial codestreams. */
+void nj2k_opj_decoder_set_strict(nj2k_opj_decoder_t *decoder, uint32_t strict);
 void nj2k_opj_decoder_free(nj2k_opj_decoder_t *decoder);
-/* One decode of a J2K codestream in non-strict mode (a codestream missing its end marker decodes). Returns 0 on
+/* One decode of a J2K codestream using the configured strictness. Returns 0 on
  * success, else 1 (codec setup), 2 (header), 3 (decode), 4 (out too small). With out non-null the image's planes are
  * copied, one after the other, into out (cap samples); *count is the number of samples in the image. With out null
  * nothing is copied: the timed calls. */
