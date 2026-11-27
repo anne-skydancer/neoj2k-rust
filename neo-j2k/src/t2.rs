@@ -93,7 +93,7 @@ impl Workspace {
     }
 }
 
-/// Reads one tile's packets, preserving every complete codeword contribution.
+/// Reads one tile's packets using upstream OpenJPEG's cut-contribution discard policy.
 /// The result is each component's highest decoded resolution index.
 pub(crate) fn read_packets<'work>(
     workspace: &'work mut Workspace,
@@ -675,7 +675,7 @@ mod tests {
     }
 
     #[test]
-    fn layers_and_cut_segments_keep_only_complete_wanted_contributions() {
+    fn cut_contributions_discard_prior_layers_and_layer_limits_keep_them() {
         let mut workspace = Workspace::default();
         let mut budget = WorkBudget::default();
         let mut diagnostics = Diagnostics::default();
@@ -693,8 +693,8 @@ mod tests {
             [0]
         );
         let block = first_block(&tile);
-        assert_eq!(block.chunks.len(), 1);
-        assert_eq!(block.chunks[0], 1..3);
+        // A cut later contribution discards earlier chunks, as upstream OpenJPEG does.
+        assert!(block.chunks.is_empty());
         assert_eq!(block.real_num_segs, 1);
         assert_eq!(block.segs[0].numpasses, 2);
         assert_eq!(block.segs[0].real_num_passes, 1);
@@ -722,6 +722,20 @@ mod tests {
         let error = read_packets(&mut workspace, &mut tile, strict, &mut budget, &mut diagnostics).unwrap_err();
         assert_eq!(error.kind(), ErrorKind::Data);
         assert!(error.message().starts_with("read: segment too long (2) with max (1)"));
+
+        // A subsequent complete request on the retained workspace still gets both layers.
+        let mut tile = single_block(0);
+        read_packets(
+            &mut workspace,
+            &mut tile,
+            stream(&bytes, 2),
+            &mut budget,
+            &mut diagnostics,
+        )
+        .unwrap();
+        let block = first_block(&tile);
+        assert_eq!(block.chunks, [1..3, 4..6]);
+        assert!(!block.corrupted);
     }
 
     #[test]

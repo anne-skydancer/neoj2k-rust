@@ -206,6 +206,8 @@ impl<'data, 'cursor, 'ppm> Reader<'data, 'cursor, 'ppm> {
                 if partial || (!skip && block.corrupted) {
                     skip_passes(block, segment);
                     if !skip {
+                        // Match upstream OpenJPEG's reconstruction after a cut packet contribution.
+                        block.chunks.clear();
                         block.corrupted = true;
                     }
                     continue;
@@ -233,6 +235,8 @@ impl<'data, 'cursor, 'ppm> Reader<'data, 'cursor, 'ppm> {
                         }
                         partial = true;
                         if !skip {
+                            // Upstream discards earlier layers of this code-block as well.
+                            block.chunks.clear();
                             block.real_num_segs = block.numsegs - u32::from(block.segs[at].numpasses == 0);
                             block.corrupted = true;
                         }

@@ -31,7 +31,7 @@ fn digests_reproduce_three_reference_lines() {
     let named = [
         "whole\tcblk_32x16_97.j2k\tplain\t0\t1529\t1\taef9eee61540d8b9",
         "whole\tcblk_32x16_97.j2k\tviewer\t0\t1529\t1\t6f85c07cefc9dd31",
-        "cuts\tcblk_32x16_97.j2k\tplain\t0\t1\t13\t118\t107\t07945346760c3730",
+        "cuts\tcblk_32x16_97.j2k\tplain\t0\t1\t13\t118\t107\ta087b885da04c19a",
     ];
     let table = reference_table();
     let mut oracle = OracleBackend::new(BackendKind::Oracle);
