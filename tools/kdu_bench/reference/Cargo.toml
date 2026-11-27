@@ -1,0 +1,14 @@
+[package]
+name = "kdu-pixel-reference"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+[workspace]
+
+[dependencies]
+neo-j2k = { path = "../../../neo-j2k" }
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
