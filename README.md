@@ -261,15 +261,13 @@ this order:
    -DNJ2K_BUILD_RUST_SHIM=ON`). A change under `src/`, `include/`, `oracle/`, `tests/common/`,
    `cmake/` or the shim runs CMake again; it rebuilds what changed.
 
-**The twin is pinned to one C++ release.** This crate is version 0.1.3 and its oracle is the C++ neo-j2k
-v0.1.3 (commit `00f273d502d211905adb756d2f75ef74321983d0`). CI checks out exactly that commit, so a later
-C++ `main` never reddens it. The test `cpp_release` fails when the checkout (or the build folder of
-`NJ2K_ORACLE_DIR`) reports another version than the crate's, and the size table test fails when the C++
-arena types differ. The pinned SHA is the commit, not the annotated tag object (`git rev-parse v0.1.3^{commit}`). The version
-test compares only major.minor.patch, so a local `NJ2K_CPP_SOURCE` pointing at C++ `main` can pass it and
-still redden the size table test; only CI's `ref:` pins the exact commit.
-Moving to a newer C++ release is a deliberate change: bump the version, the `ref:`
-of the checkouts in `.github/workflows/` and this note together.
+**The twin pins a specific C++ revision.** This crate is version 0.1.3 and its oracle is the C++ neo-j2k
+0.1.3 API with the coordinated partial-input and sparse-decode fixes, at commit
+`cf3320c0a2188e4f17a25536a94dd6c1bb7870c5`. CI checks out exactly that revision, so a later
+C++ `main` cannot silently change the oracle. The `cpp_release` test checks the library version;
+the size-table test checks the shared arena layouts. A local C++ checkout with the same version
+can still differ from the pinned source, so reproducible comparisons must use the exact commit.
+Update the workflow pins and this note together when coordinating another C++ change.
 
 The default C++ test configuration is `RelWithDebInfo` (`NJ2K_ORACLE_CONFIG`), with the dynamic
 C runtime (`/MD`) that Rust's MSVC target uses. The three-way benchmark below selects `Release`.
@@ -285,7 +283,7 @@ cargo fmt --all --check
 | Variable | Use |
 |---|---|
 | `NJ2K_ORACLE_DIR` | a CMake build folder holding the oracle libraries (above) |
-| `NJ2K_CPP_SOURCE` | a checkout of the external C++ neo-j2k repository at **v0.1.3** (commit `00f273d502d211905adb756d2f75ef74321983d0`), used when `NJ2K_ORACLE_DIR` is not set |
+| `NJ2K_CPP_SOURCE` | a checkout of the external C++ neo-j2k repository at the coordinated **0.1.3 API revision** (commit `cf3320c0a2188e4f17a25536a94dd6c1bb7870c5`), used when `NJ2K_ORACLE_DIR` is not set |
 | `NJ2K_ORACLE_PRESET` | the CMake preset `build.rs` uses when it builds the oracle itself |
 | `NJ2K_ORACLE_CONFIG` | the configuration of the oracle's build (default `RelWithDebInfo`) |
 | `NJ2K_ORACLE_NO_BUILD` | `1`: no C++ build and no link, for commands that compile without linking (`cargo clippy`, `cargo doc`, `cargo metadata`); a test build then fails to link |

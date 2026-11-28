@@ -27,7 +27,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           repository: anne-skydancer/neo-j2k
-          ref: 649201f8c5a6ddb0683b165a5616c56fdf18d3c3 # upstream-compatible partial decoding
+          ref: cf3320c0a2188e4f17a25536a94dd6c1bb7870c5 # coordinated partial-input and sparse-decode fixes
           persist-credentials: false
           path: cpp
       - name: C++ toolchain

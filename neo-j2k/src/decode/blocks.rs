@@ -87,7 +87,7 @@ impl Coding {
         }
     }
 
-    fn decode(
+    fn decode<const KNOWN_ZERO: bool>(
         self,
         block: &Block<'_>,
         samples: &mut [i32],
@@ -97,7 +97,7 @@ impl Coding {
         diagnostics: &mut Diagnostics,
     ) -> Result<(), Error> {
         let code = block.code;
-        scratch.decode(
+        scratch.decode_policy::<KNOWN_ZERO>(
             t1::Block {
                 width: code.rect.width(),
                 height: code.rect.height(),
@@ -127,8 +127,14 @@ pub(super) fn decode(
     diagnostics: &mut Diagnostics,
 ) -> Result<(), Error> {
     let coding = Coding::new(component);
+    if component.known_zero && !component.reversible && component.samples.len() >= (1 << 18) {
+        for block in blocks::<false>(component.res, 0..0) {
+            coding.decode::<true>(&block, component.samples, 0, data, scratch, diagnostics)?;
+        }
+        return Ok(());
+    }
     for block in blocks::<false>(component.res, 0..0) {
-        coding.decode(&block, component.samples, 0, data, scratch, diagnostics)?;
+        coding.decode::<false>(&block, component.samples, 0, data, scratch, diagnostics)?;
     }
     Ok(())
 }
@@ -298,7 +304,7 @@ pub(super) fn parallel_decode_tile(
         let mut diagnostics = Diagnostics::new(false);
         let origin = rows.start;
         worker.result = Some(blocks::<true>(resolutions, rows).try_for_each(|block| {
-            coding.decode(
+            coding.decode::<false>(
                 &block,
                 samples,
                 origin,

@@ -136,6 +136,18 @@ impl Scratch {
         destination: Destination<'_>,
         diagnostics: &mut Diagnostics,
     ) -> Result<(), Error> {
+        self.decode_policy::<false>(block, chunks, destination, diagnostics)
+    }
+
+    // KNOWN_ZERO is only valid for a destination cleared before the current block walk.
+    // Direct caller planes keep the default policy and receive explicit empty-block stores.
+    pub(crate) fn decode_policy<'a, const KNOWN_ZERO: bool>(
+        &mut self,
+        block: Block<'_>,
+        chunks: impl IntoIterator<Item = &'a [u8]>,
+        destination: Destination<'_>,
+        diagnostics: &mut Diagnostics,
+    ) -> Result<(), Error> {
         let Block {
             width,
             height,
@@ -182,6 +194,10 @@ impl Scratch {
 
         let mut chunks = chunks.into_iter();
         let Some(first) = chunks.next() else {
+            // All validation above still applies when the destination was cleared by reconstruction.
+            if KNOWN_ZERO {
+                return Ok(());
+            }
             for row in 0..height {
                 let start = offset + row * stride;
                 output[start..start + width].fill(0);

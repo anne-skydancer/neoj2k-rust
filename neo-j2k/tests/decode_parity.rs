@@ -336,3 +336,46 @@ fn caller_owned_targets_must_reference_selected_components() {
     assert!(!partial);
     assert_eq!(bytes, expected);
 }
+
+#[test]
+fn sparse_owned_coefficients_are_cleared_across_partial_decode_reuse() {
+    let full = std::fs::read(corpus_dir().join("large_4096_g_97.j2k")).unwrap();
+    let prefix = &full[..full.len() / 2];
+    let plane = [OutputPlane {
+        component: 0,
+        offset: 64,
+        row_stride: 4096,
+        sample_stride: 1,
+    }];
+    let decode = |codec: &mut Decoder, input: &[u8]| {
+        let mut bytes = vec![0xa5; 4096 * 4096 + 128];
+        let truncated = codec
+            .decode_into(
+                input,
+                DecodeParams::default(),
+                SampleType::U8,
+                &mut [DecodeTarget {
+                    bytes: &mut bytes,
+                    planes: &plane,
+                }],
+            )
+            .unwrap();
+        assert!(bytes[..64].iter().chain(&bytes[bytes.len() - 64..]).all(|&v| v == 0xa5));
+        (truncated, bytes)
+    };
+    let expected_full = decode(&mut Decoder::new(DecoderConfig::default()), &full);
+    let expected_partial = decode(&mut Decoder::new(DecoderConfig::default()), prefix);
+    assert!(!expected_full.0 && expected_partial.0);
+    assert_ne!(expected_full.1, expected_partial.1);
+    let mut retained = Decoder::new(DecoderConfig {
+        retain_bytes: 128 << 20,
+        ..DecoderConfig::default()
+    });
+    for (input, expected) in [
+        (&full[..], &expected_full),
+        (prefix, &expected_partial),
+        (&full[..], &expected_full),
+    ] {
+        assert_eq!(&decode(&mut retained, input), expected);
+    }
+}

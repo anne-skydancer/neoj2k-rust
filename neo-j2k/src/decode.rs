@@ -1089,6 +1089,8 @@ struct Reconstruction<'a> {
     reversible: bool,
     roishift: u8,
     cblksty: u8,
+    // Initialized for this block walk, not inferred from retained allocation capacity.
+    known_zero: bool,
     samples: &'a mut [i32],
 }
 
@@ -1096,6 +1098,8 @@ impl<'a> Reconstruction<'a> {
     fn prepare(component: &'a mut TileComp, direct: Option<&'a mut [i32]>) -> Result<Self, Error> {
         let finest = component.selected_resolution();
         let count = sample_count(finest.width(), finest.height())?;
+        // Owned storage is cleared below. Caller-owned I32 planes may contain old samples.
+        let known_zero = direct.is_none();
         let samples = if let Some(samples) = direct {
             debug_assert_eq!(samples.len(), count);
             // The block walk covers the plane, writing zeros for blocks with no packet data.
@@ -1111,6 +1115,7 @@ impl<'a> Reconstruction<'a> {
             reversible: component.reversible,
             roishift: component.roishift,
             cblksty: component.cblksty,
+            known_zero,
             samples,
         })
     }
