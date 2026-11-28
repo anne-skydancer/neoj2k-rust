@@ -51,6 +51,7 @@ const DELTA: f32 = f32::from_bits(0x3ee3_1355);
 const K: f32 = f32::from_bits(0x3f9d_7658);
 const INV_K: f32 = f32::from_bits(0x3f50_19c3);
 const COLUMN_BATCH_53: usize = 8;
+const COLUMN_BATCH_97: usize = 16;
 
 const NORMS: [[f64; 10]; 4] = [
     [1.000, 1.500, 2.750, 5.375, 10.68, 21.34, 42.67, 85.33, 170.7, 341.3],
@@ -200,7 +201,7 @@ fn lift_53_columns(line: &mut [[i32; COLUMN_BATCH_53]]) {
     }
 }
 
-fn lift_97_columns(line: &mut [[i32; COLUMN_BATCH_53]], parity: usize, coefficient: f32) {
+fn lift_97_columns<const LANES: usize>(line: &mut [[i32; LANES]], parity: usize, coefficient: f32) {
     let last = line.len() - 1;
     for at in (parity..last).step_by(2) {
         let [above, centre, below] = [line[at.abs_diff(1)], line[at], line[at + 1]];
@@ -218,9 +219,9 @@ fn lift_97_columns(line: &mut [[i32; COLUMN_BATCH_53]], parity: usize, coefficie
     }
 }
 
-/// The 9/7 lifting steps and scaling of `lift_and_scale_97`, applied to eight columns at once.
+/// The 9/7 lifting steps and scaling of `lift_and_scale_97`, applied to a full column batch.
 /// Every element sees the same float operations in the same order as the single-column form.
-fn lift_and_scale_97_columns(line: &mut [[i32; COLUMN_BATCH_53]]) {
+fn lift_and_scale_97_columns<const LANES: usize>(line: &mut [[i32; LANES]]) {
     lift_97_columns(line, 1, ALPHA);
     lift_97_columns(line, 0, BETA);
     lift_97_columns(line, 1, GAMMA);
@@ -231,6 +232,32 @@ fn lift_and_scale_97_columns(line: &mut [[i32; COLUMN_BATCH_53]]) {
     }
 }
 
+fn forward_columns_97<const LANES: usize>(
+    plane: &mut [i32],
+    stride: usize,
+    cols: usize,
+    rows: usize,
+    line: &mut [i32],
+) -> usize {
+    if cols < LANES || rows < 2 {
+        return 0;
+    }
+    let lanes = line[..rows * LANES].as_chunks_mut::<LANES>().0;
+    let end = cols / LANES * LANES;
+    for col in (0..end).step_by(LANES) {
+        let range = col..col + LANES;
+        for (tmp, row) in lanes.iter_mut().zip(plane.chunks_exact(stride)) {
+            tmp.copy_from_slice(&row[range.clone()]);
+        }
+        lift_and_scale_97_columns(lanes);
+        let bands = lanes.iter().step_by(2).chain(lanes.iter().skip(1).step_by(2));
+        for (row, tmp) in plane.chunks_exact_mut(stride).zip(bands) {
+            row[range.clone()].copy_from_slice(tmp);
+        }
+    }
+    end
+}
+
 fn forward_columns(
     plane: &mut [i32],
     stride: usize,
@@ -239,6 +266,9 @@ fn forward_columns(
     reversible: bool,
     line: &mut [i32],
 ) -> usize {
+    if !reversible && cols >= COLUMN_BATCH_97 {
+        return forward_columns_97::<COLUMN_BATCH_97>(plane, stride, cols, rows, line);
+    }
     if cols < COLUMN_BATCH_53 || rows < 2 {
         return 0;
     }
@@ -306,9 +336,14 @@ fn forward_line(data: &mut [i32], stride: usize, reversible: bool, line: &mut [i
     }
 }
 
-pub(super) fn scratch_len(width: usize, height: usize) -> usize {
-    if width >= COLUMN_BATCH_53 {
-        width.max(height * COLUMN_BATCH_53)
+pub(super) fn scratch_len(width: usize, height: usize, reversible: bool) -> usize {
+    let batch = if !reversible && width >= COLUMN_BATCH_97 {
+        COLUMN_BATCH_97
+    } else {
+        COLUMN_BATCH_53
+    };
+    if width >= batch {
+        width.max(height * batch)
     } else {
         width.max(height)
     }

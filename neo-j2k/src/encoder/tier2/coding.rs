@@ -140,6 +140,10 @@ impl TagTree {
     }
 
     pub(super) fn set_value(&mut self, leaf: usize, value: i32) {
+        if self.nodes.len() == 1 && leaf == 0 {
+            self.nodes[0].value = self.nodes[0].value.min(value);
+            return;
+        }
         let (path, depth) = self.path(leaf);
         for index in &path[..depth] {
             let node = &mut self.nodes[*index];
@@ -151,6 +155,23 @@ impl TagTree {
     }
 
     pub(super) fn write(&mut self, bio: &mut Bio<'_>, leaf: usize, threshold: i32) {
+        if self.nodes.len() == 1 && leaf == 0 {
+            let node = &mut self.nodes[0];
+            let mut low = node.low.max(0);
+            while low < threshold {
+                if low >= node.value {
+                    if !node.known {
+                        bio.put(true);
+                        node.known = true;
+                    }
+                    break;
+                }
+                bio.put(false);
+                low += 1;
+            }
+            node.low = low;
+            return;
+        }
         let (path, depth) = self.path(leaf);
         let mut low = 0;
         for index in path[..depth].iter().rev() {
@@ -188,5 +209,48 @@ mod tests {
         let mut bio = Bio::new(&mut out);
         bio.write(255, 8);
         assert_eq!(bio.finish(), None);
+    }
+}
+
+#[cfg(test)]
+mod single_leaf_contract {
+    use super::{Bio, TagTree};
+
+    #[test]
+    fn single_leaf_thresholds_reset_and_stuffing_have_stable_bits() {
+        let mut tree = TagTree::default();
+        tree.configure(1, 1).unwrap();
+        tree.set_value(0, 3);
+        tree.set_value(0, 7);
+        let mut output = [0xa5; 2];
+        let mut bio = Bio::new(&mut output);
+        for threshold in [1, 3, 4, 8] {
+            tree.write(&mut bio, 0, threshold);
+        }
+        assert_eq!(bio.finish(), Some(1));
+        assert_eq!(output, [0x10, 0xa5]);
+
+        tree.reset();
+        tree.set_value(0, 0);
+        let mut output = [0xa5; 1];
+        let mut bio = Bio::new(&mut output);
+        tree.write(&mut bio, 0, 1);
+        tree.write(&mut bio, 0, 2);
+        assert_eq!(bio.finish(), Some(1));
+        assert_eq!(output, [0x80]);
+
+        for capacity in 0..=2 {
+            let mut output = [0xa5; 2];
+            let mut bio = Bio::new(&mut output[..capacity]);
+            for _ in 0..8 {
+                tree.reset();
+                tree.set_value(0, 0);
+                tree.write(&mut bio, 0, 1);
+            }
+            assert_eq!(bio.finish(), (capacity == 2).then_some(2));
+            if capacity == 2 {
+                assert_eq!(output, [0xff, 0x00]);
+            }
+        }
     }
 }

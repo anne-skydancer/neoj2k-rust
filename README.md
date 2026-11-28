@@ -263,7 +263,7 @@ this order:
 
 **The twin pins a specific C++ revision.** This crate is version 0.1.3 and its oracle is the C++ neo-j2k
 0.1.3 API with the coordinated partial-input and sparse-decode fixes, at commit
-`cf3320c0a2188e4f17a25536a94dd6c1bb7870c5`. CI checks out exactly that revision, so a later
+`45f2bfeed2cdcd5d1eaa1aeb0a9ff3ae37bcc293`. CI checks out exactly that revision, so a later
 C++ `main` cannot silently change the oracle. The `cpp_release` test checks the library version;
 the size-table test checks the shared arena layouts. A local C++ checkout with the same version
 can still differ from the pinned source, so reproducible comparisons must use the exact commit.
@@ -283,7 +283,7 @@ cargo fmt --all --check
 | Variable | Use |
 |---|---|
 | `NJ2K_ORACLE_DIR` | a CMake build folder holding the oracle libraries (above) |
-| `NJ2K_CPP_SOURCE` | a checkout of the external C++ neo-j2k repository at the coordinated **0.1.3 API revision** (commit `cf3320c0a2188e4f17a25536a94dd6c1bb7870c5`), used when `NJ2K_ORACLE_DIR` is not set |
+| `NJ2K_CPP_SOURCE` | a checkout of the external C++ neo-j2k repository at the coordinated **0.1.3 API revision** (commit `45f2bfeed2cdcd5d1eaa1aeb0a9ff3ae37bcc293`), used when `NJ2K_ORACLE_DIR` is not set |
 | `NJ2K_ORACLE_PRESET` | the CMake preset `build.rs` uses when it builds the oracle itself |
 | `NJ2K_ORACLE_CONFIG` | the configuration of the oracle's build (default `RelWithDebInfo`) |
 | `NJ2K_ORACLE_NO_BUILD` | `1`: no C++ build and no link, for commands that compile without linking (`cargo clippy`, `cargo doc`, `cargo metadata`); a test build then fails to link |
