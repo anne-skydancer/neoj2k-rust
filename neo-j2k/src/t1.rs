@@ -129,6 +129,7 @@ impl Scratch {
     }
 
     /// Decode the code-block's complete packet contributions and write its tile coefficients.
+    #[cfg(any(test, feature = "bench-internals"))]
     pub(crate) fn decode<'a>(
         &mut self,
         block: Block<'_>,
